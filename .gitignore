@@ -1,0 +1,100 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# JetBrains Rider / IntelliJ
+.idea/
+*.sln.iml
+
+# NuGet
+.nuget/
+packages/
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# MSBuild
+*.cache
+*.userprefs
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Rider
+*.DotSettings.user
+rider.project.model.nuget.info
+rider.project.restore.info
+
+# Blazor / ASP.NET Core
+**/wwwroot/css/*.css
+**/wwwroot/css/*.css.map
+**/service-worker.published.js
+**/blazor.boot.json
+**/blazor.webassembly.js
+**/blazor.server.js
+**/framework/*
+**/_framework/*
+*.blazor.*
+
+# SCSS compiler (generated CSS; keep source .scss)
+*.css.map
+
+# Publish output
+publish/
+*.pubxml
+*.publishproj
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+*.VisualState.xml
+TestResult.xml
+[Tt]est[Rr]esults/
+
+# User-specific / local config (optional: uncomment if you keep secrets in these)
+# appsettings.Development.json
+# appsettings.*.local.json
+# **/secrets.json
+# **/*.Development.json
+
+# Server .env (secrets and local overrides; use .env.example as template)
+.env
+.env.local
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~
+
+# Misc
+*.bak
+*.tmp
+*.temp
+*.orig
+.cache/

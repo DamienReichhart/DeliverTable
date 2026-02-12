@@ -1,0 +1,29 @@
+// -----------------------------------------------------------------------------
+// Base typography and links.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+
+html,
+body {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  color: $color-text;
+  background-color: $color-bg;
+}
+
+a,
+.app-link {
+  color: $color-accent;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    color: $color-accent-hover;
+  }
+}
+
+code {
+  color: #c02d76;
+}

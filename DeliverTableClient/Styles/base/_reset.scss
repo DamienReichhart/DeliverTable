@@ -1,0 +1,21 @@
+// -----------------------------------------------------------------------------
+// Minimal reset and box-sizing.
+// -----------------------------------------------------------------------------
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+h1:focus {
+  outline: none;
+}
