@@ -42,7 +42,7 @@ Task: AB#<id>
 | Part | Meaning |
 |------|--------|
 | **type** | Kind of change (e.g. `feat`, `fix`, `docs`). |
-| **scope** | Part of the solution affected (e.g. `frontend`, `backend`, `common`). |
+| **scope** | Part of the solution affected (e.g. `client`, `server`, `shared`). |
 | **description** | Short, imperative summary (e.g. "add order list" not "added order list"). |
 | **body** | Optional; detailed explanation; wrap at 72 characters. |
 | **footer** | **Required** Azure Boards references (`PBI: AB#n`, `Task: AB#n`); optional `BREAKING CHANGE:`. |
@@ -81,18 +81,18 @@ Every commit **must** include at least one Azure Boards reference in its footer 
 
 ## Scopes
 
-Scopes map to the main areas of the solution:
+Scopes map to the projects in the solution (see project structure documentation):
 
-| Scope | Description |
-|-------|-------------|
-| `frontend` | Blazor UI, pages, components, client-side logic. |
-| `backend` | ASP.NET Core API, controllers, services, persistence. |
-| `common` | Shared library used by frontend and/or backend (DTOs, contracts, utilities). |
-| `api` | API surface (routes, contracts, versioning) when spanning frontend/backend. |
-| `auth` | Authentication and authorization. |
-| `db` | Migrations, schema, seed data. |
-| `docker` | Dockerfiles and container orchestration. |
-| `*` | When using multiple scopes (e.g. `feat(frontend, backend)`). |
+| Scope | Project | Description |
+|-------|---------|-------------|
+| `client` | DeliverTableClient | Blazor UI, pages, components, layout, styles, client-side services and configuration. |
+| `server` | DeliverTableServer | ASP.NET Core API, controllers, services, configuration, middleware, infrastructure. |
+| `shared` | DeliverTableSharedLibrary | Shared DTOs, constants, entities, enums, and contracts used by client and server. |
+| `tests` | DeliverTableTests | Unit and integration tests, mocks, test data. |
+| `api` | — | API surface (routes, contracts, versioning) when spanning client and server. |
+| `auth` | — | Authentication and authorization. |
+| `db` | — | Migrations, schema, seed data. |
+| `docker` | — | Dockerfiles and container orchestration. |
 
 ---
 
@@ -101,14 +101,14 @@ Scopes map to the main areas of the solution:
 ### Features
 
 ```text
-feat(frontend): add order list with pagination
+feat(client): add order list with pagination
 
 PBI: AB#5520
 Task: AB#5521
 ```
 
 ```text
-feat(backend): add GET /api/orders with filtering
+feat(server): add GET /api/orders with filtering
 
 PBI: AB#5520
 Task: AB#5523
@@ -117,7 +117,7 @@ Task: AB#5523
 ### Bug fixes
 
 ```text
-fix(frontend): correct date format in order table
+fix(client): correct date format in order table
 
 PBI: AB#5530
 Task: AB#5532
@@ -135,7 +135,7 @@ Task: AB#5514
 ### Refactor and style
 
 ```text
-refactor(backend): extract order mapping to dedicated service
+refactor(server): extract order mapping to dedicated service
 
 PBI: AB#5540
 Task: AB#5542
@@ -152,7 +152,7 @@ PBI: AB#5550
 ### Tests
 
 ```text
-test(backend): add OrderService unit tests
+test(server): add OrderService unit tests
 
 PBI: AB#5520
 Task: AB#5525
@@ -180,4 +180,4 @@ Azure Boards references (`PBI`, `Task`) must appear **after** any `BREAKING CHAN
 2. **Imperative mood** — "add feature" not "added feature".
 3. **No period** at the end of the subject line.
 4. **Always reference Azure Boards work items** — every commit must include `PBI: AB#<id>` and, when applicable, `Task: AB#<id>` in the footer.
-5. **Scope** must match the part of the solution you changed (`frontend`, `backend`, `common`, `api`, `auth`, `db`, `docker`).
+5. **Scope** must match the part of the solution you changed (`client`, `server`, `shared`, `tests`, `api`, `auth`, `db`, `docker`).
