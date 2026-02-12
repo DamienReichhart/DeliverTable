@@ -1,0 +1,14 @@
+// -----------------------------------------------------------------------------
+// DeliverTable Client – main stylesheet (Sass only, no Bootstrap).
+// -----------------------------------------------------------------------------
+
+@use 'abstracts/variables';
+@use 'base/reset';
+@use 'base/typography';
+@use 'layout/page';
+@use 'layout/sidebar';
+@use 'layout/nav';
+@use 'components/buttons';
+@use 'components/forms';
+@use 'pages/health';
+@use 'utilities/blazor';

@@ -1,0 +1,34 @@
+// -----------------------------------------------------------------------------
+// Main page layout: flex container, main content area.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+
+.app-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  padding: $spacing-md $content-padding-x $spacing-xl;
+  padding-top: $spacing-lg;
+}
+
+@media (min-width: $breakpoint-desktop) {
+  .app-page {
+    flex-direction: row;
+  }
+
+  .app-content {
+    padding-left: $content-padding-x-wide;
+    padding-right: $content-padding-x-wide;
+  }
+}

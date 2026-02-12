@@ -1,0 +1,22 @@
+<div class="app-nav-top">
+    <a class="app-nav-brand" href="/">DeliverTable</a>
+    <button type="button" title="Navigation menu" class="app-nav-toggler" @onclick="ToggleNavMenu" aria-label="Toggle navigation menu">
+        <span class="app-nav-toggler-icon" aria-hidden="true"></span>
+    </button>
+</div>
+
+<div class="app-nav-scrollable @NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="app-nav-list" aria-label="Main navigation">
+        <div class="app-nav-item">
+            <NavLink href="" Match="NavLinkMatch.All" class="app-nav-link">
+                <span class="app-nav-icon app-nav-icon--health" aria-hidden="true"></span> Server Health
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool _collapseNavMenu = true;
+    private string? NavMenuCssClass => _collapseNavMenu ? "app-nav-collapse" : null;
+    private void ToggleNavMenu() => _collapseNavMenu = !_collapseNavMenu;
+}

@@ -1,0 +1,51 @@
+@page "/"
+@inject IHealthApiClient HealthApi
+
+<PageTitle>Server Health</PageTitle>
+
+<div class="health-page">
+    <h1>Server Health</h1>
+
+    @if (_loading)
+    {
+        <p class="status status-loading" aria-busy="true">Checking server…</p>
+    }
+    else if (_health is { } health)
+    {
+        <div class="status status-ok">
+            <strong>Status:</strong> @health.Status
+        </div>
+        <p class="timestamp">Last checked (UTC): @health.TimestampUtc.ToString("O")</p>
+    }
+    else
+    {
+        <p class="status status-error">Server is unreachable or returned an error.</p>
+    }
+
+    <button type="button" class="app-btn app-btn--primary app-btn--refresh" @onclick="CheckHealth" disabled="@_loading">Check again</button>
+</div>
+
+@code {
+    private bool _loading = true;
+    private HealthResponse? _health;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckHealth();
+    }
+
+    private async Task CheckHealth()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            _health = await HealthApi.GetHealthAsync();
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+}

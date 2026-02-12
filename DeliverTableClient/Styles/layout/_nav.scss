@@ -1,0 +1,154 @@
+// -----------------------------------------------------------------------------
+// Top bar and navigation menu (brand, toggler, nav links).
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// Top row (brand + hamburger on mobile)
+.app-nav-top {
+  min-height: $topbar-height;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 $spacing-md;
+  background-color: $color-overlay;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  a,
+  .app-link {
+    color: $color-text-inverse;
+    white-space: nowrap;
+    margin-left: $spacing-lg;
+    text-decoration: none;
+  }
+
+  a:hover,
+  .app-link:hover {
+    text-decoration: underline;
+  }
+
+  a:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .app-nav-top {
+    justify-content: space-between;
+  }
+
+  .app-nav-top a,
+  .app-nav-top .app-link {
+    margin-left: 0;
+  }
+}
+
+@media (min-width: $breakpoint-desktop) {
+  .app-nav-top {
+    position: sticky;
+    top: 0;
+    z-index: $z-topbar;
+  }
+}
+
+.app-nav-brand {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-inverse;
+}
+
+.app-nav-toggler {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background-color: $color-nav-hover;
+  color: $color-text-inverse;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+.app-nav-toggler-icon {
+  display: block;
+  width: 1.25rem;
+  height: 1rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+@media (min-width: $breakpoint-desktop) {
+  .app-nav-toggler {
+    display: none;
+  }
+}
+
+// Collapsible nav (mobile)
+.app-nav-collapse {
+  display: none;
+}
+
+@media (min-width: $breakpoint-desktop) {
+  .app-nav-collapse {
+    display: block;
+  }
+}
+
+.app-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-nav-item {
+  font-size: $font-size-sm;
+  padding-bottom: $spacing-sm;
+
+  &:first-of-type {
+    padding-top: $spacing-md;
+  }
+
+  &:last-of-type {
+    padding-bottom: $spacing-md;
+  }
+
+  .app-nav-link,
+  a {
+    @include nav-link-base;
+  }
+}
+
+// Heart icon for Server Health nav link
+.app-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 1rem 1rem;
+}
+
+.app-nav-icon--health {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.072-.29 2.385.52 3.547l4.695 5.266 4.695-5.266c.81-1.162 1.043-2.475.52-3.547C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z'/%3E%3C/svg%3E");
+}
