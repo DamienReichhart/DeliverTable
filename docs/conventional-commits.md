@@ -22,7 +22,7 @@
 | **Format** | `<type>(<scope>): <description>` |
 | **Subject** | Imperative, no period, ~50 chars |
 | **Body** | Optional; wrap at 72 characters |
-| **Footer** | `Refs #n`, `Closes #n`, `BREAKING CHANGE:` |
+| **Footer** | **Required**: `PBI: AB#n` and/or `Task: AB#n`; optional `BREAKING CHANGE:` |
 | **Breaking** | `feat(scope)!:` or footer `BREAKING CHANGE:` |
 
 ---
@@ -34,7 +34,9 @@
 
 [optional body]
 
-[optional footer(s)]
+PBI: AB#<id>
+Task: AB#<id>
+[optional BREAKING CHANGE footer]
 ```
 
 | Part | Meaning |
@@ -43,7 +45,20 @@
 | **scope** | Part of the solution affected (e.g. `frontend`, `backend`, `common`). |
 | **description** | Short, imperative summary (e.g. "add order list" not "added order list"). |
 | **body** | Optional; detailed explanation; wrap at 72 characters. |
-| **footer** | Optional; issue refs (e.g. `Refs #123`) and/or breaking changes. |
+| **footer** | **Required** Azure Boards references (`PBI: AB#n`, `Task: AB#n`); optional `BREAKING CHANGE:`. |
+
+### Azure Boards traceability
+
+Every commit **must** include at least one Azure Boards reference in its footer to maintain full traceability between code changes and work items.
+
+| Token | Format | When to use |
+|-------|--------|-------------|
+| `PBI` | `PBI: AB#<id>` | Reference the parent Product Backlog Item. |
+| `Task` | `Task: AB#<id>` | Reference the specific Task under the PBI. |
+
+- Include **both** `PBI` and `Task` when the commit maps to a specific task.
+- Include only `PBI` when the commit is not tied to a particular task (e.g. documentation, chores).
+- Multiple references are allowed (one per line).
 
 ---
 
@@ -87,47 +102,60 @@ Scopes map to the main areas of the solution:
 
 ```text
 feat(frontend): add order list with pagination
+
+PBI: AB#5520
+Task: AB#5521
+```
+
+```text
 feat(backend): add GET /api/orders with filtering
-feat(common): add OrderDto and validation helpers
-feat(auth): implement JWT refresh in Blazor client
+
+PBI: AB#5520
+Task: AB#5523
 ```
 
 ### Bug fixes
 
 ```text
 fix(frontend): correct date format in order table
-fix(backend): handle null customer in order service
-fix(common): fix timezone in DateOnly serialization
+
+PBI: AB#5530
+Task: AB#5532
 ```
 
 ### Documentation
 
 ```text
-docs: add conventional commits standard
-docs(api): document orders endpoint
-docs(backend): add service layer overview
+docs: add the data dictionary documentation
+
+PBI: AB#5512
+Task: AB#5514
 ```
 
 ### Refactor and style
 
 ```text
 refactor(backend): extract order mapping to dedicated service
-style(frontend): apply editorconfig to Blazor components
+
+PBI: AB#5540
+Task: AB#5542
 ```
 
 ### Build and CI
 
 ```text
 build: bump Microsoft.AspNetCore.OpenApi to 9.0.1
-ci: add workflow for backend unit tests
-chore(docker): update base image for API
+
+PBI: AB#5550
 ```
 
 ### Tests
 
 ```text
 test(backend): add OrderService unit tests
-test(common): add validation tests for OrderDto
+
+PBI: AB#5520
+Task: AB#5525
 ```
 
 ### Breaking changes (footer)
@@ -136,9 +164,13 @@ test(common): add validation tests for OrderDto
 feat(api)!: require API key header for all endpoints
 
 BREAKING CHANGE: Clients must send X-Api-Key. Remove in v2.
+
+PBI: AB#5560
+Task: AB#5561
 ```
 
 Use `!` after the type/scope or a `BREAKING CHANGE:` footer to signal breaking changes.
+Azure Boards references (`PBI`, `Task`) must appear **after** any `BREAKING CHANGE:` line.
 
 ---
 
@@ -147,5 +179,5 @@ Use `!` after the type/scope or a `BREAKING CHANGE:` footer to signal breaking c
 1. **One logical change per commit** — easier to review and revert.
 2. **Imperative mood** — "add feature" not "added feature".
 3. **No period** at the end of the subject line.
-4. **Reference issues** in body or footer: `Refs #42`, `Closes #42`.
+4. **Always reference Azure Boards work items** — every commit must include `PBI: AB#<id>` and, when applicable, `Task: AB#<id>` in the footer.
 5. **Scope** must match the part of the solution you changed (`frontend`, `backend`, `common`, `api`, `auth`, `db`, `docker`).
