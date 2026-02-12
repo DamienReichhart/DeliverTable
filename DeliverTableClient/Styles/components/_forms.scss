@@ -1,0 +1,36 @@
+// -----------------------------------------------------------------------------
+// Form controls, validation states, placeholders.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.app-input,
+.app-input:focus,
+.app-checkbox:focus {
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+.valid.modified:not([type='checkbox']) {
+  outline: 1px solid $color-success-outline;
+}
+
+.invalid {
+  outline: 1px solid $color-error;
+}
+
+.validation-message {
+  color: $color-error;
+  font-size: $font-size-sm;
+  margin-top: $spacing-xs;
+}
+
+.app-input::placeholder {
+  color: $color-text-muted;
+}
+
+.app-input:focus::placeholder {
+  color: $color-text;
+}

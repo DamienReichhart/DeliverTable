@@ -1,0 +1,6 @@
+{
+  "api": {
+    "baseUrl": ""
+  },
+  "environment": "Production"
+}

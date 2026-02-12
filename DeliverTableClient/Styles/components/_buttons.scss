@@ -1,0 +1,59 @@
+// -----------------------------------------------------------------------------
+// Button styles (primary, link, focus).
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-sm $spacing-md;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  font-weight: $font-weight-normal;
+  line-height: $line-height-base;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  background-color: transparent;
+
+  &:focus {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.app-btn--primary {
+  color: $color-text-inverse;
+  background-color: $color-primary;
+  border-color: $color-primary-border;
+
+  &:hover:not(:disabled) {
+    background-color: $color-primary-hover;
+    border-color: $color-primary-hover;
+  }
+}
+
+.app-btn--link {
+  color: $color-accent;
+  background: none;
+  border: none;
+
+  &:hover:not(:disabled) {
+    color: $color-accent-hover;
+    text-decoration: underline;
+  }
+}
+
+.app-btn--refresh {
+  margin-top: $spacing-sm;
+}

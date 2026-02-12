@@ -1,0 +1,26 @@
+// -----------------------------------------------------------------------------
+// Sidebar container and scrollable nav area.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+
+.app-sidebar {
+  background: $color-bg-sidebar;
+}
+
+.app-nav-scrollable {
+  overflow-y: auto;
+}
+
+@media (min-width: $breakpoint-desktop) {
+  .app-sidebar {
+    width: $sidebar-width;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+
+  .app-nav-scrollable {
+    height: calc(100vh - $topbar-height);
+  }
+}

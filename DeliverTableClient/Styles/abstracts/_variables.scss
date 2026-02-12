@@ -1,0 +1,63 @@
+// -----------------------------------------------------------------------------
+// Design tokens – single source of truth for colors, spacing, typography.
+// -----------------------------------------------------------------------------
+
+// Colors
+$color-primary: #0d47a1;
+$color-primary-hover: #1565c0;
+$color-primary-border: #0a3d91;
+$color-accent: #0071c1;
+$color-accent-hover: #005a9e;
+
+$color-text: #1a1a1a;
+$color-text-muted: #5c5c5c;
+$color-text-inverse: #ffffff;
+
+$color-bg: #ffffff;
+$color-bg-subtle: #f7f7f7;
+$color-bg-sidebar: linear-gradient(180deg, #052767 0%, #3a0647 70%);
+$color-border: #d6d5d5;
+$color-border-focus: #258cfb;
+
+$color-success: #0d6e0d;
+$color-success-outline: #26b050;
+$color-error: #b32121;
+$color-error-bg: #b32121;
+$color-warning-bg: #fffde7;
+
+$color-overlay: rgba(0, 0, 0, 0.4);
+$color-nav-hover: rgba(255, 255, 255, 0.1);
+$color-nav-active: rgba(255, 255, 255, 0.37);
+
+// Typography
+$font-family-base: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$font-size-base: 1rem;
+$font-size-sm: 0.9rem;
+$font-size-lg: 1.1rem;
+$font-weight-normal: 400;
+$font-weight-bold: 700;
+$line-height-tight: 1.25;
+$line-height-base: 1.5;
+
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-2xl: 2.5rem;
+
+// Layout
+$sidebar-width: 250px;
+$topbar-height: 3.5rem;
+$content-padding-x: 1.5rem;
+$content-padding-x-wide: 2rem;
+$breakpoint-mobile: 640.98px;
+$breakpoint-desktop: 641px;
+
+// Focus / accessibility
+$focus-ring: 0 0 0 0.1rem $color-bg, 0 0 0 0.25rem $color-border-focus;
+
+// Z-index
+$z-error-ui: 1000;
+$z-topbar: 1;

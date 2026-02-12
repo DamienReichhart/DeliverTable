@@ -1,0 +1,34 @@
+// -----------------------------------------------------------------------------
+// Server Health page.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+
+.health-page {
+  max-width: 28rem;
+}
+
+.health-page .status {
+  margin: $spacing-md 0;
+}
+
+.health-page .status-loading {
+  color: $color-text-muted;
+}
+
+.health-page .status-ok {
+  color: $color-success;
+}
+
+.health-page .status-error {
+  color: $color-error;
+}
+
+.health-page .timestamp {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.health-page .app-btn-refresh {
+  margin-top: $spacing-sm;
+}

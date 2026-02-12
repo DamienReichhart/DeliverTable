@@ -1,0 +1,43 @@
+// -----------------------------------------------------------------------------
+// Reusable SCSS mixins.
+// -----------------------------------------------------------------------------
+
+@use 'variables' as *;
+
+@mixin focus-ring {
+  outline: none;
+  box-shadow: $focus-ring;
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@mixin nav-link-base {
+  color: #d7d7d7;
+  border-radius: 4px;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  line-height: 3rem;
+  text-decoration: none;
+  padding: 0 $spacing-md;
+
+  &:hover {
+    background-color: $color-nav-hover;
+    color: $color-text-inverse;
+  }
+
+  &.active {
+    background-color: $color-nav-active;
+    color: $color-text-inverse;
+  }
+}
