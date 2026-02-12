@@ -1,6 +1,29 @@
 # Conventional Commits Standard
 
-This document defines how to write commit messages in the DeliverTable project using [Conventional Commits](https://www.conventionalcommits.org/). Consistent commit messages improve changelog generation, release notes, and collaboration across the Blazor frontend, ASP.NET backend, and shared packages.
+**DeliverTable** · Commit message format for changelog generation, release notes, and collaboration across Blazor frontend, ASP.NET backend, and shared packages. Based on [Conventional Commits](https://www.conventionalcommits.org/).
+
+---
+
+## Table of contents
+
+- [Quick reference](#quick-reference)
+- [Format](#format)
+- [Types](#types)
+- [Scopes](#scopes)
+- [Examples](#examples)
+- [Rules of thumb](#rules-of-thumb)
+
+---
+
+## Quick reference
+
+| Element | Syntax / convention |
+|--------|----------------------|
+| **Format** | `<type>(<scope>): <description>` |
+| **Subject** | Imperative, no period, ~50 chars |
+| **Body** | Optional; wrap at 72 characters |
+| **Footer** | `Refs #n`, `Closes #n`, `BREAKING CHANGE:` |
+| **Breaking** | `feat(scope)!:` or footer `BREAKING CHANGE:` |
 
 ---
 
@@ -14,28 +37,30 @@ This document defines how to write commit messages in the DeliverTable project u
 [optional footer(s)]
 ```
 
-- **type**: What kind of change (e.g. `feat`, `fix`, `docs`).
-- **scope**: Which part of the solution is affected (e.g. `frontend`, `backend`, `common`).
-- **description**: Short, imperative summary (e.g. "add order list" not "added order list").
-- **body** (optional): Detailed explanation; wrap at 72 characters.
-- **footer** (optional): References (e.g. `Refs #123`) and/or breaking changes.
+| Part | Meaning |
+|------|--------|
+| **type** | Kind of change (e.g. `feat`, `fix`, `docs`). |
+| **scope** | Part of the solution affected (e.g. `frontend`, `backend`, `common`). |
+| **description** | Short, imperative summary (e.g. "add order list" not "added order list"). |
+| **body** | Optional; detailed explanation; wrap at 72 characters. |
+| **footer** | Optional; issue refs (e.g. `Refs #123`) and/or breaking changes. |
 
 ---
 
 ## Types
 
-| Type       | Use when |
-|-----------|----------|
-| `feat`    | New feature or user-facing capability. |
-| `fix`     | Bug fix. |
-| `docs`    | Documentation only (README, API docs, this file). |
-| `style`   | Formatting, whitespace, missing semicolons; no code logic change. |
-| `refactor`| Code change that neither fixes a bug nor adds a feature. |
-| `perf`    | Performance improvement. |
-| `test`    | Adding or updating tests. |
-| `build`   | Build, CI, or tooling (e.g. MSBuild, Docker, GitHub Actions). |
-| `ci`      | CI configuration only (e.g. workflows, scripts). |
-| `chore`   | Other changes (deps, config, chores). |
+| Type | Use when |
+|------|----------|
+| `feat` | New feature or user-facing capability. |
+| `fix` | Bug fix. |
+| `docs` | Documentation only (README, API docs, this file). |
+| `style` | Formatting, whitespace, missing semicolons; no code logic change. |
+| `refactor` | Code change that neither fixes a bug nor adds a feature. |
+| `perf` | Performance improvement. |
+| `test` | Adding or updating tests. |
+| `build` | Build, CI, or tooling (e.g. MSBuild, Docker, GitHub Actions). |
+| `ci` | CI configuration only (e.g. workflows, scripts). |
+| `chore` | Other changes (deps, config, chores). |
 
 ---
 
@@ -43,16 +68,16 @@ This document defines how to write commit messages in the DeliverTable project u
 
 Scopes map to the main areas of the solution:
 
-| Scope        | Description |
-|-------------|-------------|
-| `frontend`  | Blazor UI, pages, components, client-side logic. |
-| `backend`   | ASP.NET Core API, controllers, services, persistence. |
-| `common`    | Shared library used by frontend and/or backend (DTOs, contracts, utilities). |
-| `api`       | API surface (routes, contracts, versioning) when spanning frontend/backend. |
-| `auth`      | Authentication and authorization. |
-| `db`        | Migrations, schema, seed data. |
-| `docker`    | Dockerfiles and container orchestration. |
-| `*`         | When using  multiples scopes (eg: feat(frontend, backend)) |
+| Scope | Description |
+|-------|-------------|
+| `frontend` | Blazor UI, pages, components, client-side logic. |
+| `backend` | ASP.NET Core API, controllers, services, persistence. |
+| `common` | Shared library used by frontend and/or backend (DTOs, contracts, utilities). |
+| `api` | API surface (routes, contracts, versioning) when spanning frontend/backend. |
+| `auth` | Authentication and authorization. |
+| `db` | Migrations, schema, seed data. |
+| `docker` | Dockerfiles and container orchestration. |
+| `*` | When using multiple scopes (e.g. `feat(frontend, backend)`). |
 
 ---
 
@@ -123,4 +148,4 @@ Use `!` after the type/scope or a `BREAKING CHANGE:` footer to signal breaking c
 2. **Imperative mood** — "add feature" not "added feature".
 3. **No period** at the end of the subject line.
 4. **Reference issues** in body or footer: `Refs #42`, `Closes #42`.
-5. **Scope** need to match the part of the solution you changed (frontend, backend, common, api, auth, db, docker).
+5. **Scope** must match the part of the solution you changed (`frontend`, `backend`, `common`, `api`, `auth`, `db`, `docker`).
