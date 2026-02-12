@@ -6,7 +6,7 @@ It is designed to be **framework‑agnostic**, **Stripe‑ready**, and stable en
 ### Conventions & assumptions
 
 - **ID types**: use opaque, non‑guessable identifiers (e.g. UUID/ULID) for primary keys exposed outside the system; integers are acceptable for purely internal keys.
-- **Timestamps**: all date/time fields are stored in UTC.
+- **Timestamps**: all date/time fields are stored as **UTC, timezone‑aware values** (e.g. PostgreSQL `timestamptz`); any local times are converted at the application/UI layer only.
 - **Soft deletion**: where indicated, use flags (e.g. `is_active`, `deleted_at`) instead of hard deletes to preserve audit history.
 - **Users & roles**: a single `USER` table with role(s) to support **customers**, **restaurant owners**, and **administrators**; specialized tables extend `USER` by composition (1‑to‑1).
 - **Stripe integration**: `PAYMENT` persists Stripe identifiers (e.g. `stripe_payment_intent_id`) and never stores raw card data.
@@ -374,5 +374,5 @@ erDiagram
 - **Moderation & audit**  
   Per‑entity moderation tables (e.g. `RESTAURANT_MODERATION`, `EVENT_MODERATION`) were considered. A single `MODERATION_ACTION` table is more flexible and easier to extend as new content types appear.
  
-This ER model is intentionally **extensible** and aligned with upcoming **Stripe integration**, while the single Mermaid graph above represents the **full logical database** in one place.
+This ER model is intentionally **extensible** and aligned with upcoming **Stripe integration**.
 
