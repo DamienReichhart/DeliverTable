@@ -390,14 +390,17 @@ Core transactional entity representing a reservation at a restaurant (or for an 
 
 ## 15. BOOKING_RULE
 
-Configurable rules that govern how bookings work for a given restaurant (lead time, pre-order settings, delivery support, minimum confirmation amounts).
+Configurable rules that govern how bookings work for a given restaurant (lead time, advance window, slot duration, availability, pre-order, delivery, minimum confirmation amount).
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
 | `id` | `string` | **PK** | Unique booking rule identifier (UUID/ULID). |
 | `restaurant_id` | `string` | **FK → RESTAURANT.id, NOT NULL** | The restaurant these rules apply to. |
 | `min_confirm_amount` | `float` | NULLABLE | Minimum prepayment amount required to confirm a booking. |
-| `booking_window_schema` | `string` (JSON) | NULLABLE | JSON describing lead time, max duration, availability windows, etc. |
+| `min_lead_time_hours` | `int` | NULLABLE | No booking allowed before this many hours in advance (e.g. 24 = book at least 24h ahead). |
+| `max_advance_days` | `int` | NULLABLE | No booking allowed beyond this many days in the future (e.g. 30 = up to 30 days ahead). |
+| `slot_duration_minutes` | `int` | NULLABLE | Duration of one bookable slot in minutes (e.g. 120 for 2-hour slots). |
+| `availability_ranges` | `string` (JSON) | NULLABLE | Time ranges when the restaurant accepts bookings, per day (e.g. opening hours per weekday). |
 | `allow_preorder` | `boolean` | **NOT NULL, DEFAULT false** | Whether customers can pre-order menu items with their booking. |
 | `allow_delivery` | `boolean` | **NOT NULL, DEFAULT false** | Whether delivery is supported for bookings at this restaurant. |
 | `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
