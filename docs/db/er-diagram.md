@@ -188,7 +188,10 @@ erDiagram
         string  id PK
         string  restaurant_id FK
         float   min_confirm_amount
-        string  booking_window_schema   "JSON for lead time, max duration, etc."
+        int     min_lead_time_hours     "no booking before X hours in advance"
+        int     max_advance_days        "no booking beyond Y days"
+        int     slot_duration_minutes   "duration of one slot"
+        string  availability_ranges     "JSON: time ranges per day"
         boolean allow_preorder
         boolean allow_delivery
         datetime created_at
