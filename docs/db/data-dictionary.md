@@ -189,6 +189,7 @@ A dish or beverage offered by a restaurant. Used in pre-orders (via `BOOKING_ITE
 | `restaurant_id` | `string` | **FK → RESTAURANT.id, NOT NULL** | The restaurant that offers this item. |
 | `name` | `string` | **NOT NULL** | Display name of the menu item. |
 | `description` | `string` | NULLABLE | Description, ingredients, preparation notes. |
+| `type_of_dish` | `string` (enum) | **NOT NULL** | Course category for menu structure and filtering. Allowed values: `STARTER`, `MAIN`, `DESSERT`, `APERITIF`, `BEVERAGE`. |
 | `base_price` | `float` | **NOT NULL** | Standard price. Use `DECIMAL` in the physical schema for precision. |
 | `is_vegetarian` | `boolean` | **NOT NULL, DEFAULT false** | Whether the item is vegetarian. |
 | `is_vegan` | `boolean` | **NOT NULL, DEFAULT false** | Whether the item is vegan. |
