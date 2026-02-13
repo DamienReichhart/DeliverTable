@@ -85,6 +85,7 @@ erDiagram
         string  restaurant_id FK
         string  name
         string  description
+        string  type_of_dish       "STARTER | MAIN | DESSERT | APERITIF | BEVERAGE"
         float   base_price
         boolean is_vegetarian
         boolean is_vegan
