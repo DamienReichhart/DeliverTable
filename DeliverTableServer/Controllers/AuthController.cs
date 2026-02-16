@@ -160,7 +160,6 @@ public class AuthController(
     public async Task<IActionResult> GetProfile()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
         if (string.IsNullOrWhiteSpace(userIdClaim))
             return Unauthorized(new { Error = "Token invalide ou expiré" });
 
