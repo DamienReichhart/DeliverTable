@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using DeliverTableClient.Configuration;
 using DeliverTableClient.Configuration.Interfaces;
 using DeliverTableClient.Services;
@@ -7,14 +6,18 @@ using DeliverTableClient.Services.Interfaces;
 namespace DeliverTableClient.Extensions;
 
 /// <summary>
-/// Extension methods for registering API options and HTTP clients.
-/// API base URL is read from <see cref="IAppConfiguration"/> (appconfig.json). Call <see cref="Configuration.AppConfigurationServiceCollectionExtensions.AddAppConfiguration"/> first.
+///     Extension methods for registering API options and HTTP clients.
+///     API base URL is read from <see cref="IAppConfiguration" /> (appconfig.json). Call
+///     <see cref="Configuration.AppConfigurationServiceCollectionExtensions.AddAppConfiguration" /> first.
 /// </summary>
 public static class ApiClientServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers API client options from <see cref="IAppConfiguration"/> and the shared API <see cref="HttpClient"/> and all API client implementations.
-    /// Requires <see cref="IAppConfiguration"/> to be registered and loaded (via <see cref="Configuration.AppConfigurationServiceCollectionExtensions.AddAppConfiguration"/> and LoadAsync before RunAsync).
+    ///     Registers API client options from <see cref="IAppConfiguration" /> and the shared API <see cref="HttpClient" /> and
+    ///     all API client implementations.
+    ///     Requires <see cref="IAppConfiguration" /> to be registered and loaded (via
+    ///     <see cref="Configuration.AppConfigurationServiceCollectionExtensions.AddAppConfiguration" /> and LoadAsync before
+    ///     RunAsync).
     /// </summary>
     public static IServiceCollection AddApiClients(this IServiceCollection services)
     {
@@ -36,7 +39,7 @@ public static class ApiClientServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers API client implementations. Add new clients here as the app grows.
+    ///     Registers API client implementations. Add new clients here as the app grows.
     /// </summary>
     private static void RegisterApiClients(IServiceCollection services)
     {

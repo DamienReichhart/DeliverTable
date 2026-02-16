@@ -22,7 +22,9 @@
         <p class="status status-error">Server is unreachable or returned an error.</p>
     }
 
-    <button type="button" class="app-btn app-btn--primary app-btn--refresh" @onclick="CheckHealth" disabled="@_loading">Check again</button>
+    <button type="button" class="app-btn app-btn--primary app-btn--refresh" @onclick="CheckHealth" disabled="@_loading">
+        Check again
+    </button>
 </div>
 
 @code {
@@ -48,4 +50,5 @@
             StateHasChanged();
         }
     }
+
 }

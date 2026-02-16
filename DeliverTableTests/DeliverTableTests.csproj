@@ -21,9 +21,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DeliverTableClient\DeliverTableClient.csproj" />
-      <ProjectReference Include="..\DeliverTableServer\DeliverTableServer.csproj" />
-      <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj" />
+        <ProjectReference Include="..\DeliverTableClient\DeliverTableClient.csproj"/>
+        <ProjectReference Include="..\DeliverTableServer\DeliverTableServer.csproj"/>
+        <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj"/>
     </ItemGroup>
 
 </Project>

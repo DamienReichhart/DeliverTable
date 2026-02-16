@@ -1,6 +1,7 @@
 <div class="app-nav-top">
     <a class="app-nav-brand" href="/">DeliverTable</a>
-    <button type="button" title="Navigation menu" class="app-nav-toggler" @onclick="ToggleNavMenu" aria-label="Toggle navigation menu">
+    <button type="button" title="Navigation menu" class="app-nav-toggler" @onclick="ToggleNavMenu"
+            aria-label="Toggle navigation menu">
         <span class="app-nav-toggler-icon" aria-hidden="true"></span>
     </button>
 </div>
@@ -18,5 +19,10 @@
 @code {
     private bool _collapseNavMenu = true;
     private string? NavMenuCssClass => _collapseNavMenu ? "app-nav-collapse" : null;
-    private void ToggleNavMenu() => _collapseNavMenu = !_collapseNavMenu;
+
+    private void ToggleNavMenu()
+    {
+        _collapseNavMenu = !_collapseNavMenu;
+    }
+
 }
