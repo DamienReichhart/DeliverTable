@@ -1,7 +1,7 @@
 namespace DeliverTableClient.Configuration.Interfaces;
 
 /// <summary>
-/// Options for the API HTTP client (base URL, etc.). Bound from <see cref="IAppConfiguration"/> at startup.
+///     Options for the API HTTP client (base URL, etc.). Bound from <see cref="IAppConfiguration" /> at startup.
 /// </summary>
 public interface IApiClientOptions
 {

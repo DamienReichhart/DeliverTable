@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj" />
+        <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj"/>
     </ItemGroup>
 
 </Project>

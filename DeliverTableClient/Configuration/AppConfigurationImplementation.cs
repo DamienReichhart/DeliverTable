@@ -5,25 +5,16 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 namespace DeliverTableClient.Configuration;
 
 /// <summary>
-/// Loads and holds client configuration from wwwroot/appconfig.json (or appconfig.Development.json in Development).
-/// Uses a same-origin HttpClient to fetch the file at startup.
+///     Loads and holds client configuration from wwwroot/appconfig.json (or appconfig.Development.json in Development).
+///     Uses a same-origin HttpClient to fetch the file at startup.
 /// </summary>
 public sealed class AppConfigurationImplementation : IAppConfiguration
 {
     private readonly HttpClient _configHttpClient;
-    private readonly IWebAssemblyHostEnvironment _hostEnvironment;
     private readonly string _fallbackBaseAddress;
+    private readonly IWebAssemblyHostEnvironment _hostEnvironment;
     private readonly object _lock = new();
     private bool _loaded;
-
-    public bool IsLoaded
-    {
-        get { lock (_lock) return _loaded; }
-    }
-
-    public string ApiBaseUrl { get; private set; } = "";
-
-    public string Environment { get; private set; } = "";
 
     public AppConfigurationImplementation(
         HttpClient configHttpClient,
@@ -34,6 +25,21 @@ public sealed class AppConfigurationImplementation : IAppConfiguration
         _hostEnvironment = hostEnvironment ?? throw new ArgumentNullException(nameof(hostEnvironment));
         _fallbackBaseAddress = fallbackBaseAddress ?? "";
     }
+
+    public bool IsLoaded
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _loaded;
+            }
+        }
+    }
+
+    public string ApiBaseUrl { get; private set; } = "";
+
+    public string Environment { get; private set; } = "";
 
     /// <inheritdoc />
     public async Task LoadAsync(CancellationToken cancellationToken = default)
@@ -80,12 +86,18 @@ public sealed class AppConfigurationImplementation : IAppConfiguration
                 }
                 else
                 {
-                    lock (_lock) { _loaded = true; }
+                    lock (_lock)
+                    {
+                        _loaded = true;
+                    }
                 }
             }
             else
             {
-                lock (_lock) { _loaded = true; }
+                lock (_lock)
+                {
+                    _loaded = true;
+                }
             }
         }
         catch
