@@ -1,16 +1,15 @@
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DeliverTableServer.Extensions;
 
 /// <summary>
-/// Centralized registration of application services. Add new service registrations here to keep Program.cs minimal.
+///     Centralized registration of application services. Add new service registrations here to keep Program.cs minimal.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers all DeliverTable application services (health, and future domain/application services).
+    ///     Registers all DeliverTable application services (health, and future domain/application services).
     /// </summary>
     public static IServiceCollection AddDeliverTableServices(this IServiceCollection services)
     {
@@ -22,7 +21,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers health-related services.
+    ///     Registers health-related services.
     /// </summary>
     private static void RegisterHealthServices(IServiceCollection services)
     {

@@ -4,20 +4,22 @@ using Microsoft.OpenApi;
 namespace DeliverTableServer.Configuration;
 
 /// <summary>
-/// Enriches the generated OpenAPI document with professional metadata:
-/// title, description, version, contact, license, terms of service, and servers.
-/// Applied via AddDocumentTransformer so the spec is suitable for public documentation and tooling.
+///     Enriches the generated OpenAPI document with professional metadata:
+///     title, description, version, contact, license, terms of service, and servers.
+///     Applied via AddDocumentTransformer so the spec is suitable for public documentation and tooling.
 /// </summary>
 internal sealed class OpenApiDocumentTransformer : IOpenApiDocumentTransformer
 {
     private const string ApiTitle = "DeliverTable API";
     private const string ApiVersion = "1.0.0";
+
     private const string ApiDescription =
         "REST API for the DeliverTable service. " +
         "Use this documentation to discover endpoints, request/response schemas, and try out operations.";
 
     /// <inheritdoc />
-    public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+    public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
 

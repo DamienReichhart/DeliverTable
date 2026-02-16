@@ -1,7 +1,7 @@
 namespace DeliverTableSharedLibrary.Dtos;
 
 /// <summary>
-/// Response model for the health endpoint. Shared between server and client.
+///     Response model for the health endpoint. Shared between server and client.
 /// </summary>
 public sealed class HealthResponse
 {

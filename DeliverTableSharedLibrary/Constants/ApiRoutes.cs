@@ -1,7 +1,7 @@
 namespace DeliverTableSharedLibrary.Constants;
 
 /// <summary>
-/// API route paths. Single source of truth for client and server; keep in sync with controller routes.
+///     API route paths. Single source of truth for client and server; keep in sync with controller routes.
 /// </summary>
 public static class ApiRoutes
 {

@@ -3,7 +3,12 @@
   "Target": "wwwroot/css",
   "Arguments": "--error-css",
   "GenerateScopedCss": true,
-  "ScopedCssFolders": ["Pages", "Layout", "Components", "Shared"],
+  "ScopedCssFolders": [
+    "Pages",
+    "Layout",
+    "Components",
+    "Shared"
+  ],
   "IncludePaths": [],
   "Configurations": {
     "Debug": {

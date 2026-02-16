@@ -1,17 +1,16 @@
 using DeliverTableClient.Configuration.Interfaces;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DeliverTableClient.Configuration;
 
 /// <summary>
-/// Registers the centralized client configuration (IAppConfiguration) and the HttpClient used to load appconfig.json.
-/// Call before AddApiClients so that API base URL comes from appconfig.
+///     Registers the centralized client configuration (IAppConfiguration) and the HttpClient used to load appconfig.json.
+///     Call before AddApiClients so that API base URL comes from appconfig.
 /// </summary>
 public static class AppConfigurationServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <see cref="IAppConfiguration"/> and the same-origin HttpClient used to load wwwroot/appconfig.json.
+    ///     Registers <see cref="IAppConfiguration" /> and the same-origin HttpClient used to load wwwroot/appconfig.json.
     /// </summary>
     public static IServiceCollection AddAppConfiguration(
         this IServiceCollection services,
