@@ -1,9 +1,11 @@
+using System.Text;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Extensions;
 using DotNetEnv;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
-EnvLoader.Load();
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
