@@ -2,18 +2,18 @@
 
 public class User
 {
-    public enum Role
+    public enum UserRole
     {
-        CUSTOMER,
-        ADMINISTRATOR,
-        RESTAURANT_OWNER
+        Customer,
+        Administrator,
+        RestaurantOwner
     }
 
-    public enum Status
+    public enum UserStatus
     {
-        ACTIVE,
-        SUSPENDED,
-        BANNED
+        Active,
+        Suspended,
+        Banned
     }
 
     public int Id { get; set; }
@@ -22,10 +22,13 @@ public class User
     public string Email { get; set; } = "";
     public string PasswordHash { get; set; } = "";
 
-    public Role role { get; set; } = Role.CUSTOMER;
+    public UserRole Role { get; set; } = UserRole.Customer;
 
-    public Status status { get; set; } = Status.ACTIVE;
+    public UserStatus Status { get; set; } = UserStatus.Active;
 
-    public DateTime created_at { get; set; }
-    public DateTime updated_at { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    
+    public RestaurantOwner? RestaurantOwner { get; set; }
+    public CustomerProfile? CustomerProfile { get; set; }
 }
