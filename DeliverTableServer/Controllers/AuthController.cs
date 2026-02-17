@@ -105,6 +105,8 @@ public class AuthController : ControllerBase
             VatNumber = registerRequest.VatNumber,
             ContactPhoneNumber = registerRequest.ContactPhoneNumber
         };
+        
+        user.CustomerProfile = new CustomerProfile();
 
         _context.Users.Add(user);
 
