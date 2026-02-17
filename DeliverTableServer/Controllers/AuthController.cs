@@ -5,6 +5,7 @@ using DeliverTableServer.Configuration;
 using DeliverTableServer.Data;
 using DeliverTableServer.Models;
 using DeliverTableSharedLibrary.Dtos;
+using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ public class AuthController : ControllerBase
 
         var token = GenerateJwt(user);
 
-        return Ok(new { Token = token });
+        return Ok(new { Token = token, User = user });
     }
 
     [HttpPost("register")]
@@ -51,10 +52,6 @@ public class AuthController : ControllerBase
         if (await _context.Users.AnyAsync(u => u.Email == registerRequest.Email))
             return BadRequest(new { Error = "Email déjà utilisé" });
 
-        // Vérifier password == confirm password
-        if (registerRequest.Password != registerRequest.ConfirmPassword)
-            return BadRequest(new { Error = "Les mots de passe ne correspondent pas" });
-
         // Hash du mot de passe
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password);
 
@@ -66,12 +63,64 @@ public class AuthController : ControllerBase
             PasswordHash = passwordHash
         };
 
+        user.CustomerProfile = new CustomerProfile();
+
         _context.Users.Add(user);
+
         await _context.SaveChangesAsync();
 
         var token = GenerateJwt(user);
 
-        return Ok(new { Token = token });
+        return Ok(new { Token = token, User = new UserResponse
+        {
+            Id = user.Id,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+        } });
+    }
+
+    [HttpPost("restaurant/register")]
+    public async Task<IActionResult> RegisterRestaurant([FromBody] RestaurantRegister registerRequest)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { Error = "Identifiants invalides" });
+        // Vérifier si l'email existe déjà
+        if (await _context.Users.AnyAsync(u => u.Email == registerRequest.Email))
+            return BadRequest(new { Error = "Email déjà utilisé" });
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password);
+
+        var user = new User
+        {
+            FirstName = registerRequest.FirstName,
+            LastName = registerRequest.LastName,
+            Email = registerRequest.Email,
+            Role = Models.User.UserRole.RestaurantOwner,
+            PasswordHash = passwordHash
+        };
+
+        user.RestaurantOwner = new RestaurantOwner
+        {
+            CompanyName = registerRequest.CompanyName,
+            VatNumber = registerRequest.VatNumber,
+            ContactPhoneNumber = registerRequest.ContactPhoneNumber
+        };
+
+        _context.Users.Add(user);
+
+        await _context.SaveChangesAsync();
+
+        var token = GenerateJwt(user);
+        return Ok(new
+        {
+            Token = token, User = new UserResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName
+            }
+        });
     }
 
     [Authorize]
@@ -79,7 +128,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> GetProfile()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
+
         if (string.IsNullOrWhiteSpace(userIdClaim))
             return Unauthorized(new { Error = "Token invalide ou expiré" });
 
@@ -100,7 +149,7 @@ public class AuthController : ControllerBase
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
-            new("role", user.role.ToString())
+            new("role", user.Role.ToString())
         };
 
         var tokenDescriptor = new SecurityTokenDescriptor

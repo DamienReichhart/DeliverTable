@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace DeliverTableSharedLibrary.Dtos;
+namespace DeliverTableSharedLibrary.Dtos.Auth;
 
 public sealed class LoginRequest
 {

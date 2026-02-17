@@ -11,29 +11,11 @@ public class DeliverTableContext : DbContext
     }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<RestaurantOwner> RestaurantOwners { get; set; }
+    public DbSet<CustomerProfile> CustomerProfiles { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
-        
-        modelBuilder.Entity<User>()
-            .Property(u => u.role)
-            .HasConversion<string>();
-
-        modelBuilder.Entity<User>()
-            .Property(u => u.status)
-            .HasConversion<string>();
-
-        modelBuilder.Entity<User>()
-            .Property(u => u.created_at)
-            .HasDefaultValueSql("NOW()")
-            .ValueGeneratedOnAdd();
-
-        modelBuilder.Entity<User>()
-            .Property(u => u.updated_at)
-            .HasDefaultValueSql("NOW()")
-            .ValueGeneratedOnAddOrUpdate();
+       modelBuilder.ApplyConfigurationsFromAssembly(typeof(DeliverTableContext).Assembly);
     }
 }
