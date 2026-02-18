@@ -39,7 +39,14 @@ public class AuthController : ControllerBase
 
         var token = GenerateJwt(user);
 
-        return Ok(new { Token = token, User = user });
+        return Ok(new ConnectionResponse{ Token = token, User =
+        new UserResponse {
+            Id = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Role = user.Role.ToString()
+        } });
     }
 
     [HttpPost("register")]
@@ -71,12 +78,13 @@ public class AuthController : ControllerBase
 
         var token = GenerateJwt(user);
 
-        return Ok(new { Token = token, User = new UserResponse
+        return Ok(new ConnectionResponse { Token = token, User = new UserResponse
         {
             Id = user.Id,
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
+            Role = user.Role.ToString()
         } });
     }
 
@@ -95,7 +103,7 @@ public class AuthController : ControllerBase
             FirstName = registerRequest.FirstName,
             LastName = registerRequest.LastName,
             Email = registerRequest.Email,
-            Role = Models.User.UserRole.RestaurantOwner,
+            Role = UserRole.RestaurantOwner,
             PasswordHash = passwordHash
         };
 
@@ -113,14 +121,15 @@ public class AuthController : ControllerBase
         await _context.SaveChangesAsync();
 
         var token = GenerateJwt(user);
-        return Ok(new
+        return Ok(new ConnectionResponse
         {
             Token = token, User = new UserResponse
             {
                 Id = user.Id,
                 Email = user.Email,
                 FirstName = user.FirstName,
-                LastName = user.LastName
+                LastName = user.LastName,
+                Role = user.Role.ToString()
             }
         });
     }
