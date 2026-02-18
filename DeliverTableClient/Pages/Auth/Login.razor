@@ -1,0 +1,82 @@
+﻿@page "/login"
+@using DeliverTableSharedLibrary.Dtos.Auth
+@using DeliverTableClient.Services.Auth
+@inject AuthService AuthService
+@inject NavigationManager Nav
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-center">Connexion</h3>
+
+                    @* On lie le modèle au DTO *@
+                    <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="_loginModel.Email" class="form-control" placeholder="votre@email.com" />
+                            <ValidationMessage For="@(() => _loginModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mot de passe</label>
+                            <InputText @bind-Value="_loginModel.Password" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => _loginModel.Password)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span> <span> Connexion...</span>
+                            }
+                            else
+                            {
+                                <span>Se connecter</span>
+                            }
+                        </button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Instance du DTO servant de modèle au formulaire
+    private LoginRequest _loginModel = new LoginRequest();
+    private string? _errorMessage;
+    private bool _isSubmitting = false;
+
+    private async Task HandleLogin()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var success = await AuthService.Login(_loginModel);
+
+            if (success)
+            {
+                // Redirige vers l'accueil ou la page précédente après succès
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                _errorMessage = "Email ou mot de passe incorrect.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Une erreur est survenue lors de la connexion.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}
