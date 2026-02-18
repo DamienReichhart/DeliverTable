@@ -1,0 +1,95 @@
+﻿@page "/Register"
+@using DeliverTableSharedLibrary.Dtos.Auth
+@inject NavigationManager Nav
+@inject AuthService AuthService
+
+<h3>Register</h3>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h3 class="card-title text-center mb-4">Créer un compte</h3>
+
+                    <EditForm Model="@_registerModel" OnValidSubmit="HandleRegister">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Prénom</label>
+                                <InputText @bind-Value="_registerModel.FirstName" class="form-control" />
+                                <ValidationMessage For="@(() => _registerModel.FirstName)" class="text-danger" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom</label>
+                                <InputText @bind-Value="_registerModel.LastName" class="form-control" />
+                                <ValidationMessage For="@(() => _registerModel.LastName)" class="text-danger" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="_registerModel.Email" class="form-control" placeholder="exemple@mail.com" />
+                            <ValidationMessage For="@(() => _registerModel.Email)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mot de passe (12 caractères min.)</label>
+                            <InputText @bind-Value="_registerModel.Password" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => _registerModel.Password)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmer le mot de passe</label>
+                            <InputText @bind-Value="_registerModel.ConfirmPassword" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="text-danger" />
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(_errorMessage))
+                        {
+                            <div class="alert alert-danger">@_errorMessage</div>
+                        }
+
+                        <button type="submit" class="btn btn-success w-100 mt-3" disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span> <span> Création du compte...</span>
+                            }
+                            else
+                            {
+                                <span>S'inscrire</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                    <div class="text-center mt-3">
+                        <small>Déjà un compte ? <a href="/login">Connectez-vous</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    private RegisterRequest _registerModel = new RegisterRequest();
+    private string? _errorMessage;
+    private bool _isSubmitting = false;
+    private async Task HandleRegister()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        var success = await AuthService.Register(_registerModel);
+
+        if (success)
+        {
+            // L'utilisateur est maintenant connecté et ses claims sont chargés
+            Nav.NavigateTo("/"); 
+        }
+        else
+        {
+            _errorMessage = "Erreur lors de l'inscription (Email déjà utilisé ou serveur indisponible).";
+            _isSubmitting = false;
+        }
+    }
+}
