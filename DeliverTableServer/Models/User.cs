@@ -2,19 +2,6 @@
 
 public class User
 {
-    public enum UserRole
-    {
-        Customer,
-        Administrator,
-        RestaurantOwner
-    }
-
-    public enum UserStatus
-    {
-        Active,
-        Suspended,
-        Banned
-    }
 
     public int Id { get; set; }
     public string FirstName { get; set; } = "";

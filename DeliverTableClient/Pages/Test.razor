@@ -1,0 +1,34 @@
+﻿@page "/test-auth"
+@using System.Security.Claims
+
+<h3>Test d'Authentification</h3>
+
+<AuthorizeView Context="auth">
+    <Authorized>
+        <div class="alert alert-success">
+            <h5>✅ Vous êtes connecté !</h5>
+            <ul>
+                @* On utilise "auth" au lieu de "context" *@
+                <li><strong>Nom :</strong> @auth.User.Identity?.Name</li>
+                <li><strong>ID :</strong> @auth.User.FindFirst(ClaimTypes.NameIdentifier)?.Value</li>
+                <li><strong>Rôle :</strong> @auth.User.FindFirst(ClaimTypes.Role)?.Value</li>
+            </ul>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">
+            ❌ Vous n'êtes pas connecté.
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+<AuthorizeView Roles="RestaurantOwner">
+    <div class="alert alert-info">
+        👑 Cet encadré est visible uniquement par un <strong>RestaurantOwner</strong>.
+    </div>
+</AuthorizeView>
+
+@code
+{
+    
+}
