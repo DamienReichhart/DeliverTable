@@ -1,3 +1,8 @@
+@inject Services.Auth.AuthService AuthService
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@inject NavigationManager Nav
+
 <div class="app-nav-top">
     <a class="app-nav-brand" href="/">DeliverTable</a>
     <button type="button" title="Navigation menu" class="app-nav-toggler" @onclick="ToggleNavMenu"
@@ -8,11 +13,41 @@
 
 <div class="app-nav-scrollable @NavMenuCssClass" @onclick="ToggleNavMenu">
     <nav class="app-nav-list" aria-label="Main navigation">
+        
         <div class="app-nav-item">
             <NavLink href="" Match="NavLinkMatch.All" class="app-nav-link">
                 <span class="app-nav-icon app-nav-icon--health" aria-hidden="true"></span> Server Health
             </NavLink>
         </div>
+
+        <AuthorizeView Context="auth">
+            <Authorized>
+                <div class="app-nav-item">
+                    <NavLink href="/test-auth" class="app-nav-link">
+                        <span class="app-nav-icon" aria-hidden="true">👤</span> Mon Profil (@auth.User.Identity?.Name)
+                    </NavLink>
+                </div>
+                
+                <div class="app-nav-item">
+                    <button class="app-nav-link btn-logout" @onclick="HandleLogout">
+                        <span class="app-nav-icon" aria-hidden="true">🚪</span> Déconnexion
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="app-nav-item">
+                    <NavLink href="/login" class="app-nav-link">
+                        <span class="app-nav-icon" aria-hidden="true">🔑</span> Se connecter
+                    </NavLink>
+                </div>
+                <div class="app-nav-item">
+                    <NavLink href="/register" class="app-nav-link">
+                        <span class="app-nav-icon" aria-hidden="true">🔑</span> Créer son compte
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+
     </nav>
 </div>
 
@@ -25,4 +60,9 @@
         _collapseNavMenu = !_collapseNavMenu;
     }
 
+    private async Task HandleLogout()
+    {
+        await AuthService.Logout();
+        Nav.NavigateTo("/"); // Redirige vers l'accueil après déconnexion
+    }
 }
