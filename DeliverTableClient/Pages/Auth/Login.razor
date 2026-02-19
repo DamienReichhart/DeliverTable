@@ -1,37 +1,50 @@
 ﻿@page "/login"
 @using DeliverTableSharedLibrary.Dtos.Auth
-@using DeliverTableClient.Services.Auth
 @inject AuthService AuthService
-@inject NavigationManager Nav
+@inject NavigationManager Nav   
 
-<div class="container mt-5">
+<div class="container mt-5 centered screen-h-70">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h3 class="card-title text-center">Connexion</h3>
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="col p-4">
+                    <h3 class="card-title text-center mb-2">Connexion</h3>
 
-                    @* On lie le modèle au DTO *@
                     <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin">
                         <DataAnnotationsValidator />
-                        <ValidationSummary class="text-danger" />
 
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <InputText @bind-Value="_loginModel.Email" class="form-control" placeholder="votre@email.com" />
-                            <ValidationMessage For="@(() => _loginModel.Email)" />
+                        <div class="mb-1 col">
+                            <label class="form-label fw-bold">Email</label>
+                            @* On applique la classe .app-input de ton CSS *@
+                            <InputText @bind-Value="_loginModel.Email" 
+                                       class="form-control app-input" 
+                                       placeholder="votre@email.com" />
+                            @* Blazor générera automatiquement .validation-message s'il y a une erreur *@
+                            <ValidationMessage For="@(() => _loginModel.Email)" class="validation-message" />
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Mot de passe</label>
-                            <InputText @bind-Value="_loginModel.Password" type="password" class="form-control" />
-                            <ValidationMessage For="@(() => _loginModel.Password)" />
+                        <div class="mb-1 col">
+                            <label class="form-label fw-bold">Mot de passe</label>
+                            <InputText @bind-Value="_loginModel.Password" 
+                                       type="password" 
+                                       class="form-control app-input" 
+                                       placeholder="••••••••••••" />
+                            <ValidationMessage For="@(() => _loginModel.Password)" class="validation-message" />
                         </div>
+                        
+                        @if (!string.IsNullOrEmpty(_errorMessage))
+                        {
+                            @* On utilise ici aussi la classe invalid pour la cohérence visuelle *@
+                            <div class="alert alert-danger invalid-feedback d-block mb-3">
+                                <span class="app-icon">⚠️</span> @_errorMessage
+                            </div>
+                        }
 
-                        <button type="submit" class="btn btn-primary w-100" disabled="@_isSubmitting">
+                        <button type="submit" class="app-btn w-full" disabled="@_isSubmitting">
                             @if (_isSubmitting)
                             {
-                                <span class="spinner-border spinner-border-sm"></span> <span> Connexion...</span>
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span class="ms-2">Chargement...</span>
                             }
                             else
                             {
@@ -39,6 +52,12 @@
                             }
                         </button>
                     </EditForm>
+                    
+                    <div class="mt-4 text-center">
+                        <p class="text-muted small">
+                            Pas encore de compte ? <a href="/register" class="text-primary text-decoration-none fw-bold">S'inscrire</a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -60,7 +79,7 @@
         {
             var success = await AuthService.Login(_loginModel);
 
-            if (success)
+            if (success.Success)
             {
                 // Redirige vers l'accueil ou la page précédente après succès
                 Nav.NavigateTo("/");
@@ -70,7 +89,7 @@
                 _errorMessage = "Email ou mot de passe incorrect.";
             }
         }
-        catch (Exception ex)
+        catch
         {
             _errorMessage = "Une erreur est survenue lors de la connexion.";
         }
