@@ -2,7 +2,7 @@
 // DeliverTable Client – main stylesheet (Sass only, no Bootstrap).
 // -----------------------------------------------------------------------------
 
-@use 'abstracts/variables';
+@use 'abstracts/variables' as *;
 @use 'base/reset';
 @use 'base/typography';
 @use 'layout/page';
@@ -12,3 +12,118 @@
 @use 'components/forms';
 @use 'pages/health';
 @use 'utilities/blazor';
+
+.container {
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.centered{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.h-full{
+  height: 100%;
+}
+
+.w-full{
+  width: 100%;
+}
+
+@media (min-width: $breakpoint-desktop) {
+  .container {
+    width: 80%;
+    margin: 0 auto;
+  }
+}
+
+@for $i from 1 through 100 {
+  .screen-h-#{$i}{
+    height: #{$i}vh;
+  }
+
+  .screen-w-#{$i}{
+    width: #{$i}vw;
+  }
+}
+
+@for $i from 1 through 20 {
+  .m-#{$i}{
+    margin: #{$i}rem;
+  }
+
+  .p-#{$i}{
+    margin: #{$i}rem;
+  }
+  
+  .mt-#{$i}{
+    margin-top: #{$i}rem;
+  }
+
+  .mb-#{$i}{
+    margin-bottom: #{$i}rem;
+  }
+
+  .mr-#{$i}{
+    margin-right: #{$i}rem;
+  }
+
+  .ml-#{$i}{
+    margin-bottom: #{$i}rem;
+  }
+
+  .mx-#{$i}{
+    margin-left: #{$i}rem;
+    margin-right: #{$i}rem;
+  }
+
+  .my-#{$i}{
+    margin-top: #{$i}rem;
+    margin-bottom: #{$i}rem;
+  }
+
+  .pt-#{$i}{
+    padding-top: #{$i}rem;
+  }
+
+  .pb-#{$i}{
+    padding-bottom: #{$i}rem;
+  }
+
+  .pr-#{$i}{
+    padding-right: #{$i}rem;
+  }
+
+  .pl-#{$i}{
+    padding-bottom: #{$i}rem;
+  }
+
+  .px-#{$i}{
+    padding-left: #{$i}rem;
+    padding-right: #{$i}rem;
+  }
+
+  .py-#{$i}{
+    padding-top: #{$i}rem;
+    padding-bottom: #{$i}rem;
+  }
+}

@@ -11,6 +11,11 @@ public class AuthService
     private readonly HttpClient _httpClient;
     private readonly AuthenticationStateProvider _authStateProvider;
     private readonly IJSRuntime _js;
+    
+    private class ApiErrorResponse
+    {
+        public string Error { get; set; } = "";
+    }
 
     public AuthService(HttpClient httpClient, AuthenticationStateProvider authStateProvider, IJSRuntime js)
     {
@@ -19,21 +24,50 @@ public class AuthService
         _js = js;
     }
 
-    public async Task<bool> Login(LoginRequest loginRequest)
+    public async Task<AuthResponse> Login(LoginRequest loginRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync( ApiRoutes.Login, loginRequest);
+        var response = await _httpClient.PostAsJsonAsync( ApiRoutes.Auth["Login"], loginRequest);
         return await HandleResponse(response);
     }
 
-    public async Task<bool> Register(RegisterRequest registerRequest)
+    public async Task<AuthResponse> Register(RegisterRequest registerRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Register, registerRequest);
+        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth["Register"], registerRequest);
         return await HandleResponse(response);
     }
 
-    private async Task<bool> HandleResponse(HttpResponseMessage response)
+    public async Task<AuthResponse> RegisterRestaurant(RestaurantRegister registerRequest)
     {
-        if (!response.IsSuccessStatusCode) return false;
+        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth["RestaurantRegister"], registerRequest);
+        return await HandleResponse(response);
+    }
+
+    private async Task<AuthResponse> HandleResponse(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            try
+            {
+                // On tente de lire le message d'erreur envoyé par l'API
+                var errorContent = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+
+                // Si ton API renvoie juste du texte, utilise errorContent.
+                // Si elle renvoie un objet JSON { "message": "..." }, il faudra le désérialiser.
+                return new AuthResponse
+                {
+                    Success = false,
+                    Error = errorContent?.Error ?? "Une erreur est survenue"
+                };
+            }
+            catch
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Error = "Une erreur est survenue"
+                };
+            }
+        };
 
         var result = await response.Content.ReadFromJsonAsync<ConnectionResponse>();
 
@@ -51,10 +85,10 @@ public class AuthService
                 result.User.Id.ToString(), 
                 result.User.FirstName);
 
-            return true;
+            return new AuthResponse {Success = true};
         }
 
-        return false;
+        return new AuthResponse {Success = false, Error = "Une erreur est survenue."};
     }
 
     public async Task Logout()
