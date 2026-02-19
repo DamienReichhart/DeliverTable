@@ -19,8 +19,10 @@
   border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  background-color: transparent;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  background-color: $color-primary;
+  margin: 0 auto;
+  color: $color-text-inverse;
 
   &:focus {
     @include focus-ring;
@@ -29,6 +31,12 @@
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+  
+  &:hover {
+    background-color: $color-text-inverse;
+    border-color: $color-primary;
+    color: $color-text;
   }
 }
 

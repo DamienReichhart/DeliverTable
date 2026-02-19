@@ -95,7 +95,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { Error = "Identifiants invalides" });
         // Vérifier si l'email existe déjà
         if (await _context.Users.AnyAsync(u => u.Email == registerRequest.Email))
-            return BadRequest(new { Error = "Email déjà utilisé" });
+            return BadRequest(new { Error = "Cet email est déjà utilisé" });
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password);
 
         var user = new User

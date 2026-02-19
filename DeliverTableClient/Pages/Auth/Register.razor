@@ -79,16 +79,16 @@
         _isSubmitting = true;
         _errorMessage = null;
 
-        var success = await AuthService.Register(_registerModel);
+        var response = await AuthService.Register(_registerModel);
 
-        if (success)
+        if (response.Success)
         {
             // L'utilisateur est maintenant connecté et ses claims sont chargés
             Nav.NavigateTo("/"); 
         }
         else
         {
-            _errorMessage = "Erreur lors de l'inscription (Email déjà utilisé ou serveur indisponible).";
+            _errorMessage = response.Error;
             _isSubmitting = false;
         }
     }
