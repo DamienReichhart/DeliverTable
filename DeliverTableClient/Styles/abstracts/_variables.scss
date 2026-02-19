@@ -3,17 +3,19 @@
 // -----------------------------------------------------------------------------
 
 // Colors
-$color-primary: #0d47a1;
-$color-primary-hover: #1565c0;
+$color-primary: #721C36;
+$color-primary-hover: #2e0c15;
 $color-primary-border: #0a3d91;
-$color-accent: #0071c1;
-$color-accent-hover: #005a9e;
+$color-accent: #2e0c15;
+$color-accent-hover: #721C36;
+
+$color-secondary: #BF9E62;
 
 $color-text: #1a1a1a;
 $color-text-muted: #5c5c5c;
 $color-text-inverse: #ffffff;
 
-$color-bg: #ffffff;
+$color-bg: #f6f6f6;
 $color-bg-subtle: #f7f7f7;
 $color-bg-sidebar: linear-gradient(180deg, #052767 0%, #3a0647 70%);
 $color-border: #d6d5d5;
@@ -27,7 +29,7 @@ $color-warning-bg: #fffde7;
 
 $color-overlay: rgba(0, 0, 0, 0.4);
 $color-nav-hover: rgba(255, 255, 255, 0.1);
-$color-nav-active: rgba(255, 255, 255, 0.37);
+$color-nav-active: #2e0c15;
 
 // Typography
 $font-family-base: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -49,6 +51,7 @@ $spacing-2xl: 2.5rem;
 
 // Layout
 $sidebar-width: 250px;
+$sidebar-width-retracted: 100px;
 $topbar-height: 3.5rem;
 $content-padding-x: 1.5rem;
 $content-padding-x-wide: 2rem;

@@ -4,11 +4,11 @@ namespace DeliverTableSharedLibrary.Dtos.Auth;
 
 public sealed class LoginRequest
 {
-    [Required]
-    [EmailAddress(ErrorMessage = "Invalid Credentials")]
+    [Required(ErrorMessage =  "L'email est requis")]
+    [EmailAddress(ErrorMessage = "L'adresse mail ou le mot de passe est incorrect")]
     public string Email { get; set; } = "";
 
-    [Required]
-    [MinLength(12, ErrorMessage = "Invalid Credentials")]
+    [Required(ErrorMessage = "Le mot de passe est requis")]
+    [MinLength(12, ErrorMessage = "L'adresse mail ou le mot de passe est incorrect")]
     public string Password { get; set; } = "";
 }

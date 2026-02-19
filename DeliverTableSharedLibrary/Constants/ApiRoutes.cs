@@ -7,6 +7,12 @@ public static class ApiRoutes
 {
     /// <summary>Health endpoint path (relative to API base). Must match HealthController route.</summary>
     public const string Health = "api/v1/health";
-    public const string Login = "api/auth/login";
-    public const string Register = "api/auth/register";
+    
+    // Auth
+    public static readonly Dictionary<string, string> Auth = new()
+    {
+        { "Login", "api/auth/login" },
+        { "Register", "api/auth/register" },
+        { "RestaurantRegister", "api/auth/restaurant/register" }
+    };
 }

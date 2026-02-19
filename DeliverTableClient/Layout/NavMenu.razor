@@ -1,6 +1,4 @@
-@inject Services.Auth.AuthService AuthService
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Authorization
+@inject AuthService AuthService
 @inject NavigationManager Nav
 
 <div class="app-nav-top">
@@ -15,7 +13,7 @@
     <nav class="app-nav-list" aria-label="Main navigation">
         
         <div class="app-nav-item">
-            <NavLink href="" Match="NavLinkMatch.All" class="app-nav-link">
+            <NavLink href="/" Match="NavLinkMatch.All" class="app-nav-link">
                 <span class="app-nav-icon app-nav-icon--health" aria-hidden="true"></span> Server Health
             </NavLink>
         </div>

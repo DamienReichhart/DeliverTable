@@ -5,7 +5,7 @@
 @use '../abstracts/variables' as *;
 
 .app-sidebar {
-  background: $color-bg-sidebar;
+  background: $color-primary;
 }
 
 .app-nav-scrollable {
@@ -14,13 +14,29 @@
 
 @media (min-width: $breakpoint-desktop) {
   .app-sidebar {
-    width: $sidebar-width;
+    width: $sidebar-width-retracted;
     min-height: 100vh;
     position: sticky;
     top: 0;
+    transition: width 0.15s ease;
   }
-
-  .app-nav-scrollable {
+  
+  .app-nav-scrollable::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .app-nav-scrollable{
     height: calc(100vh - $topbar-height);
+    overflow-x: hidden;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .app-sidebar:hover {
+    width: $sidebar-width;
+  }
+  
+  .app-sidebar:hover .app-nav-list {
+    opacity: 1;
   }
 }
