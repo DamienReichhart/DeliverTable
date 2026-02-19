@@ -9,6 +9,6 @@ public sealed class LoginRequest
     public string Email { get; set; } = "";
 
     [Required(ErrorMessage = "Le mot de passe est requis")]
-    [MinLength(12, ErrorMessage = "Votre mot d epasse doit contenir au moins 12 caractères")]
+    [MinLength(12, ErrorMessage = "Votre mot de passe doit contenir au moins 12 caractères")]
     public string Password { get; set; } = "";
 }
