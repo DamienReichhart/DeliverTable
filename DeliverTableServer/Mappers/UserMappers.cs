@@ -10,7 +10,7 @@ namespace DeliverTableServer.Mappers
 {
     public static class UserMappers
     {
-        public static UserResponse ToDto(this User userModel)
+        public static UserResponse ToDto(this User userModel, string role)
         {
             return new UserResponse
             {
@@ -18,7 +18,7 @@ namespace DeliverTableServer.Mappers
                 FirstName = userModel.FirstName,
                 LastName = userModel.LastName,
                 Email = userModel.Email,
-                Role = userModel.Role.ToString()
+                Role = role
             };
         }
     }

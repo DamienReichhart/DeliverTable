@@ -5,27 +5,31 @@ using DeliverTableServer.Configuration;
 using DeliverTableServer.Data;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
+using DeliverTableServer.Services;
+using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace DeliverTableServer.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(
+    DeliverTableContext context,
+    ITokenService tokenService,
+    UserManager<User> userManager,
+    IHostEnvironment env
+    ) : ControllerBase
 {
-    private readonly DeliverTableContext _context;
-    private readonly JwtConfig _jwtConfig;
-
-    public AuthController(DeliverTableContext context, JwtConfig jwtConfig)
-    {
-        _context = context;
-        _jwtConfig = jwtConfig;
-    }
+    private readonly string _defaultRoleValue = "Customer";
+    private readonly DeliverTableContext _context = context;
+    private readonly ITokenService _tokenService = tokenService;
+    private readonly UserManager<User> _userManager = userManager;
+    private readonly IHostEnvironment _env = env;
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
@@ -35,19 +39,25 @@ public class AuthController : ControllerBase
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginRequest.Email);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(loginRequest.Password, user.PasswordHash))
+        if (user == null || !await _userManager.CheckPasswordAsync(user, loginRequest.Password))
             return Unauthorized(new { Error = "Identifiants invalides" });
 
-        var token = GenerateJwt(user);
+        var token = await _tokenService.CreateToken(user);
+        var userRoles = await _userManager.GetRolesAsync(user);
+        var role = userRoles.FirstOrDefault(_defaultRoleValue);
 
-        return Ok(new ConnectionResponse{ Token = token, User =
-        new UserResponse {
-            Id = user.Id,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            Role = user.Role.ToString()
-        } });
+        return Ok(new ConnectionResponse
+        {
+            Token = token,
+            User = new UserResponse
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email ?? "",
+                Role = role
+            }
+        });
     }
 
     [HttpPost("register")]
@@ -56,37 +66,42 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(new { Error = "Champs Invalides" });
 
-        // Vérifier si l'email existe déjà
         if (await _context.Users.AnyAsync(u => u.Email == registerRequest.Email))
             return BadRequest(new { Error = "Email déjà utilisé" });
 
-        // Hash du mot de passe
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password);
-
-        var user = new User
+        User user = new()
         {
+            UserName = registerRequest.Email,
+            Email = registerRequest.Email,
             FirstName = registerRequest.FirstName,
             LastName = registerRequest.LastName,
-            Email = registerRequest.Email,
-            PasswordHash = passwordHash
+            CustomerProfile = new CustomerProfile()
         };
 
-        user.CustomerProfile = new CustomerProfile();
+        var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Customer");
+        if (createdUser == null) return BadRequest(
+            _env.IsDevelopment() ? 
+            new {Errors = errors} 
+            :
+            new { Errors = new[] { "Une erreur est survenue" } }
+            );
 
-        _context.Users.Add(user);
+        var userRoles = await _userManager.GetRolesAsync(user);
+        var role = userRoles.FirstOrDefault(_defaultRoleValue);
+        var token = await _tokenService.CreateToken(user);
 
-        await _context.SaveChangesAsync();
-
-        var token = GenerateJwt(user);
-
-        return Ok(new ConnectionResponse { Token = token, User = new UserResponse
+        return Ok(new ConnectionResponse
         {
-            Id = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = user.Role.ToString()
-        } });
+            Token = token,
+            User = new UserResponse
+            {
+                Id = user.Id,
+                Email = user.Email ?? "",
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Role = role
+            }
+        });
     }
 
     [HttpPost("restaurant/register")]
@@ -94,43 +109,47 @@ public class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(new { Error = "Identifiants invalides" });
-        // Vérifier si l'email existe déjà
+
         if (await _context.Users.AnyAsync(u => u.Email == registerRequest.Email))
             return BadRequest(new { Error = "Cet email est déjà utilisé" });
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password);
 
-        var user = new User
+        User user = new()
         {
+            UserName = registerRequest.Email,
+            Email = registerRequest.Email,
             FirstName = registerRequest.FirstName,
             LastName = registerRequest.LastName,
-            Email = registerRequest.Email,
-            Role = UserRole.RestaurantOwner,
-            PasswordHash = passwordHash
+            RestaurantOwner = new RestaurantOwner
+            {
+                CompanyName = registerRequest.CompanyName,
+                VatNumber = registerRequest.VatNumber,
+                ContactPhoneNumber = registerRequest.ContactPhoneNumber
+            },
+            CustomerProfile = new CustomerProfile()
         };
 
-        user.RestaurantOwner = new RestaurantOwner
-        {
-            CompanyName = registerRequest.CompanyName,
-            VatNumber = registerRequest.VatNumber,
-            ContactPhoneNumber = registerRequest.ContactPhoneNumber
-        };
-        
-        user.CustomerProfile = new CustomerProfile();
+        var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Restaurant_Owner");
+        if (createdUser == null) return BadRequest(
+            _env.IsDevelopment() ? 
+            new {Errors = errors} 
+            :
+            new { Errors = new[] { "Une erreur est survenue" } }
+            );
 
-        _context.Users.Add(user);
+        var userRoles = await _userManager.GetRolesAsync(user);
+        var role = userRoles.FirstOrDefault("Restaurant_Owner");
+        var token = await _tokenService.CreateToken(user);
 
-        await _context.SaveChangesAsync();
-
-        var token = GenerateJwt(user);
         return Ok(new ConnectionResponse
         {
-            Token = token, User = new UserResponse
+            Token = token,
+            User = new UserResponse
             {
                 Id = user.Id,
-                Email = user.Email,
+                Email = user.Email ?? "",
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Role = user.Role.ToString()
+                Role = role
             }
         });
     }
@@ -150,34 +169,31 @@ public class AuthController : ControllerBase
         var user = await _context.Users.FindAsync(userId);
         if (user == null)
             return NotFound(new { Error = "Utilisateur introuvable" });
+        
+        var userRoles = await _userManager.GetRolesAsync(user); 
+        var role = userRoles.FirstOrDefault(_defaultRoleValue);
 
-        return Ok(user.ToDto());
+        return Ok(user.ToDto(role));
     }
 
-    private string GenerateJwt(User user)
+    private async Task<(User? user, IEnumerable<string> errors)> CreateUser(User user, string password, string role = "Customer")
     {
-        var key = Encoding.UTF8.GetBytes(_jwtConfig.Key);
-        var claims = new List<Claim>
+        try
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email),
-            new("role", user.Role.ToString())
-        };
-
-        var tokenDescriptor = new SecurityTokenDescriptor
+            var createdUser = await _userManager.CreateAsync(user, password);
+            if (createdUser.Succeeded)
+            {
+                var roleResult = await _userManager.AddToRoleAsync(user, role);
+                if (roleResult.Succeeded)
+                {
+                    return (user, []);
+                }
+            }
+            return (null, createdUser.Errors.Select(e => e.Description));
+        }
+        catch (Exception exception)
         {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(_jwtConfig.ExpireMinutes),
-            Issuer = _jwtConfig.Issuer,
-            Audience = _jwtConfig.Audience,
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256Signature)
-        };
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        Console.WriteLine(token);
-        return tokenHandler.WriteToken(token);
+            return (null, [exception.Message]);
+        }
     }
 }
