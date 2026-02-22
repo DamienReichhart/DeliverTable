@@ -1,11 +1,7 @@
-using System.Text;
 using DeliverTableServer.Configuration;
-using DeliverTableServer.Data;
 using DeliverTableServer.Extensions;
-using DeliverTableServer.Models;
 using DotNetEnv;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 Env.Load();
 
