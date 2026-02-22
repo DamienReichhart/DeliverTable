@@ -15,8 +15,8 @@ public class DeliverTableContext(DbContextOptions<DeliverTableContext> options) 
     {
         base.OnModelCreating(builder);
 
-        List<IdentityRole<int>> roles = new List<IdentityRole<int>>
-            {
+        List<IdentityRole<int>> roles =
+            [
                 new() {
                     Id=1,
                     Name = "Administrator",
@@ -37,7 +37,7 @@ public class DeliverTableContext(DbContextOptions<DeliverTableContext> options) 
                     NormalizedName = "RESTAURANT_OWNER",
                     ConcurrencyStamp = "3"
                 }
-            };
+            ];
 
         builder.Entity<IdentityRole<int>>().HasData(roles);
 
