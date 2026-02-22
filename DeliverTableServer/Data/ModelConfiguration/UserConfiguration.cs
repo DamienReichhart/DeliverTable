@@ -22,12 +22,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.LastName)
             .IsRequired()
             .HasMaxLength(100);
-        
-        builder.Property(u => u.PasswordHash)
-            .HasMaxLength(300);
-
-        builder.Property(u => u.Role)
-            .HasConversion<string>();
 
         builder.Property(u => u.Status)
             .HasConversion<string>();

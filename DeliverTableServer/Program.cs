@@ -1,56 +1,23 @@
-using System.Text;
 using DeliverTableServer.Configuration;
-using DeliverTableServer.Data;
 using DeliverTableServer.Extensions;
-using DeliverTableServer.Models;
 using DotNetEnv;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Identity
-builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 12;
-}).AddEntityFrameworkStores<DeliverTableContext>();
+builder.Services.AddIdentityParams();
 
 // JWT
-var jwtConfig = JwtConfig.LoadFromEnv();
-builder.Services.AddSingleton(jwtConfig);
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters()
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtConfig.Issuer,
-            ValidAudience = jwtConfig.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key))
-        };
-    });
-
-
+builder.Services.AddJwtAuthentication();
 builder.Services.AddAuthorization();
 
+// Retirer les objets avec tous les détails des réponses si hors développement
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
-    options.SuppressModelStateInvalidFilter = true;
+    options.SuppressModelStateInvalidFilter = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development";
 });
 
 builder.Services.AddDeliverTableServices();
