@@ -1,9 +1,11 @@
 ﻿using DeliverTableServer.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DeliverTableServer.Data;
 
-public class DeliverTableContext : DbContext
+public class DeliverTableContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public DeliverTableContext(DbContextOptions<DeliverTableContext> options)
         : base(options)
@@ -14,8 +16,12 @@ public class DeliverTableContext : DbContext
     public DbSet<RestaurantOwner> RestaurantOwners { get; set; }
     public DbSet<CustomerProfile> CustomerProfiles { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-       modelBuilder.ApplyConfigurationsFromAssembly(typeof(DeliverTableContext).Assembly);
+        base.OnModelCreating(builder);
+
+        builder.Ignore<IdentityPasskeyData>();
+
+        builder.ApplyConfigurationsFromAssembly(typeof(DeliverTableContext).Assembly);
     }
 }
