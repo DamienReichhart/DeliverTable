@@ -1,14 +1,27 @@
 using System.Text;
 using DeliverTableServer.Configuration;
+using DeliverTableServer.Data;
 using DeliverTableServer.Extensions;
+using DeliverTableServer.Models;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Identity
+builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 12;
+}).AddEntityFrameworkStores<DeliverTableContext>();
 
 // JWT
 var jwtConfig = JwtConfig.LoadFromEnv();
@@ -30,25 +43,11 @@ builder.Services.AddAuthentication(options =>
             ValidAudience = jwtConfig.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key))
         };
-        
-        // options.Events = new JwtBearerEvents
-        // {
-        //     OnAuthenticationFailed = context =>
-        //     {
-        //         Console.WriteLine($"JWT failed: {context.Exception.Message}");
-        //         return Task.CompletedTask;
-        //     },
-        //     OnTokenValidated = context =>
-        //     {
-        //         Console.WriteLine($"JWT validated: {context.Principal.Identity.Name}");
-        //         return Task.CompletedTask;
-        //     }
-        // };
     });
+
 
 builder.Services.AddAuthorization();
 
-// Retrait des détails dans les réponses API ModelState Invalides
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
@@ -70,14 +69,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Test si la connexion s'effectue bien
-// DBConfiguration.VerifyConnectionToDB(app.Services);
-
-// OpenAPI document and Swagger UI: enabled in Development or when explicitly enabled via configuration.
-// Disabled by default in Production to limit information disclosure (see Microsoft security guidance).
 var openApiOptions = app.Services.GetRequiredService<IOptions<OpenApiOptions>>().Value;
-var enableOpenApi = app.Environment.IsDevelopment()
-                    || openApiOptions.EnableDocumentation;
+var enableOpenApi = app.Environment.IsDevelopment() || openApiOptions.EnableDocumentation;
 
 if (enableOpenApi)
 {

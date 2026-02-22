@@ -1,6 +1,8 @@
-﻿namespace DeliverTableServer.Models;
+﻿using Microsoft.AspNetCore.Identity;
 
-public class User
+namespace DeliverTableServer.Models;
+
+public class User : IdentityUser<int>
 {
 
     public int Id { get; set; }
