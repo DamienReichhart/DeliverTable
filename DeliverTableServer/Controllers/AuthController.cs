@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Data;
+using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
@@ -150,7 +151,7 @@ public class AuthController : ControllerBase
         if (user == null)
             return NotFound(new { Error = "Utilisateur introuvable" });
 
-        return Ok(user);
+        return Ok(user.ToDto());
     }
 
     private string GenerateJwt(User user)
