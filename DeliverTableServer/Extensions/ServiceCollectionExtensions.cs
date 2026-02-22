@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddDeliverTableServices(this IServiceCollection services)
     {
         RegisterHealthServices(services);
+        RegisterTokenService(services);
         // Register additional service groups here as the app grows, e.g.:
         // RegisterBookingServices(services);
         // RegisterRestaurantServices(services);
@@ -26,5 +27,10 @@ public static class ServiceCollectionExtensions
     private static void RegisterHealthServices(IServiceCollection services)
     {
         services.AddScoped<IHealthService, HealthService>();
+    }
+
+    private static void RegisterTokenService(IServiceCollection services)
+    {
+        services.AddScoped<ITokenService, TokenService>();
     }
 }
