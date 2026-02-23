@@ -98,3 +98,4 @@ Desktop.ini
 *.temp
 *.orig
 .cache/
+*.css
