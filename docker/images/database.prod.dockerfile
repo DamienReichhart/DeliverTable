@@ -1,0 +1,8 @@
+FROM postgres:17-alpine
+
+COPY docker/config/prod/postgres/init-db.sh /docker-entrypoint-initdb.d/01-init-db.sh
+COPY docker/config/prod/postgres/postgresql.conf /etc/postgresql/postgresql.conf
+
+RUN chmod +x /docker-entrypoint-initdb.d/01-init-db.sh
+
+CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
