@@ -1,0 +1,133 @@
+name: delivertable-dev
+
+services:
+
+  # ── Reverse Proxy ────────────────────────────────────────────
+  proxy:
+    container_name: dt-proxy-dev
+    build:
+      context: .
+      dockerfile: docker/images/proxy.dev.dockerfile
+    ports:
+      - "${PROXY_PORT}:80"
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      dt-frontend-net:
+        ipv4_address: 192.168.50.10
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # ── Blazor WASM Frontend ────────────────────────────────────
+  frontend:
+    container_name: dt-frontend-dev
+    build:
+      context: .
+      dockerfile: docker/images/frontend.dev.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+      - ./docker/config/dev/blazor/appconfig.Development.json:/src/DeliverTableClient/wwwroot/appconfig.Development.json:ro
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5147
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER: "true"
+      DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "true"
+    networks:
+      dt-frontend-net:
+        ipv4_address: 192.168.50.20
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5147 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+    restart: unless-stopped
+
+  # ── ASP.NET Core Web API Backend ────────────────────────────
+  backend:
+    container_name: dt-backend-dev
+    build:
+      context: .
+      dockerfile: docker/images/backend.dev.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5268
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      DOTNET_WATCH_SUPPRESS_LAUNCH_BROWSER: "true"
+      DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "true"
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      dt-frontend-net:
+        ipv4_address: 192.168.50.30
+      dt-backend-net:
+        ipv4_address: 192.168.60.10
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5268/api/v1/Health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+    restart: unless-stopped
+
+  # ── PostgreSQL Database ─────────────────────────────────────
+  database:
+    container_name: dt-database-dev
+    build:
+      context: .
+      dockerfile: docker/images/database.dev.dockerfile
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    networks:
+      dt-backend-net:
+        ipv4_address: 192.168.60.20
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+networks:
+  dt-frontend-net:
+    name: dt-frontend-dev
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.50.0/24
+          gateway: 192.168.50.1
+  dt-backend-net:
+    name: dt-backend-dev
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.60.0/24
+          gateway: 192.168.60.1
+
+volumes:
+  postgres-data:
+    name: dt-postgres-data-dev
+  nuget-cache:
+    name: dt-nuget-cache-dev
