@@ -1,0 +1,216 @@
+name: delivertable-utils
+
+services:
+
+  # ── Full Test Suite ────────────────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm test
+  test:
+    container_name: dt-test-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+      - ./reports/test-results:/results
+    command: >-
+      dotnet test DeliverTable.sln
+      --configuration Release
+      --logger "console;verbosity=normal"
+      --logger "trx;LogFilePrefix=full"
+      --results-directory /results
+    profiles: ["test"]
+
+  # ── Unit Tests Only ────────────────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm test-unit
+  test-unit:
+    container_name: dt-test-unit-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+      - ./reports/test-results:/results
+    command: >-
+      dotnet test DeliverTable.sln
+      --configuration Release
+      --filter "FullyQualifiedName~Unit"
+      --logger "console;verbosity=normal"
+      --logger "trx;LogFilePrefix=unit"
+      --results-directory /results
+    profiles: ["test-unit"]
+
+  # ── Integration Tests (with ephemeral database) ────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm test-integration
+  test-integration:
+    container_name: dt-test-integration-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+      - ./reports/test-results:/results
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=database;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+    command: >-
+      dotnet test DeliverTable.sln
+      --configuration Release
+      --filter "FullyQualifiedName~Integration"
+      --logger "console;verbosity=normal"
+      --logger "trx;LogFilePrefix=integration"
+      --results-directory /results
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - dt-utils-net
+    profiles: ["test-integration"]
+
+  # ── Code Coverage Report ───────────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm coverage
+  # HTML report output: ./reports/coverage/index.html
+  coverage:
+    container_name: dt-coverage-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+      - ./reports/coverage:/reports
+    environment:
+      COVERAGE_THRESHOLD: ${COVERAGE_THRESHOLD:-80}
+    entrypoint: /scripts/coverage-entrypoint.sh
+    profiles: ["coverage"]
+
+  # ── Code Format Check ──────────────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm format-check
+  format-check:
+    container_name: dt-format-check-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    command: dotnet format DeliverTable.sln --verify-no-changes --verbosity diagnostic
+    profiles: ["format-check"]
+
+  # ── Code Format Fix ────────────────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm format-fix
+  format-fix:
+    container_name: dt-format-fix-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    command: dotnet format DeliverTable.sln --verbosity diagnostic
+    profiles: ["format-fix"]
+
+  # ── Security Audit (vulnerabilities + deprecated) ──────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm security-audit
+  security-audit:
+    container_name: dt-security-audit-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    command:
+      - sh
+      - -c
+      - |
+        echo '══════════════════════════════════════════'
+        echo '  Vulnerable Packages'
+        echo '══════════════════════════════════════════'
+        echo ''
+        dotnet list DeliverTable.sln package --vulnerable --include-transitive
+        echo ''
+        echo '══════════════════════════════════════════'
+        echo '  Deprecated Packages'
+        echo '══════════════════════════════════════════'
+        echo ''
+        dotnet list DeliverTable.sln package --deprecated
+    profiles: ["security-audit"]
+
+  # ── Outdated Packages ──────────────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm outdated
+  outdated:
+    container_name: dt-outdated-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    command: dotnet list DeliverTable.sln package --outdated --include-transitive
+    profiles: ["outdated"]
+
+  # ── Release Build Verification ─────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm build-release
+  build-release:
+    container_name: dt-build-release-utils
+    build:
+      context: .
+      dockerfile: docker/images/dotnet-sdk.utils.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    command: >-
+      dotnet build DeliverTable.sln
+      --configuration Release
+      --no-incremental
+      -p:TreatWarningsAsErrors=true
+    profiles: ["build-release"]
+
+  # ── Clean Build Artifacts ──────────────────────────────────────
+  # Usage: docker compose -f docker-utils.yaml run --rm clean
+  clean:
+    container_name: dt-clean-utils
+    image: busybox:latest
+    volumes:
+      - .:/src
+    command:
+      - sh
+      - -c
+      - |
+        find /src -type d \( -name bin -o -name obj \) -not -path '*/node_modules/*' -exec rm -rf {} + 2>/dev/null
+        rm -rf /src/reports
+        echo 'Cleaned bin/, obj/, and reports/ directories'
+    profiles: ["clean"]
+
+  # ── Ephemeral Database (for integration tests) ─────────────────
+  database:
+    container_name: dt-database-utils
+    build:
+      context: .
+      dockerfile: docker/images/database.dev.dockerfile
+    tmpfs:
+      - /var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - dt-utils-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    profiles: ["test-integration"]
+
+networks:
+  dt-utils-net:
+    name: dt-utils
+    driver: bridge
+
+volumes:
+  nuget-cache:
+    name: dt-nuget-cache-utils

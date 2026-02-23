@@ -74,6 +74,9 @@ coverage*.xml
 TestResult.xml
 [Tt]est[Rr]esults/
 
+# Utils reports (coverage, test results, mutation reports)
+reports/
+
 # User-specific / local config (optional: uncomment if you keep secrets in these)
 # appsettings.Development.json
 # appsettings.*.local.json
