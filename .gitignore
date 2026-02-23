@@ -84,6 +84,9 @@ TestResult.xml
 .env
 .env.local
 
+# Docker environment (local overrides; use .env.example as template)
+.env.docker.dev
+
 # OS
 Thumbs.db
 ehthumbs.db
