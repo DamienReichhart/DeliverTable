@@ -64,3 +64,24 @@ $focus-ring: 0 0 0 0.1rem $color-bg, 0 0 0 0.25rem $color-border-focus;
 // Z-index
 $z-error-ui: 1000;
 $z-topbar: 1;
+
+$color-warning: #f8c52b;
+$color-light: #f6f6f6;
+$color-dark: #1d1d1d;
+
+// Statuses
+$statuses : (
+    "success": $color-success,
+    "danger": $color-error,
+    "warning": $color-warning,
+    "light": $color-light,
+    "dark": $color-dark
+);
+
+$alertColors : (
+    "success" rgb(98, 201, 116) $color-success $color-light,
+    "danger" rgb(214, 122, 122) $color-error $color-light,
+    "warning" rgb(253, 217, 109) $color-warning $color-dark,
+    "light" rgb(209, 209, 209) $color-light $color-dark,
+    "dark" rgb(115, 115, 115) $color-dark $color-light
+);
