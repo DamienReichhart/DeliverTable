@@ -1,0 +1,87 @@
+﻿@page "/Register"
+@using DeliverTableSharedLibrary.Dtos.Auth
+@inject NavigationManager Nav
+@inject AuthService AuthService
+
+<div class="container register-page">
+    <div class="hidden-mobile register-page-icon">Montre toi</div>
+    <div class="row justify-content-center w-full">
+        <div class="register-form">
+            <h3>Créer son compte</h3>
+
+            <EditForm Model="@_registerModel" OnValidSubmit="HandleRegister"><DataAnnotationsValidator />
+                <div class="mb-1 col">
+                    <label class="form-label">Prénom</label>
+                    <InputText @bind-Value="_registerModel.FirstName" class="form-control" />
+                    <ValidationMessage For="@(() => _registerModel.FirstName)" class="text-danger" />
+                </div>
+
+                <div class="mb-1 col">
+                    <label class="form-label">Nom</label>
+                    <InputText @bind-Value="_registerModel.LastName" class="form-control" />
+                    <ValidationMessage For="@(() => _registerModel.LastName)" class="text-danger" />
+                </div>
+
+                <div class="mb-1 col">
+                    <label class="form-label">Email</label>
+                    <InputText @bind-Value="_registerModel.Email" class="form-control" placeholder="exemple@mail.com" />
+                    <ValidationMessage For="@(() => _registerModel.Email)" class="text-danger" />
+                </div>
+
+                <div class="mb-1 col">
+                    <label class="form-label">Mot de passe (12 caractères min.)</label>
+                    <InputText @bind-Value="_registerModel.Password" type="password" class="form-control" />
+                    <ValidationMessage For="@(() => _registerModel.Password)" class="text-danger" />
+                </div>
+
+                <div class="mb-1 col">
+                    <label class="form-label">Confirmer le mot de passe</label>
+                    <InputText @bind-Value="_registerModel.ConfirmPassword" type="password" class="form-control" />
+                    <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="text-danger" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger w-70">@_errorMessage</div>
+                }
+
+                <button type="submit" class="app-btn mx-auto flex mt-1" disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm"></span> <span> Création du compte...</span>
+                    }
+                    else
+                    {
+                        <span>S'inscrire</span>
+                    }
+                </button>
+            </EditForm>
+
+            <div class="text-center mt-2">
+                <small>Déjà un compte ? <a href="/login">Connectez-vous</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    private RegisterRequest _registerModel = new RegisterRequest();
+    private string? _errorMessage;
+    private bool _isSubmitting = false;
+    private async Task HandleRegister()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        AuthResponse? response = await AuthService.Register(_registerModel);
+
+        if (response.Success)
+        {
+            Nav.NavigateTo(uri: "/"); 
+        }
+        else
+        {
+            _errorMessage = response.Error;
+            _isSubmitting = false;
+        }
+    }
+}
