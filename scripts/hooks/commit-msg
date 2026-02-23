@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════
+#  DeliverTable – Git Commit-Msg Hook
+# ═══════════════════════════════════════════════════════════════════
+#
+#  Validates commit messages against the project's Conventional Commits
+#  standard with Azure Boards traceability requirements.
+#
+#  Rules enforced:
+#    • Subject matches:  <type>(<scope>): <description>
+#      – type is required; scope is optional
+#      – optional ! before : for breaking changes
+#    • Type ∈ {feat, fix, docs, style, refactor, perf, test, build, ci, chore}
+#    • Scope ∈ {client, server, shared, tests, api, auth, db, docker}
+#    • Subject ≤ 72 characters, no trailing period, imperative mood
+#    • Footer contains at least one Azure Boards reference:
+#        PBI: AB#<id>  and/or  Task: AB#<id>
+#
+#  Skipped for merge, fixup, squash, and amend prefixes.
+#
+#  Reference: docs/commits-convention.md
+# ═══════════════════════════════════════════════════════════════════
+
+set -euo pipefail
+
+readonly COMMIT_MSG_FILE="$1"
+
+# ── Terminal colours ────────────────────────────────────────────
+
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly CYAN='\033[0;36m'
+readonly BOLD='\033[1m'
+readonly DIM='\033[2m'
+readonly RESET='\033[0m'
+
+ERRORS=0
+
+fail()   { printf '%b  ✘ %s%b\n' "$RED" "$1" "$RESET"; ERRORS=$((ERRORS + 1)); }
+pass()   { printf '%b  ✔ %s%b\n' "$GREEN" "$1" "$RESET"; }
+hint()   { printf '%b    %s%b\n' "$DIM" "$1" "$RESET"; }
+
+# ── Allowed values ──────────────────────────────────────────────
+
+readonly TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore"
+readonly SCOPES="client|server|shared|tests|api|auth|db|docker"
+
+# ── Strip comment lines ────────────────────────────────────────
+
+COMMENT_CHAR=$(git config --get core.commentChar 2>/dev/null || echo '#')
+CLEAN_MSG=$(grep -v "^${COMMENT_CHAR}" "$COMMIT_MSG_FILE" || true)
+
+if [[ -z "${CLEAN_MSG// /}" ]]; then
+    fail "Commit message is empty"
+    exit 1
+fi
+
+# ── Extract subject (first non-empty line) ──────────────────────
+
+SUBJECT=$(echo "$CLEAN_MSG" | grep -v '^$' | head -1)
+
+# ── Skip special commits ───────────────────────────────────────
+
+if [[ "$SUBJECT" =~ ^(Merge\ |Revert\ |fixup!\ |squash!\ |amend!\ ) ]]; then
+    exit 0
+fi
+
+printf '\n%bCommit message validation%b\n\n' "$BOLD" "$RESET"
+
+# ── 1. Conventional Commits format ─────────────────────────────
+
+SUBJECT_PATTERN="^(${TYPES})(\((${SCOPES})\))?!?: .+"
+
+if echo "$SUBJECT" | grep -Pq "$SUBJECT_PATTERN"; then
+    pass "Format matches Conventional Commits"
+else
+    fail "Subject does not match Conventional Commits format"
+    hint "Expected: <type>(<scope>): <description>"
+    hint "Types:    ${TYPES//|/, }"
+    hint "Scopes:   ${SCOPES//|/, } (optional)"
+    hint "Got:      $SUBJECT"
+fi
+
+# ── 2. Subject length ──────────────────────────────────────────
+
+SUBJECT_LEN=${#SUBJECT}
+
+if [[ "$SUBJECT_LEN" -le 72 ]]; then
+    pass "Subject length ($SUBJECT_LEN/72 chars)"
+else
+    fail "Subject too long ($SUBJECT_LEN chars, max 72)"
+fi
+
+# ── 3. No trailing period ──────────────────────────────────────
+
+if [[ "$SUBJECT" =~ \.$ ]]; then
+    fail "Subject should not end with a period"
+else
+    pass "No trailing period"
+fi
+
+# ── 4. Azure Boards references ─────────────────────────────────
+
+if echo "$CLEAN_MSG" | grep -Pq '^(PBI|Task): AB#\d+'; then
+    pass "Azure Boards reference found"
+else
+    fail "Missing Azure Boards reference in footer"
+    hint "Add at least: PBI: AB#<id>"
+    hint "Optionally:   Task: AB#<id>"
+fi
+
+# ── Summary ─────────────────────────────────────────────────────
+
+printf '\n'
+if [[ "$ERRORS" -gt 0 ]]; then
+    printf '%b%b✘ Commit message rejected (%d error(s))%b\n' "$BOLD" "$RED" "$ERRORS" "$RESET"
+    printf '%bSee: docs/commits-convention.md%b\n' "$YELLOW" "$RESET"
+    printf '%bBypass (not recommended): git commit --no-verify%b\n' "$DIM" "$RESET"
+    exit 1
+fi
+
+printf '%b%b✔ Commit message is valid%b\n' "$BOLD" "$GREEN" "$RESET"

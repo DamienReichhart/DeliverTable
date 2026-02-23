@@ -17,6 +17,20 @@ The client uses a centralized config file loaded at startup. No secrets—the fi
 - **Schema:** `api.baseUrl` (API base URL; empty = same origin), `environment` (e.g. `"Development"`, `"Production"`). For local dev with the server on another port, set `api.baseUrl` in `appconfig.Development.json` (e.g. `http://localhost:5268`).
 - **Usage:** Inject `IAppConfiguration` where needed; API base URL is used automatically by registered API clients.
 
+## Getting started
+
+Prerequisites: **Make** and **Docker** (with Compose plugin).
+
+```bash
+# Install Git hooks (pre-commit + commit-msg validation)
+make hooks-install
+
+# Start the full development stack
+make dev
+```
+
+Run `make help` for all available commands.
+
 ## Contributing
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/). See [docs/commits-convention.md](docs/commits-convention.md) for types, scopes (client, server, shared, tests, api), and examples.
