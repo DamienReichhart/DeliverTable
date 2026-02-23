@@ -101,6 +101,20 @@ utils-build: ## Pre-build the utils Docker image
 utils-down: ## Stop and remove any lingering utils containers
 	$(COMPOSE_UTILS) down
 
+# ── Git Hooks ────────────────────────────────────────────────────
+
+HOOKS_DIR = scripts/hooks
+
+.PHONY: hooks-install
+hooks-install: ## Install Git hooks (pre-commit + commit-msg)
+	@git config core.hooksPath $(HOOKS_DIR)
+	@echo 'Git hooks installed (core.hooksPath → $(HOOKS_DIR))'
+
+.PHONY: hooks-uninstall
+hooks-uninstall: ## Remove Git hooks
+	@git config --unset core.hooksPath || true
+	@echo 'Git hooks removed'
+
 # ── Composite Targets ────────────────────────────────────────────
 
 .PHONY: ci
