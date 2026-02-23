@@ -3,6 +3,7 @@
 # ═══════════════════════════════════════════════════════════════════
 
 COMPOSE_DEV   = docker compose -f docker-dev.yaml
+COMPOSE_PROD  = docker compose -f docker-prod.yaml
 COMPOSE_UTILS = docker compose -f docker-utils.yaml
 
 .DEFAULT_GOAL := help
@@ -40,6 +41,40 @@ dev-restart: ## Restart all development services
 .PHONY: dev-rebuild
 dev-rebuild: ## Rebuild images and restart the development stack
 	$(COMPOSE_DEV) up --build --force-recreate
+
+# ── Production Environment ───────────────────────────────────────
+
+.PHONY: prod
+prod: ## Start the production stack in the background (tunnel + proxy + frontend + backend + database)
+	$(COMPOSE_PROD) up --build -d
+
+.PHONY: prod-down
+prod-down: ## Stop and remove the production stack
+	$(COMPOSE_PROD) down
+
+.PHONY: prod-down-volumes
+prod-down-volumes: ## Stop the production stack and remove volumes (database data)
+	$(COMPOSE_PROD) down -v
+
+.PHONY: prod-logs
+prod-logs: ## Tail logs from all production services
+	$(COMPOSE_PROD) logs -f
+
+.PHONY: prod-ps
+prod-ps: ## Show running production containers
+	$(COMPOSE_PROD) ps
+
+.PHONY: prod-restart
+prod-restart: ## Restart all production services
+	$(COMPOSE_PROD) restart
+
+.PHONY: prod-rebuild
+prod-rebuild: ## Rebuild images and restart the production stack
+	$(COMPOSE_PROD) up --build --force-recreate -d
+
+.PHONY: prod-build
+prod-build: ## Build production images without starting containers
+	$(COMPOSE_PROD) build
 
 # ── Testing ──────────────────────────────────────────────────────
 
