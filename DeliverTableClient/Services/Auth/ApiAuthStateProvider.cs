@@ -5,23 +5,19 @@ using Microsoft.JSInterop;
 
 namespace DeliverTableClient.Services.Auth;
 
-public class ApiAuthStateProvider : AuthenticationStateProvider
+public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : AuthenticationStateProvider
 {
-    private readonly IJSRuntime _js;
-    private readonly HttpClient _httpClient;
+    private readonly IJSRuntime _js = js;
+    private readonly HttpClient _httpClient = httpClient;
 
-    public ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient)
-    {
-        _js = js;
-        _httpClient = httpClient;
-    }
+    private readonly string _getItem = "localStorage.getItem";
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
-        var role = await _js.InvokeAsync<string>("localStorage.getItem", "userRole");
-        var userId = await _js.InvokeAsync<string>("localStorage.getItem", "userId");
-        var userName = await _js.InvokeAsync<string>("localStorage.getItem", "userName");
+        var token = await _js.InvokeAsync<string>(_getItem, "authToken");
+        var role = await _js.InvokeAsync<string>(_getItem, "userRole");
+        var userId = await _js.InvokeAsync<string>(_getItem, "userId");
+        var userName = await _js.InvokeAsync<string>(_getItem, "userName");
 
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -34,9 +30,9 @@ public class ApiAuthStateProvider : AuthenticationStateProvider
         // On construit l'identité avec tous les claims nécessaires
         var claims = new List<Claim> 
         { 
-            new Claim(ClaimTypes.Role, role ?? "Customer"),
-            new Claim(ClaimTypes.NameIdentifier, userId ?? ""),
-            new Claim(ClaimTypes.Name, userName ?? "")
+            new (ClaimTypes.Role, role ?? "Customer"),
+            new (ClaimTypes.NameIdentifier, userId ?? ""),
+            new (ClaimTypes.Name, userName ?? "")
         };
         
         var identity = new ClaimsIdentity(claims, "jwt");
@@ -47,9 +43,9 @@ public class ApiAuthStateProvider : AuthenticationStateProvider
     {
         var claims = new List<Claim> 
         { 
-            new Claim(ClaimTypes.Role, role),
-            new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim(ClaimTypes.Name, userName)
+            new (ClaimTypes.Role, role),
+            new (ClaimTypes.NameIdentifier, userId),
+            new (ClaimTypes.Name, userName)
         };
         
         var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));

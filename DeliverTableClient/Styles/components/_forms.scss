@@ -34,3 +34,19 @@
 .app-input:focus::placeholder {
   color: $color-text;
 }
+
+form .text-danger {
+  font-size: .8em;
+}
+
+.form-label{
+    margin-bottom: .3rem;
+}
+
+.form-control{
+  padding: .5rem 1rem;
+  border-width: 1px;
+  border-color: $color-accent;
+  border-radius: .5rem;
+  width: 100%;
+}

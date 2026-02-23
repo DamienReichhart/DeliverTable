@@ -6,7 +6,7 @@
 @use '../abstracts/mixins' as *;
 
 .app-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: $spacing-sm $spacing-md;

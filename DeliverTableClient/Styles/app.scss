@@ -10,6 +10,7 @@
 @use 'layout/nav';
 @use 'components/buttons';
 @use 'components/forms';
+@use 'components/alert';
 @use 'pages/health';
 @use 'utilities/blazor';
 
@@ -49,10 +50,26 @@
   width: 100%;
 }
 
+.mx-auto{
+  margin: 0 auto;
+}
+
+.hidden-mobile{
+  display: none;
+}
+
+.rounded {
+  border-radius: 1em;
+}
+
 @media (min-width: $breakpoint-desktop) {
   .container {
     width: 80%;
     margin: 0 auto;
+  }
+
+  .hidden-mobile {
+    display: block;
   }
 }
 
@@ -64,6 +81,10 @@
   .screen-w-#{$i}{
     width: #{$i}vw;
   }
+
+  .w-#{$i}{
+    width: $i * 1%;
+  }
 }
 
 @for $i from 1 through 20 {
@@ -72,7 +93,7 @@
   }
 
   .p-#{$i}{
-    margin: #{$i}rem;
+    padding: #{$i}rem;
   }
   
   .mt-#{$i}{
@@ -125,5 +146,15 @@
   .py-#{$i}{
     padding-top: #{$i}rem;
     padding-bottom: #{$i}rem;
+  }
+}
+
+@each $status, $color in $statuses {
+  .text-#{$status}{
+    color: $color;
+  }
+
+  .bg-#{$status}{
+    background-color: $color;
   }
 }
