@@ -3,7 +3,7 @@ using DeliverTableServer.Extensions;
 using DotNetEnv;
 using Microsoft.Extensions.Options;
 
-Env.Load();
+EnvLoader.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
