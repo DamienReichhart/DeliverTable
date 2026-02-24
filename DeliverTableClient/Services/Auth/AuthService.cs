@@ -6,10 +6,10 @@ using DeliverTableSharedLibrary.Dtos.Auth;
 
 namespace DeliverTableClient.Services.Auth;
 
-public class AuthService(HttpClient httpClient, AuthenticationStateProvider authStateProvider, IJSRuntime js)
+public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStateProvider, IJSRuntime js)
 {
     private readonly HttpClient _httpClient = httpClient;
-    private readonly AuthenticationStateProvider _authStateProvider = authStateProvider;
+    private readonly ApiAuthStateProvider _authStateProvider = authStateProvider;
     private readonly IJSRuntime _js = js;
     
     private sealed class ApiErrorResponse
@@ -64,7 +64,7 @@ public class AuthService(HttpClient httpClient, AuthenticationStateProvider auth
 
         var result = await response.Content.ReadFromJsonAsync<ConnectionResponse>();
 
-        if (result != null && !string.IsNullOrEmpty(result.Token))
+        if (result?.User != null && !string.IsNullOrEmpty(result.Token))
         {
             // Stockage
             await _js.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
@@ -73,7 +73,8 @@ public class AuthService(HttpClient httpClient, AuthenticationStateProvider auth
             await _js.InvokeVoidAsync("localStorage.setItem", "userName", result.User.FirstName);
 
             // Notification du Provider
-            ((ApiAuthStateProvider)_authStateProvider).NotifyUserAuthentication(
+            _authStateProvider.NotifyUserAuthentication(
+                result.Token,
                 result.User.Role, 
                 result.User.Id.ToString(), 
                 result.User.FirstName);
@@ -93,6 +94,6 @@ public class AuthService(HttpClient httpClient, AuthenticationStateProvider auth
         await _js.InvokeVoidAsync("localStorage.removeItem", "userName");
 
         // Notification de l'état déconnecté
-        ((ApiAuthStateProvider)_authStateProvider).NotifyUserLogout();
+        _authStateProvider.NotifyUserLogout();
     }
 }

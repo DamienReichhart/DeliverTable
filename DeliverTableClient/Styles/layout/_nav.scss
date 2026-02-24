@@ -110,7 +110,9 @@
   
   .app-nav-list {
     opacity: 0;
-    transition: opacity 0.15s ease;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s ease, visibility 0s linear 0.15s;
   }
 }
 

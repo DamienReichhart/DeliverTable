@@ -32,11 +32,13 @@
     scrollbar-width: none;  /* Firefox */
   }
   
-  .app-sidebar:hover {
+  .app-sidebar:hover,.app-sidebar:focus-within {
     width: $sidebar-width;
   }
   
-  .app-sidebar:hover .app-nav-list {
+  .app-sidebar:hover .app-nav-list, .app-sidebar:focus-within .app-nav-list {
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 }

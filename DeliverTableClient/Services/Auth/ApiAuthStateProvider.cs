@@ -21,6 +21,7 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
 
         if (string.IsNullOrWhiteSpace(token))
         {
+            _httpClient.DefaultRequestHeaders.Authorization = null;
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 
@@ -39,8 +40,12 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
-    public void NotifyUserAuthentication(string role, string userId, string userName)
+    public void NotifyUserAuthentication(string token, string role, string userId, string userName)
     {
+        
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+
         var claims = new List<Claim> 
         { 
             new (ClaimTypes.Role, role),
