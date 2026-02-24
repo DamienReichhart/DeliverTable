@@ -35,13 +35,13 @@
                         </div>
                         
                         <div class="mb-1">
-                            <label class="form-label">Numéro de téléphone</label>
+                            <label class="form-label">N° de téléphone</label>
                             <InputText @bind-Value="_restaurantRegisterModel.ContactPhoneNumber" class="form-control" placeholder="N° de téléphone" />
                             <ValidationMessage For="@(() => _restaurantRegisterModel.ContactPhoneNumber)" class="text-danger" />
                         </div>
                         
                         <div class="mb-1">
-                            <label class="form-label">N°° de SIRET</label>
+                            <label class="form-label">N° de SIRET</label>
                             <InputText @bind-Value="_restaurantRegisterModel.VatNumber" class="form-control" placeholder="N° de SIRET" />
                             <ValidationMessage For="@(() => _restaurantRegisterModel.VatNumber)" class="text-danger" />
                         </div>
@@ -91,16 +91,18 @@
         _isSubmitting = true;
         _errorMessage = null;
 
-        var response = await AuthService.RegisterRestaurant(_restaurantRegisterModel);
+        try{
+            AuthResponse? response = await AuthService.RegisterRestaurant(_restaurantRegisterModel);
 
-        if (response.Success)
-        {
-            // L'utilisateur est maintenant connecté et ses claims sont chargés
-            Nav.NavigateTo("/"); 
-        }
-        else
-        {
+            if (response.Success)
+            {
+                Nav.NavigateTo("/"); 
+                return;
+            }
             _errorMessage = response.Error;
+        } catch (Exception ex) {
+            _errorMessage = ex.Message;
+        } finally {
             _isSubmitting = false;
         }
     }

@@ -3,7 +3,7 @@ using DeliverTableServer.Extensions;
 using DotNetEnv;
 using Microsoft.Extensions.Options;
 
-Env.Load();
+EnvLoader.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +17,11 @@ builder.Services.AddAuthorization();
 // Retirer les objets avec tous les détails des réponses si hors développement
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
-    options.SuppressModelStateInvalidFilter = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Development";
+    if (!builder.Environment.IsDevelopment())
+    {
+        options.InvalidModelStateResponseFactory = _ =>
+            new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new { error = "Invalid request." });
+    }
 });
 
 builder.Services.AddDeliverTableServices();
