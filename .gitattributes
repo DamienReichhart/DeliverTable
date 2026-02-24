@@ -1,0 +1,5 @@
+# Force LF line endings for files that will run inside Linux containers.
+*.sh          text eol=lf
+*.dockerfile  text eol=lf
+*.conf        text eol=lf
+*.toml        text eol=lf

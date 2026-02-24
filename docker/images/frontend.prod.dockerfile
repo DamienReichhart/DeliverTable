@@ -61,7 +61,8 @@ FROM scratch
 
 COPY --from=rootfs /rootfs /
 
-EXPOSE 80
+EXPOSE 8080
 STOPSIGNAL SIGQUIT
+USER 101:101
 
 ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"]

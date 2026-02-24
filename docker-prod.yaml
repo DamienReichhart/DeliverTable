@@ -72,25 +72,20 @@ services:
       dt-frontend-net:
         ipv4_address: 172.31.0.20
     healthcheck:
-      test: ["CMD", "/healthcheck", "http://localhost/health"]
+      test: ["CMD", "/healthcheck", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
     cap_drop:
       - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-      - SETUID
-      - SETGID
-      - CHOWN
     logging: *default-logging
     restart: always
     read_only: true
     tmpfs:
-      - /var/cache/nginx:size=10m
-      - /var/run:size=1m
-      - /tmp:size=5m
+      - /var/cache/nginx:size=10m,uid=101,gid=101
+      - /var/run:size=1m,uid=101,gid=101
+      - /tmp:size=5m,uid=101,gid=101
 
   backend:
     container_name: dt-backend-prod
