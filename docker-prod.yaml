@@ -101,8 +101,15 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
+      ObjectStorage__ServiceUrl: http://172.32.0.30:3900
+      ObjectStorage__AccessKey: ${GARAGE_S3_ACCESS_KEY}
+      ObjectStorage__SecretKey: ${GARAGE_S3_SECRET_KEY}
+      ObjectStorage__BucketName: ${GARAGE_BUCKET_NAME}
+      ObjectStorage__ForcePathStyle: "true"
     depends_on:
       database:
+        condition: service_healthy
+      garage:
         condition: service_healthy
     networks:
       dt-frontend-net:
@@ -154,6 +161,33 @@ services:
     logging: *default-logging
     restart: always
 
+  garage:
+    container_name: dt-garage-prod
+    build:
+      context: .
+      dockerfile: docker/images/garage.prod.dockerfile
+    volumes:
+      - garage-data:/var/lib/garage
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN}
+      GARAGE_S3_ACCESS_KEY: ${GARAGE_S3_ACCESS_KEY}
+      GARAGE_S3_SECRET_KEY: ${GARAGE_S3_SECRET_KEY}
+      GARAGE_BUCKET_NAME: ${GARAGE_BUCKET_NAME}
+    networks:
+      dt-backend-net:
+        ipv4_address: 172.32.0.30
+    healthcheck:
+      test: ["CMD", "/healthcheck", "http://localhost:3903/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    restart: always
+
 networks:
   dt-public-net:
     name: dt-public-prod
@@ -184,3 +218,5 @@ networks:
 volumes:
   postgres-data:
     name: dt-postgres-data-prod
+  garage-data:
+    name: dt-garage-data-prod
