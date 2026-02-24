@@ -37,6 +37,12 @@ if [ ! -f "$INIT_MARKER" ]; then
   garage key import --yes "${GARAGE_S3_ACCESS_KEY}" "${GARAGE_S3_SECRET_KEY}" 2>&1 || true
   garage bucket allow --read --write --owner "${GARAGE_BUCKET_NAME}" --key "${GARAGE_S3_ACCESS_KEY}" 2>&1 || true
 
+  if ! garage key info "${GARAGE_S3_ACCESS_KEY}" >/dev/null 2>&1; then
+    echo "ERROR: API key ${GARAGE_S3_ACCESS_KEY} was not created." >&2
+    echo "Access key must be GK + 24 hex chars, secret key must be 64 hex chars." >&2
+    exit 1
+  fi
+
   touch "$INIT_MARKER"
   echo "Garage initialization complete."
 fi
