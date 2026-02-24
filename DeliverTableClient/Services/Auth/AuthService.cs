@@ -6,22 +6,15 @@ using DeliverTableSharedLibrary.Dtos.Auth;
 
 namespace DeliverTableClient.Services.Auth;
 
-public class AuthService
+public class AuthService(HttpClient httpClient, AuthenticationStateProvider authStateProvider, IJSRuntime js)
 {
-    private readonly HttpClient _httpClient;
-    private readonly AuthenticationStateProvider _authStateProvider;
-    private readonly IJSRuntime _js;
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly AuthenticationStateProvider _authStateProvider = authStateProvider;
+    private readonly IJSRuntime _js = js;
     
-    private class ApiErrorResponse
+    private sealed class ApiErrorResponse
     {
         public string Error { get; set; } = "";
-    }
-
-    public AuthService(HttpClient httpClient, AuthenticationStateProvider authStateProvider, IJSRuntime js)
-    {
-        _httpClient = httpClient;
-        _authStateProvider = authStateProvider;
-        _js = js;
     }
 
     public async Task<AuthResponse> Login(LoginRequest loginRequest)

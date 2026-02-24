@@ -7,6 +7,7 @@ using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -17,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DeliverTableServer.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route(ApiRoutes.Authentication)]
 public class AuthController(
     DeliverTableContext context,
     ITokenService tokenService,

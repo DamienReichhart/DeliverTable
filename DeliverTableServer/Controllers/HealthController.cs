@@ -10,14 +10,9 @@ namespace DeliverTableServer.Controllers;
 /// </summary>
 [ApiController]
 [Route(ApiRoutes.Health)]
-public class HealthController : ControllerBase
+public class HealthController(IHealthService healthService) : ControllerBase
 {
-    private readonly IHealthService _healthService;
-
-    public HealthController(IHealthService healthService)
-    {
-        _healthService = healthService ?? throw new ArgumentNullException(nameof(healthService));
-    }
+    private readonly IHealthService _healthService = healthService ?? throw new ArgumentNullException(nameof(healthService));
 
     /// <summary>
     ///     Returns service health status for liveness/readiness probes and monitoring.
