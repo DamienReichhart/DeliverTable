@@ -72,15 +72,19 @@
         _isSubmitting = true;
         _errorMessage = null;
 
-        AuthResponse? response = await AuthService.Register(_registerModel);
+        try{
+            AuthResponse? response = await AuthService.Register(_registerModel);
 
-        if (response.Success)
-        {
-            Nav.NavigateTo(uri: "/"); 
-        }
-        else
-        {
-            _errorMessage = response.Error;
+            if (response?.Success == true)
+            {
+                Nav.NavigateTo(uri: "/"); 
+                return;
+            }
+            _errorMessage = response?.Error ?? "Une erreur est survenue";
+        
+        } catch (Exception exception) {
+            _errorMessage = exception.Message;
+        } finally {
             _isSubmitting = false;
         }
     }

@@ -10,7 +10,7 @@
             <h3 class="card-title text-center mb-2">Connexion</h3>
 
             <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin">
-
+                <DataAnnotationsValidator/>
                 <div class="mb-1 col">
                     <label class="form-label">Email</label>
                     @* On applique la classe .app-input de ton CSS *@
@@ -70,9 +70,9 @@
 
         try
         {
-            AuthResponse? success = await AuthService.Login(_loginModel);
+            AuthResponse? response = await AuthService.Login(_loginModel);
 
-            if (success.Success)
+            if (response?.Success ?? false)
             {
                 Nav.NavigateTo(uri: "/");
             }
