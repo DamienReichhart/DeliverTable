@@ -20,6 +20,8 @@ services:
     networks:
       dt-public-net:
         ipv4_address: 172.30.0.20
+    cap_drop:
+      - ALL
     logging: *default-logging
     restart: always
 
@@ -38,12 +40,21 @@ services:
         ipv4_address: 172.30.0.10
       dt-frontend-net:
         ipv4_address: 172.31.0.10
+    ports:
+      - "${PROXY_PORT}:80"
     healthcheck:
       test: ["CMD", "/healthcheck", "http://localhost/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETUID
+      - SETGID
+      - CHOWN
     logging: *default-logging
     restart: always
     read_only: true
@@ -66,6 +77,13 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETUID
+      - SETGID
+      - CHOWN
     logging: *default-logging
     restart: always
     read_only: true
@@ -97,6 +115,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    cap_drop:
+      - ALL
     logging: *default-logging
     restart: always
     read_only: true
@@ -123,6 +143,14 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
     logging: *default-logging
     restart: always
 
