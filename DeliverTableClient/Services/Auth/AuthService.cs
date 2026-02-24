@@ -62,7 +62,15 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
             }
         };
 
-        var result = await response.Content.ReadFromJsonAsync<ConnectionResponse>();
+        ConnectionResponse? result;
+        try
+        {
+            result = await response.Content.ReadFromJsonAsync<ConnectionResponse>();
+        }
+        catch
+        {
+            return new AuthResponse { Success = false, Error = "Une erreur est survenue." };
+        }
 
         if (result?.User != null && !string.IsNullOrEmpty(result.Token))
         {

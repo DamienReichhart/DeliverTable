@@ -50,14 +50,7 @@ public class AuthController(
         return Ok(new ConnectionResponse
         {
             Token = token,
-            User = new UserResponse
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email ?? "",
-                Role = role
-            }
+            User = user.ToDto(role)
         });
     }
 
@@ -94,14 +87,7 @@ public class AuthController(
         return Ok(new ConnectionResponse
         {
             Token = token,
-            User = new UserResponse
-            {
-                Id = user.Id,
-                Email = user.Email ?? "",
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Role = role
-            }
+            User = user.ToDto(role)
         });
     }
 
@@ -144,14 +130,7 @@ public class AuthController(
         return Ok(new ConnectionResponse
         {
             Token = token,
-            User = new UserResponse
-            {
-                Id = user.Id,
-                Email = user.Email ?? "",
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Role = role
-            }
+            User = user.ToDto(role)
         });
     }
 
