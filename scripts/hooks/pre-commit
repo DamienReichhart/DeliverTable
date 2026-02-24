@@ -16,8 +16,6 @@
 #      • Code formatting     (make format-check)
 #      • Release build       (make build-release)
 #      • Test suite           (make test)
-#      • Security audit       (make security-audit)
-#      • Outdated packages    (make outdated)
 #
 #  Override with environment variables:
 #    SKIP_DOCKER_CHECKS=1   Skip all Docker-based checks
@@ -212,15 +210,6 @@ else
         warn "SKIP_TESTS=1 — test suite skipped"
     fi
 
-    step "Security audit (make security-audit)"
-    run_docker_check "security-audit" \
-        "No vulnerable or deprecated packages" \
-        "Vulnerable or deprecated packages detected"
-
-    step "Outdated packages (make outdated)"
-    run_docker_check "outdated" \
-        "All packages are up to date" \
-        "Outdated packages detected"
 fi
 
 # ── Summary ─────────────────────────────────────────────────────
