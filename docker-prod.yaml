@@ -106,10 +106,13 @@ services:
       ObjectStorage__SecretKey: ${GARAGE_S3_SECRET_KEY}
       ObjectStorage__BucketName: ${GARAGE_BUCKET_NAME}
       ObjectStorage__ForcePathStyle: "true"
+      ConnectionStrings__Redis: 172.32.0.40:6379,password=${REDIS_PASSWORD}
     depends_on:
       database:
         condition: service_healthy
       garage:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       dt-frontend-net:
@@ -160,6 +163,30 @@ services:
       - SETGID
     logging: *default-logging
     restart: always
+
+  redis:
+    container_name: dt-redis-prod
+    build:
+      context: .
+      dockerfile: docker/images/redis.prod.dockerfile
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks:
+      dt-backend-net:
+        ipv4_address: 172.32.0.40
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep -q PONG"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    restart: always
+    read_only: true
+    tmpfs:
+      - /tmp:size=1m
 
   garage:
     container_name: dt-garage-prod

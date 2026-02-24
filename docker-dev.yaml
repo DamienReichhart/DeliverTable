@@ -74,10 +74,13 @@ services:
       ObjectStorage__SecretKey: ${GARAGE_S3_SECRET_KEY}
       ObjectStorage__BucketName: ${GARAGE_BUCKET_NAME}
       ObjectStorage__ForcePathStyle: "true"
+      ConnectionStrings__Redis: ${ConnectionStrings__Redis}
     depends_on:
       database:
         condition: service_healthy
       garage:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       dt-frontend-net:
@@ -115,6 +118,25 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+    restart: unless-stopped
+
+  # ── Redis (in-memory cache) ─────────────────────────────────
+  redis:
+    container_name: dt-redis-dev
+    build:
+      context: .
+      dockerfile: docker/images/redis.dev.dockerfile
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      dt-backend-net:
+        ipv4_address: 192.168.60.50
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     restart: unless-stopped
 
   # ── Object Storage (Garage S3) ────────────────────────────────
