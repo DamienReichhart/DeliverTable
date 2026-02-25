@@ -42,6 +42,10 @@ dev-restart: ## Restart all development services
 dev-rebuild: ## Rebuild images and restart the development stack
 	$(COMPOSE_DEV) up --build --force-recreate
 
+.PHONY: dev-migrate
+dev-migrate: ## Apply EF Core migrations to the development database
+	$(COMPOSE_DEV) exec backend dotnet ef database update --project DeliverTableServer
+
 # ── Production Environment ───────────────────────────────────────
 
 .PHONY: prod
