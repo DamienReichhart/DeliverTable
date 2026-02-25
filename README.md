@@ -2,12 +2,12 @@
 
 ## Configuration
 
-### Server (DeliverTableServer)
+### Environment Variables
 
-The server uses a `.env` file for local and environment-specific settings. Environment variables override `appsettings.json`.
+All environment variables live in a single `.env` file at the repository root (infrastructure, server, and tooling).
 
-- **Setup:** Copy `DeliverTableServer/.env.example` to `DeliverTableServer/.env` and set values. Do not commit `.env`.
-- **Variables:** See `.env.example` for all supported keys.
+- **Setup:** Copy `.env.example` to `.env` and adjust values. Do not commit `.env`.
+- **Variables:** See `.env.example` for all supported keys and documentation.
 
 ### Client (DeliverTableClient)
 
