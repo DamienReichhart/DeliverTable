@@ -1,19 +1,20 @@
 using System.Text;
 using DeliverTableServer.Configuration;
-using DeliverTableServer.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DeliverTableServer.Extensions;
 
 public static class JwtExtensions
 {
-    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services)
+    /// <param name="services">The service collection.</param>
+    /// <param name="jwtConfig">
+    ///     Pre-validated JWT configuration provided by <see cref="AppEnvironment" />.
+    /// </param>
+    public static IServiceCollection AddJwtAuthentication(
+        this IServiceCollection services,
+        JwtConfig jwtConfig)
     {
-        // JWT
-        var jwtConfig = JwtConfig.LoadFromEnv();
-        services.AddSingleton(jwtConfig);
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -21,7 +22,7 @@ public static class JwtExtensions
             })
             .AddJwtBearer(options =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters()
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,

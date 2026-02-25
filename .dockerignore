@@ -11,3 +11,6 @@
 **/.DS_Store
 **/TestResults/
 **/*.log
+.env
+.env.local
+.env.docker.dev

@@ -51,12 +51,12 @@ public static class ServerEntityFactory
         return user;
     }
 
-    /// <summary>Creates a <see cref="JwtConfig"/> suitable for test token generation.</summary>
+    /// <summary>Creates a <see cref="JwtConfig" /> suitable for test token generation.</summary>
     public static JwtConfig CreateTestJwtConfig() => new()
     {
         Key = "ThisIsATestSecretKeyThatIsLongEnoughForHmacSha256Signing!",
         Issuer = "TestIssuer",
         Audience = "TestAudience",
-        ExpireMinutes = 30
+        ExpireMinutes = 30,
     };
 }

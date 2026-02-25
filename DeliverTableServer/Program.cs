@@ -1,20 +1,19 @@
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Extensions;
-using DotNetEnv;
-using Microsoft.Extensions.Options;
 
 EnvLoader.Load();
+var env = AppEnvironment.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Identity
-builder.Services.AddIdentityParams();
+builder.Services.AddSingleton(env);
+builder.Services.AddSingleton(env.Jwt);
+builder.Services.AddSingleton(env.ObjectStorage);
 
-// JWT
-builder.Services.AddJwtAuthentication();
+builder.Services.AddIdentityParams();
+builder.Services.AddJwtAuthentication(env.Jwt);
 builder.Services.AddAuthorization();
 
-// Retirer les objets avec tous les détails des réponses si hors développement
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
     if (!builder.Environment.IsDevelopment())
@@ -26,8 +25,7 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 
 builder.Services.AddDeliverTableServices();
 builder.Services.AddDeliverTableOpenApi();
-builder.Services.AddDeliverTableDatabase();
-builder.Services.Configure<OpenApiOptions>(builder.Configuration.GetSection(OpenApiOptions.SectionName));
+builder.Services.AddDeliverTableDatabase(env.DatabaseConnectionString);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -40,8 +38,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-var openApiOptions = app.Services.GetRequiredService<IOptions<OpenApiOptions>>().Value;
-var enableOpenApi = app.Environment.IsDevelopment() || openApiOptions.EnableDocumentation;
+var enableOpenApi = app.Environment.IsDevelopment() || env.OpenApiEnableDocumentation;
 
 if (enableOpenApi)
 {
