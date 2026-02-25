@@ -18,6 +18,10 @@ jobs:
 
   sast:
     name: SAST
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     uses: ./.github/workflows/_sast.yml
     secrets: inherit
 
