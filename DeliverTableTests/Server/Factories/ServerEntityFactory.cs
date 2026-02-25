@@ -1,0 +1,62 @@
+using DeliverTableServer.Configuration;
+using DeliverTableServer.Models;
+
+namespace DeliverTableTests.Server.Factories;
+
+/// <summary>
+///     Factory methods that produce valid server-side entities.
+///     Tests start from a known-good state and mutate only the field under test.
+/// </summary>
+public static class ServerEntityFactory
+{
+    private static int _emailCounter;
+
+    /// <summary>Creates a valid <see cref="User"/> with unique email to avoid DB constraint conflicts.</summary>
+    public static User CreateValidUser(string? email = null)
+    {
+        var resolvedEmail = email ?? $"user{Interlocked.Increment(ref _emailCounter)}@example.com";
+
+        return new User
+        {
+            UserName = resolvedEmail,
+            Email = resolvedEmail,
+            NormalizedEmail = resolvedEmail.ToUpperInvariant(),
+            NormalizedUserName = resolvedEmail.ToUpperInvariant(),
+            FirstName = "Test",
+            LastName = "User",
+            Status = UserStatus.Active,
+            SecurityStamp = Guid.NewGuid().ToString()
+        };
+    }
+
+    /// <summary>Creates a valid <see cref="User"/> with an attached <see cref="CustomerProfile"/>.</summary>
+    public static User CreateValidCustomer(string? email = null)
+    {
+        var user = CreateValidUser(email);
+        user.CustomerProfile = new CustomerProfile();
+        return user;
+    }
+
+    /// <summary>Creates a valid <see cref="User"/> with an attached <see cref="RestaurantOwner"/> profile.</summary>
+    public static User CreateValidRestaurantOwner(string? email = null)
+    {
+        var user = CreateValidUser(email);
+        user.RestaurantOwner = new RestaurantOwner
+        {
+            CompanyName = "Le Bon Restaurant",
+            VatNumber = "BE0123456789",
+            ContactPhoneNumber = "+32470123456"
+        };
+        user.CustomerProfile = new CustomerProfile();
+        return user;
+    }
+
+    /// <summary>Creates a <see cref="JwtConfig"/> suitable for test token generation.</summary>
+    public static JwtConfig CreateTestJwtConfig() => new()
+    {
+        Key = "ThisIsATestSecretKeyThatIsLongEnoughForHmacSha256Signing!",
+        Issuer = "TestIssuer",
+        Audience = "TestAudience",
+        ExpireMinutes = 30
+    };
+}
