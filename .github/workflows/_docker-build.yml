@@ -3,6 +3,11 @@ name: Docker Build
 on:
   workflow_call:
 
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
 jobs:
   docker-prod-build:
     name: Production Images
@@ -21,3 +26,97 @@ jobs:
 
       - name: Build all production images
         run: docker compose -f docker-prod.yaml build
+
+      # ── Trivy: scan application images ──────────────────────────
+      - name: Trivy scan – backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: delivertable-prod-backend
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: sarif
+          output: trivy-backend.sarif
+
+      - name: Trivy scan – frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: delivertable-prod-frontend
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: sarif
+          output: trivy-frontend.sarif
+
+      - name: Trivy scan – proxy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: delivertable-prod-proxy
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: sarif
+          output: trivy-proxy.sarif
+
+      - name: Trivy scan – tunnel (warn only)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: delivertable-prod-tunnel
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          format: sarif
+          output: trivy-tunnel.sarif
+
+      - name: Upload SARIF – backend
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend
+
+      - name: Upload SARIF – frontend
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-frontend
+
+      - name: Upload SARIF – proxy
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-proxy.sarif
+          category: trivy-proxy
+
+      - name: Upload SARIF – tunnel
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-tunnel.sarif
+          category: trivy-tunnel
+
+      # ── SBOM: application images ────────────────────────────────
+      - name: Generate SBOM – backend
+        if: always()
+        uses: anchore/sbom-action@v0
+        with:
+          image: delivertable-prod-backend
+          artifact-name: sbom-backend.spdx.json
+          output-file: sbom-backend.spdx.json
+
+      - name: Generate SBOM – frontend
+        if: always()
+        uses: anchore/sbom-action@v0
+        with:
+          image: delivertable-prod-frontend
+          artifact-name: sbom-frontend.spdx.json
+          output-file: sbom-frontend.spdx.json
+
+      - name: Upload SBOM artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: sbom-*.spdx.json
+          retention-days: 14
