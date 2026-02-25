@@ -1,0 +1,35 @@
+name: Security Scan
+
+on:
+  workflow_call:
+
+jobs:
+  nuget-audit:
+    name: NuGet Vulnerability Audit
+    runs-on: ubuntu-latest
+    environment: CI
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Scan for vulnerable packages
+        run: |
+          output=$(dotnet list DeliverTable.sln package --vulnerable --include-transitive 2>&1)
+          echo "$output"
+
+          if echo "$output" | grep -q "has the following vulnerable packages"; then
+            echo "::error::Vulnerable NuGet packages detected"
+            exit 1
+          fi
+
+      - name: Scan for deprecated packages
+        run: |
+          output=$(dotnet list DeliverTable.sln package --deprecated 2>&1)
+          echo "$output"
+
+          if echo "$output" | grep -q "has the following deprecated packages"; then
+            echo "::warning::Deprecated NuGet packages detected"
+          fi
