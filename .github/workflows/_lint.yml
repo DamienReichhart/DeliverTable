@@ -1,0 +1,19 @@
+name: Lint
+
+on:
+  workflow_call:
+
+jobs:
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    environment: CI
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Check formatting
+        run: dotnet format DeliverTable.sln --verify-no-changes --verbosity diagnostic

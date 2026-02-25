@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Tier 1: Fast parallel gates (no build required) ─────────
+  lint:
+    name: Lint
+    uses: ./.github/workflows/_lint.yml
+    secrets: inherit
+
+  sast:
+    name: SAST
+    uses: ./.github/workflows/_sast.yml
+    secrets: inherit
+
+  security-scan:
+    name: Security Scan
+    uses: ./.github/workflows/_security-scan.yml
+    secrets: inherit
+
+  # ── Tier 2: Compilation gate ────────────────────────────────
+  build:
+    name: Build
+    needs: [lint, sast, security-scan]
+    uses: ./.github/workflows/_build.yml
+    secrets: inherit
+
+  # ── Tier 3: Expensive verification (parallel) ──────────────
+  test:
+    name: Test
+    needs: [build]
+    uses: ./.github/workflows/_test.yml
+    secrets: inherit
+
+  docker-build:
+    name: Docker Build
+    needs: [build]
+    uses: ./.github/workflows/_docker-build.yml
+    secrets: inherit
