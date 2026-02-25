@@ -1,0 +1,33 @@
+name: Docker Build
+
+on:
+  workflow_call:
+
+jobs:
+  docker-prod-build:
+    name: Production Images
+    runs-on: ubuntu-latest
+    environment: CI
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: backend
+            dockerfile: docker/images/backend.prod.dockerfile
+          - image: frontend
+            dockerfile: docker/images/frontend.prod.dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.image }} production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.image }}-prod
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-prod

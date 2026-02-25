@@ -1,0 +1,24 @@
+name: Build
+
+on:
+  workflow_call:
+
+jobs:
+  build-release:
+    name: Release Build
+    runs-on: ubuntu-latest
+    environment: CI
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Build Release (warnings as errors)
+        run: >-
+          dotnet build DeliverTable.sln
+          --configuration Release
+          --no-incremental
+          --no-restore
+          -p:TreatWarningsAsErrors=true
