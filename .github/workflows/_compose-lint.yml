@@ -1,0 +1,21 @@
+name: Compose Lint
+
+on:
+  workflow_call:
+
+jobs:
+  validate-compose:
+    name: Validate Compose Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create build environment
+        run: cp .env.example .env
+
+      - name: Validate production compose
+        run: docker compose -f docker-prod.yaml config --quiet
+
+      - name: Validate development compose
+        run: docker compose -f docker-dev.yaml config --quiet
