@@ -30,10 +30,25 @@ jobs:
     uses: ./.github/workflows/_security-scan.yml
     secrets: inherit
 
+  secret-scan:
+    name: Secret Scan
+    uses: ./.github/workflows/_secret-scan.yml
+    secrets: inherit
+
+  compose-lint:
+    name: Compose Lint
+    uses: ./.github/workflows/_compose-lint.yml
+    secrets: inherit
+
+  license-check:
+    name: License Check
+    uses: ./.github/workflows/_license-check.yml
+    secrets: inherit
+
   # ── Tier 2: Compilation gate ────────────────────────────────
   build:
     name: Build
-    needs: [lint, sast, security-scan]
+    needs: [lint, sast, security-scan, secret-scan, compose-lint, license-check]
     uses: ./.github/workflows/_build.yml
     secrets: inherit
 
@@ -47,5 +62,9 @@ jobs:
   docker-build:
     name: Docker Build
     needs: [build]
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     uses: ./.github/workflows/_docker-build.yml
     secrets: inherit

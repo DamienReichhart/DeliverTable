@@ -1,0 +1,51 @@
+name: License Check
+
+on:
+  workflow_call:
+
+jobs:
+  nuget-licenses:
+    name: NuGet License Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Install license tool
+        run: dotnet tool install --global nuget-license
+
+      - name: Check server licenses
+        run: >-
+          nuget-license
+          -i DeliverTableServer/DeliverTableServer.csproj
+          -t
+          -a allowed-licenses.json
+          -mapping license-url-mappings.json
+          -o Markdown
+          -fo license-report-server.md
+
+      - name: Check client licenses
+        run: >-
+          nuget-license
+          -i DeliverTableClient/DeliverTableClient.csproj
+          -t
+          -a allowed-licenses.json
+          -mapping license-url-mappings.json
+          -o Markdown
+          -fo license-report-client.md
+
+      - name: Post license summary
+        if: always()
+        run: |
+          echo "## License Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Server" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f license-report-server.md ]; then
+            cat license-report-server.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "### Client" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f license-report-client.md ]; then
+            cat license-report-client.md >> "$GITHUB_STEP_SUMMARY"
+          fi
