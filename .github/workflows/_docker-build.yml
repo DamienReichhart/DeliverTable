@@ -7,7 +7,6 @@ jobs:
   docker-prod-build:
     name: Production Images
     runs-on: ubuntu-latest
-    environment: CI
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

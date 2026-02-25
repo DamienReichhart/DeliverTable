@@ -7,7 +7,6 @@ jobs:
   nuget-audit:
     name: NuGet Vulnerability Audit
     runs-on: ubuntu-latest
-    environment: CI
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

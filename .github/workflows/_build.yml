@@ -7,7 +7,6 @@ jobs:
   build-release:
     name: Release Build
     runs-on: ubuntu-latest
-    environment: CI
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
