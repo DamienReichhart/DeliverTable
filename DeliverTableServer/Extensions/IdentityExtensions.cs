@@ -17,7 +17,7 @@ namespace DeliverTableServer.Extensions
                     options.Password.RequiredLength = 12;
                 }).AddEntityFrameworkStores<DeliverTableContext>()
                 .AddDefaultTokenProviders();
-                
+
             return services;
         }
     }

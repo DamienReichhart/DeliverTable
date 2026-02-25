@@ -12,7 +12,7 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped<ApiAuthStateProvider>();
-builder.Services.AddScoped<AuthenticationStateProvider>(sp => 
+builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<ApiAuthStateProvider>());
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddAuthorizationCore();

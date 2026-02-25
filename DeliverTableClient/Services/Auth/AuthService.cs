@@ -11,7 +11,7 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
     private readonly HttpClient _httpClient = httpClient;
     private readonly ApiAuthStateProvider _authStateProvider = authStateProvider;
     private readonly IJSRuntime _js = js;
-    
+
     private sealed class ApiErrorResponse
     {
         public string Error { get; set; } = "";
@@ -19,7 +19,7 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
 
     public async Task<AuthResponse> Login(LoginRequest loginRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync( ApiRoutes.Auth["Login"], loginRequest);
+        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth["Login"], loginRequest);
         return await HandleResponse(response);
     }
 
@@ -60,7 +60,8 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
                     Error = "Une erreur est survenue"
                 };
             }
-        };
+        }
+        ;
 
         ConnectionResponse? result;
         try
@@ -83,14 +84,14 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
             // Notification du Provider
             _authStateProvider.NotifyUserAuthentication(
                 result.Token,
-                result.User.Role, 
-                result.User.Id.ToString(), 
+                result.User.Role,
+                result.User.Id.ToString(),
                 result.User.FirstName);
 
-            return new AuthResponse {Success = true};
+            return new AuthResponse { Success = true };
         }
 
-        return new AuthResponse {Success = false, Error = "Une erreur est survenue."};
+        return new AuthResponse { Success = false, Error = "Une erreur est survenue." };
     }
 
     public async Task Logout()

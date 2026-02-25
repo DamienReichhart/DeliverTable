@@ -74,8 +74,8 @@ public class AuthController(
 
         var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Customer");
         if (createdUser == null) return BadRequest(
-            _env.IsDevelopment() ? 
-            new {Errors = errors} 
+            _env.IsDevelopment() ?
+            new { Errors = errors }
             :
             new { Errors = new[] { "Une erreur est survenue" } }
             );
@@ -117,8 +117,8 @@ public class AuthController(
 
         var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Restaurant_Owner");
         if (createdUser == null) return BadRequest(
-            _env.IsDevelopment() ? 
-            new {Errors = errors} 
+            _env.IsDevelopment() ?
+            new { Errors = errors }
             :
             new { Errors = new[] { "Une erreur est survenue" } }
             );
@@ -148,8 +148,8 @@ public class AuthController(
         var user = await _context.Users.FindAsync(userId);
         if (user == null)
             return NotFound(new { Error = "Utilisateur introuvable" });
-        
-        var userRoles = await _userManager.GetRolesAsync(user); 
+
+        var userRoles = await _userManager.GetRolesAsync(user);
         var role = userRoles.FirstOrDefault(_defaultRoleValue);
 
         return Ok(user.ToDto(role));

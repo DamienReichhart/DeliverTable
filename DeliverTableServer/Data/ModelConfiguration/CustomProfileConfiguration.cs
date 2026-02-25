@@ -15,7 +15,7 @@ public class CustomProfileConfiguration : IEntityTypeConfiguration<CustomerProfi
 
         builder.Property(cp => cp.AllergyNotes).HasMaxLength(255);
         builder.Property(cp => cp.DietaryPreferences).HasMaxLength(255);
-        
+
         builder.Property(cp => cp.CreatedAt).IsRequired().HasDefaultValueSql("NOW()").ValueGeneratedOnAdd();
         builder.Property(cp => cp.UpdatedAt).IsRequired().HasDefaultValueSql("NOW()").ValueGeneratedOnAddOrUpdate();
     }
