@@ -7,7 +7,6 @@ jobs:
   semgrep:
     name: Semgrep Analysis
     runs-on: ubuntu-latest
-    environment: CI
     container:
       image: semgrep/semgrep
     steps:
