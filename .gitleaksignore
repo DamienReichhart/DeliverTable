@@ -1,3 +1,0 @@
-# Gitleaks false-positive allowlist
-# Add commit hashes or fingerprints of known safe findings, one per line.
-# See https://github.com/gitleaks/gitleaks#gitleaksignore

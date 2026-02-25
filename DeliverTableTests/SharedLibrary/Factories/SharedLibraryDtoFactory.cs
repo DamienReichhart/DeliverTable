@@ -40,8 +40,8 @@ public static class SharedLibraryDtoFactory
     public static HealthResponse CreateHealthResponse(
         string status = "Healthy",
         DateTime? timestampUtc = null) => new()
-    {
-        Status = status,
-        TimestampUtc = timestampUtc ?? DateTime.UtcNow
-    };
+        {
+            Status = status,
+            TimestampUtc = timestampUtc ?? DateTime.UtcNow
+        };
 }
