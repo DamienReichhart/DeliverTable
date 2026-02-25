@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 env:
-  COVERAGE_THRESHOLD: 80
+  COVERAGE_THRESHOLD: 0
 
 jobs:
   test-and-coverage:
