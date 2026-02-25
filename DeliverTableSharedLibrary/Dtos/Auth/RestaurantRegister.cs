@@ -4,19 +4,19 @@ namespace DeliverTableSharedLibrary.Dtos.Auth;
 
 public class RestaurantRegister
 {
-    [Required] [MaxLength(50)] public string FirstName { get; set; } = "";
+    [Required][MaxLength(50)] public string FirstName { get; set; } = "";
 
-    [Required] [MaxLength(100)]public string LastName { get; set; } = "";
-    
+    [Required][MaxLength(100)] public string LastName { get; set; } = "";
+
     [Required]
     [MaxLength(255)]
-    public string  CompanyName { get; set; } = "";
-    
+    public string CompanyName { get; set; } = "";
+
     [Required]
     [MinLength(10)]
     [MaxLength(20)]
     public string VatNumber { get; set; } = "";
-    
+
     [Required]
     [MinLength(10, ErrorMessage = "Ce numéro de téléphone n'est pas valide")]
     [MaxLength(20)]

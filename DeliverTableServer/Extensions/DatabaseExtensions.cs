@@ -10,8 +10,8 @@ public static class DatabaseExtensions
     {
         var connectionString = DBConfiguration.BuildConnectionString();
         if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                throw new InvalidOperationException("CONNECTION_STRING environment variable is not set.");
+        {
+            throw new InvalidOperationException("CONNECTION_STRING environment variable is not set.");
         }
 
         services.AddDbContext<DeliverTableContext>(options =>

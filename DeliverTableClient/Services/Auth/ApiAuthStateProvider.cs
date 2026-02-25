@@ -29,30 +29,30 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
 
         // On construit l'identité avec tous les claims nécessaires
-        var claims = new List<Claim> 
-        { 
+        var claims = new List<Claim>
+        {
             new (ClaimTypes.Role, role ?? "Customer"),
             new (ClaimTypes.NameIdentifier, userId ?? ""),
             new (ClaimTypes.Name, userName ?? "")
         };
-        
+
         var identity = new ClaimsIdentity(claims, "jwt");
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
     public void NotifyUserAuthentication(string token, string role, string userId, string userName)
     {
-        
+
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        var claims = new List<Claim> 
-        { 
+        var claims = new List<Claim>
+        {
             new (ClaimTypes.Role, role),
             new (ClaimTypes.NameIdentifier, userId),
             new (ClaimTypes.Name, userName)
         };
-        
+
         var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));
         var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
         NotifyAuthenticationStateChanged(authState);

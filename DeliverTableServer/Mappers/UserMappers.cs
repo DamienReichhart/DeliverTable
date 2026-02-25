@@ -17,7 +17,7 @@ namespace DeliverTableServer.Mappers
                 Id = userModel.Id,
                 FirstName = userModel.FirstName,
                 LastName = userModel.LastName,
-                Email = userModel.Email,
+                Email = userModel.Email ?? string.Empty,
                 Role = role
             };
         }
