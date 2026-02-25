@@ -53,7 +53,7 @@ services:
       - nuget-cache:/root/.nuget/packages
       - ./reports/test-results:/results
     environment:
-      ConnectionStrings__DefaultConnection: "Host=database;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      CONNECTION_STRING_DATABASE: "Host=database;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
     command: >-
       dotnet test DeliverTable.sln
       --configuration Release

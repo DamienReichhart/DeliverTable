@@ -83,11 +83,10 @@ reports/
 # **/secrets.json
 # **/*.Development.json
 
-# Server .env (secrets and local overrides; use .env.example as template)
+# Environment files (secrets and local overrides; use .env.example as template)
+# Only .env.example is tracked; .env and variants are never committed.
 .env
 .env.local
-
-# Docker environment (local overrides; use .env.example as template)
 .env.docker.dev
 
 # OS

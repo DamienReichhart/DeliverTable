@@ -1,20 +1,12 @@
-﻿namespace DeliverTableServer.Configuration;
+namespace DeliverTableServer.Configuration;
 
-public class JwtConfig
+/// <summary>
+///     JWT signing and validation parameters. Populated by <see cref="AppEnvironment" />.
+/// </summary>
+public sealed class JwtConfig
 {
-    public string Key { get; set; } = "";
-    public string Issuer { get; set; } = "";
-    public string Audience { get; set; } = "";
-    public int ExpireMinutes { get; set; } = 60;
-
-    public static JwtConfig LoadFromEnv()
-    {
-        return new JwtConfig
-        {
-            Key = Environment.GetEnvironmentVariable("JWT_KEY") ?? "",
-            Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "",
-            Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "",
-            ExpireMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRE_MINUTES") ?? "60")
-        };
-    }
+    public required string Key { get; init; }
+    public required string Issuer { get; init; }
+    public required string Audience { get; init; }
+    public int ExpireMinutes { get; init; } = 60;
 }
