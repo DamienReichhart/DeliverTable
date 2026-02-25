@@ -4,11 +4,11 @@ namespace DeliverTableSharedLibrary.Dtos.Auth;
 
 public class RegisterRequest
 {
-    [Required(ErrorMessage = "Votre prénom est nécessaire")] 
+    [Required(ErrorMessage = "Votre prénom est nécessaire")]
     [MaxLength(50, ErrorMessage = "Le prénom ne peut pas dépasser 50 caractères")]
     public string FirstName { get; set; } = "";
 
-    [Required(ErrorMessage = "Votre nom de famille est nécessaire")] 
+    [Required(ErrorMessage = "Votre nom de famille est nécessaire")]
     [MaxLength(100, ErrorMessage = "Le nom de famille ne peut pas dépasser 100 caractères")]
     public string LastName { get; set; } = "";
 

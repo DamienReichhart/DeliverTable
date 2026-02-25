@@ -9,7 +9,7 @@ public static class ApiRoutes
     public const string Health = "api/v1/health";
 
     public const string Authentication = "api/v1/auth";
-    
+
     // Auth
     public static readonly Dictionary<string, string> Auth = new()
     {

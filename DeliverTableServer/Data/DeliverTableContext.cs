@@ -1,4 +1,4 @@
-﻿using DeliverTableServer.Models;
+using DeliverTableServer.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +7,6 @@ namespace DeliverTableServer.Data;
 
 public class DeliverTableContext(DbContextOptions<DeliverTableContext> options) : IdentityDbContext<User, IdentityRole<int>, int>(options)
 {
-    public DbSet<User> Users { get; set; }
     public DbSet<RestaurantOwner> RestaurantOwners { get; set; }
     public DbSet<CustomerProfile> CustomerProfiles { get; set; }
 
