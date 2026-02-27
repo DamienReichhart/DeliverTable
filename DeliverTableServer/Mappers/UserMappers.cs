@@ -10,15 +10,15 @@ namespace DeliverTableServer.Mappers
 {
     public static class UserMappers
     {
-        public static UserResponse ToDto(this User userModel, string role)
+        public static UserResponse ToDto(this User userModel, string? role = null)
         {
             return new UserResponse
             {
                 Id = userModel.Id,
                 FirstName = userModel.FirstName,
                 LastName = userModel.LastName,
-                Email = userModel.Email ?? string.Empty,
-                Role = role
+                Email = userModel.Email ?? "Non fournie",
+                Role = role ?? "Non défini"
             };
         }
     }

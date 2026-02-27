@@ -9,6 +9,7 @@ public class DeliverTableContext(DbContextOptions<DeliverTableContext> options) 
 {
     public DbSet<RestaurantOwner> RestaurantOwners { get; set; }
     public DbSet<CustomerProfile> CustomerProfiles { get; set; }
+    public DbSet<Restaurant> Restaurants { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

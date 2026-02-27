@@ -23,8 +23,9 @@ Backend API. Hosts controllers, configuration, and application services.
 |--------|---------|
 | `Configuration/` | OpenAPI/Swagger setup, constants, and service registration extensions. |
 | `Controllers/` | API controllers (e.g. `HealthController`). |
+| `Data/` | Database connection and entities column rules (unique, size, ...) |
 | `Infrastructure/` | Data access, external integrations, infrastructure concerns. |
-| `Mappings/` | Object-to-object mapping (e.g. AutoMapper profiles). |
+| `Mappers/` | Object-to-object mapping (e.g. AutoMapper profiles). |
 | `Middleware/` | Custom HTTP middleware. |
 | `Models/` | Request/response and API-specific models. |
 | `Repositories/` | Data access abstractions and implementations. |
