@@ -22,11 +22,11 @@ public class RestaurantOwnerConfiguration : IEntityTypeConfiguration<RestaurantO
         builder.Property(u => u.ContactPhoneNumber).HasMaxLength(20);
 
         builder.Property(u => u.CreatedAt)
-            .HasDefaultValueSql("NOW()")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAdd();
 
         builder.Property(u => u.UpdatedAt)
-            .HasDefaultValueSql("NOW()")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAddOrUpdate();
     }
 }

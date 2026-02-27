@@ -27,11 +27,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasConversion<string>();
 
         builder.Property(u => u.CreatedAt)
-            .HasDefaultValueSql("NOW()")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAdd();
 
         builder.Property(u => u.UpdatedAt)
-            .HasDefaultValueSql("NOW()")
+            .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAddOrUpdate();
     }
 }
