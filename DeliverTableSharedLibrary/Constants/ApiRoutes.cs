@@ -10,6 +10,8 @@ public static class ApiRoutes
 
     public const string Authentication = "api/v1/auth";
 
+    public const string Restaurant = "api/v1/restaurant";
+    
     // Auth
     public static readonly Dictionary<string, string> Auth = new()
     {
