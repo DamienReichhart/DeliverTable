@@ -13,7 +13,7 @@ namespace DeliverTableServer.Repositories.Interfaces
         Task<Restaurant> CreateRestaurant(
             CreateRestaurantDto creationDto,
             int ownerId,
-            double lon, 
+            double lon,
             double lat
         );
 
@@ -27,7 +27,7 @@ namespace DeliverTableServer.Repositories.Interfaces
             int id,
             UpdateRestaurantDto restaurantDto,
             double lon,
-            double lat 
+            double lat
         );
 
         Task<List<Restaurant>> GetRestaurantByOwner(int id, RestaurantQuery query);

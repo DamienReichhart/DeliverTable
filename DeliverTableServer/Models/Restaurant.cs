@@ -13,7 +13,7 @@ namespace DeliverTableServer.Models
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
-        public RestaurantType Type {get; set;} = RestaurantType.Autre;
+        public RestaurantType Type { get; set; } = RestaurantType.Autre;
 
         [MaxLength(500)]
         public string Description { get; set; } = string.Empty;
@@ -33,7 +33,7 @@ namespace DeliverTableServer.Models
         [Required]
         public string Country { get; set; } = string.Empty;
 
-        public double Latitude { get; set; } 
+        public double Latitude { get; set; }
 
         public double Longitude { get; set; }
 
