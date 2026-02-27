@@ -77,7 +77,7 @@ namespace DeliverTableClient.Services
         public async Task<(DetailedRestaurantDto? dto, ErrorResponse? error)> UpdateRestaurant(UpdateRestaurantDto updateDto, int id, CancellationToken cancellationToken = default)
         {
             var response = await _httpClient.PutAsJsonAsync(ApiRoutes.RestaurantEndpoints["Update"] + id, updateDto, cancellationToken);
-            if(!response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
                 return (null, error);

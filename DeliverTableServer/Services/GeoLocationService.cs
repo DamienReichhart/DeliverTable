@@ -8,7 +8,7 @@ using DeliverTableSharedLibrary.Dtos.Gouv;
 
 namespace DeliverTableServer.Services
 {
-    public sealed class GeoLocationService:IGeoLocationService
+    public sealed class GeoLocationService : IGeoLocationService
     {
         private readonly HttpClient _httpClient;
 
@@ -28,11 +28,11 @@ namespace DeliverTableServer.Services
 
             var bestResult = response?.Features.FirstOrDefault();
 
-            if(
-                bestResult != null 
+            if (
+                bestResult != null
                 && bestResult.Properties.Score > 0.5
                 && (
-                    bestResult.Properties.Postcode == zipcode 
+                    bestResult.Properties.Postcode == zipcode
                     || bestResult.Properties.Citycode == zipcode
                     )
                 )
