@@ -1,4 +1,4 @@
-﻿namespace DeliverTableServer.Models;
+namespace DeliverTableSharedLibrary.Constants.Enums;
 
 public enum UserStatus
 {
