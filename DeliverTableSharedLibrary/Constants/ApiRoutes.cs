@@ -21,7 +21,7 @@ public static class ApiRoutes
         { "Delete", "api/v1/restaurant/" },
         { "Me", "api/v1/restaurant/user/me" },
     };
-    
+
     // Auth
     public static readonly Dictionary<string, string> Auth = new()
     {

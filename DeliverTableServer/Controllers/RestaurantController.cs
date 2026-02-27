@@ -12,7 +12,6 @@ using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -110,7 +109,7 @@ namespace DeliverTableServer.Controllers
 
                 Restaurant? restaurant = await _restaurantRepository.GetRestaurantById(id);
 
-                return restaurant != null ? Ok(restaurant.ToDetailedDto()) : BadRequest(new {Error = "Une erreur est survenue"});
+                return restaurant != null ? Ok(restaurant.ToDetailedDto()) : BadRequest(new { Error = "Une erreur est survenue" });
             }
             catch (Exception exception)
             {
@@ -120,6 +119,7 @@ namespace DeliverTableServer.Controllers
 
         // delete
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "RestaurantOwner")]
         [EnsureOwner]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
