@@ -22,7 +22,6 @@ namespace DeliverTableServer.Mappers
             };
         }
 
-
         public static DetailedRestaurantDto ToDetailedDto(this Restaurant restaurantModel)
         {
             return new DetailedRestaurantDto
