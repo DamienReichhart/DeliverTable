@@ -9,7 +9,6 @@ namespace DeliverTableSharedLibrary.Dtos.Restaurant
 {
     public class UpdateRestaurantDto
     {
-
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
