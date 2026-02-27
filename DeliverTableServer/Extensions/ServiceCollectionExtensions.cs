@@ -1,3 +1,5 @@
+using DeliverTableServer.Repositories;
+using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 
@@ -15,9 +17,9 @@ public static class ServiceCollectionExtensions
     {
         RegisterHealthServices(services);
         RegisterTokenService(services);
+        RegisterGouvGeoLocationService(services);
+        RegisterRestaurantServices(services);
         // Register additional service groups here as the app grows, e.g.:
-        // RegisterBookingServices(services);
-        // RegisterRestaurantServices(services);
         return services;
     }
 
@@ -32,5 +34,15 @@ public static class ServiceCollectionExtensions
     private static void RegisterTokenService(IServiceCollection services)
     {
         services.AddScoped<ITokenService, TokenService>();
+    }
+
+    private static void RegisterGouvGeoLocationService(IServiceCollection services)
+    {
+        services.AddHttpClient<IGeoLocationService, GeoLocationService>();
+    }
+
+    private static void RegisterRestaurantServices(IServiceCollection services)
+    {
+        services.AddScoped<IRestaurantRepository, RestaurantRepository>();
     }
 }
