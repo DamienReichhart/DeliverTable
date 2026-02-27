@@ -12,7 +12,6 @@ using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -120,6 +119,7 @@ namespace DeliverTableServer.Controllers
 
         // delete
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "RestaurantOwner")]
         [EnsureOwner]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
