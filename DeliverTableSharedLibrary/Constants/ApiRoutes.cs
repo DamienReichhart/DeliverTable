@@ -11,6 +11,15 @@ public static class ApiRoutes
     public const string Authentication = "api/v1/auth";
 
     public const string Restaurant = "api/v1/restaurant";
+
+    public static readonly Dictionary<string, string> RestaurantEndpoints = new()
+    {
+        { "All", "api/v1/restaurant" },
+        { "Single", "api/v1/restaurant/" },
+        { "Create", "api/v1/restaurant" },
+        { "Update", "api/v1/restaurant/" },
+        { "Delete", "api/v1/restaurant/" },
+    };
     
     // Auth
     public static readonly Dictionary<string, string> Auth = new()
