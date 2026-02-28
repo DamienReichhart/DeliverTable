@@ -1,0 +1,15 @@
+@page "/restaurant/create"
+@using DeliverTableClient.Components.Forms
+@using DeliverTableClient.Components.Redirect
+
+<AuthorizeView Roles="RestaurantOwner">
+    <NotAuthorized>
+        <RedirectToHomePage/>
+    </NotAuthorized>
+    <Authorized>
+        <h1>
+            Ajouter un restaurant
+        </h1>
+        <RestaurantCreationForm/>
+    </Authorized>
+</AuthorizeView>
