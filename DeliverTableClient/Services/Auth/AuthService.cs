@@ -61,7 +61,6 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
                 };
             }
         }
-        ;
 
         ConnectionResponse? result;
         try
