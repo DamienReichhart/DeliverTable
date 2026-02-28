@@ -57,7 +57,7 @@ namespace DeliverTableServer.Controllers
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
                     );
 
-                return BadRequest(new { Message = "Des erreurs de validation ont été détectées.", Errors = errors });
+                return BadRequest(new { Error = "Des erreurs de validation ont été détectées.", Errors = errors });
             }
 
             var coords = await _geoLocationService.GetCoordinatesAsync(
@@ -68,7 +68,7 @@ namespace DeliverTableServer.Controllers
 
             if (coords == null)
             {
-                return BadRequest(new { message = "Impossible de localiser l'adresse fournie." });
+                return BadRequest(new { Error = "Impossible de localiser l'adresse fournie." });
             }
 
             try
@@ -121,7 +121,7 @@ namespace DeliverTableServer.Controllers
 
             if (coords == null || !int.TryParse(ownerIdString, out int ownerId))
             {
-                return BadRequest(new { message = "Impossible de localiser l'adresse fournie." });
+                return BadRequest(new { Error = "Impossible de localiser l'adresse fournie." });
             }
 
             var restaurant = await _restaurantRepository.CreateRestaurant(

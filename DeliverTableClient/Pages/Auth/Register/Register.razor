@@ -9,7 +9,8 @@
         <div class="register-form">
             <h3>Créer son compte</h3>
 
-            <EditForm Model="@_registerModel" OnValidSubmit="HandleRegister"><DataAnnotationsValidator />
+            <EditForm Model="@_registerModel" OnValidSubmit="HandleRegister">
+                <DataAnnotationsValidator />
                 <div class="mb-1 col">
                     <label class="form-label">Prénom</label>
                     <InputText @bind-Value="_registerModel.FirstName" class="form-control" />
