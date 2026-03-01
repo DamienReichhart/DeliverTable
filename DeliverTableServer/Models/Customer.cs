@@ -1,6 +1,6 @@
 ﻿namespace DeliverTableServer.Models;
 
-public class CustomerProfile
+public class Customer
 {
     public int Id { get; set; } // User.Id
     public User User { get; init; } = null!;

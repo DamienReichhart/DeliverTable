@@ -29,11 +29,11 @@ public static class ServerEntityFactory
         };
     }
 
-    /// <summary>Creates a valid <see cref="User"/> with an attached <see cref="CustomerProfile"/>.</summary>
+    /// <summary>Creates a valid <see cref="User"/> with an attached <see cref="Customer"/>.</summary>
     public static User CreateValidCustomer(string? email = null)
     {
         var user = CreateValidUser(email);
-        user.CustomerProfile = new CustomerProfile();
+        user.Customer = new Customer();
         return user;
     }
 
@@ -47,7 +47,7 @@ public static class ServerEntityFactory
             VatNumber = "BE0123456789",
             ContactPhoneNumber = "+32470123456"
         };
-        user.CustomerProfile = new CustomerProfile();
+        user.Customer = new Customer();
         return user;
     }
 

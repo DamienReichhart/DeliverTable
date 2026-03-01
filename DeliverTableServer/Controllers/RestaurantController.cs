@@ -12,6 +12,7 @@ using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,6 +33,33 @@ namespace DeliverTableServer.Controllers
         public async Task<IActionResult> GetAll([FromQuery] RestaurantQuery query)
         {
             List<Restaurant> restaurants = await _restaurantRepository.GetAllRestaurant(query);
+            return Ok(restaurants.Select(r => r.ToDto()));
+        }
+
+        // Get All Restaurants from owner
+        [HttpGet("user/{id:int}")]
+        [HttpGet("user/me")]
+        [Authorize]
+        public async Task<IActionResult> GetAllUserRestaurants([FromQuery] RestaurantQuery query, [FromRoute] int? id = null)
+        {
+            _ = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId);
+            if (id != null)
+            {
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (role != "Admin")
+                {
+                    if (userId != id)
+                    {
+                        return Forbid();
+                    }
+                }
+            }
+            else
+            {
+                id = userId;
+            }
+            List<Restaurant> restaurants = await _restaurantRepository.GetRestaurantByOwner((int)id, query);
+
             return Ok(restaurants.Select(r => r.ToDto()));
         }
 
@@ -80,11 +108,11 @@ namespace DeliverTableServer.Controllers
                     coords.Value.lat
                     );
 
-                object? restaurant  = await _restaurantRepository.GetRestaurantById(id);
-                
+                object? restaurant = await _restaurantRepository.GetRestaurantById(id);
+
                 return Ok(restaurant);
             }
-            catch (System.Exception exception)
+            catch (Exception exception)
             {
                 return BadRequest(new { Error = exception.Message });
             }
@@ -92,7 +120,6 @@ namespace DeliverTableServer.Controllers
 
         // delete
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "RestaurantOwner")]
         [EnsureOwner]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {

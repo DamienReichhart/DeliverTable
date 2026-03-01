@@ -1,5 +1,6 @@
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Extensions;
+using DeliverTableServer.Middleware;
 
 EnvLoader.Load();
 var env = AppEnvironment.Load();
@@ -22,6 +23,10 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
             new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new { error = "Invalid request." });
     }
 });
+
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddDeliverTableServices();
 builder.Services.AddDeliverTableOpenApi();
@@ -52,6 +57,7 @@ if (enableOpenApi)
     });
 }
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();
