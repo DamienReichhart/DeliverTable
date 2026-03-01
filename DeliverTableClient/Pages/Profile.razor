@@ -1,6 +1,8 @@
 ﻿@page "/profil"
 @using System.Security.Claims
 
+<PageTitle>Profil</PageTitle>
+
 <h3>Test d'Authentification</h3>
 
 <AuthorizeView Context="auth">
@@ -14,6 +16,9 @@
                 <li><strong>Rôle :</strong> @auth.User.FindFirst(ClaimTypes.Role)?.Value</li>
             </ul>
         </div>
+        <NavLink href="/restaurant/create" class="app-btn mx-auto my-1">
+            <span class="app-nav-icon app-nav-icon--plus" aria-hidden="true"></span>&nbsp;Ajouter un restaurant
+        </NavLink>
     </Authorized>
     <NotAuthorized>
         <div class="alert alert-warning">
