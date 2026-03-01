@@ -58,7 +58,7 @@ Central account table for all platform participants. Role-based extensions (see 
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| `id` | `string` | **PK** | Unique user identifier (UUID/ULID). |
+| `id` | `integer` | **PK** | Unique user identifier (UUID/ULID). |
 | `email` | `string` | **NOT NULL, UNIQUE** | User's email address; used for authentication. |
 | `password_hash` | `string` | **NOT NULL** | Hashed password. Raw passwords are never stored. |
 | `role` | `string` (enum) | **NOT NULL** | User role. Allowed values: `CUSTOMER`, `RESTAURANT_OWNER`, `ADMIN`. |
@@ -88,7 +88,7 @@ Extension table for users with the `CUSTOMER` role. Holds dietary preferences, a
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| `user_id` | `string` | **PK, FK → USER.id** | References the parent user account. |
+| `user_id` | `integer` | **PK, FK → USER.id** | References the parent user account. |
 | `allergy_notes` | `string` | NULLABLE | Free-text and/or structured JSON describing the customer's allergies. |
 | `dietary_preferences` | `string` | NULLABLE | Dietary preferences (e.g. vegetarian, vegan, halal). |
 | `marketing_opt_in` | `boolean` | **NOT NULL, DEFAULT false** | Whether the customer has opted in to marketing communications. |
@@ -107,7 +107,7 @@ Extension table for users with the `RESTAURANT_OWNER` role. Stores business cont
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
-| `user_id` | `string` | **PK, FK → USER.id** | References the parent user account. |
+| `user_id` | `integer` | **PK, FK → USER.id** | References the parent user account. |
 | `company_name` | `string` | NULLABLE | Legal or trading company name. |
 | `vat_number` | `string` | NULLABLE | VAT / tax registration number. |
 | `contact_phone` | `string` | NULLABLE | Business contact phone number. |
