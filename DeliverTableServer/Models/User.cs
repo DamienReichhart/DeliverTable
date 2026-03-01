@@ -25,7 +25,7 @@ public class User : IdentityUser<int>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public RestaurantOwner? RestaurantOwner { get; set; }
-    public CustomerProfile? CustomerProfile { get; set; }
+    public Customer? Customer { get; set; }
 
     public List<Restaurant> Restaurants { get; set; } = [];
 }

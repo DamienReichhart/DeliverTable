@@ -25,7 +25,7 @@ namespace DeliverTableServer.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerProfile", b =>
+            modelBuilder.Entity("DeliverTableServer.Models.Customer", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("integer");
@@ -55,7 +55,7 @@ namespace DeliverTableServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CustomerProfiles");
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("DeliverTableServer.Models.RestaurantOwner", b =>
@@ -343,11 +343,11 @@ namespace DeliverTableServer.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerProfile", b =>
+            modelBuilder.Entity("DeliverTableServer.Models.Customer", b =>
                 {
                     b.HasOne("DeliverTableServer.Models.User", "User")
-                        .WithOne("CustomerProfile")
-                        .HasForeignKey("DeliverTableServer.Models.CustomerProfile", "Id")
+                        .WithOne("Customer")
+                        .HasForeignKey("DeliverTableServer.Models.Customer", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -418,7 +418,7 @@ namespace DeliverTableServer.Migrations
 
             modelBuilder.Entity("DeliverTableServer.Models.User", b =>
                 {
-                    b.Navigation("CustomerProfile");
+                    b.Navigation("Customer");
 
                     b.Navigation("RestaurantOwner");
                 });
