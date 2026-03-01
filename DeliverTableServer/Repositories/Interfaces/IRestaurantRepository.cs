@@ -29,5 +29,7 @@ namespace DeliverTableServer.Repositories.Interfaces
             double lon,
             double lat 
         );
+
+        Task<List<Restaurant>> GetRestaurantByOwner(int id, RestaurantQuery query);
     }
 }
