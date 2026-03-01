@@ -113,6 +113,30 @@ namespace DeliverTableServer.Repositories
             return result;
         }
 
+        public async Task<List<Restaurant>> GetRestaurantByOwner(int id, RestaurantQuery query)
+        {
+            var restaurants = _dbContext.Restaurants.AsQueryable();
+            restaurants = restaurants.Where(r => r.OwnerId == id);
+            if (!string.IsNullOrWhiteSpace(query.Name))
+            {
+                restaurants = restaurants.Where(r => r.Name.Contains(query.Name));
+            }
+            if (!string.IsNullOrWhiteSpace(query.City))
+            {
+                restaurants = restaurants.Where(r => r.City.Contains(query.City));
+            }
+
+
+            restaurants = restaurants.OrderBy(r => r.Id);
+
+            int page = query.PageNumber > 0 ? query.PageNumber : 1;
+            int skipNumber = (page - 1) * query.PageSize;
+
+            List<Restaurant> result = await restaurants.Skip(skipNumber).Take(query.PageSize).ToListAsync();
+
+            return result;
+        }
+
         public async Task<Restaurant> Update(int id, UpdateRestaurantDto restaurantDto, double lon, double lat)
         {
             var restaurant = await _dbContext.Restaurants
