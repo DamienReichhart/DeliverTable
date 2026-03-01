@@ -69,7 +69,7 @@ public class AuthController(
             Email = registerRequest.Email,
             FirstName = registerRequest.FirstName,
             LastName = registerRequest.LastName,
-            CustomerProfile = new CustomerProfile()
+            Customer = new Customer()
         };
 
         var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Customer");
@@ -112,7 +112,7 @@ public class AuthController(
                 VatNumber = registerRequest.VatNumber,
                 ContactPhoneNumber = registerRequest.ContactPhoneNumber
             },
-            CustomerProfile = new CustomerProfile()
+            Customer = new Customer()
         };
 
         var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Restaurant_Owner");

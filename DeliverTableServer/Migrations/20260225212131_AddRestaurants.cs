@@ -34,7 +34,7 @@ namespace DeliverTableServer.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "UpdatedAt",
-                table: "CustomerProfiles",
+                table: "Customers",
                 type: "timestamp with time zone",
                 nullable: false,
                 defaultValueSql: "CURRENT_TIMESTAMP",
@@ -44,7 +44,7 @@ namespace DeliverTableServer.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "CreatedAt",
-                table: "CustomerProfiles",
+                table: "Customers",
                 type: "timestamp with time zone",
                 nullable: false,
                 defaultValueSql: "CURRENT_TIMESTAMP",
@@ -152,7 +152,7 @@ namespace DeliverTableServer.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "UpdatedAt",
-                table: "CustomerProfiles",
+                table: "Customers",
                 type: "timestamp with time zone",
                 nullable: false,
                 defaultValueSql: "NOW()",
@@ -162,7 +162,7 @@ namespace DeliverTableServer.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "CreatedAt",
-                table: "CustomerProfiles",
+                table: "Customers",
                 type: "timestamp with time zone",
                 nullable: false,
                 defaultValueSql: "NOW()",

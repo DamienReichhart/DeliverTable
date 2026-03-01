@@ -168,7 +168,7 @@ namespace DeliverTableServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CustomerProfiles",
+                name: "Customers",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false),
@@ -180,9 +180,9 @@ namespace DeliverTableServer.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CustomerProfiles", x => x.Id);
+                    table.PrimaryKey("PK_Customers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CustomerProfiles_AspNetUsers_Id",
+                        name: "FK_Customers_AspNetUsers_Id",
                         column: x => x.Id,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -284,7 +284,7 @@ namespace DeliverTableServer.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "CustomerProfiles");
+                name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "RestaurantOwners");

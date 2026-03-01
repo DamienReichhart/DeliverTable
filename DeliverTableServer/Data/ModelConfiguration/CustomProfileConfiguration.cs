@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DeliverTableServer.Data.ModelConfiguration;
 
-public class CustomProfileConfiguration : IEntityTypeConfiguration<CustomerProfile>
+public class CustomProfileConfiguration : IEntityTypeConfiguration<Customer>
 {
-    public void Configure(EntityTypeBuilder<CustomerProfile> builder)
+    public void Configure(EntityTypeBuilder<Customer> builder)
     {
         builder.HasOne(ro => ro.User)
-            .WithOne(u => u.CustomerProfile)
-            .HasForeignKey<CustomerProfile>(ro => ro.Id)
+            .WithOne(u => u.Customer)
+            .HasForeignKey<Customer>(ro => ro.Id)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(cp => cp.AllergyNotes).HasMaxLength(255);
