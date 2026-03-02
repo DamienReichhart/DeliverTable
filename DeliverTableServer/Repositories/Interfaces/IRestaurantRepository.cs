@@ -19,7 +19,7 @@ namespace DeliverTableServer.Repositories.Interfaces
 
         Task<List<Restaurant>> GetAllRestaurant(RestaurantQuery query);
 
-        Task<object?> GetRestaurantById(int id);
+        Task<Restaurant?> GetRestaurantById(int id);
 
         Task<bool> Delete(int id);
 

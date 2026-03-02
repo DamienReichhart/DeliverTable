@@ -107,3 +107,6 @@ Desktop.ini
 *.css
 
 .editorconfig
+
+brouillons/
+.vscode/

@@ -3,67 +3,67 @@
 @inject NavigationManager Nav
 @inject IRestaurantService RestaurantService
 
-<EditForm Model="@_creationDto" OnValidSubmit="HandleCreation">
+<EditForm Model="@_creationDto" OnValidSubmit="HandleCreation" class="restaurant-creation">
     <DataAnnotationsValidator/>
     <div class="col gap-1 mb-1">
         <label for="restaurant-name">Nom du restaurant</label>
-        <InputText id="restaurant-name" @bind-Value="_creationDto.Name"/>
-        <ValidationMessage For="@(() => _creationDto.Name)" class="text-danger" />
+        <InputText id="restaurant-name" @bind-Value="_creationDto.Name" class="app-input" placeholder="Nom du restaurant"/>
+        <ValidationMessage For="@(() => _creationDto.Name)" class="validation-message" />
     </div>
     
     <div class="col gap-1 mb-1">
         <label for="restaurant-description">Description</label>
-        <InputTextArea id="restaurant-description" @bind-Value="_creationDto.Description"/>
-        <ValidationMessage For="@(() => _creationDto.Description)" class="text-danger" />
+        <InputTextArea rows="5" id="restaurant-description" @bind-Value="_creationDto.Description" class="app-input" placeholder="Description du restaurant"/>
+        <ValidationMessage For="@(() => _creationDto.Description)" class="validation-message" />
     </div>
 
     
     <div class="col gap-1 mb-1">
         <label for="restaurant-address1">Adresse du restaurant</label>
-        <InputText id="restaurant-address1" @bind-Value="_creationDto.AdressLine1"/>
-        <ValidationMessage For="@(() => _creationDto.AdressLine1)" class="text-danger" />
+        <InputText id="restaurant-address1" @bind-Value="_creationDto.AdressLine1" class="app-input" placeholder="Adresse du restaurant"/>
+        <ValidationMessage For="@(() => _creationDto.AdressLine1)" class="validation-message" />
     </div>
 
     <div class="col gap-1 mb-1">
         <label for="restaurant-address2">Complément d'adresse</label>
-        <InputText id="restaurant-address2" @bind-Value="_creationDto.AdressLine2"/>
-        <ValidationMessage For="@(() => _creationDto.AdressLine2)" class="text-danger" />
+        <InputText id="restaurant-address2" @bind-Value="_creationDto.AdressLine2" class="app-input" placeholder="Complément d'adresse"/>
+        <ValidationMessage For="@(() => _creationDto.AdressLine2)" class="validation-message" />
     </div>
 
     <div class="col gap-1 mb-1">
         <label for="restaurant-city">Ville</label>
-        <InputText id="restaurant-city" @bind-Value="_creationDto.City"/>
-        <ValidationMessage For="@(() => _creationDto.City)" class="text-danger" />
+        <InputText id="restaurant-city" @bind-Value="_creationDto.City" class="app-input" placeholder="Ville"/>
+        <ValidationMessage For="@(() => _creationDto.City)" class="validation-message" />
     </div>
 
     <div class="col gap-1 mb-1">
         <label for="restaurant-ZipCode">Code Postal</label>
-        <InputText id="restaurant-ZipCode" @bind-Value="_creationDto.ZipCode"/>
-        <ValidationMessage For="@(() => _creationDto.ZipCode)" class="text-danger" />
+        <InputText id="restaurant-ZipCode" @bind-Value="_creationDto.ZipCode" class="app-input" placeholder="Code Postal"/>
+        <ValidationMessage For="@(() => _creationDto.ZipCode)" class="validation-message"/>
     </div>
 
     <div class="col gap-1 mb-1">
         <label for="restaurant-Country">Pays</label>
-        <InputSelect id="restaurant-Country" @bind-Value="_creationDto.Country">
+        <InputSelect id="restaurant-Country" @bind-Value="_creationDto.Country" class="app-input">
         <option value="">-- Sélectionnez un type --</option>
         @foreach (AvailableCountries country in Enum.GetValues<AvailableCountries>())
         {
             <option value="@country">@country.ToString()</option>
         }
         </InputSelect>
-        <ValidationMessage For="@(() => _creationDto.Country)" class="text-danger" />
+        <ValidationMessage For="@(() => _creationDto.Country)" class="validation-message" />
     </div>
 
     <div class="col gap-1 mb-1">
         <label for="restaurant-type">Type de restaurant</label>
-        <InputSelect id="restaurant-type" @bind-Value="_creationDto.Type">
-        <option value="">-- Sélectionnez un type --</option>
+        <InputSelect id="restaurant-type" @bind-Value="_creationDto.Type" class="app-input">
+        <option value="">-- Sélectionnez un type de restauration --</option>
         @foreach (RestaurantType type in Enum.GetValues<RestaurantType>())
         {
             <option value="@type">@type.ToString()</option>
         }
         </InputSelect>
-        <ValidationMessage For="@(() => _creationDto.Type)" class="text-danger" />
+        <ValidationMessage For="@(() => _creationDto.Type)" class="validation-message" />
     </div>
 
     <button type="submit" class="app-btn mx-auto flex mt-1" disabled="@_isSubmitting">

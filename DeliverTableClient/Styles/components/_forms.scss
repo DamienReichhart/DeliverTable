@@ -27,6 +27,11 @@
   margin-top: $spacing-xs;
 }
 
+.app-input {
+  padding: .5rem 1rem;
+  border-radius: .3rem;
+}
+
 .app-input::placeholder {
   color: $color-text-muted;
 }
