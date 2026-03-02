@@ -38,8 +38,7 @@ namespace DeliverTableServer.Mappers
                 Country = restaurantModel.Country,
                 Latitude = restaurantModel.Latitude,
                 Longitude = restaurantModel.Longitude,
-                IsActive = restaurantModel.IsActive,
-                Owner = $"{restaurantModel.Owner.FirstName} {restaurantModel.Owner.LastName}"
+                IsActive = restaurantModel.IsActive
             };
         }
     }

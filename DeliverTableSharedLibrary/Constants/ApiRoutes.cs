@@ -19,6 +19,7 @@ public static class ApiRoutes
         { "Create", "api/v1/restaurant" },
         { "Update", "api/v1/restaurant/" },
         { "Delete", "api/v1/restaurant/" },
+        { "Me", "api/v1/restaurant/user/me" },
     };
     
     // Auth

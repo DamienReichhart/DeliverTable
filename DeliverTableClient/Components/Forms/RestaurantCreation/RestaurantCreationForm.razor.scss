@@ -1,0 +1,12 @@
+@use '../../../Styles/abstracts//variables' as *;
+
+.restaurant-creation{
+    width: 90%;
+    margin: 0 auto;
+}
+
+@media (min-width: $breakpoint-desktop) {
+    .restaurant-creation{
+        width: 50%;
+    }
+}

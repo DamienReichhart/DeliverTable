@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
@@ -14,21 +15,19 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await _js.InvokeAsync<string>(_getItem, "authToken");
-        var role = await _js.InvokeAsync<string>(_getItem, "userRole");
-        var userId = await _js.InvokeAsync<string>(_getItem, "userId");
-        var userName = await _js.InvokeAsync<string>(_getItem, "userName");
+        string token = await _js.InvokeAsync<string>(_getItem, "authToken");
+        string role = await _js.InvokeAsync<string>(_getItem, "userRole");
+        string userId = await _js.InvokeAsync<string>(_getItem, "userId");
+        string userName = await _js.InvokeAsync<string>(_getItem, "userName");
 
-        if (string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(token) || IsTokenExpired(token))
         {
-            _httpClient.DefaultRequestHeaders.Authorization = null;
+            await CleanUpStorage();
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 
-        // Configure le header Authorization pour tous les appels HttpClient
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
 
-        // On construit l'identité avec tous les claims nécessaires
         var claims = new List<Claim>
         {
             new (ClaimTypes.Role, role ?? "Customer"),
@@ -64,5 +63,29 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
         var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
         var authState = Task.FromResult(new AuthenticationState(anonymousUser));
         NotifyAuthenticationStateChanged(authState);
+    }
+
+    private async Task CleanUpStorage()
+    {
+        await _js.InvokeVoidAsync("localStorage.removeItem", "authToken");
+        await _js.InvokeVoidAsync("localStorage.removeItem", "userRole");
+        await _js.InvokeVoidAsync("localStorage.removeItem", "userId");
+        await _js.InvokeVoidAsync("localStorage.removeItem", "userName");
+        _httpClient.DefaultRequestHeaders.Authorization = null;
+    }
+
+    private static bool IsTokenExpired(string token)
+    {
+        try
+        {
+            JwtSecurityTokenHandler handler = new();
+            JwtSecurityToken jwtToken = handler.ReadJwtToken(token);
+
+            return jwtToken.ValidTo < DateTime.UtcNow;
+        }
+        catch
+        {
+            return true;
+        }
     }
 }

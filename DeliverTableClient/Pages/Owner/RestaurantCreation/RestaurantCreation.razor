@@ -1,5 +1,5 @@
 @page "/restaurant/create"
-@using DeliverTableClient.Components.Forms
+@using DeliverTableClient.Components.Forms.RestaurantCreation
 @using DeliverTableClient.Components.Redirect
 
 <PageTitle>Ajouter un restaurant</PageTitle>
@@ -9,9 +9,11 @@
         <RedirectToHomePage/>
     </NotAuthorized>
     <Authorized>
+        <div class="container">
         <h1>
             Ajouter un restaurant
         </h1>
         <RestaurantCreationForm/>
+        </div>
     </Authorized>
-</AuthorizeView>
+</AuthorizeView>    
