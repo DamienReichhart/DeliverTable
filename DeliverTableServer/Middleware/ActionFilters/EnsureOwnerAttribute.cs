@@ -16,7 +16,7 @@ namespace DeliverTableServer.Middleware.ActionFilters
         {
         }
 
-        private class EnsureOwnerFilter(DeliverTableContext dbcontext) : IAsyncActionFilter
+        private sealed class EnsureOwnerFilter(DeliverTableContext dbcontext) : IAsyncActionFilter
         {
             private readonly DeliverTableContext _dbContext = dbcontext;
             public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)

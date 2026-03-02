@@ -1,4 +1,4 @@
-@DeliverTable_HostAddress = http://localhost:5268
+@DeliverTable_HostAddress = http://0.0.0.0:5268
 
 GET {{DeliverTable_HostAddress}}/api/v1/health
 Accept: application/json
