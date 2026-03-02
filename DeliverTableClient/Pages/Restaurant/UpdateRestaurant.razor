@@ -1,0 +1,121 @@
+@page "/restaurant/update/{Id:int}"
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+@inject IRestaurantService RestaurantService
+@inject NavigationManager NavigationManager
+
+<div class="form-container">
+    @if (loading)
+    {
+        <p>Loading...</p>
+    }
+    else if (error != null)
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+    else
+    {
+        <h2>Update Restaurant</h2>
+        <div class="form-group">
+            <label>Nom du restaurant</label>
+            <input class="form-control" placeholder="Nom du restaurant" @bind="form.Name" />
+        </div>
+        <div class="form-group">
+            <label>Adresse de l'établissement</label>
+            <input class="form-control" placeholder="Adresse de l'établissement" @bind="form.AdressLine1" />
+        </div>
+        <div class="form-group">
+            <label>Complément d'adresse</label>
+            <input class="form-control" placeholder="Complément d'adresse" @bind="form.AdressLine2" />
+        </div>
+        <div class="form-group">
+            <label>Ville</label>
+            <input class="form-control" placeholder="Ville" @bind="form.City" />
+        </div>
+        <div class="form-group">
+            <label>Code Postal</label>
+            <input class="form-control" placeholder="Code Postal" @bind="form.ZipCode" />
+        </div>
+        @if (submitError != null)
+        {
+            <div class="alert alert-danger">@submitError</div>
+        }
+        @if (error != null)
+        {
+            <div class="alert alert-danger">@error</div>
+        }
+        <div class="form-controls">
+            <button class="app-btn my-2" @onclick="HandleSubmit" disabled="@submitting">
+                @(submitting ? "Vérification..." : "Enregistrer")
+            </button>
+            <NavLink href="/profil" class="app-btn bg-secondary mt-4">Revenir en arrière</NavLink>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private DetailedRestaurantDto form = new();
+    private bool loading = true;
+    private bool submitting = false;
+    private string? error = null;
+    private string? submitError = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            (DetailedRestaurantDto? dto, ErrorResponse? error) result = await RestaurantService.GetRestaurantById(Id);
+
+            if (result.dto != null)
+            {
+                form = result.dto;
+            }
+        }
+        catch (Exception)
+        {
+            error = "Une erreur est survenue";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        submitting = true;
+        submitError = null;
+
+        try
+        {
+            UpdateRestaurantDto updateDto = new (){
+                Name = form.Name,
+                AdressLine1 = form.AdressLine1,
+                AdressLine2 = form.AdressLine2,
+                City = form.City,
+                Country = form.Country,
+                ZipCode = form.ZipCode,
+                Description = form.Description,
+            };
+            (DetailedRestaurantDto? result, ErrorResponse? errorObject) = await RestaurantService.UpdateRestaurant(updateDto, Id);
+
+            if (errorObject != null)
+            {
+                submitError = errorObject.Error;
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/profil");
+            }
+        }
+        catch (Exception)
+        {
+            submitError = "Une erreur est survenue";
+        }
+        finally
+        {
+            submitting = false;
+        }
+    }
+}
