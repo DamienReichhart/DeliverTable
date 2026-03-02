@@ -87,27 +87,10 @@ namespace DeliverTableServer.Repositories
             return result;
         }
 
-        public async Task<object?> GetRestaurantById(int id)
+        public async Task<Restaurant?> GetRestaurantById(int id)
         {
             return await _dbContext.Restaurants
-            .Where(r => r.Id == id)
-            .Select(r => new
-            {
-                r.Id,
-                r.Name,
-                Type = r.Type.ToString(),
-                r.Description,
-                r.AdressLine1,
-                r.AdressLine2,
-                r.City,
-                r.ZipCode,
-                r.Country,
-                r.Latitude,
-                r.Longitude,
-                r.IsActive,
-                Owner = $"{r.Owner.FirstName} {r.Owner.LastName}"
-            })
-            .FirstOrDefaultAsync();
+            .Where(r => r.Id == id).FirstOrDefaultAsync();
         }
 
         public async Task<List<Restaurant>> GetRestaurantByOwner(int id, RestaurantQuery query)

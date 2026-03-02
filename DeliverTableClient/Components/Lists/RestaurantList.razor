@@ -1,0 +1,93 @@
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+@inject IRestaurantService RestaurantService
+<ul class="restaurant-list">
+    @if (restaurants == null && !loading)
+    {
+        <li>No restaurants found.</li>
+    }
+    else if (loading)
+    {
+        <li>Loading...</li>
+    }
+    else
+    {
+        @if (restaurants == null)
+        {
+            <li class="alert alert-danger">@error</li>
+        }
+        else
+        {
+            @foreach (RestaurantDto restaurant in restaurants)
+            {
+                if (@restaurant != null)
+                {
+                    <li class="restaurant-card">
+                        <div class="restaurant-card-content">
+                            <h3>
+                                @restaurant.Name
+                            </h3>
+                            <p>
+                                @restaurant.ZipCode @restaurant.City
+                            </p>
+                        </div>
+                        <div class="restaurant-card-controls">
+                            <NavLink href=@($"/restaurant/update/{restaurant.Id}") class="app-btn">
+                                <Blazicon Svg="Lucide.Pencil" class="app-icon" />
+                            </NavLink>
+                            <button class="app-btn bg-danger" @onclick="() => DeleteRestaurant(restaurant.Id)">
+                                <Blazicon Svg="Lucide.Trash2" class="app-icon" />
+                            </button>
+                        </div>
+                    </li>
+                }
+            }
+        }
+    }
+</ul>
+
+@code {
+    private List<RestaurantDto>? restaurants;
+    private bool loading = true;
+    private string? error = null;
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        error = null;
+
+        try
+        {
+            (List<RestaurantDto>? result, ErrorResponse? errorObject) = await RestaurantService.GetConnectedUserRestaurants();
+
+            if (errorObject != null)
+            {
+                error = errorObject.Error;
+            }
+            else
+            {
+                restaurants = result;
+            }
+        }
+        catch (Exception)
+        {
+            error = "Une erreur est survenue";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task DeleteRestaurant(int id)
+    {
+        bool deleteResult = await RestaurantService.DeleteRestaurant(id);
+
+        if (deleteResult)
+        {
+            restaurants?.RemoveAll(r => r.Id == id);
+        }
+        else
+        {
+            error = "Erreur lors de la suppression du restaurant";
+        }
+    }
+}

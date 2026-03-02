@@ -1,0 +1,48 @@
+@use '../../Styles/abstracts/variables' as *;
+
+
+.restaurant-list {
+    margin: 1rem auto;
+    list-style-type: none;
+}
+
+.restaurant-card {
+    width: 90%;
+    padding: 1rem;
+    border: 2px solid $color-primary;
+    border-radius: 1.5em;
+    display: flex;
+    align-items: center;
+}
+
+.restaurant-card-content {
+    width: 80%;
+}
+
+.restaurant-card-controls {
+    width: 20%;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.restaurant-card-controls > button, .restaurant-card-controls ::deep a {
+    width: 100%;
+    padding: .5rem;
+    margin: 0;
+}
+
+@media (min-width: $breakpoint-desktop) {
+    .restaurant-card {
+        width: 30%;
+    }
+
+
+    .restaurant-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        row-gap: 1rem;
+    }
+}

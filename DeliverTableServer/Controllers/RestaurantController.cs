@@ -67,8 +67,8 @@ namespace DeliverTableServer.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            object? restaurant = await _restaurantRepository.GetRestaurantById(id);
-            return restaurant == null ? NotFound(new { Error = "Etablissement introuvable" }) : Ok(restaurant);
+            Restaurant? restaurant = await _restaurantRepository.GetRestaurantById(id);
+            return restaurant == null ? NotFound(new { Error = "Etablissement introuvable" }) : Ok(restaurant.ToDetailedDto());
         }
 
         // put
@@ -108,9 +108,9 @@ namespace DeliverTableServer.Controllers
                     coords.Value.lat
                     );
 
-                object? restaurant = await _restaurantRepository.GetRestaurantById(id);
+                Restaurant? restaurant = await _restaurantRepository.GetRestaurantById(id);
 
-                return Ok(restaurant);
+                return restaurant != null ? Ok(restaurant.ToDetailedDto()) : BadRequest(new {Error = "Une erreur est survenue"});
             }
             catch (Exception exception)
             {

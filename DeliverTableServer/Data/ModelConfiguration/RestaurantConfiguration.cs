@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DeliverTableServer.Data.ModelConfiguration
 {
-    public class RestaurantConfiguration: IEntityTypeConfiguration<Restaurant>
+    public class RestaurantConfiguration : IEntityTypeConfiguration<Restaurant>
     {
         public void Configure(EntityTypeBuilder<Restaurant> builder)
         {
