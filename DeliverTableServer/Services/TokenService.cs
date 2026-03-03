@@ -21,7 +21,7 @@ namespace DeliverTableServer.Services
         {
             var key = Encoding.UTF8.GetBytes(_jwtConfig.Key);
 
-        var claims = new List<Claim>
+            var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
         };
