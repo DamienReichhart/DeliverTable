@@ -22,7 +22,7 @@ namespace DeliverTableServer.Services
         public async Task<string> CreateToken(User user)
         {
             var key = Encoding.UTF8.GetBytes(_jwtConfig.Key);
-            
+
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault(_defaultRoleValue);
 
