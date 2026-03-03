@@ -17,4 +17,8 @@ public static class ApiRoutes
         { "Register", "api/v1/auth/register" },
         { "RestaurantRegister", "api/v1/auth/restaurant/register" }
     };
+
+    /// <summary>Storage proxy route patterns that serve objects directly from S3-compatible storage.</summary>
+    public const string StorageImages = "images/{**path}";
+    public const string StorageDocuments = "documents/{**path}";
 }
