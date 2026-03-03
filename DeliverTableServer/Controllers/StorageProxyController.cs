@@ -1,6 +1,7 @@
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace DeliverTableServer.Controllers;
 
@@ -11,6 +12,28 @@ namespace DeliverTableServer.Controllers;
 [ApiController]
 public class StorageProxyController(IObjectStorageService objectStorage) : ControllerBase
 {
+    private const string SafeFallbackContentType = "application/octet-stream";
+
+    /// <summary>
+    ///     Allowed MIME types per storage prefix.
+    ///     Requests whose stored Content-Type falls outside the allowlist are
+    ///     forced to <c>application/octet-stream</c> with a download disposition.
+    /// </summary>
+    private static readonly FrozenDictionary<string, FrozenSet<string>> AllowedContentTypes =
+        new Dictionary<string, FrozenSet<string>>(StringComparer.Ordinal)
+        {
+            ["images"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "image/jpeg", "image/png", "image/gif",
+                "image/webp", "image/svg+xml", "image/avif"
+            }.ToFrozenSet(StringComparer.OrdinalIgnoreCase),
+
+            ["documents"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "application/pdf"
+            }.ToFrozenSet(StringComparer.OrdinalIgnoreCase)
+        }.ToFrozenDictionary(StringComparer.Ordinal);
+
     private readonly IObjectStorageService _objectStorage =
         objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
 
@@ -57,9 +80,39 @@ public class StorageProxyController(IObjectStorageService objectStorage) : Contr
         if (result is null)
             return NotFound();
 
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+
         if (result.ContentLength.HasValue)
             Response.ContentLength = result.ContentLength.Value;
 
-        return File(result.Content, result.ContentType);
+        var contentType = ResolveContentType(prefix, result.ContentType, out var forceDownload);
+
+        if (forceDownload)
+        {
+            var fileName = segments[^1];
+            Response.Headers[HeaderNames.ContentDisposition] =
+                new ContentDispositionHeaderValue("attachment") { FileName = fileName }.ToString();
+        }
+
+        return File(result.Content, contentType);
+    }
+
+    /// <summary>
+    ///     Validates the stored MIME type against the prefix's allowlist.
+    ///     Returns the original type when allowed, otherwise falls back to a
+    ///     safe binary type and signals forced download.
+    /// </summary>
+    private static string ResolveContentType(
+        string prefix, string storedContentType, out bool forceDownload)
+    {
+        if (AllowedContentTypes.TryGetValue(prefix, out var allowed)
+            && allowed.Contains(storedContentType))
+        {
+            forceDownload = false;
+            return storedContentType;
+        }
+
+        forceDownload = true;
+        return SafeFallbackContentType;
     }
 }
