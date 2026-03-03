@@ -1,0 +1,12 @@
+[
+  {
+    "PackageId": "Blazicons",
+    "License": "MIT",
+    "LicenseUrl": "https://github.com/kyleherzog/Blazicons/blob/main/LICENSE"
+  },
+  {
+    "PackageId": "Blazicons.Lucide",
+    "License": "MIT",
+    "LicenseUrl": "https://github.com/kyleherzog/Blazicons.Lucide/blob/main/LICENSE"
+  }
+]
