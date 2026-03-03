@@ -13,18 +13,23 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DeliverTableServer.Services
 {
-    public class TokenService(JwtConfig jwtConfig) : ITokenService
+    public class TokenService(JwtConfig jwtConfig, UserManager<User> userManager) : ITokenService
     {
         private readonly JwtConfig _jwtConfig = jwtConfig;
+        private readonly UserManager<User> _userManager = userManager;
+        private readonly string _defaultRoleValue = "Customer";
 
         public async Task<string> CreateToken(User user)
         {
             var key = Encoding.UTF8.GetBytes(_jwtConfig.Key);
+            
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault(_defaultRoleValue);
 
-            var claims = new List<Claim>
-        {
+            List<Claim> claims = [
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        };
+            new(ClaimTypes.Role, role)
+        ];
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
