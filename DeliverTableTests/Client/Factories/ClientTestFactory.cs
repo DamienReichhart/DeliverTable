@@ -1,4 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using DeliverTableSharedLibrary.Dtos.Auth;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DeliverTableTests.Client.Factories;
 
@@ -8,10 +12,26 @@ namespace DeliverTableTests.Client.Factories;
 /// </summary>
 public static class ClientTestFactory
 {
-    public const string ValidToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test-payload.test-signature";
+    public static string ValidToken => GenerateToken();
     public const string ValidRole = "Customer";
     public const string ValidUserId = "42";
     public const string ValidUserName = "Jean";
+
+    private static string GenerateToken()
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your-test-secret-key-min-16-chars"));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: "test",
+            audience: "test",
+            claims: new[] { new Claim(ClaimTypes.Name, ValidUserName) },
+            expires: DateTime.UtcNow.AddHours(1), // 👈 always fresh
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 
     /// <summary>Creates a valid <see cref="ConnectionResponse" /> with token and user.</summary>
     public static ConnectionResponse CreateValidConnectionResponse() => new()
