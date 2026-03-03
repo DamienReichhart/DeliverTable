@@ -21,18 +21,39 @@ public class ApiRoutesTests
     }
 
     [Test]
-    public void Authentication_ShouldEqualExpectedRoute()
+    public void AuthBase_ShouldEqualExpectedRoute()
     {
-        Assert.That(ApiRoutes.Authentication, Is.EqualTo("api/v1/auth"));
+        Assert.That(ApiRoutes.Auth.Base, Is.EqualTo("api/v1/auth"));
     }
 
-    [TestCase("Login", "api/v1/auth/login")]
-    [TestCase("Register", "api/v1/auth/register")]
-    [TestCase("RestaurantRegister", "api/v1/auth/restaurant/register")]
-    public void AuthDictionary_ShouldContainExpectedEntry(string key, string expectedRoute)
+    [TestCase(nameof(ApiRoutes.Auth.Login), "api/v1/auth/login")]
+    [TestCase(nameof(ApiRoutes.Auth.Register), "api/v1/auth/register")]
+    [TestCase(nameof(ApiRoutes.Auth.RestaurantRegister), "api/v1/auth/restaurant/register")]
+    [TestCase(nameof(ApiRoutes.Auth.Me), "api/v1/auth/me")]
+    public void AuthFullPath_ShouldEqualExpectedRoute(string name, string expectedRoute)
     {
-        Assert.That(ApiRoutes.Auth, Does.ContainKey(key));
-        Assert.That(ApiRoutes.Auth[key], Is.EqualTo(expectedRoute));
+        var actual = name switch
+        {
+            nameof(ApiRoutes.Auth.Login) => ApiRoutes.Auth.Login,
+            nameof(ApiRoutes.Auth.Register) => ApiRoutes.Auth.Register,
+            nameof(ApiRoutes.Auth.RestaurantRegister) => ApiRoutes.Auth.RestaurantRegister,
+            nameof(ApiRoutes.Auth.Me) => ApiRoutes.Auth.Me,
+            _ => throw new ArgumentException($"Unknown route: {name}")
+        };
+
+        Assert.That(actual, Is.EqualTo(expectedRoute));
+    }
+
+    [Test]
+    public void RestaurantBase_ShouldEqualExpectedRoute()
+    {
+        Assert.That(ApiRoutes.Restaurant.Base, Is.EqualTo("api/v1/restaurant"));
+    }
+
+    [Test]
+    public void RestaurantUserMe_ShouldEqualExpectedRoute()
+    {
+        Assert.That(ApiRoutes.Restaurant.UserMe, Is.EqualTo("api/v1/restaurant/user/me"));
     }
 
     #endregion
@@ -40,29 +61,32 @@ public class ApiRoutesTests
     #region Structural invariants
 
     [Test]
-    public void AllStaticRoutes_ShouldStartWithVersionPrefix()
+    public void AllBaseRoutes_ShouldStartWithVersionPrefix()
     {
         Assert.Multiple(() =>
         {
             Assert.That(ApiRoutes.Health, Does.StartWith(VersionPrefix));
-            Assert.That(ApiRoutes.Authentication, Does.StartWith(VersionPrefix));
+            Assert.That(ApiRoutes.Auth.Base, Does.StartWith(VersionPrefix));
+            Assert.That(ApiRoutes.Restaurant.Base, Does.StartWith(VersionPrefix));
         });
     }
 
     [Test]
-    public void AuthDictionary_AllValues_ShouldStartWithVersionPrefix()
+    public void AuthFullPaths_ShouldStartWithAuthBase()
     {
-        foreach (var (key, route) in ApiRoutes.Auth)
-            Assert.That(route, Does.StartWith(VersionPrefix),
-                $"Route '{key}' violates version prefix convention");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ApiRoutes.Auth.Login, Does.StartWith(ApiRoutes.Auth.Base));
+            Assert.That(ApiRoutes.Auth.Register, Does.StartWith(ApiRoutes.Auth.Base));
+            Assert.That(ApiRoutes.Auth.RestaurantRegister, Does.StartWith(ApiRoutes.Auth.Base));
+            Assert.That(ApiRoutes.Auth.Me, Does.StartWith(ApiRoutes.Auth.Base));
+        });
     }
 
     [Test]
-    public void AuthDictionary_AllValues_ShouldBeSubPathsOfAuthenticationBase()
+    public void RestaurantFullPaths_ShouldStartWithRestaurantBase()
     {
-        foreach (var (key, route) in ApiRoutes.Auth)
-            Assert.That(route, Does.StartWith(ApiRoutes.Authentication),
-                $"Route '{key}' is not a sub-path of the Authentication base");
+        Assert.That(ApiRoutes.Restaurant.UserMe, Does.StartWith(ApiRoutes.Restaurant.Base));
     }
 
     [Test]
@@ -85,24 +109,20 @@ public class ApiRoutesTests
                 $"Route '{route}' contains uppercase characters");
     }
 
-    [Test]
-    public void AuthDictionary_ShouldHaveNoDuplicateValues()
-    {
-        Assert.That(ApiRoutes.Auth.Values, Is.Unique);
-    }
-
-    [Test]
-    public void AuthDictionary_ShouldNotBeEmpty()
-    {
-        Assert.That(ApiRoutes.Auth, Is.Not.Empty);
-    }
-
     #endregion
 
     private static List<string> CollectAllRoutes()
     {
-        var routes = new List<string> { ApiRoutes.Health, ApiRoutes.Authentication };
-        routes.AddRange(ApiRoutes.Auth.Values);
-        return routes;
+        return
+        [
+            ApiRoutes.Health,
+            ApiRoutes.Auth.Base,
+            ApiRoutes.Auth.Login,
+            ApiRoutes.Auth.Register,
+            ApiRoutes.Auth.RestaurantRegister,
+            ApiRoutes.Auth.Me,
+            ApiRoutes.Restaurant.Base,
+            ApiRoutes.Restaurant.UserMe
+        ];
     }
 }

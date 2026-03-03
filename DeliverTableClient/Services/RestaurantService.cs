@@ -13,7 +13,7 @@ namespace DeliverTableClient.Services
 
         public async Task<bool> CreateRestaurant(CreateRestaurantDto creationDto, CancellationToken cancellationToken = default)
         {
-            HttpResponseMessage? response = await _httpClient.PostAsJsonAsync(ApiRoutes.RestaurantEndpoints["Create"], creationDto);
+            HttpResponseMessage? response = await _httpClient.PostAsJsonAsync(ApiRoutes.Restaurant.Base, creationDto);
             if (response.IsSuccessStatusCode)
             {
                 await response.Content.ReadFromJsonAsync<RestaurantDto>(cancellationToken: cancellationToken);
@@ -35,7 +35,7 @@ namespace DeliverTableClient.Services
             try
             {
                 List<RestaurantDto>? restaurants = await _httpClient
-                    .GetFromJsonAsync<List<RestaurantDto>>(ApiRoutes.RestaurantEndpoints["Me"], cancellationToken);
+                    .GetFromJsonAsync<List<RestaurantDto>>(ApiRoutes.Restaurant.UserMe, cancellationToken);
 
                 return (restaurants, null);
             }
@@ -49,7 +49,7 @@ namespace DeliverTableClient.Services
         {
             try
             {
-                var response = await _httpClient.DeleteAsync(ApiRoutes.RestaurantEndpoints["Delete"] + id);
+                var response = await _httpClient.DeleteAsync($"{ApiRoutes.Restaurant.Base}/{id}");
                 Console.WriteLine(response);
                 return true;
             }
@@ -62,7 +62,7 @@ namespace DeliverTableClient.Services
 
         public async Task<(DetailedRestaurantDto?, ErrorResponse?)> GetRestaurantById(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.GetAsync(ApiRoutes.RestaurantEndpoints["Single"] + id, cancellationToken);
+            var response = await _httpClient.GetAsync($"{ApiRoutes.Restaurant.Base}/{id}", cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -76,7 +76,7 @@ namespace DeliverTableClient.Services
 
         public async Task<(DetailedRestaurantDto? dto, ErrorResponse? error)> UpdateRestaurant(UpdateRestaurantDto updateDto, int id, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PutAsJsonAsync(ApiRoutes.RestaurantEndpoints["Update"] + id, updateDto, cancellationToken);
+            var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Restaurant.Base}/{id}", updateDto, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
