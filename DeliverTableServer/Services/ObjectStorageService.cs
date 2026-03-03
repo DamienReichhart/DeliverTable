@@ -29,7 +29,7 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
                 ? response.Headers.ContentType
                 : "application/octet-stream";
 
-            var contentLength = response.ContentLength > 0 ? response.ContentLength : (long?)null;
+            var contentLength = response.ContentLength >= 0 ? response.ContentLength : null;
 
             return new ObjectStorageResult(response.ResponseStream, contentType, contentLength);
         }
