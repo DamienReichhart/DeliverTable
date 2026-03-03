@@ -1,6 +1,9 @@
+using System.Net;
 using System.Security.Claims;
 using DeliverTableClient.Services.Auth;
+using DeliverTableSharedLibrary.Dtos.Auth;
 using DeliverTableTests.Client.Factories;
+using DeliverTableTests.Client.Helpers;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using NSubstitute;
@@ -16,6 +19,7 @@ namespace DeliverTableTests.Client.Unit.Services.Auth;
 public class ApiAuthStateProviderTests
 {
     private IJSRuntime _jsRuntime = null!;
+    private MockHttpMessageHandler _mockHandler = null!;
     private HttpClient _httpClient = null!;
     private ApiAuthStateProvider _sut = null!;
 
@@ -23,7 +27,8 @@ public class ApiAuthStateProviderTests
     public void SetUp()
     {
         _jsRuntime = Substitute.For<IJSRuntime>();
-        _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost/") };
+        _mockHandler = new MockHttpMessageHandler();
+        _httpClient = new HttpClient(_mockHandler) { BaseAddress = new Uri("http://localhost/") };
         _sut = new ApiAuthStateProvider(_jsRuntime, _httpClient);
     }
 
@@ -31,6 +36,7 @@ public class ApiAuthStateProviderTests
     public void TearDown()
     {
         _httpClient.Dispose();
+        _mockHandler.Dispose();
     }
 
     #region GetAuthenticationStateAsync
@@ -38,11 +44,8 @@ public class ApiAuthStateProviderTests
     [Test]
     public async Task GetAuthenticationStateAsync_WithToken_ReturnsAuthenticatedUser()
     {
-        ConfigureLocalStorage(
-            ClientTestFactory.ValidToken,
-            ClientTestFactory.ValidRole,
-            ClientTestFactory.ValidUserId,
-            ClientTestFactory.ValidUserName);
+        ConfigureLocalStorage(ClientTestFactory.ValidToken);
+        QueueMeResponse();
 
         var state = await _sut.GetAuthenticationStateAsync();
 
@@ -52,11 +55,9 @@ public class ApiAuthStateProviderTests
     [Test]
     public async Task GetAuthenticationStateAsync_WithToken_BuildsCorrectClaims()
     {
-        ConfigureLocalStorage(
-            ClientTestFactory.ValidToken,
-            ClientTestFactory.ValidRole,
-            ClientTestFactory.ValidUserId,
-            ClientTestFactory.ValidUserName);
+        ConfigureLocalStorage(ClientTestFactory.ValidToken);
+        var expectedUser = ClientTestFactory.CreateValidUserResponse();
+        QueueMeResponse(expectedUser);
 
         var state = await _sut.GetAuthenticationStateAsync();
         var claims = state.User.Claims.ToList();
@@ -64,22 +65,20 @@ public class ApiAuthStateProviderTests
         Assert.Multiple(() =>
         {
             Assert.That(claims.First(c => c.Type == ClaimTypes.Role).Value,
-                Is.EqualTo(ClientTestFactory.ValidRole));
+                Is.EqualTo(expectedUser.Role));
             Assert.That(claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value,
-                Is.EqualTo(ClientTestFactory.ValidUserId));
+                Is.EqualTo(expectedUser.Id.ToString()));
             Assert.That(claims.First(c => c.Type == ClaimTypes.Name).Value,
-                Is.EqualTo(ClientTestFactory.ValidUserName));
+                Is.EqualTo(expectedUser.FirstName));
         });
     }
 
     [Test]
     public async Task GetAuthenticationStateAsync_WithToken_SetsAuthorizationHeader()
     {
-        ConfigureLocalStorage(
-            ClientTestFactory.ValidToken,
-            ClientTestFactory.ValidRole,
-            ClientTestFactory.ValidUserId,
-            ClientTestFactory.ValidUserName);
+        var token = ClientTestFactory.ValidToken;
+        ConfigureLocalStorage(token);
+        QueueMeResponse();
 
         await _sut.GetAuthenticationStateAsync();
 
@@ -89,18 +88,15 @@ public class ApiAuthStateProviderTests
             Assert.That(_httpClient.DefaultRequestHeaders.Authorization!.Scheme,
                 Is.EqualTo("bearer"));
             Assert.That(_httpClient.DefaultRequestHeaders.Authorization.Parameter,
-                Is.EqualTo(ClientTestFactory.ValidToken));
+                Is.EqualTo(token));
         });
     }
 
     [Test]
     public async Task GetAuthenticationStateAsync_WithToken_UsesJwtAuthType()
     {
-        ConfigureLocalStorage(
-            ClientTestFactory.ValidToken,
-            ClientTestFactory.ValidRole,
-            ClientTestFactory.ValidUserId,
-            ClientTestFactory.ValidUserName);
+        ConfigureLocalStorage(ClientTestFactory.ValidToken);
+        QueueMeResponse();
 
         var state = await _sut.GetAuthenticationStateAsync();
 
@@ -141,18 +137,14 @@ public class ApiAuthStateProviderTests
     }
 
     [Test]
-    public async Task GetAuthenticationStateAsync_WithNullRole_DefaultsToCustomer()
+    public async Task GetAuthenticationStateAsync_WithFailedApiResponse_ReturnsAnonymousUser()
     {
-        ConfigureLocalStorage(
-            ClientTestFactory.ValidToken,
-            role: null,
-            ClientTestFactory.ValidUserId,
-            ClientTestFactory.ValidUserName);
+        ConfigureLocalStorage(ClientTestFactory.ValidToken);
+        _mockHandler.QueueErrorResponse(HttpStatusCode.Unauthorized);
 
         var state = await _sut.GetAuthenticationStateAsync();
-        var roleClaim = state.User.Claims.First(c => c.Type == ClaimTypes.Role);
 
-        Assert.That(roleClaim.Value, Is.EqualTo("Customer"));
+        Assert.That(state.User.Identity?.IsAuthenticated, Is.False);
     }
 
     #endregion
@@ -262,28 +254,22 @@ public class ApiAuthStateProviderTests
     #endregion
 
     /// <summary>
-    ///     Configures the <see cref="IJSRuntime" /> mock to simulate localStorage values.
+    ///     Configures the <see cref="IJSRuntime" /> mock to return the given token
+    ///     from <c>localStorage.getItem("authToken")</c>.
     /// </summary>
-    private void ConfigureLocalStorage(
-        string? token = null,
-        string? role = null,
-        string? userId = null,
-        string? userName = null)
+    private void ConfigureLocalStorage(string? token)
     {
         _jsRuntime.InvokeAsync<string>("localStorage.getItem",
                 Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == "authToken"))
             .Returns(new ValueTask<string>(token!));
+    }
 
-        _jsRuntime.InvokeAsync<string>("localStorage.getItem",
-                Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == "userRole"))
-            .Returns(new ValueTask<string>(role!));
-
-        _jsRuntime.InvokeAsync<string>("localStorage.getItem",
-                Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == "userId"))
-            .Returns(new ValueTask<string>(userId!));
-
-        _jsRuntime.InvokeAsync<string>("localStorage.getItem",
-                Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == "userName"))
-            .Returns(new ValueTask<string>(userName!));
+    /// <summary>
+    ///     Queues a successful <c>GET /me</c> response on the mock handler
+    ///     returning the given <see cref="UserResponse" />.
+    /// </summary>
+    private void QueueMeResponse(UserResponse? user = null)
+    {
+        _mockHandler.QueueJsonResponse(user ?? ClientTestFactory.CreateValidUserResponse());
     }
 }
