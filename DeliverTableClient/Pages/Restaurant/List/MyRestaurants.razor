@@ -1,0 +1,23 @@
+@page "/mes-restaurants"
+@attribute [Authorize(Roles = "RestaurantOwner")]
+
+@using DeliverTableClient.Components.Lists
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Mes restaurants</PageTitle>
+
+<div class="my-restaurants-page">
+    <section class="my-restaurants-header">
+        <div>
+            <h2>Mes restaurants</h2>
+            <p class="my-restaurants-subtitle">Gérez vos établissements, modifiez leurs informations ou ajoutez-en de nouveaux.</p>
+        </div>
+        <NavLink href="/restaurant/create" class="app-btn">
+            <Blazicon Svg="Lucide.Plus" class="app-icon" />&nbsp;Ajouter un restaurant
+        </NavLink>
+    </section>
+
+    <section class="my-restaurants-content">
+        <RestaurantList />
+    </section>
+</div>

@@ -25,6 +25,8 @@ public static class ApiRoutes
         public const string RegisterRoute = "register";
         public const string RestaurantRegisterRoute = "restaurant/register";
         public const string MeRoute = "me";
+        public const string UpdateProfileRoute = "me";
+        public const string ChangePasswordRoute = "me/password";
 
         /// <summary>Full paths for client HTTP calls.</summary>
         public const string Login = Base + "/" + LoginRoute;
@@ -32,6 +34,8 @@ public static class ApiRoutes
         public const string Register = Base + "/" + RegisterRoute;
         public const string RestaurantRegister = Base + "/" + RestaurantRegisterRoute;
         public const string Me = Base + "/" + MeRoute;
+        public const string UpdateProfile = Base + "/" + UpdateProfileRoute;
+        public const string ChangePassword = Base + "/" + ChangePasswordRoute;
     }
 
     /// <summary>Restaurant routes.</summary>

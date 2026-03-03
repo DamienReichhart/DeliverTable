@@ -1,0 +1,216 @@
+@use "sass:color";
+@use "../../Styles/abstracts/variables" as *;
+
+// ── Layout ──
+
+.profile-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// ── Header with avatar ──
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+  padding: $spacing-xl;
+  background: linear-gradient(135deg, $color-primary 0%, $color-accent 100%);
+  border-radius: 0.75rem;
+  color: $color-text-inverse;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.05em;
+  color: $color-text-inverse;
+  user-select: none;
+}
+
+.profile-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
+
+.profile-role {
+  opacity: 0.8;
+  font-size: $font-size-sm;
+  text-transform: capitalize;
+}
+
+// ── Cards ──
+
+.profile-card {
+  background: #ffffff;
+  border: 1px solid $color-border;
+  border-radius: 0.75rem;
+  padding: $spacing-lg;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+  }
+}
+
+.profile-card-action {
+  background: none;
+  border: 1px solid $color-primary;
+  color: $color-primary;
+  padding: $spacing-xs $spacing-md;
+  border-radius: 0.35rem;
+  font-size: $font-size-sm;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-family: $font-family-base;
+
+  &:hover {
+    background-color: $color-primary;
+    color: $color-text-inverse;
+    text-decoration: none;
+  }
+}
+
+// ── Read-only fields ──
+
+.profile-fields {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $spacing-sm 0;
+  border-bottom: 1px solid color.adjust($color-border, $lightness: 5%);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.profile-field-label {
+  font-size: 0.8rem;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: $font-weight-bold;
+}
+
+.profile-field-value {
+  font-size: $font-size-base;
+  color: $color-text;
+}
+
+.profile-field-password {
+  letter-spacing: 0.15em;
+}
+
+// ── Edit form ──
+
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+
+  @media (min-width: $breakpoint-desktop) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.profile-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  margin-top: $spacing-lg;
+}
+
+.profile-btn-cancel {
+  background-color: transparent;
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+
+  &:hover {
+    background-color: $color-bg-subtle;
+    color: $color-text;
+    border-color: $color-border;
+  }
+}
+
+// ── Spinners ──
+
+.profile-loading {
+  flex-direction: column;
+  gap: $spacing-md;
+  min-height: 40vh;
+
+  p {
+    color: $color-text-muted;
+  }
+}
+
+.profile-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid $color-border;
+  border-top-color: $color-primary;
+  border-radius: 50%;
+  animation: profile-spin 0.7s linear infinite;
+}
+
+.profile-spinner-sm {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: profile-spin 0.7s linear infinite;
+  margin-right: $spacing-xs;
+  vertical-align: middle;
+}
+
+@keyframes profile-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

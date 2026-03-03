@@ -47,7 +47,7 @@
             <button class="app-btn my-2" @onclick="HandleSubmit" disabled="@submitting">
                 @(submitting ? "Vérification..." : "Enregistrer")
             </button>
-            <NavLink href="/profil" class="app-btn bg-secondary mt-4">Revenir en arrière</NavLink>
+            <NavLink href="/mes-restaurants" class="app-btn bg-secondary mt-4">Revenir en arrière</NavLink>
         </div>
     }
 </div>
@@ -106,7 +106,7 @@
             }
             else
             {
-                NavigationManager.NavigateTo("/profil");
+                NavigationManager.NavigateTo("/mes-restaurants");
             }
         }
         catch (Exception)

@@ -139,11 +139,8 @@ public class AuthController(
     public async Task<IActionResult> GetProfile()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(userIdClaim))
+        if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             return Unauthorized(new { Error = "Token invalide ou expiré" });
-
-        if (!int.TryParse(userIdClaim, out var userId))
-            return Unauthorized(new { Error = "Token invalide" });
 
         var user = await _context.Users.FindAsync(userId);
         if (user == null)
@@ -153,6 +150,80 @@ public class AuthController(
         var role = userRoles.FirstOrDefault(_defaultRoleValue);
 
         return Ok(user.ToDto(role));
+    }
+
+    [Authorize]
+    [HttpPut(ApiRoutes.Auth.UpdateProfileRoute)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { Error = "Champs invalides" });
+
+        var user = await GetAuthenticatedUser();
+        if (user == null)
+            return Unauthorized(new { Error = "Token invalide ou expiré" });
+
+        if (!string.Equals(user.Email, request.Email, StringComparison.OrdinalIgnoreCase)
+            && await _context.Users.AnyAsync(u => u.Email == request.Email))
+        {
+            return BadRequest(new { Error = "Cette adresse email est déjà utilisée" });
+        }
+
+        user.FirstName = request.FirstName;
+        user.LastName = request.LastName;
+        user.Email = request.Email;
+        user.UserName = request.Email;
+        user.NormalizedEmail = request.Email.ToUpperInvariant();
+        user.NormalizedUserName = request.Email.ToUpperInvariant();
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        var userRoles = await _userManager.GetRolesAsync(user);
+        var role = userRoles.FirstOrDefault(_defaultRoleValue);
+        var token = await _tokenService.CreateToken(user);
+
+        return Ok(new ConnectionResponse
+        {
+            Token = token,
+            User = user.ToDto(role)
+        });
+    }
+
+    [Authorize]
+    [HttpPut(ApiRoutes.Auth.ChangePasswordRoute)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { Error = "Champs invalides" });
+
+        var user = await GetAuthenticatedUser();
+        if (user == null)
+            return Unauthorized(new { Error = "Token invalide ou expiré" });
+
+        if (!await _userManager.CheckPasswordAsync(user, request.CurrentPassword))
+            return BadRequest(new { Error = "Le mot de passe actuel est incorrect" });
+
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            var errors = result.Errors.Select(e => e.Description);
+            return BadRequest(new { Error = string.Join(", ", errors) });
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Message = "Mot de passe modifié avec succès" });
+    }
+
+    private async Task<User?> GetAuthenticatedUser()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            return null;
+
+        return await _context.Users.FindAsync(userId);
     }
 
     private async Task<(User? user, IEnumerable<string> errors)> CreateUser(User user, string password, string role = "Customer")
