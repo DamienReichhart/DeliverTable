@@ -94,7 +94,7 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
     public async Task GetAuthenticatedUser()
     {
         string? token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if(string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(token))
         {
             return;
         }
