@@ -95,7 +95,7 @@ public class AuthServiceTests
             Assert.That(_httpHandler.SentRequests, Has.Count.EqualTo(1));
             Assert.That(_httpHandler.SentRequests[0].Method, Is.EqualTo(HttpMethod.Post));
             Assert.That(_httpHandler.SentRequests[0].RequestUri!.PathAndQuery,
-                Does.EndWith(ApiRoutes.Auth["Login"]));
+                Does.EndWith(ApiRoutes.Auth.Login));
         });
     }
 
@@ -208,7 +208,7 @@ public class AuthServiceTests
         });
 
         Assert.That(_httpHandler.SentRequests[0].RequestUri!.PathAndQuery,
-            Does.EndWith(ApiRoutes.Auth["Register"]));
+            Does.EndWith(ApiRoutes.Auth.Register));
     }
 
     [Test]
@@ -278,7 +278,7 @@ public class AuthServiceTests
         });
 
         Assert.That(_httpHandler.SentRequests[0].RequestUri!.PathAndQuery,
-            Does.EndWith(ApiRoutes.Auth["RestaurantRegister"]));
+            Does.EndWith(ApiRoutes.Auth.RestaurantRegister));
     }
 
     [Test]

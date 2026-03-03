@@ -27,7 +27,7 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
 
-        var response = await _httpClient.GetAsync(ApiRoutes.Authentication + "/me");
+        var response = await _httpClient.GetAsync(ApiRoutes.Auth.Me);
 
         if (!response.IsSuccessStatusCode)
         {

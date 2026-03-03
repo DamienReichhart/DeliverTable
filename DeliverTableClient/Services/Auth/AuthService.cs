@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using DeliverTableSharedLibrary.Constants;
 using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -19,19 +19,19 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
 
     public async Task<AuthResponse> Login(LoginRequest loginRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth["Login"], loginRequest);
+        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Login, loginRequest);
         return await HandleResponse(response);
     }
 
     public async Task<AuthResponse> Register(RegisterRequest registerRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth["Register"], registerRequest);
+        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Register, registerRequest);
         return await HandleResponse(response);
     }
 
     public async Task<AuthResponse> RegisterRestaurant(RestaurantRegister registerRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth["RestaurantRegister"], registerRequest);
+        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.RestaurantRegister, registerRequest);
         return await HandleResponse(response);
     }
 
