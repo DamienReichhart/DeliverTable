@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using DeliverTableSharedLibrary.Constants;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DeliverTableServer.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route(ApiRoutes.Test)]
     public class TestController : ControllerBase
     {
         [HttpGet]

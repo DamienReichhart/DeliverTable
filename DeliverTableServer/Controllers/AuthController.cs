@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using DeliverTableServer.Configuration;
@@ -18,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DeliverTableServer.Controllers;
 
 [ApiController]
-[Route(ApiRoutes.Authentication)]
+[Route(ApiRoutes.Auth.Base)]
 public class AuthController(
     DeliverTableContext context,
     ITokenService tokenService,
@@ -32,7 +32,7 @@ public class AuthController(
     private readonly UserManager<User> _userManager = userManager;
     private readonly IHostEnvironment _env = env;
 
-    [HttpPost("login")]
+    [HttpPost(ApiRoutes.Auth.LoginRoute)]
     public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
     {
         if (!ModelState.IsValid)
@@ -54,7 +54,7 @@ public class AuthController(
         });
     }
 
-    [HttpPost("register")]
+    [HttpPost(ApiRoutes.Auth.RegisterRoute)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
     {
         if (!ModelState.IsValid)
@@ -91,7 +91,7 @@ public class AuthController(
         });
     }
 
-    [HttpPost("restaurant/register")]
+    [HttpPost(ApiRoutes.Auth.RestaurantRegisterRoute)]
     public async Task<IActionResult> RegisterRestaurant([FromBody] RestaurantRegister registerRequest)
     {
         if (!ModelState.IsValid)
@@ -135,7 +135,7 @@ public class AuthController(
     }
 
     [Authorize]
-    [HttpGet("me")]
+    [HttpGet(ApiRoutes.Auth.MeRoute)]
     public async Task<IActionResult> GetProfile()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

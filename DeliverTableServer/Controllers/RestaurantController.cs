@@ -19,7 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DeliverTableServer.Controllers
 {
     [ApiController]
-    [Route(ApiRoutes.Restaurant)]
+    [Route(ApiRoutes.Restaurant.Base)]
     public class RestaurantController(
         IGeoLocationService geoLocationService,
         IRestaurantRepository restaurantRepository
@@ -37,8 +37,8 @@ namespace DeliverTableServer.Controllers
         }
 
         // Get All Restaurants from owner
-        [HttpGet("user/{id:int}")]
-        [HttpGet("user/me")]
+        [HttpGet(ApiRoutes.Restaurant.UserByIdRoute)]
+        [HttpGet(ApiRoutes.Restaurant.UserMeRoute)]
         [Authorize]
         public async Task<IActionResult> GetAllUserRestaurants([FromQuery] RestaurantQuery query, [FromRoute] int? id = null)
         {
@@ -64,7 +64,7 @@ namespace DeliverTableServer.Controllers
         }
 
         // /id
-        [HttpGet("{id:int}")]
+        [HttpGet(ApiRoutes.Restaurant.ByIdRoute)]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             Restaurant? restaurant = await _restaurantRepository.GetRestaurantById(id);
@@ -72,7 +72,7 @@ namespace DeliverTableServer.Controllers
         }
 
         // put
-        [HttpPut("{id:int}")]
+        [HttpPut(ApiRoutes.Restaurant.ByIdRoute)]
         [EnsureOwner]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateRestaurantDto restaurantDto)
         {
@@ -119,7 +119,7 @@ namespace DeliverTableServer.Controllers
         }
 
         // delete
-        [HttpDelete("{id:int}")]
+        [HttpDelete(ApiRoutes.Restaurant.ByIdRoute)]
         [EnsureOwner]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
