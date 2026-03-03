@@ -1,0 +1,50 @@
+@use "../../../Styles/abstracts/variables" as *;
+
+.my-restaurants-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.my-restaurants-header {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+  }
+
+  .app-btn {
+    align-self: flex-start;
+  }
+
+  @media (min-width: $breakpoint-desktop) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+
+    .app-btn {
+      align-self: auto;
+    }
+  }
+}
+
+.my-restaurants-subtitle {
+  margin: $spacing-xs 0 0;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+}
+
+.my-restaurants-content {
+  background: #ffffff;
+  border: 1px solid $color-border;
+  border-radius: 0.75rem;
+  padding: $spacing-lg;
+}
