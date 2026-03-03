@@ -8,4 +8,5 @@ public sealed record ObjectStorageConfig(
     string AccessKey,
     string SecretKey,
     string BucketName,
-    bool ForcePathStyle);
+    bool ForcePathStyle,
+    string Region);

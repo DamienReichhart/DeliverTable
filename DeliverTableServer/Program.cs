@@ -12,6 +12,7 @@ builder.Services.AddSingleton(env.ObjectStorage);
 
 builder.Services.AddIdentityParams();
 builder.Services.AddJwtAuthentication(env.Jwt);
+builder.Services.AddObjectStorage(env.ObjectStorage);
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
