@@ -65,13 +65,15 @@ public class StorageProxyController(IObjectStorageService objectStorage) : Contr
     private async Task<IActionResult> StreamObjectAsync(
         string prefix, string path, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(path) || path.Contains('\\')){
+        if (string.IsNullOrWhiteSpace(path) || path.Contains('\\'))
+        {
             return BadRequest();
         }
 
         var segments = path.Trim('/').Split('/');
 
-        if (segments.Any(s => s is "" or "." or "..")){
+        if (segments.Any(s => s is "" or "." or ".."))
+        {
             return BadRequest();
         }
 
