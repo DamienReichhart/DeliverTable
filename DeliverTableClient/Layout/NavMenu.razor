@@ -25,7 +25,15 @@
                         <span class="app-nav-icon" aria-hidden="true">👤</span> Mon Profil (@auth.User.Identity?.Name)
                     </NavLink>
                 </div>
-                
+
+                <AuthorizeView Roles="RestaurantOwner" Context="ownerCtx">
+                    <div class="app-nav-item">
+                        <NavLink href="/mes-restaurants" class="app-nav-link">
+                            <span class="app-nav-icon" aria-hidden="true">🍽️</span> Mes Restaurants
+                        </NavLink>
+                    </div>
+                </AuthorizeView>
+
                 <div class="app-nav-item">
                     <button class="app-nav-link btn-logout" @onclick="HandleLogout">
                         <span class="app-nav-icon" aria-hidden="true">🚪</span> Déconnexion

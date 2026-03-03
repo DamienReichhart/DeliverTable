@@ -1,0 +1,424 @@
+@page "/profil"
+@using System.Security.Claims
+@using DeliverTableClient.Services.Auth
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Auth
+
+@inject IUserService UserService
+@inject AuthService AuthService
+@inject ApiAuthStateProvider AuthStateProvider
+@inject IJSRuntime Js
+
+<PageTitle>Mon Profil</PageTitle>
+
+<AuthorizeView Context="auth">
+    <Authorized>
+        @if (_isLoading)
+        {
+            <div class="profile-loading centered">
+                <div class="profile-spinner"></div>
+                <p>Chargement du profil...</p>
+            </div>
+        }
+        else if (_loadError != null)
+        {
+            <div class="container">
+                <div class="alert alert-danger">@_loadError</div>
+                <button class="app-btn" @onclick="LoadProfile">Réessayer</button>
+            </div>
+        }
+        else
+        {
+            <div class="profile-page">
+                @* ── Header ── *@
+                <section class="profile-header">
+                    <div class="profile-avatar">
+                        <span>@_initials</span>
+                    </div>
+                    <div class="profile-header-info">
+                        <h2 class="profile-name">@_profileModel.FirstName @_profileModel.LastName</h2>
+                        <span class="profile-role">@auth.User.FindFirst(ClaimTypes.Role)?.Value</span>
+                    </div>
+                </section>
+
+                @* ── Personal information card ── *@
+                <section class="profile-card">
+                    <div class="profile-card-header">
+                        <h3>Informations personnelles</h3>
+                        @if (!_isEditingProfile)
+                        {
+                            <button class="profile-card-action" @onclick="StartEditProfile">Modifier</button>
+                        }
+                    </div>
+
+                    @if (_profileSuccess != null)
+                    {
+                        <div class="alert alert-success">@_profileSuccess</div>
+                    }
+
+                    @if (!_isEditingProfile)
+                    {
+                        <div class="profile-fields">
+                            <div class="profile-field">
+                                <span class="profile-field-label">Prénom</span>
+                                <span class="profile-field-value">@_profileModel.FirstName</span>
+                            </div>
+                            <div class="profile-field">
+                                <span class="profile-field-label">Nom</span>
+                                <span class="profile-field-value">@_profileModel.LastName</span>
+                            </div>
+                            <div class="profile-field">
+                                <span class="profile-field-label">Email</span>
+                                <span class="profile-field-value">@_profileModel.Email</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="@_profileModel" OnValidSubmit="HandleUpdateProfile">
+                            <DataAnnotationsValidator />
+
+                            <div class="profile-form-grid">
+                                <div class="col">
+                                    <label class="form-label" for="firstName">Prénom</label>
+                                    <InputText id="firstName"
+                                               @bind-Value="_profileModel.FirstName"
+                                               class="form-control app-input"
+                                               placeholder="Votre prénom" />
+                                    <ValidationMessage For="@(() => _profileModel.FirstName)" class="validation-message" />
+                                </div>
+
+                                <div class="col">
+                                    <label class="form-label" for="lastName">Nom</label>
+                                    <InputText id="lastName"
+                                               @bind-Value="_profileModel.LastName"
+                                               class="form-control app-input"
+                                               placeholder="Votre nom" />
+                                    <ValidationMessage For="@(() => _profileModel.LastName)" class="validation-message" />
+                                </div>
+                            </div>
+
+                            <div class="col mt-1">
+                                <label class="form-label" for="email">Email</label>
+                                <InputText id="email"
+                                           @bind-Value="_profileModel.Email"
+                                           class="form-control app-input"
+                                           placeholder="votre@email.com" />
+                                <ValidationMessage For="@(() => _profileModel.Email)" class="validation-message" />
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(_profileError))
+                            {
+                                <div class="alert alert-danger mt-1">@_profileError</div>
+                            }
+
+                            <div class="profile-form-actions">
+                                <button type="button"
+                                        class="app-btn profile-btn-cancel"
+                                        @onclick="CancelEditProfile"
+                                        disabled="@_isSavingProfile">
+                                    Annuler
+                                </button>
+                                <button type="submit"
+                                        class="app-btn"
+                                        disabled="@_isSavingProfile">
+                                    @if (_isSavingProfile)
+                                    {
+                                        <span class="profile-spinner-sm"></span>
+                                        <span>Enregistrement...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Enregistrer</span>
+                                    }
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </section>
+
+                @* ── Password card ── *@
+                <section class="profile-card">
+                    <div class="profile-card-header">
+                        <h3>Mot de passe</h3>
+                        @if (!_isEditingPassword)
+                        {
+                            <button class="profile-card-action" @onclick="StartEditPassword">Modifier</button>
+                        }
+                    </div>
+
+                    @if (_passwordSuccess != null)
+                    {
+                        <div class="alert alert-success">@_passwordSuccess</div>
+                    }
+
+                    @if (!_isEditingPassword)
+                    {
+                        <div class="profile-fields">
+                            <div class="profile-field">
+                                <span class="profile-field-label">Mot de passe</span>
+                                <span class="profile-field-value profile-field-password">••••••••••••</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="@_passwordModel" OnValidSubmit="HandleChangePassword">
+                            <DataAnnotationsValidator />
+
+                            <div class="col mb-1">
+                                <label class="form-label" for="currentPassword">Mot de passe actuel</label>
+                                <InputText id="currentPassword"
+                                           @bind-Value="_passwordModel.CurrentPassword"
+                                           type="password"
+                                           class="form-control app-input"
+                                           placeholder="••••••••••••" />
+                                <ValidationMessage For="@(() => _passwordModel.CurrentPassword)" class="validation-message" />
+                            </div>
+
+                            <div class="col mb-1">
+                                <label class="form-label" for="newPassword">Nouveau mot de passe (12 caractères min.)</label>
+                                <InputText id="newPassword"
+                                           @bind-Value="_passwordModel.NewPassword"
+                                           type="password"
+                                           class="form-control app-input"
+                                           placeholder="••••••••••••" />
+                                <ValidationMessage For="@(() => _passwordModel.NewPassword)" class="validation-message" />
+                            </div>
+
+                            <div class="col mb-1">
+                                <label class="form-label" for="confirmNewPassword">Confirmer le nouveau mot de passe</label>
+                                <InputText id="confirmNewPassword"
+                                           @bind-Value="_passwordModel.ConfirmNewPassword"
+                                           type="password"
+                                           class="form-control app-input"
+                                           placeholder="••••••••••••" />
+                                <ValidationMessage For="@(() => _passwordModel.ConfirmNewPassword)" class="validation-message" />
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(_passwordError))
+                            {
+                                <div class="alert alert-danger">@_passwordError</div>
+                            }
+
+                            <div class="profile-form-actions">
+                                <button type="button"
+                                        class="app-btn profile-btn-cancel"
+                                        @onclick="CancelEditPassword"
+                                        disabled="@_isSavingPassword">
+                                    Annuler
+                                </button>
+                                <button type="submit"
+                                        class="app-btn"
+                                        disabled="@_isSavingPassword">
+                                    @if (_isSavingPassword)
+                                    {
+                                        <span class="profile-spinner-sm"></span>
+                                        <span>Modification...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Modifier le mot de passe</span>
+                                    }
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </section>
+
+                @* ── Quick link to restaurant management (RestaurantOwner only) ── *@
+                <AuthorizeView Roles="RestaurantOwner" Context="ownerCtx">
+                    <section class="profile-card">
+                        <div class="profile-card-header">
+                            <h3>Mes restaurants</h3>
+                            <NavLink href="/mes-restaurants" class="profile-card-action">
+                                Gérer
+                            </NavLink>
+                        </div>
+                        <p class="profile-field-label" style="padding: 0.25rem 0;">
+                            Accédez à la gestion de vos restaurants pour ajouter, modifier ou supprimer vos établissements.
+                        </p>
+                    </section>
+                </AuthorizeView>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="container centered" style="min-height: 60vh;">
+            <div class="profile-card" style="max-width: 400px; text-align: center;">
+                <h3>Accès refusé</h3>
+                <p class="mt-1">Vous devez être connecté pour accéder à votre profil.</p>
+                <NavLink href="/login" class="app-btn mt-1">Se connecter</NavLink>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private UpdateProfileRequest _profileModel = new();
+    private ChangePasswordRequest _passwordModel = new();
+
+    private bool _isLoading = true;
+    private string? _loadError;
+    private string _initials = "";
+
+    private bool _isEditingProfile;
+    private bool _isSavingProfile;
+    private string? _profileError;
+    private string? _profileSuccess;
+    private UpdateProfileRequest? _originalProfile;
+
+    private bool _isEditingPassword;
+    private bool _isSavingPassword;
+    private string? _passwordError;
+    private string? _passwordSuccess;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfile();
+    }
+
+    private async Task LoadProfile()
+    {
+        _isLoading = true;
+        _loadError = null;
+        StateHasChanged();
+
+        var (user, error) = await UserService.GetProfileAsync();
+
+        if (user != null)
+        {
+            _profileModel = new UpdateProfileRequest
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email
+            };
+            _initials = BuildInitials(user.FirstName, user.LastName);
+        }
+        else
+        {
+            _loadError = error?.Error ?? "Impossible de charger le profil";
+        }
+
+        _isLoading = false;
+    }
+
+    private void StartEditProfile()
+    {
+        _profileSuccess = null;
+        _profileError = null;
+        _originalProfile = new UpdateProfileRequest
+        {
+            FirstName = _profileModel.FirstName,
+            LastName = _profileModel.LastName,
+            Email = _profileModel.Email
+        };
+        _isEditingProfile = true;
+    }
+
+    private void CancelEditProfile()
+    {
+        if (_originalProfile != null)
+        {
+            _profileModel.FirstName = _originalProfile.FirstName;
+            _profileModel.LastName = _originalProfile.LastName;
+            _profileModel.Email = _originalProfile.Email;
+        }
+        _profileError = null;
+        _isEditingProfile = false;
+    }
+
+    private async Task HandleUpdateProfile()
+    {
+        _isSavingProfile = true;
+        _profileError = null;
+        _profileSuccess = null;
+
+        try
+        {
+            var (connection, error) = await UserService.UpdateProfileAsync(_profileModel);
+
+            if (connection?.User != null && !string.IsNullOrEmpty(connection.Token))
+            {
+                await Js.InvokeVoidAsync("localStorage.setItem", "authToken", connection.Token);
+                AuthStateProvider.NotifyUserAuthentication(
+                    connection.Token,
+                    connection.User.Role,
+                    connection.User.Id.ToString(),
+                    connection.User.FirstName
+                );
+
+                _initials = BuildInitials(connection.User.FirstName, connection.User.LastName);
+                _isEditingProfile = false;
+                _profileSuccess = "Profil mis à jour avec succès";
+                _originalProfile = null;
+            }
+            else
+            {
+                _profileError = error?.Error ?? "Une erreur est survenue";
+            }
+        }
+        catch
+        {
+            _profileError = "Une erreur est survenue lors de la mise à jour";
+        }
+        finally
+        {
+            _isSavingProfile = false;
+        }
+    }
+
+    private void StartEditPassword()
+    {
+        _passwordSuccess = null;
+        _passwordError = null;
+        _passwordModel = new ChangePasswordRequest();
+        _isEditingPassword = true;
+    }
+
+    private void CancelEditPassword()
+    {
+        _passwordError = null;
+        _passwordModel = new ChangePasswordRequest();
+        _isEditingPassword = false;
+    }
+
+    private async Task HandleChangePassword()
+    {
+        _isSavingPassword = true;
+        _passwordError = null;
+        _passwordSuccess = null;
+
+        try
+        {
+            var (success, error) = await UserService.ChangePasswordAsync(_passwordModel);
+
+            if (success)
+            {
+                _passwordModel = new ChangePasswordRequest();
+                _isEditingPassword = false;
+                _passwordSuccess = "Mot de passe modifié avec succès";
+            }
+            else
+            {
+                _passwordError = error?.Error ?? "Une erreur est survenue";
+            }
+        }
+        catch
+        {
+            _passwordError = "Une erreur est survenue lors de la modification";
+        }
+        finally
+        {
+            _isSavingPassword = false;
+        }
+    }
+
+    private static string BuildInitials(string firstName, string lastName)
+    {
+        var first = string.IsNullOrEmpty(firstName) ? "" : firstName[..1].ToUpperInvariant();
+        var last = string.IsNullOrEmpty(lastName) ? "" : lastName[..1].ToUpperInvariant();
+        return $"{first}{last}";
+    }
+}

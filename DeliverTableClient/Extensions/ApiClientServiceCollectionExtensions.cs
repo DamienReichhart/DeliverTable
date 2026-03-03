@@ -36,6 +36,7 @@ public static class ApiClientServiceCollectionExtensions
 
         RegisterApiClients(services);
         RegisterRestaurantService(services);
+        RegisterUserService(services);
 
         return services;
     }
@@ -51,5 +52,10 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterRestaurantService(IServiceCollection services)
     {
         services.AddScoped<IRestaurantService, RestaurantService>();
+    }
+
+    private static void RegisterUserService(IServiceCollection services)
+    {
+        services.AddScoped<IUserService, UserService>();
     }
 }
