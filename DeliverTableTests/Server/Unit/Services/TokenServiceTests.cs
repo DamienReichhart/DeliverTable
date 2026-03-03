@@ -58,13 +58,13 @@ public class TokenServiceTests
     }
 
     [Test]
-    public async Task CreateToken_ContainsCorrectEmailClaim()
+    public async Task CreateToken_DoesNotContainEmailClaim()
     {
         var token = await _sut.CreateToken(_testUser);
 
         var jwt = ParseToken(token);
-        var emailClaim = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Email);
-        Assert.That(emailClaim.Value, Is.EqualTo(_testUser.Email));
+        var emailClaim = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email);
+        Assert.That(emailClaim, Is.Null);
     }
 
     [Test]
@@ -134,15 +134,15 @@ public class TokenServiceTests
     }
 
     [Test]
-    public async Task CreateToken_HandlesNullEmail()
+    public async Task CreateToken_DoesNotContainEmailClaim_WhenEmailIsNull()
     {
         _testUser.Email = null;
 
         var token = await _sut.CreateToken(_testUser);
 
         var jwt = ParseToken(token);
-        var emailClaim = jwt.Claims.First(c => c.Type == JwtRegisteredClaimNames.Email);
-        Assert.That(emailClaim.Value, Is.EqualTo(string.Empty));
+        var emailClaim = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email);
+        Assert.That(emailClaim, Is.Null);
     }
 
     private static JwtSecurityToken ParseToken(string token)
