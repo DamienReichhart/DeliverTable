@@ -1,6 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
+using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 
@@ -15,42 +17,52 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        string token = await _js.InvokeAsync<string>(_getItem, "authToken");
-        string role = await _js.InvokeAsync<string>(_getItem, "userRole");
-        string userId = await _js.InvokeAsync<string>(_getItem, "userId");
-        string userName = await _js.InvokeAsync<string>(_getItem, "userName");
+        var token = await _js.InvokeAsync<string>(_getItem, "authToken");
 
-        if (string.IsNullOrWhiteSpace(token) || IsTokenExpired(token))
+        if (string.IsNullOrWhiteSpace(token))
         {
-            await CleanUpStorage();
+            _httpClient.DefaultRequestHeaders.Authorization = null;
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
 
-        var claims = new List<Claim>
+        var response = await _httpClient.GetAsync(ApiRoutes.Authentication + "/me");
+
+        if (!response.IsSuccessStatusCode)
         {
-            new (ClaimTypes.Role, role ?? "Customer"),
-            new (ClaimTypes.NameIdentifier, userId ?? ""),
-            new (ClaimTypes.Name, userName ?? "")
-        };
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        }
+
+        UserResponse? user = await response.Content.ReadFromJsonAsync<UserResponse>();
+
+        if (user == null)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        }
+
+        List<Claim> claims = [
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.FirstName),
+            new(ClaimTypes.Role, user.Role),
+        ];
 
         var identity = new ClaimsIdentity(claims, "jwt");
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
-    public void NotifyUserAuthentication(string token, string role, string userId, string userName)
+    public void NotifyUserAuthentication(string token, string role, string id, string firstname)
     {
-
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        var claims = new List<Claim>
-        {
+        List<Claim> claims = [
+            new (ClaimTypes.NameIdentifier, id),
+            new (ClaimTypes.Name, firstname),
             new (ClaimTypes.Role, role),
-            new (ClaimTypes.NameIdentifier, userId),
-            new (ClaimTypes.Name, userName)
-        };
+        ];
 
         var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));
         var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
@@ -63,29 +75,5 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
         var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
         var authState = Task.FromResult(new AuthenticationState(anonymousUser));
         NotifyAuthenticationStateChanged(authState);
-    }
-
-    private async Task CleanUpStorage()
-    {
-        await _js.InvokeVoidAsync("localStorage.removeItem", "authToken");
-        await _js.InvokeVoidAsync("localStorage.removeItem", "userRole");
-        await _js.InvokeVoidAsync("localStorage.removeItem", "userId");
-        await _js.InvokeVoidAsync("localStorage.removeItem", "userName");
-        _httpClient.DefaultRequestHeaders.Authorization = null;
-    }
-
-    private static bool IsTokenExpired(string token)
-    {
-        try
-        {
-            JwtSecurityTokenHandler handler = new();
-            JwtSecurityToken jwtToken = handler.ReadJwtToken(token);
-
-            return jwtToken.ValidTo < DateTime.UtcNow;
-        }
-        catch
-        {
-            return true;
-        }
     }
 }
