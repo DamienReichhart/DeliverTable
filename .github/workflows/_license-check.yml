@@ -34,6 +34,7 @@ jobs:
           -t
           -a allowed-licenses.json
           -mapping license-url-mappings.json
+          -override manual-package-licenses.json
           -o Markdown
           -fo license-report-client.md
 
