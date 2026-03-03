@@ -76,16 +76,14 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
         {
             // Stockage
             await _js.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
-            await _js.InvokeVoidAsync("localStorage.setItem", "userRole", result.User.Role);
-            await _js.InvokeVoidAsync("localStorage.setItem", "userId", result.User.Id.ToString());
-            await _js.InvokeVoidAsync("localStorage.setItem", "userName", result.User.FirstName);
 
             // Notification du Provider
             _authStateProvider.NotifyUserAuthentication(
                 result.Token,
                 result.User.Role,
                 result.User.Id.ToString(),
-                result.User.FirstName);
+                result.User.FirstName
+            );
 
             return new AuthResponse { Success = true };
         }
@@ -93,13 +91,19 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
         return new AuthResponse { Success = false, Error = "Une erreur est survenue." };
     }
 
+    public async Task GetAuthenticatedUser()
+    {
+        string? token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
+        if(string.IsNullOrWhiteSpace(token))
+        {
+            return;
+        }
+    }
+
     public async Task Logout()
     {
         // Nettoyage local
         await _js.InvokeVoidAsync("localStorage.removeItem", "authToken");
-        await _js.InvokeVoidAsync("localStorage.removeItem", "userRole");
-        await _js.InvokeVoidAsync("localStorage.removeItem", "userId");
-        await _js.InvokeVoidAsync("localStorage.removeItem", "userName");
 
         // Notification de l'état déconnecté
         _authStateProvider.NotifyUserLogout();
