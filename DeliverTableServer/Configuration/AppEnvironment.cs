@@ -48,6 +48,7 @@ public sealed class AppEnvironment
         var osSecretKey = RequireVar("OBJECT_STORAGE_SECRET_KEY", errors);
         var osBucket = RequireVar("OBJECT_STORAGE_BUCKET_NAME", errors);
         var osForcePathStyle = ParseBool("OBJECT_STORAGE_FORCE_PATH_STYLE", defaultValue: true);
+        var osRegion = GetVar("OBJECT_STORAGE_REGION") ?? "garage";
 
         var openApiEnable = ParseBool("OPENAPI_ENABLE_DOCUMENTATION", defaultValue: false);
 
@@ -67,7 +68,7 @@ public sealed class AppEnvironment
                 Audience = jwtAudience!,
                 ExpireMinutes = jwtExpire
             },
-            new ObjectStorageConfig(osUrl!, osAccessKey!, osSecretKey!, osBucket!, osForcePathStyle),
+            new ObjectStorageConfig(osUrl!, osAccessKey!, osSecretKey!, osBucket!, osForcePathStyle, osRegion),
             openApiEnable);
     }
 

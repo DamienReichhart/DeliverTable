@@ -15,15 +15,9 @@ public static class ServiceCollectionExtensions
     {
         RegisterHealthServices(services);
         RegisterTokenService(services);
-        // Register additional service groups here as the app grows, e.g.:
-        // RegisterBookingServices(services);
-        // RegisterRestaurantServices(services);
         return services;
     }
 
-    /// <summary>
-    ///     Registers health-related services.
-    /// </summary>
     private static void RegisterHealthServices(IServiceCollection services)
     {
         services.AddScoped<IHealthService, HealthService>();
