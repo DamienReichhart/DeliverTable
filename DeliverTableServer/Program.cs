@@ -44,6 +44,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// app.UseMiddleware<NotFoundMiddleware>();
+
 var enableOpenApi = app.Environment.IsDevelopment() || env.OpenApiEnableDocumentation;
 
 if (enableOpenApi)

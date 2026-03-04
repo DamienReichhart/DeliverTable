@@ -31,4 +31,9 @@
         <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Watch Remove="bin\**" />
+        <Watch Remove="obj\**" />
+    </ItemGroup>
+
 </Project>
