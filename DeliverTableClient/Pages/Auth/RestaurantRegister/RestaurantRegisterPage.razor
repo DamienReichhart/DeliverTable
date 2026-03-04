@@ -1,84 +1,90 @@
-﻿@page "/owner/register"
+@page "/owner/register"
 @using DeliverTableSharedLibrary.Dtos.Auth
 @inject AuthService AuthService
 @inject NavigationManager Nav
 
 <div class="container register-page">
-    <div class="hidden-mobile register-page-icon">Montre toi</div>
+    <div class="register-page-illustration">
+        <div class="register-illustration-content">
+            <h2>Espace gérant</h2>
+            <p>Référencez votre restaurant et touchez de nouveaux clients.</p>
+        </div>
+    </div>
     <div class="row justify-content-center w-full">
-                <div class="register-form">
-                    <h3 class="text-center">Créer un compte gérant</h3>
+        <div class="register-form">
+            <h3 class="text-center">Créer un compte gérant</h3>
 
-                    <EditForm Model="@_restaurantRegisterModel" OnValidSubmit="HandleRestaurantOwnerRegister">
-                        <DataAnnotationsValidator />
-                            <div class="mb-1">
-                                <label class="form-label">Prénom</label>
-                                <InputText @bind-Value="_restaurantRegisterModel.FirstName" class="form-control" />
-                                <ValidationMessage For="@(() => _restaurantRegisterModel.FirstName)" class="text-danger" />
-                            </div>
-                            <div class="mb-1">
-                                <label class="form-label">Nom</label>
-                                <InputText @bind-Value="_restaurantRegisterModel.LastName" class="form-control" />
-                                <ValidationMessage For="@(() => _restaurantRegisterModel.LastName)" class="text-danger" />
-                            </div>
-
-                        <div class="mb-1">
-                            <label class="form-label">Email</label>
-                            <InputText @bind-Value="_restaurantRegisterModel.Email" class="form-control" placeholder="exemple@mail.com" />
-                            <ValidationMessage For="@(() => _restaurantRegisterModel.Email)" class="text-danger" />
-                        </div>
-                        
-                        <div class="mb-1">
-                            <label class="form-label">Nom de l'enseigne</label>
-                            <InputText @bind-Value="_restaurantRegisterModel.CompanyName" class="form-control" placeholder="Nom du restaurant" />
-                            <ValidationMessage For="@(() => _restaurantRegisterModel.CompanyName)" class="text-danger" />
-                        </div>
-                        
-                        <div class="mb-1">
-                            <label class="form-label">N° de téléphone</label>
-                            <InputText @bind-Value="_restaurantRegisterModel.ContactPhoneNumber" class="form-control" placeholder="N° de téléphone" />
-                            <ValidationMessage For="@(() => _restaurantRegisterModel.ContactPhoneNumber)" class="text-danger" />
-                        </div>
-                        
-                        <div class="mb-1">
-                            <label class="form-label">N° de SIRET</label>
-                            <InputText @bind-Value="_restaurantRegisterModel.VatNumber" class="form-control" placeholder="N° de SIRET" />
-                            <ValidationMessage For="@(() => _restaurantRegisterModel.VatNumber)" class="text-danger" />
-                        </div>
-
-                        <div class="mb-1">
-                            <label class="form-label">Mot de passe (12 caractères min.)</label>
-                            <InputText @bind-Value="_restaurantRegisterModel.Password" type="password" class="form-control" />
-                            <ValidationMessage For="@(() => _restaurantRegisterModel.Password)" class="text-danger" />
-                        </div>
-
-                        <div class="mb-1">
-                            <label class="form-label">Confirmer le mot de passe</label>
-                            <InputText @bind-Value="_restaurantRegisterModel.ConfirmPassword" type="password" class="form-control" />
-                            <ValidationMessage For="@(() => _restaurantRegisterModel.ConfirmPassword)" class="text-danger" />
-                        </div>
-                        
-                        @if (!string.IsNullOrEmpty(_errorMessage))
-                        {
-                            <div class="alert alert-danger w-70">@_errorMessage</div>
-                        }
-
-                        <button type="submit" class="app-btn mx-auto mt-1" disabled="@_isSubmitting">
-                            @if (_isSubmitting)
-                            {
-                                <span class="spinner-border spinner-border-sm"></span> <span> Création du compte...</span>
-                            }
-                            else
-                            {
-                                <span>Créer mon compte gérant</span>
-                            }
-                        </button>
-                    </EditForm>
-
-                    <div class="text-center mt-3">
-                        <small>Déjà un compte ? <a href="/login">Connectez-vous</a></small>
-                    </div>
+            <EditForm Model="@_restaurantRegisterModel" OnValidSubmit="HandleRestaurantOwnerRegister">
+                <DataAnnotationsValidator />
+                <div class="mb-1 col">
+                    <label class="form-label">Prénom</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.FirstName" class="form-control" placeholder="Votre prénom" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.FirstName)" class="validation-message" />
                 </div>
+                <div class="mb-1 col">
+                    <label class="form-label">Nom</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.LastName" class="form-control" placeholder="Votre nom" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.LastName)" class="validation-message" />
+                </div>
+
+                <div class="mb-1 col">
+                    <label class="form-label">Email</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.Email" class="form-control" placeholder="exemple@mail.com" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.Email)" class="validation-message" />
+                </div>
+                
+                <div class="mb-1 col">
+                    <label class="form-label">Nom de l'enseigne</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.CompanyName" class="form-control" placeholder="Nom du restaurant" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.CompanyName)" class="validation-message" />
+                </div>
+                
+                <div class="mb-1 col">
+                    <label class="form-label">N° de téléphone</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.ContactPhoneNumber" class="form-control" placeholder="N° de téléphone" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.ContactPhoneNumber)" class="validation-message" />
+                </div>
+                
+                <div class="mb-1 col">
+                    <label class="form-label">N° de SIRET</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.VatNumber" class="form-control" placeholder="N° de SIRET" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.VatNumber)" class="validation-message" />
+                </div>
+
+                <div class="mb-1 col">
+                    <label class="form-label">Mot de passe (12 caractères min.)</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.Password" type="password" class="form-control" placeholder="••••••••••••" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.Password)" class="validation-message" />
+                </div>
+
+                <div class="mb-1 col">
+                    <label class="form-label">Confirmer le mot de passe</label>
+                    <InputText @bind-Value="_restaurantRegisterModel.ConfirmPassword" type="password" class="form-control" placeholder="••••••••••••" />
+                    <ValidationMessage For="@(() => _restaurantRegisterModel.ConfirmPassword)" class="validation-message" />
+                </div>
+                
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger w-70">@_errorMessage</div>
+                }
+
+                <button type="submit" class="app-btn w-full mt-1" disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <span class="profile-spinner-sm"></span>
+                        <span>Création du compte...</span>
+                    }
+                    else
+                    {
+                        <span>Créer mon compte gérant</span>
+                    }
+                </button>
+            </EditForm>
+
+            <div class="text-center mt-2">
+                <p class="text-muted">Déjà un compte ? <a href="/login">Connectez-vous</a></p>
+            </div>
+        </div>
     </div>
 </div>
 @code {

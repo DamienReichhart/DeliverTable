@@ -1,19 +1,23 @@
-﻿@page "/login"
+@page "/login"
 @using DeliverTableSharedLibrary.Dtos.Auth
 @inject AuthService AuthService
 @inject NavigationManager Nav   
 
 <div class="container login-page screen-h-80 centered">
-    <div class="hidden-mobile login-page-icon">Montre toi</div>
+    <div class="login-page-illustration">
+        <div class="login-illustration-content">
+            <h2>Bon retour</h2>
+            <p>Chaque repas mérite une vraie table.</p>
+        </div>
+    </div>
     <div class="row justify-content-center w-full">
         <div class="login-form">
-            <h3 class="card-title text-center mb-2">Connexion</h3>
+            <h3 class="card-title text-center">Connexion</h3>
 
             <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin">
                 <DataAnnotationsValidator/>
                 <div class="mb-1 col">
                     <label class="form-label">Email</label>
-                    @* On applique la classe .app-input de ton CSS *@
                     <InputText @bind-Value="_loginModel.Email" 
                         class="form-control app-input" 
                         placeholder="votre@email.com" />
@@ -21,7 +25,7 @@
                 </div>
 
                 <div class="mb-1 col">
-                    <label class="form-label fw-bold">Mot de passe</label>
+                    <label class="form-label">Mot de passe</label>
                     <InputText @bind-Value="_loginModel.Password" 
                         type="password" 
                         class="form-control app-input" 
@@ -36,11 +40,11 @@
                     </div>  
                 }
 
-                <button type="submit" class="app-btn w-full" disabled="@_isSubmitting">
+                <button type="submit" class="app-btn w-full mt-1" disabled="@_isSubmitting">
                     @if (_isSubmitting)
                     {
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        <span class="ms-2">Chargement...</span>
+                        <span class="profile-spinner-sm"></span>
+                        <span>Chargement...</span>
                     }
                     else
                     {
@@ -49,9 +53,9 @@
                 </button>
             </EditForm>
             
-            <div class="mt-4 text-center">
-                <p class="text-muted small">
-                    Pas encore de compte ? <a href="/register" class="text-primary text-decoration-none fw-bold">S'inscrire</a>
+            <div class="mt-2 text-center">
+                <p class="text-muted">
+                    Pas encore de compte ? <a href="/register">S'inscrire</a>
                 </p>
             </div>
         </div>

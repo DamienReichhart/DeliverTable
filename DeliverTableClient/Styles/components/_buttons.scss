@@ -1,27 +1,30 @@
 // -----------------------------------------------------------------------------
-// Button styles (primary, link, focus).
+// Button styles – DeliverTable brand.
 // -----------------------------------------------------------------------------
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
 .app-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: $spacing-sm $spacing-md;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-lg;
   font-family: $font-family-base;
   font-size: $font-size-base;
-  font-weight: $font-weight-normal;
-  line-height: $line-height-base;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-tight;
   text-align: center;
   text-decoration: none;
-  border: 1px solid transparent;
-  border-radius: 4px;
+  border: 2px solid transparent;
+  border-radius: $radius-md;
   cursor: pointer;
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: background-color $transition-fast,
+              border-color $transition-fast,
+              color $transition-fast,
+              box-shadow $transition-fast;
   background-color: $color-primary;
-  margin: 0 auto;
   color: $color-text-inverse;
 
   &:focus {
@@ -29,39 +32,76 @@
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
   }
-  
-  &:hover {
-    background-color: $color-text-inverse;
-    border-color: $color-primary;
-    color: $color-text;
+
+  &:hover:not(:disabled) {
+    background-color: $color-primary-hover;
+    border-color: $color-primary-hover;
+    color: $color-text-inverse;
+    text-decoration: none;
   }
 }
 
 .app-btn--primary {
   color: $color-text-inverse;
   background-color: $color-primary;
-  border-color: $color-primary-border;
+  border-color: $color-primary;
 
   &:hover:not(:disabled) {
-    background-color: $color-primary-hover;
-    border-color: $color-primary-hover;
+    background-color: $color-primary-dark;
+    border-color: $color-primary-dark;
+  }
+}
+
+.app-btn--secondary {
+  color: $color-text;
+  background-color: transparent;
+  border-color: $color-border;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-subtle;
+    border-color: $color-text-muted;
+    color: $color-text;
+  }
+}
+
+.app-btn--accent {
+  color: $color-text-inverse;
+  background-color: $color-accent;
+  border-color: $color-accent;
+
+  &:hover:not(:disabled) {
+    background-color: $color-accent-hover;
+    border-color: $color-accent-hover;
   }
 }
 
 .app-btn--link {
-  color: $color-accent;
+  color: $color-primary;
   background: none;
   border: none;
+  padding: $spacing-xs $spacing-sm;
 
   &:hover:not(:disabled) {
-    color: $color-accent-hover;
+    color: $color-primary-dark;
     text-decoration: underline;
+    background: none;
   }
 }
 
 .app-btn--refresh {
   margin-top: $spacing-sm;
+}
+
+.app-btn--gold {
+  background-color: $color-amber-gold;
+  border-color: $color-amber-gold;
+  color: $color-deep-charcoal;
+
+  &:hover:not(:disabled) {
+    background-color: $color-secondary-hover;
+    border-color: $color-secondary-hover;
+  }
 }

@@ -1,11 +1,11 @@
 {
-  "name": "DeliverTableClient",
-  "short_name": "DeliverTableClient",
+  "name": "DeliverTable",
+  "short_name": "DeliverTable",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#03173d",
+  "background_color": "#FFF8F0",
+  "theme_color": "#1A1A2E",
   "prefer_related_applications": false,
   "icons": [
     {

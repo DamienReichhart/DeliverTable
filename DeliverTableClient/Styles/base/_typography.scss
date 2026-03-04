@@ -1,8 +1,10 @@
 // -----------------------------------------------------------------------------
-// Base typography and links.
+// Base typography, headings, and links.
+// Based on DeliverTable Brand Guidelines v1.0
 // -----------------------------------------------------------------------------
 
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
 
 html,
 body {
@@ -11,23 +13,71 @@ body {
   line-height: $line-height-base;
   color: $color-text;
   background-color: $color-bg;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+// ── Headings use DM Serif Display ──
+
+h1, h2, h3, h4 {
+  @include heading-display;
+  margin-top: 0;
+}
+
+h1 {
+  font-size: $font-size-h1;
+  margin-bottom: $spacing-lg;
+}
+
+h2 {
+  font-size: $font-size-h2;
+  margin-bottom: $spacing-md;
+}
+
+h3 {
+  font-size: $font-size-h3;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-sm;
+}
+
+h4 {
+  font-size: $font-size-h4;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-sm;
+}
+
+// ── Links ──
 
 a,
 .app-link {
-  color: $color-accent;
+  color: $color-primary;
   text-decoration: none;
+  transition: color $transition-fast;
 
   &:hover {
+    color: $color-primary-hover;
     text-decoration: underline;
-    color: $color-accent-hover;
   }
 }
 
+// ── Code / Mono ──
+
 code {
-  color: #c02d76;
+  font-family: $font-family-mono;
+  color: $color-primary;
+  font-size: 0.875em;
 }
 
-.text-center{
+// ── Helpers ──
+
+.text-center {
   text-align: center;
+}
+
+.text-muted {
+  color: $color-text-muted;
+}
+
+.text-mono {
+  @include label-mono;
 }

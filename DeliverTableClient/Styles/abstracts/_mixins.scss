@@ -22,14 +22,19 @@
 }
 
 @mixin nav-link-base {
-  color: #d7d7d7;
-  border-radius: 4px;
-  height: 3rem;
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: $radius-md;
+  height: 2.75rem;
   display: flex;
   align-items: center;
-  line-height: 3rem;
+  gap: $spacing-sm;
+  line-height: 2.75rem;
   text-decoration: none;
   padding: 0 $spacing-md;
+  font-family: $font-family-base;
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
+  transition: background-color $transition-fast, color $transition-fast;
 
   &:hover {
     background-color: $color-nav-hover;
@@ -39,5 +44,33 @@
   &.active {
     background-color: $color-nav-active;
     color: $color-text-inverse;
+    font-weight: $font-weight-semibold;
   }
+}
+
+@mixin card {
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: box-shadow $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+@mixin heading-display {
+  font-family: $font-family-display;
+  line-height: $line-height-heading;
+  color: $color-text;
+}
+
+@mixin label-mono {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: $font-weight-medium;
 }

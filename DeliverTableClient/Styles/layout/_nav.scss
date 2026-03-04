@@ -5,15 +5,16 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Top row (brand + hamburger on mobile)
+// ── Top row (brand + hamburger on mobile) ──
+
 .app-nav-top {
   min-height: $topbar-height;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 $spacing-md;
-  background-color: $color-overlay;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba($color-deep-charcoal, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
   a,
   .app-link {
@@ -54,11 +55,26 @@
   }
 }
 
+// ── Brand ──
+
 .app-nav-brand {
-  font-size: $font-size-lg;
+  font-family: $font-family-display;
+  font-size: 1.25rem;
   font-weight: $font-weight-bold;
   color: $color-text-inverse;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  letter-spacing: -0.01em;
 }
+
+.app-nav-brand-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+// ── Toggler ──
 
 .app-nav-toggler {
   display: flex;
@@ -68,11 +84,11 @@
   height: 2.5rem;
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: $radius-md;
   background-color: $color-nav-hover;
   color: $color-text-inverse;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color $transition-fast;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.2);
@@ -98,7 +114,8 @@
   }
 }
 
-// Collapsible nav (mobile)
+// ── Collapsible nav (mobile) ──
+
 .app-nav-collapse {
   display: none;
 }
@@ -107,12 +124,12 @@
   .app-nav-collapse {
     display: block;
   }
-  
+
   .app-nav-list {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+    transition: opacity $transition-fast, visibility 0s linear 150ms;
   }
 }
 
@@ -124,9 +141,11 @@
   flex-direction: column;
 }
 
+// ── Nav items ──
+
 .app-nav-item {
   font-size: $font-size-sm;
-  padding-bottom: $spacing-sm;
+  padding-bottom: $spacing-xs;
 
   &:first-of-type {
     padding-top: $spacing-md;
@@ -142,14 +161,21 @@
   }
 }
 
-// Heart icon for Server Health nav link
+.btn-logout {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  background: none;
+}
+
+// ── Nav icon ──
+
 .app-nav-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
-  margin-right: 0.75rem;
   flex-shrink: 0;
   background-repeat: no-repeat;
   background-position: center;
