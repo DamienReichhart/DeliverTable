@@ -1,20 +1,72 @@
 @use "../../../Styles/abstracts/variables" as *;
+@use "../../../Styles/abstracts/mixins" as *;
 
-.register-form{
-    width: 100%;
+.register-form {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: $spacing-xl;
+}
+
+.register-page-illustration {
+  display: none;
+  background-color: $color-deep-charcoal;
+  align-items: center;
+  justify-content: center;
+  color: $color-text-inverse;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -15%;
+    right: -10%;
+    width: 320px;
+    height: 320px;
+    border-radius: $radius-full;
+    background: rgba($color-coral-fire, 0.12);
+  }
+}
+
+.register-illustration-content {
+  text-align: center;
+  z-index: 1;
+
+  h2 {
+    font-family: $font-family-display;
+    font-size: $font-size-h2;
+    color: $color-text-inverse;
+    margin-bottom: $spacing-sm;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: $font-size-base;
+  }
+}
+
+.register-form h3 {
+  font-family: $font-family-display;
+  font-size: $font-size-h3;
+  color: $color-text;
+  margin-bottom: $spacing-lg;
+  text-align: center;
 }
 
 @media (min-width: $breakpoint-desktop) {
-    .register-form {
-        width: 70%;
-    }
+  .register-form {
+    width: 50%;
+    padding: $spacing-2xl;
+  }
 
-    .register-page {
-        display: flex;
-    }
+  .register-page {
+    display: flex;
+    min-height: 85vh;
+  }
 
-    .register-page-icon {
-        width: 50%;
-        background-color: $color-accent;
-    }
+  .register-page-illustration {
+    display: flex;
+    width: 50%;
+  }
 }

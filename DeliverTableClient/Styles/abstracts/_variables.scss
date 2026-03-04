@@ -1,87 +1,145 @@
 // -----------------------------------------------------------------------------
 // Design tokens – single source of truth for colors, spacing, typography.
+// Based on DeliverTable Brand Guidelines v1.0 (March 2026)
 // -----------------------------------------------------------------------------
 
-// Colors
-$color-primary: #721C36;
-$color-primary-hover: #2e0c15;
-$color-primary-border: #0a3d91;
-$color-accent: #2e0c15;
-$color-accent-hover: #721C36;
+// ── Brand Colors ──
 
-$color-secondary: #BF9E62;
+$color-coral-fire:    #E85D34;
+$color-deep-charcoal: #1A1A2E;
+$color-warm-cream:    #FFF8F0;
+$color-amber-gold:    #F2A541;
+$color-garden-sage:   #7BAE7A;
+$color-soft-coral:    #FF7F50;
 
-$color-text: #1a1a1a;
-$color-text-muted: #5c5c5c;
-$color-text-inverse: #ffffff;
+// ── Semantic Aliases ──
 
-$color-bg: #f6f6f6;
-$color-bg-subtle: #f7f7f7;
-$color-bg-sidebar: linear-gradient(180deg, #052767 0%, #3a0647 70%);
-$color-border: #d6d5d5;
-$color-border-focus: #258cfb;
+$color-primary:       $color-coral-fire;
+$color-primary-hover: $color-soft-coral;
+$color-primary-dark:  darken($color-coral-fire, 10%);
 
-$color-success: #0d6e0d;
-$color-success-outline: #26b050;
-$color-error: #b32121;
-$color-error-bg: #b32121;
-$color-warning-bg: #fffde7;
+$color-accent:        $color-deep-charcoal;
+$color-accent-hover:  lighten($color-deep-charcoal, 12%);
 
-$color-overlay: rgba(0, 0, 0, 0.4);
-$color-nav-hover: rgba(255, 255, 255, 0.1);
-$color-nav-active: #2e0c15;
+$color-secondary:     $color-amber-gold;
+$color-secondary-hover: darken($color-amber-gold, 8%);
 
-// Typography
-$font-family-base: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-$font-size-base: 1rem;
-$font-size-sm: 0.9rem;
-$font-size-lg: 1.1rem;
-$font-weight-normal: 400;
-$font-weight-bold: 700;
+$color-text:          $color-deep-charcoal;
+$color-text-muted:    #6B6B80;
+$color-text-inverse:  #FFFFFF;
+
+$color-bg:            $color-warm-cream;
+$color-bg-subtle:     #FFF4E8;
+$color-bg-white:      #FFFFFF;
+$color-border:        #E8E4DF;
+$color-border-focus:  $color-coral-fire;
+
+$color-success:       $color-garden-sage;
+$color-success-outline: lighten($color-garden-sage, 10%);
+$color-error:         #C0392B;
+$color-error-bg:      #C0392B;
+$color-warning:       $color-amber-gold;
+$color-warning-bg:    #FFF8E1;
+
+$color-overlay:       rgba($color-deep-charcoal, 0.6);
+$color-nav-hover:     rgba(255, 255, 255, 0.1);
+$color-nav-active:    $color-coral-fire;
+
+// ── Typography ──
+
+$font-family-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+$font-family-base:    'Plus Jakarta Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$font-family-mono:    'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+$font-size-base:  0.9375rem; // 15px
+$font-size-sm:    0.8125rem; // 13px
+$font-size-lg:    1.0625rem; // 17px
+$font-size-xs:    0.75rem;   // 12px
+
+$font-size-h1: 3rem;      // 48px
+$font-size-h2: 2.25rem;   // 36px
+$font-size-h3: 1.5rem;    // 24px
+$font-size-h4: 1.125rem;  // 18px
+
+$font-weight-light:    300;
+$font-weight-normal:   400;
+$font-weight-medium:   500;
+$font-weight-semibold: 600;
+$font-weight-bold:     700;
+$font-weight-extrabold: 800;
+
 $line-height-tight: 1.25;
-$line-height-base: 1.5;
+$line-height-base:  1.7;
+$line-height-heading: 1.2;
 
-// Spacing
-$spacing-xs: 0.25rem;
-$spacing-sm: 0.5rem;
-$spacing-md: 1rem;
-$spacing-lg: 1.5rem;
-$spacing-xl: 2rem;
+// ── Spacing ──
+
+$spacing-xs:  0.25rem;
+$spacing-sm:  0.5rem;
+$spacing-md:  1rem;
+$spacing-lg:  1.5rem;
+$spacing-xl:  2rem;
 $spacing-2xl: 2.5rem;
+$spacing-3xl: 3rem;
 
-// Layout
-$sidebar-width: 250px;
-$sidebar-width-retracted: 100px;
-$topbar-height: 3.5rem;
-$content-padding-x: 1.5rem;
-$content-padding-x-wide: 2rem;
-$breakpoint-mobile: 640.98px;
-$breakpoint-desktop: 641px;
+// ── Layout ──
 
-// Focus / accessibility
-$focus-ring: 0 0 0 0.1rem $color-bg, 0 0 0 0.25rem $color-border-focus;
+$sidebar-width:           250px;
+$sidebar-width-retracted: 80px;
+$topbar-height:           3.75rem;
+$content-padding-x:       1.5rem;
+$content-padding-x-wide:  2.5rem;
+$breakpoint-mobile:       640.98px;
+$breakpoint-desktop:      641px;
 
-// Z-index
+// ── Borders & Radius ──
+
+$radius-sm:  0.375rem;
+$radius-md:  0.5rem;
+$radius-lg:  0.75rem;
+$radius-xl:  1rem;
+$radius-full: 50%;
+
+// ── Shadows ──
+
+$shadow-sm:  0 1px 3px rgba($color-deep-charcoal, 0.06);
+$shadow-md:  0 4px 12px rgba($color-deep-charcoal, 0.08);
+$shadow-lg:  0 8px 24px rgba($color-deep-charcoal, 0.1);
+$shadow-card: 0 2px 8px rgba($color-deep-charcoal, 0.05);
+
+// ── Focus / Accessibility ──
+
+$focus-ring: 0 0 0 2px $color-bg, 0 0 0 4px $color-coral-fire;
+
+// ── Z-index ──
+
 $z-error-ui: 1000;
-$z-topbar: 1;
+$z-topbar: 10;
+$z-sidebar: 20;
 
-$color-warning: #f8c52b;
-$color-light: #f6f6f6;
-$color-dark: #1d1d1d;
+// ── Transitions ──
 
-// Statuses
-$statuses : (
-    "success": $color-success,
-    "danger": $color-error,
-    "warning": $color-warning,
-    "light": $color-light,
-    "dark": $color-dark
+$transition-fast: 150ms ease;
+$transition-base: 250ms ease;
+$transition-slow: 400ms ease;
+
+// ── Status map ──
+
+$color-light: $color-warm-cream;
+$color-dark:  $color-deep-charcoal;
+
+$statuses: (
+  "success": $color-success,
+  "danger":  $color-error,
+  "warning": $color-warning,
+  "light":   $color-light,
+  "dark":    $color-dark,
 );
 
-$alertColors : (
-    "success" rgb(98, 201, 116) $color-success $color-light,
-    "danger" rgb(214, 122, 122) $color-error $color-light,
-    "warning" rgb(253, 217, 109) $color-warning $color-dark,
-    "light" rgb(209, 209, 209) $color-light $color-dark,
-    "dark" rgb(115, 115, 115) $color-dark $color-light
+$alertColors: (
+  "success" rgba($color-garden-sage, 0.15) $color-garden-sage $color-deep-charcoal,
+  "danger"  rgba($color-error, 0.12) $color-error $color-deep-charcoal,
+  "warning" rgba($color-amber-gold, 0.15) $color-amber-gold $color-deep-charcoal,
+  "light"   rgba($color-deep-charcoal, 0.06) $color-border $color-deep-charcoal,
+  "dark"    rgba($color-deep-charcoal, 0.85) $color-deep-charcoal $color-text-inverse,
 );

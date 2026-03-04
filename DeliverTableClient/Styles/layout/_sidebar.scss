@@ -5,7 +5,7 @@
 @use '../abstracts/variables' as *;
 
 .app-sidebar {
-  background: $color-primary;
+  background-color: $color-deep-charcoal;
 }
 
 .app-nav-scrollable {
@@ -18,25 +18,29 @@
     min-height: 100vh;
     position: sticky;
     top: 0;
-    transition: width 0.15s ease;
+    z-index: $z-sidebar;
+    transition: width $transition-base;
+    box-shadow: 2px 0 12px rgba($color-deep-charcoal, 0.15);
   }
-  
+
   .app-nav-scrollable::-webkit-scrollbar {
     display: none;
   }
-  
-  .app-nav-scrollable{
+
+  .app-nav-scrollable {
     height: calc(100vh - $topbar-height);
     overflow-x: hidden;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-  
-  .app-sidebar:hover,.app-sidebar:focus-within {
+
+  .app-sidebar:hover,
+  .app-sidebar:focus-within {
     width: $sidebar-width;
   }
-  
-  .app-sidebar:hover .app-nav-list, .app-sidebar:focus-within .app-nav-list {
+
+  .app-sidebar:hover .app-nav-list,
+  .app-sidebar:focus-within .app-nav-list {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;

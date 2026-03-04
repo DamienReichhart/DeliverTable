@@ -1,48 +1,67 @@
 @use '../../Styles/abstracts/variables' as *;
-
+@use '../../Styles/abstracts/mixins' as *;
 
 .restaurant-list {
-    margin: 1rem auto;
-    list-style-type: none;
+  margin: $spacing-md auto;
+  list-style-type: none;
+  padding: 0;
 }
 
 .restaurant-card {
-    width: 90%;
-    padding: 1rem;
-    border: 2px solid $color-primary;
-    border-radius: 1.5em;
-    display: flex;
-    align-items: center;
+  width: 100%;
+  padding: $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  background: $color-bg-white;
+  transition: box-shadow $transition-base, border-color $transition-base;
+  margin-bottom: $spacing-md;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: $color-primary;
+  }
 }
 
 .restaurant-card-content {
-    width: 80%;
+  flex: 1;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0 0 $spacing-xs;
+  }
+
+  p {
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+    margin: 0;
+  }
 }
 
 .restaurant-card-controls {
-    width: 20%;
-    display: flex;
-    flex-direction: column;
-    gap: .5rem;
+  display: flex;
+  gap: $spacing-sm;
+  flex-shrink: 0;
 }
 
-.restaurant-card-controls > button, .restaurant-card-controls ::deep a {
-    width: 100%;
-    padding: .5rem;
-    margin: 0;
+.restaurant-card-controls > button,
+.restaurant-card-controls ::deep a {
+  padding: $spacing-sm;
+  margin: 0;
+  min-width: 2.5rem;
 }
 
 @media (min-width: $breakpoint-desktop) {
-    .restaurant-card {
-        width: 30%;
-    }
+  .restaurant-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: $spacing-md;
+  }
 
-
-    .restaurant-list {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
-        row-gap: 1rem;
-    }
+  .restaurant-card {
+    margin-bottom: 0;
+  }
 }

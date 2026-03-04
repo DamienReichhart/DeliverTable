@@ -2,7 +2,13 @@
 @inject NavigationManager Nav
 
 <div class="app-nav-top">
-    <a class="app-nav-brand" href="/">DeliverTable</a>
+    <a class="app-nav-brand" href="/">
+        <svg class="app-nav-brand-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="15" fill="#E85D34"/>
+            <text x="16" y="21" text-anchor="middle" font-family="'DM Serif Display', serif" font-size="18" font-weight="bold" fill="white">D</text>
+        </svg>
+        <span>DeliverTable</span>
+    </a>
     <button type="button" title="Navigation menu" class="app-nav-toggler" @onclick="ToggleNavMenu"
             aria-label="Toggle navigation menu">
         <span class="app-nav-toggler-icon" aria-hidden="true"></span>
@@ -11,7 +17,7 @@
 
 <div class="app-nav-scrollable @NavMenuCssClass" @onclick="ToggleNavMenu">
     <nav class="app-nav-list" aria-label="Main navigation">
-        
+
         <div class="app-nav-item">
             <NavLink href="/" Match="NavLinkMatch.All" class="app-nav-link">
                 <Blazicon Svg="Lucide.House" class="app-nav-icon" />&nbsp;Accueil
@@ -22,33 +28,33 @@
             <Authorized>
                 <div class="app-nav-item">
                     <NavLink href="/profil" class="app-nav-link">
-                        <span class="app-nav-icon" aria-hidden="true">👤</span> Mon Profil (@auth.User.Identity?.Name)
+                        <Blazicon Svg="Lucide.User" class="app-nav-icon" />&nbsp;Mon Profil
                     </NavLink>
                 </div>
 
                 <AuthorizeView Roles="RestaurantOwner" Context="ownerCtx">
                     <div class="app-nav-item">
                         <NavLink href="/mes-restaurants" class="app-nav-link">
-                            <span class="app-nav-icon" aria-hidden="true">🍽️</span> Mes Restaurants
+                            <Blazicon Svg="Lucide.UtensilsCrossed" class="app-nav-icon" />&nbsp;Mes Restaurants
                         </NavLink>
                     </div>
                 </AuthorizeView>
 
                 <div class="app-nav-item">
                     <button class="app-nav-link btn-logout" @onclick="HandleLogout">
-                        <span class="app-nav-icon" aria-hidden="true">🚪</span> Déconnexion
+                        <Blazicon Svg="Lucide.LogOut" class="app-nav-icon" />&nbsp;Déconnexion
                     </button>
                 </div>
             </Authorized>
             <NotAuthorized>
                 <div class="app-nav-item">
                     <NavLink href="/login" class="app-nav-link">
-                        <span class="app-nav-icon" aria-hidden="true">🔑</span> Se connecter
+                        <Blazicon Svg="Lucide.LogIn" class="app-nav-icon" />&nbsp;Se connecter
                     </NavLink>
                 </div>
                 <div class="app-nav-item">
                     <NavLink href="/register" class="app-nav-link">
-                        <span class="app-nav-icon" aria-hidden="true">🔑</span> Créer son compte
+                        <Blazicon Svg="Lucide.UserPlus" class="app-nav-icon" />&nbsp;Créer son compte
                     </NavLink>
                 </div>
             </NotAuthorized>
@@ -69,6 +75,6 @@
     private async Task HandleLogout()
     {
         await AuthService.Logout();
-        Nav.NavigateTo("/"); // Redirige vers l'accueil après déconnexion
+        Nav.NavigateTo("/");
     }
 }

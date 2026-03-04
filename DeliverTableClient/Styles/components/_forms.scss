@@ -14,11 +14,11 @@
 }
 
 .valid.modified:not([type='checkbox']) {
-  outline: 1px solid $color-success-outline;
+  outline: 2px solid $color-success-outline;
 }
 
 .invalid {
-  outline: 1px solid $color-error;
+  outline: 2px solid $color-error;
 }
 
 .validation-message {
@@ -28,8 +28,18 @@
 }
 
 .app-input {
-  padding: .5rem 1rem;
-  border-radius: .3rem;
+  padding: 0.625rem 1rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $color-text;
+  background-color: $color-bg-white;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    border-color: $color-primary;
+  }
 }
 
 .app-input::placeholder {
@@ -37,21 +47,51 @@
 }
 
 .app-input:focus::placeholder {
-  color: $color-text;
+  color: lighten($color-text-muted, 15%);
 }
 
 form .text-danger {
-  font-size: .8em;
+  font-size: 0.8em;
+  color: $color-error;
 }
 
-.form-label{
-    margin-bottom: .3rem;
+.form-label {
+  margin-bottom: 0.375rem;
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
+  color: $color-text;
 }
 
-.form-control{
-  padding: .5rem 1rem;
-  border-width: 1px;
-  border-color: $color-accent;
-  border-radius: .5rem;
+.form-control {
+  padding: 0.625rem 1rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
   width: 100%;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $color-text;
+  background-color: $color-bg-white;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.15);
+  }
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+
+  label {
+    display: block;
+    margin-bottom: $spacing-xs;
+    font-weight: $font-weight-medium;
+    font-size: $font-size-sm;
+    color: $color-text;
+  }
 }
