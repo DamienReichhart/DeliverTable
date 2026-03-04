@@ -1,12 +1,19 @@
-@use '../../../Styles/abstracts//variables' as *;
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
 
-.restaurant-creation{
-    width: 90%;
-    margin: 0 auto;
+.restaurant-creation {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+
+  label {
+    font-weight: $font-weight-medium;
+    font-size: $font-size-sm;
+  }
 }
 
 @media (min-width: $breakpoint-desktop) {
-    .restaurant-creation{
-        width: 50%;
-    }
+  .restaurant-creation {
+    width: 60%;
+  }
 }

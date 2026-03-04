@@ -1,4 +1,5 @@
 @use "../../../Styles/abstracts/variables" as *;
+@use "../../../Styles/abstracts/mixins" as *;
 
 .my-restaurants-page {
   max-width: 960px;
@@ -16,8 +17,8 @@
 
   h2 {
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: $font-weight-bold;
+    font-family: $font-family-display;
+    font-size: $font-size-h2;
     color: $color-text;
   }
 
@@ -43,8 +44,5 @@
 }
 
 .my-restaurants-content {
-  background: #ffffff;
-  border: 1px solid $color-border;
-  border-radius: 0.75rem;
-  padding: $spacing-lg;
+  @include card;
 }

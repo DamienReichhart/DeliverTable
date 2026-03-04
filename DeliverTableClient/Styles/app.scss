@@ -1,5 +1,6 @@
 // -----------------------------------------------------------------------------
-// DeliverTable Client – main stylesheet (Sass only, no Bootstrap).
+// DeliverTable Client – main stylesheet.
+// Brand Guidelines v1.0 (March 2026)
 // -----------------------------------------------------------------------------
 
 @use 'abstracts/variables' as *;
@@ -16,6 +17,7 @@
 
 textarea {
   resize: vertical;
+  font-family: $font-family-base;
 }
 
 .container {
@@ -32,7 +34,7 @@ textarea {
   flex-direction: column;
 }
 
-.centered{
+.centered {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,24 +48,28 @@ textarea {
   align-items: center;
 }
 
-.h-full{
+.h-full {
   height: 100%;
 }
 
-.w-full{
+.w-full {
   width: 100%;
 }
 
-.mx-auto{
+.mx-auto {
   margin: 0 auto;
 }
 
-.hidden-mobile{
+.hidden-mobile {
   display: none;
 }
 
 .rounded {
-  border-radius: 1em;
+  border-radius: $radius-xl;
+}
+
+.gap-1 {
+  gap: $spacing-xs;
 }
 
 @media (min-width: $breakpoint-desktop) {
@@ -78,87 +84,87 @@ textarea {
 }
 
 @for $i from 1 through 100 {
-  .screen-h-#{$i}{
+  .screen-h-#{$i} {
     height: #{$i}vh;
   }
 
-  .screen-w-#{$i}{
+  .screen-w-#{$i} {
     width: #{$i}vw;
   }
 
-  .w-#{$i}{
+  .w-#{$i} {
     width: $i * 1%;
   }
 }
 
 @for $i from 1 through 20 {
-  .m-#{$i}{
+  .m-#{$i} {
     margin: #{$i}rem;
   }
 
-  .p-#{$i}{
+  .p-#{$i} {
     padding: #{$i}rem;
   }
-  
-  .mt-#{$i}{
+
+  .mt-#{$i} {
     margin-top: #{$i}rem;
   }
 
-  .mb-#{$i}{
+  .mb-#{$i} {
     margin-bottom: #{$i}rem;
   }
 
-  .mr-#{$i}{
+  .mr-#{$i} {
     margin-right: #{$i}rem;
   }
 
-  .ml-#{$i}{
-    margin-bottom: #{$i}rem;
+  .ml-#{$i} {
+    margin-left: #{$i}rem;
   }
 
-  .mx-#{$i}{
+  .mx-#{$i} {
     margin-left: #{$i}rem;
     margin-right: #{$i}rem;
   }
 
-  .my-#{$i}{
+  .my-#{$i} {
     margin-top: #{$i}rem;
     margin-bottom: #{$i}rem;
   }
 
-  .pt-#{$i}{
+  .pt-#{$i} {
     padding-top: #{$i}rem;
   }
 
-  .pb-#{$i}{
+  .pb-#{$i} {
     padding-bottom: #{$i}rem;
   }
 
-  .pr-#{$i}{
+  .pr-#{$i} {
     padding-right: #{$i}rem;
   }
 
-  .pl-#{$i}{
-    padding-bottom: #{$i}rem;
+  .pl-#{$i} {
+    padding-left: #{$i}rem;
   }
 
-  .px-#{$i}{
+  .px-#{$i} {
     padding-left: #{$i}rem;
     padding-right: #{$i}rem;
   }
 
-  .py-#{$i}{
+  .py-#{$i} {
     padding-top: #{$i}rem;
     padding-bottom: #{$i}rem;
   }
 }
 
 @each $status, $color in $statuses {
-  .text-#{$status}{
+  .text-#{$status} {
     color: $color;
   }
 
-  .bg-#{$status}{
+  .bg-#{$status} {
     background-color: $color;
   }
 }

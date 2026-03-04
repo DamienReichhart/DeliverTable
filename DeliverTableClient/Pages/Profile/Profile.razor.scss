@@ -1,5 +1,5 @@
-@use "sass:color";
 @use "../../Styles/abstracts/variables" as *;
+@use "../../Styles/abstracts/mixins" as *;
 
 // ── Layout ──
 
@@ -19,8 +19,8 @@
   align-items: center;
   gap: $spacing-lg;
   padding: $spacing-xl;
-  background: linear-gradient(135deg, $color-primary 0%, $color-accent 100%);
-  border-radius: 0.75rem;
+  background: $color-deep-charcoal;
+  border-radius: $radius-lg;
   color: $color-text-inverse;
 }
 
@@ -28,12 +28,13 @@
   width: 72px;
   height: 72px;
   min-width: 72px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: $radius-full;
+  background-color: $color-coral-fire;
+  border: 3px solid rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: $font-family-display;
   font-size: 1.5rem;
   font-weight: $font-weight-bold;
   letter-spacing: 0.05em;
@@ -49,29 +50,24 @@
 
 .profile-name {
   margin: 0;
+  font-family: $font-family-display;
   font-size: 1.4rem;
   font-weight: $font-weight-bold;
   line-height: $line-height-tight;
 }
 
 .profile-role {
-  opacity: 0.8;
-  font-size: $font-size-sm;
-  text-transform: capitalize;
+  opacity: 0.7;
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 // ── Cards ──
 
 .profile-card {
-  background: #ffffff;
-  border: 1px solid $color-border;
-  border-radius: 0.75rem;
-  padding: $spacing-lg;
-  transition: box-shadow 0.2s ease;
-
-  &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  }
+  @include card;
 }
 
 .profile-card-header {
@@ -82,23 +78,24 @@
 
   h3 {
     margin: 0;
-    font-size: 1.1rem;
-    font-weight: $font-weight-bold;
+    font-family: $font-family-display;
+    font-size: 1.25rem;
     color: $color-text;
   }
 }
 
 .profile-card-action {
   background: none;
-  border: 1px solid $color-primary;
+  border: 2px solid $color-primary;
   color: $color-primary;
   padding: $spacing-xs $spacing-md;
-  border-radius: 0.35rem;
+  border-radius: $radius-md;
   font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.2s ease, color 0.2s ease;
   font-family: $font-family-base;
+  transition: background-color $transition-fast, color $transition-fast;
 
   &:hover {
     background-color: $color-primary;
@@ -120,7 +117,7 @@
   flex-direction: column;
   gap: 2px;
   padding: $spacing-sm 0;
-  border-bottom: 1px solid color.adjust($color-border, $lightness: 5%);
+  border-bottom: 1px solid $color-border;
 
   &:last-child {
     border-bottom: none;
@@ -129,11 +126,8 @@
 }
 
 .profile-field-label {
-  font-size: 0.8rem;
+  @include label-mono;
   color: $color-text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: $font-weight-bold;
 }
 
 .profile-field-value {
@@ -167,12 +161,12 @@
 .profile-btn-cancel {
   background-color: transparent;
   color: $color-text-muted;
-  border: 1px solid $color-border;
+  border: 2px solid $color-border;
 
   &:hover {
     background-color: $color-bg-subtle;
     color: $color-text;
-    border-color: $color-border;
+    border-color: $color-text-muted;
   }
 }
 
@@ -193,7 +187,7 @@
   height: 40px;
   border: 3px solid $color-border;
   border-top-color: $color-primary;
-  border-radius: 50%;
+  border-radius: $radius-full;
   animation: profile-spin 0.7s linear infinite;
 }
 
@@ -203,7 +197,7 @@
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #ffffff;
-  border-radius: 50%;
+  border-radius: $radius-full;
   animation: profile-spin 0.7s linear infinite;
   margin-right: $spacing-xs;
   vertical-align: middle;

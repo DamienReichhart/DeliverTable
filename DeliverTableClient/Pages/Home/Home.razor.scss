@@ -1,5 +1,9 @@
 @use "../../Styles/abstracts/variables" as *;
+@use "../../Styles/abstracts/mixins" as *;
 
-.health-page{
-  color:$color-primary;
+.health-page {
+  h1 {
+    font-family: $font-family-display;
+    color: $color-text;
+  }
 }

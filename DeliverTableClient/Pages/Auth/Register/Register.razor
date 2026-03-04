@@ -1,10 +1,15 @@
-﻿@page "/Register"
+@page "/Register"
 @using DeliverTableSharedLibrary.Dtos.Auth
 @inject NavigationManager Nav
 @inject AuthService AuthService
 
 <div class="container register-page">
-    <div class="hidden-mobile register-page-icon">Montre toi</div>
+    <div class="register-page-illustration">
+        <div class="register-illustration-content">
+            <h2>Rejoignez-nous</h2>
+            <p>Découvrez les meilleurs restaurants près de chez vous.</p>
+        </div>
+    </div>
     <div class="row justify-content-center w-full">
         <div class="register-form">
             <h3>Créer son compte</h3>
@@ -13,32 +18,32 @@
                 <DataAnnotationsValidator />
                 <div class="mb-1 col">
                     <label class="form-label">Prénom</label>
-                    <InputText @bind-Value="_registerModel.FirstName" class="form-control" />
-                    <ValidationMessage For="@(() => _registerModel.FirstName)" class="text-danger" />
+                    <InputText @bind-Value="_registerModel.FirstName" class="form-control" placeholder="Votre prénom" />
+                    <ValidationMessage For="@(() => _registerModel.FirstName)" class="validation-message" />
                 </div>
 
                 <div class="mb-1 col">
                     <label class="form-label">Nom</label>
-                    <InputText @bind-Value="_registerModel.LastName" class="form-control" />
-                    <ValidationMessage For="@(() => _registerModel.LastName)" class="text-danger" />
+                    <InputText @bind-Value="_registerModel.LastName" class="form-control" placeholder="Votre nom" />
+                    <ValidationMessage For="@(() => _registerModel.LastName)" class="validation-message" />
                 </div>
 
                 <div class="mb-1 col">
                     <label class="form-label">Email</label>
                     <InputText @bind-Value="_registerModel.Email" class="form-control" placeholder="exemple@mail.com" />
-                    <ValidationMessage For="@(() => _registerModel.Email)" class="text-danger" />
+                    <ValidationMessage For="@(() => _registerModel.Email)" class="validation-message" />
                 </div>
 
                 <div class="mb-1 col">
                     <label class="form-label">Mot de passe (12 caractères min.)</label>
-                    <InputText @bind-Value="_registerModel.Password" type="password" class="form-control" />
-                    <ValidationMessage For="@(() => _registerModel.Password)" class="text-danger" />
+                    <InputText @bind-Value="_registerModel.Password" type="password" class="form-control" placeholder="••••••••••••" />
+                    <ValidationMessage For="@(() => _registerModel.Password)" class="validation-message" />
                 </div>
 
                 <div class="mb-1 col">
                     <label class="form-label">Confirmer le mot de passe</label>
-                    <InputText @bind-Value="_registerModel.ConfirmPassword" type="password" class="form-control" />
-                    <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="text-danger" />
+                    <InputText @bind-Value="_registerModel.ConfirmPassword" type="password" class="form-control" placeholder="••••••••••••" />
+                    <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="validation-message" />
                 </div>
 
                 @if (!string.IsNullOrEmpty(_errorMessage))
@@ -46,10 +51,11 @@
                     <div class="alert alert-danger w-70">@_errorMessage</div>
                 }
 
-                <button type="submit" class="app-btn mx-auto flex mt-1" disabled="@_isSubmitting">
+                <button type="submit" class="app-btn w-full mt-1" disabled="@_isSubmitting">
                     @if (_isSubmitting)
                     {
-                        <span class="spinner-border spinner-border-sm"></span> <span> Création du compte...</span>
+                        <span class="profile-spinner-sm"></span>
+                        <span>Création du compte...</span>
                     }
                     else
                     {
@@ -59,7 +65,7 @@
             </EditForm>
 
             <div class="text-center mt-2">
-                <small>Déjà un compte ? <a href="/login">Connectez-vous</a></small>
+                <p class="text-muted">Déjà un compte ? <a href="/login">Connectez-vous</a></p>
             </div>
         </div>
     </div>
