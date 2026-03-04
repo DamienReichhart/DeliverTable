@@ -22,7 +22,9 @@ namespace DeliverTableServer.Middleware.ActionFilters
             public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
             {
                 // 1. Get the Restaurant ID from the route parameters
-                if (!context.ActionArguments.TryGetValue("id", out var routeId) || routeId is not int restaurantId)
+                var routeId = context.RouteData.Values["id"]?.ToString();
+
+                if (routeId == null || !int.TryParse(routeId, out int id))
                 {
                     context.Result = new BadRequestObjectResult(new { Error = "ID de restaurant manquant ou invalide." });
                     return;
@@ -38,7 +40,7 @@ namespace DeliverTableServer.Middleware.ActionFilters
 
                 // 3. Check database ownership
                 var restaurantOwnerId = await _dbContext.Restaurants
-                    .Where(r => r.Id == restaurantId)
+                    .Where(r => r.Id == id)
                     .Select(r => (int?)r.OwnerId)
                     .FirstOrDefaultAsync();
 

@@ -12,6 +12,10 @@ public interface IObjectStorageService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The object result containing stream and metadata, or null if not found.</returns>
     Task<ObjectStorageResult?> GetObjectAsync(string key, CancellationToken cancellationToken = default);
+
+    Task<string?> UploadAsync(IFormFile file, string folder = "dishes", CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

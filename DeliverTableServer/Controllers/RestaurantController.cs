@@ -12,7 +12,6 @@ using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -151,14 +150,14 @@ namespace DeliverTableServer.Controllers
                 return BadRequest(new { Error = "Impossible de localiser l'adresse fournie." });
             }
 
-            var restaurant = await _restaurantRepository.CreateRestaurant(
+            Restaurant restaurant = await _restaurantRepository.CreateRestaurant(
                 creationDto,
                 ownerId,
                 coords.Value.lon,
                 coords.Value.lat
             );
 
-            return CreatedAtAction("GetById", new { id = restaurant.Id }, restaurant.ToDto());
+            return Ok(restaurant.ToDto());
         }
     }
 }
