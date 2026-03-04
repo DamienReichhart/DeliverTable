@@ -5,12 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliverTableServer.Data;
 
-public class DeliverTableContext(DbContextOptions<DeliverTableContext> options) : IdentityDbContext<User, IdentityRole<int>, int>(options)
+public partial class DeliverTableContext(DbContextOptions<DeliverTableContext> options) : IdentityDbContext<User, IdentityRole<int>, int>(options)
 {
-    public DbSet<RestaurantOwner> RestaurantOwners { get; set; }
-    public DbSet<Customer> Customers { get; set; }
-    public DbSet<Restaurant> Restaurants { get; set; }
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

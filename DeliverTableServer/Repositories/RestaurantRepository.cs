@@ -115,7 +115,7 @@ namespace DeliverTableServer.Repositories
 
         public async Task<Restaurant> Update(int id, UpdateRestaurantDto restaurantDto, double lon, double lat)
         {
-            var restaurant = await _dbContext.Restaurants
+            Restaurant? restaurant = await _dbContext.Restaurants
                 .FirstOrDefaultAsync(r => r.Id == id) ?? throw new ArgumentException("Restaurant non trouvé");
             bool isValid = Enum.TryParse<RestaurantType>(restaurantDto.Type, out var restaurantType);
 
