@@ -1,71 +1,96 @@
+@using System.Security.Claims
 @inject AuthService AuthService
 @inject NavigationManager Nav
 
-<div class="app-nav-top">
-    <a class="app-nav-brand" href="/">
-        <svg class="app-nav-brand-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="15" fill="#E85D34"/>
-            <text x="16" y="21" text-anchor="middle" font-family="'DM Serif Display', serif" font-size="18" font-weight="bold" fill="white">D</text>
+<div class="sidebar-header">
+    <a class="sidebar-brand" href="/">
+        <svg class="sidebar-brand-logo" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 4L25 22H3L14 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <line x1="7" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
-        <span>DeliverTable</span>
+        <span class="sidebar-brand-text">Deliver<em>Table</em></span>
     </a>
-    <button type="button" title="Navigation menu" class="app-nav-toggler" @onclick="ToggleNavMenu"
-            aria-label="Toggle navigation menu">
-        <span class="app-nav-toggler-icon" aria-hidden="true"></span>
+    <button type="button" title="Navigation menu" class="sidebar-toggler"
+            @onclick="ToggleNavMenu" aria-label="Toggle navigation menu">
+        <span class="sidebar-toggler-icon" aria-hidden="true"></span>
     </button>
 </div>
 
-<div class="app-nav-scrollable @NavMenuCssClass" @onclick="ToggleNavMenu">
-    <nav class="app-nav-list" aria-label="Main navigation">
+<div class="sidebar-body @NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="sidebar-nav">
+        <span class="nav-section-label">Navigation</span>
 
-        <div class="app-nav-item">
-            <NavLink href="/" Match="NavLinkMatch.All" class="app-nav-link">
-                <Blazicon Svg="Lucide.House" class="app-nav-icon" />&nbsp;Accueil
+        <div class="nav-item">
+            <NavLink href="/" Match="NavLinkMatch.All" class="nav-link">
+                <Blazicon Svg="Lucide.House" class="nav-icon" />
+                <span>Accueil</span>
             </NavLink>
         </div>
 
         <AuthorizeView Context="auth">
             <Authorized>
-                <div class="app-nav-item">
-                    <NavLink href="/profil" class="app-nav-link">
-                        <Blazicon Svg="Lucide.User" class="app-nav-icon" />&nbsp;Mon Profil
+                <div class="nav-item">
+                    <NavLink href="/profil" class="nav-link">
+                        <Blazicon Svg="Lucide.User" class="nav-icon" />
+                        <span>Mon Profil</span>
                     </NavLink>
                 </div>
 
                 <AuthorizeView Roles="RestaurantOwner" Context="ownerCtx">
-                    <div class="app-nav-item">
-                        <NavLink href="/mes-restaurants" class="app-nav-link">
-                            <Blazicon Svg="Lucide.UtensilsCrossed" class="app-nav-icon" />&nbsp;Mes Restaurants
+                    <div class="nav-item">
+                        <NavLink href="/mes-restaurants" class="nav-link">
+                            <Blazicon Svg="Lucide.UtensilsCrossed" class="nav-icon" />
+                            <span>Mes Restaurants</span>
                         </NavLink>
                     </div>
                 </AuthorizeView>
 
-                <div class="app-nav-item">
-                    <button class="app-nav-link btn-logout" @onclick="HandleLogout">
-                        <Blazicon Svg="Lucide.LogOut" class="app-nav-icon" />&nbsp;Déconnexion
+                <span class="nav-section-label">Compte</span>
+
+                <div class="nav-item">
+                    <button class="nav-link nav-link-logout" @onclick="HandleLogout">
+                        <Blazicon Svg="Lucide.LogOut" class="nav-icon" />
+                        <span>Déconnexion</span>
                     </button>
                 </div>
             </Authorized>
             <NotAuthorized>
-                <div class="app-nav-item">
-                    <NavLink href="/login" class="app-nav-link">
-                        <Blazicon Svg="Lucide.LogIn" class="app-nav-icon" />&nbsp;Se connecter
+                <span class="nav-section-label">Compte</span>
+
+                <div class="nav-item">
+                    <NavLink href="/login" class="nav-link">
+                        <Blazicon Svg="Lucide.LogIn" class="nav-icon" />
+                        <span>Se connecter</span>
                     </NavLink>
                 </div>
-                <div class="app-nav-item">
-                    <NavLink href="/register" class="app-nav-link">
-                        <Blazicon Svg="Lucide.UserPlus" class="app-nav-icon" />&nbsp;Créer son compte
+                <div class="nav-item">
+                    <NavLink href="/register" class="nav-link">
+                        <Blazicon Svg="Lucide.UserPlus" class="nav-icon" />
+                        <span>Créer son compte</span>
                     </NavLink>
                 </div>
             </NotAuthorized>
         </AuthorizeView>
-
     </nav>
+
+    <AuthorizeView Context="userCtx">
+        <Authorized>
+            <div class="sidebar-user">
+                <div class="sidebar-user-avatar">
+                    @(userCtx.User.Identity?.Name?[..1].ToUpperInvariant() ?? "?")
+                </div>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name">@userCtx.User.Identity?.Name</span>
+                    <span class="sidebar-user-role">@userCtx.User.FindFirst(ClaimTypes.Role)?.Value</span>
+                </div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 @code {
     private bool _collapseNavMenu = true;
-    private string? NavMenuCssClass => _collapseNavMenu ? "app-nav-collapse" : null;
+    private string? NavMenuCssClass => _collapseNavMenu ? "sidebar-collapse" : null;
 
     private void ToggleNavMenu()
     {

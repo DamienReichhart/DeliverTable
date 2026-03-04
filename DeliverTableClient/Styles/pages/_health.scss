@@ -1,37 +1,39 @@
 // -----------------------------------------------------------------------------
-// Server Health page.
+// Server Health page + 404 page.
 // -----------------------------------------------------------------------------
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-.health-page {
-  max-width: 32rem;
+// ── 404 page ──
+
+.not-found-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+  gap: $spacing-sm;
 }
 
-.health-page .status {
-  margin: $spacing-md 0;
-  font-weight: $font-weight-medium;
+.not-found-code {
+  font-family: $font-family-display;
+  font-size: 5rem;
+  color: $color-coral-fire;
+  line-height: 1;
+  font-weight: $font-weight-bold;
 }
 
-.health-page .status-loading {
+.not-found-heading {
+  font-family: $font-family-display;
+  font-size: $font-size-h2;
+  color: $color-text;
+  margin-bottom: $spacing-xs;
+}
+
+.not-found-description {
   color: $color-text-muted;
-}
-
-.health-page .status-ok {
-  color: $color-success;
-}
-
-.health-page .status-error {
-  color: $color-error;
-}
-
-.health-page .timestamp {
-  font-family: $font-family-mono;
-  font-size: $font-size-sm;
-  color: $color-text-muted;
-}
-
-.health-page .app-btn-refresh {
-  margin-top: $spacing-sm;
+  font-size: $font-size-base;
+  margin-bottom: $spacing-lg;
 }

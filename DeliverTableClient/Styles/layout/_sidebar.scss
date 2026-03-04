@@ -1,48 +1,22 @@
 // -----------------------------------------------------------------------------
-// Sidebar container and scrollable nav area.
+// Sidebar: always-expanded left panel on desktop, top bar on mobile.
 // -----------------------------------------------------------------------------
 
 @use '../abstracts/variables' as *;
 
 .app-sidebar {
   background-color: $color-deep-charcoal;
-}
-
-.app-nav-scrollable {
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (min-width: $breakpoint-desktop) {
   .app-sidebar {
-    width: $sidebar-width-retracted;
+    width: $sidebar-width;
     min-height: 100vh;
     position: sticky;
     top: 0;
     z-index: $z-sidebar;
-    transition: width $transition-base;
     box-shadow: 2px 0 12px rgba($color-deep-charcoal, 0.15);
-  }
-
-  .app-nav-scrollable::-webkit-scrollbar {
-    display: none;
-  }
-
-  .app-nav-scrollable {
-    height: calc(100vh - $topbar-height);
-    overflow-x: hidden;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .app-sidebar:hover,
-  .app-sidebar:focus-within {
-    width: $sidebar-width;
-  }
-
-  .app-sidebar:hover .app-nav-list,
-  .app-sidebar:focus-within .app-nav-list {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
   }
 }
