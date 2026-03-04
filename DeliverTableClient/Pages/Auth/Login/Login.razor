@@ -1,49 +1,129 @@
 @page "/login"
+@layout AuthLayout
 @using DeliverTableSharedLibrary.Dtos.Auth
 @inject AuthService AuthService
-@inject NavigationManager Nav   
+@inject NavigationManager Nav
 
-<div class="container login-page screen-h-80 centered">
-    <div class="login-page-illustration">
-        <div class="login-illustration-content">
-            <h2>Bon retour</h2>
-            <p>Chaque repas mérite une vraie table.</p>
+<PageTitle>Connexion — DeliverTable</PageTitle>
+
+<div class="auth-split">
+    <section class="auth-showcase">
+        <div class="showcase-cards">
+            <div class="showcase-card showcase-card--1">
+                <div class="showcase-card-icon showcase-card-icon--coral">
+                    <Blazicon Svg="Lucide.UtensilsCrossed" />
+                </div>
+                <div>
+                    <p class="showcase-card-name">Truffle Tagliatelle</p>
+                    <p class="showcase-card-meta">La Bottega · Italian</p>
+                    <p class="showcase-card-price">€24.00</p>
+                    <p class="showcase-card-rating">★ 4.9</p>
+                </div>
+            </div>
+
+            <div class="showcase-card showcase-card--2">
+                <div class="showcase-card-icon showcase-card-icon--sage">
+                    <Blazicon Svg="Lucide.Flame" />
+                </div>
+                <div>
+                    <p class="showcase-card-name">Wagyu Steak</p>
+                    <p class="showcase-card-meta">Le Boeuf · Steakhouse</p>
+                    <p class="showcase-card-price">€42.00</p>
+                </div>
+            </div>
+
+            <div class="showcase-card showcase-card--3">
+                <div class="showcase-card-icon showcase-card-icon--gold">
+                    <Blazicon Svg="Lucide.Globe" />
+                </div>
+                <div>
+                    <p class="showcase-card-name">Omakase Set</p>
+                    <p class="showcase-card-meta">Sakura · Japanese</p>
+                    <p class="showcase-card-price">€38.00</p>
+                    <p class="showcase-card-rating">★ 5.0</p>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="row justify-content-center w-full">
-        <div class="login-form">
-            <h3 class="card-title text-center">Connexion</h3>
 
-            <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin">
-                <DataAnnotationsValidator/>
-                <div class="mb-1 col">
-                    <label class="form-label">Email</label>
-                    <InputText @bind-Value="_loginModel.Email" 
-                        class="form-control app-input" 
-                        placeholder="votre@email.com" />
+        <div class="showcase-content">
+            <h1 class="showcase-tagline">
+                Every meal<br/>
+                deserves a <span class="text-accent">proper<br/>table.</span>
+            </h1>
+            <p class="showcase-description">
+                Discover restaurants, book your table, pre-order your meal
+                — all in one place. From intimate dinners to grand events.
+            </p>
+            <div class="showcase-stats">
+                <div class="showcase-stat">
+                    <span class="showcase-stat-value">2,400+</span>
+                    <span class="showcase-stat-label">Restaurants</span>
+                </div>
+                <div class="showcase-stat">
+                    <span class="showcase-stat-value">180k+</span>
+                    <span class="showcase-stat-label">Bookings</span>
+                </div>
+                <div class="showcase-stat">
+                    <span class="showcase-stat-value">4.8</span>
+                    <span class="showcase-stat-label">Avg Rating</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="auth-panel">
+        <div class="auth-panel-content">
+            <div class="auth-brand">
+                <svg class="auth-brand-logo" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 4L25 22H3L14 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <line x1="7" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span class="auth-brand-text">Deliver<em>Table</em></span>
+            </div>
+
+            <div class="auth-tabs">
+                <a href="/login" class="auth-tab auth-tab--active">Se connecter</a>
+                <a href="/register" class="auth-tab">Créer un compte</a>
+            </div>
+
+            <h2 class="auth-heading">Bon retour</h2>
+            <p class="auth-subheading">Connectez-vous pour accéder à votre compte</p>
+
+            <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin" class="auth-form">
+                <DataAnnotationsValidator />
+
+                <div class="auth-field">
+                    <label class="auth-label">Adresse email</label>
+                    <div class="auth-input-wrapper">
+                        <Blazicon Svg="Lucide.Mail" class="auth-input-icon" />
+                        <InputText @bind-Value="_loginModel.Email"
+                                   class="auth-input"
+                                   placeholder="votre@email.com" />
+                    </div>
                     <ValidationMessage For="@(() => _loginModel.Email)" class="validation-message" />
                 </div>
 
-                <div class="mb-1 col">
-                    <label class="form-label">Mot de passe</label>
-                    <InputText @bind-Value="_loginModel.Password" 
-                        type="password" 
-                        class="form-control app-input" 
-                        placeholder="••••••••••••" />
+                <div class="auth-field">
+                    <label class="auth-label">Mot de passe</label>
+                    <div class="auth-input-wrapper">
+                        <Blazicon Svg="Lucide.Lock" class="auth-input-icon" />
+                        <InputText @bind-Value="_loginModel.Password"
+                                   type="password"
+                                   class="auth-input"
+                                   placeholder="••••••••••" />
+                    </div>
                     <ValidationMessage For="@(() => _loginModel.Password)" class="validation-message" />
                 </div>
-                
+
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
-                    <div class="alert alert-danger w-70">
-                        @_errorMessage
-                    </div>  
+                    <div class="alert alert-danger">@_errorMessage</div>
                 }
 
-                <button type="submit" class="app-btn w-full mt-1" disabled="@_isSubmitting">
+                <button type="submit" class="auth-submit" disabled="@_isSubmitting">
                     @if (_isSubmitting)
                     {
-                        <span class="profile-spinner-sm"></span>
+                        <span class="auth-spinner"></span>
                         <span>Chargement...</span>
                     }
                     else
@@ -52,14 +132,12 @@
                     }
                 </button>
             </EditForm>
-            
-            <div class="mt-2 text-center">
-                <p class="text-muted">
-                    Pas encore de compte ? <a href="/register">S'inscrire</a>
-                </p>
-            </div>
+
+            <p class="auth-footer">
+                Pas encore de compte ? <a href="/register">Créer un compte gratuitement</a>
+            </p>
         </div>
-    </div>
+    </section>
 </div>
 
 @code {

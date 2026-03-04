@@ -1,28 +1,37 @@
 @page "/"
 @inject IHealthApiClient HealthApi
 
-<PageTitle>Server Health</PageTitle>
+<PageTitle>Accueil — DeliverTable</PageTitle>
 
 <div class="health-page">
     <h1>Server Health</h1>
 
-    @if (_loading)
-    {
-        <p class="status status-loading" aria-busy="true">Checking server…</p>
-    }
-    else if (_health is { } health)
-    {
-        <div class="status status-ok">
-            <strong>Status:</strong> @health.Status
-        </div>
-        <p class="timestamp">Last checked (UTC): @health.TimestampUtc.ToString("O")</p>
-    }
-    else
-    {
-        <p class="status status-error">Server is unreachable or returned an error.</p>
-    }
+    <div class="health-card">
+        @if (_loading)
+        {
+            <div class="health-status health-status--loading">
+                <span class="health-status-dot health-status-dot--loading"></span>
+                <span>Checking server…</span>
+            </div>
+        }
+        else if (_health is { } health)
+        {
+            <div class="health-status health-status--ok">
+                <span class="health-status-dot health-status-dot--ok"></span>
+                <strong>@health.Status</strong>
+            </div>
+            <p class="health-timestamp">Last checked (UTC): @health.TimestampUtc.ToString("O")</p>
+        }
+        else
+        {
+            <div class="health-status health-status--error">
+                <span class="health-status-dot health-status-dot--error"></span>
+                <span>Server is unreachable or returned an error.</span>
+            </div>
+        }
+    </div>
 
-    <button type="button" class="app-btn app-btn--primary app-btn--refresh" @onclick="CheckHealth" disabled="@_loading">
+    <button type="button" class="app-btn app-btn--primary" @onclick="CheckHealth" disabled="@_loading">
         Check again
     </button>
 </div>
@@ -50,5 +59,4 @@
             StateHasChanged();
         }
     }
-
 }

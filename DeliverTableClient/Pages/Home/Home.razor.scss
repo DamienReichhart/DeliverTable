@@ -2,8 +2,73 @@
 @use "../../Styles/abstracts/mixins" as *;
 
 .health-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+
   h1 {
     font-family: $font-family-display;
+    font-size: $font-size-h2;
     color: $color-text;
+    margin-bottom: $spacing-lg;
   }
+}
+
+.health-card {
+  @include card;
+  margin-bottom: $spacing-lg;
+}
+
+.health-status {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+  font-weight: $font-weight-medium;
+}
+
+.health-status--loading {
+  color: $color-text-muted;
+}
+
+.health-status--ok {
+  color: $color-success;
+}
+
+.health-status--error {
+  color: $color-error;
+}
+
+.health-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+}
+
+.health-status-dot--ok {
+  background-color: $color-success;
+  box-shadow: 0 0 6px rgba($color-garden-sage, 0.4);
+}
+
+.health-status-dot--error {
+  background-color: $color-error;
+  box-shadow: 0 0 6px rgba($color-error, 0.4);
+}
+
+.health-status-dot--loading {
+  background-color: $color-text-muted;
+  animation: health-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes health-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.health-timestamp {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-top: $spacing-sm;
 }
