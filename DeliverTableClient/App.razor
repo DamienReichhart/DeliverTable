@@ -1,4 +1,4 @@
-﻿@using DeliverTableClient.Components
+@using DeliverTableClient.Components
 @using DeliverTableClient.Components.Redirect
 @using DeliverTableClient.Pages
 @using Microsoft.AspNetCore.Components.Authorization
@@ -15,10 +15,7 @@
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
-            <PageTitle>Not found</PageTitle>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Désolé, rien ici.</p>
-            </LayoutView>
+            <RedirectToNotFound />
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
