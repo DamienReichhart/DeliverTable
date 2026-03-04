@@ -13,7 +13,7 @@ public sealed class UserService(HttpClient httpClient) : IUserService
     public async Task<(UserResponse? User, ErrorResponse? Error)> GetProfileAsync(
         CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync(ApiRoutes.Auth.Me, cancellationToken);
+        using var response = await _httpClient.GetAsync(ApiRoutes.Auth.Me, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -28,7 +28,7 @@ public sealed class UserService(HttpClient httpClient) : IUserService
     public async Task<(ConnectionResponse? Connection, ErrorResponse? Error)> UpdateProfileAsync(
         UpdateProfileRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.UpdateProfile, request, cancellationToken);
+        using var response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.UpdateProfile, request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -43,7 +43,7 @@ public sealed class UserService(HttpClient httpClient) : IUserService
     public async Task<(bool Success, ErrorResponse? Error)> ChangePasswordAsync(
         ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.ChangePassword, request, cancellationToken);
+        using var response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.ChangePassword, request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
