@@ -77,7 +77,9 @@
         <Authorized>
             <div class="sidebar-user">
                 <div class="sidebar-user-avatar">
-                    @(userCtx.User.Identity?.Name?[..1].ToUpperInvariant() ?? "?")
+                    @(userCtx.User.Identity?.Name is { Length: > 0 } name
+                        ? name[..1].ToUpperInvariant()
+                        : "?")
                 </div>
                 <div class="sidebar-user-info">
                     <span class="sidebar-user-name">@userCtx.User.Identity?.Name</span>
