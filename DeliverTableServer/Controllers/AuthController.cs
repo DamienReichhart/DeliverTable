@@ -60,7 +60,8 @@ public class AuthController(
         if (!ModelState.IsValid)
             return BadRequest(new { Error = "Champs Invalides" });
 
-        if (await _context.Users.AnyAsync(u => u.Email == registerRequest.Email))
+        var normalizedEmail = registerRequest.Email?.ToUpperInvariant();
+        if (await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail))
             return BadRequest(new { Error = "Email déjà utilisé" });
 
         User user = new()
@@ -97,7 +98,8 @@ public class AuthController(
         if (!ModelState.IsValid)
             return BadRequest(new { Error = "Identifiants invalides" });
 
-        if (await _context.Users.AnyAsync(u => u.Email == registerRequest.Email))
+        var normalizedEmail = registerRequest.Email?.ToUpperInvariant();
+        if (await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail))
             return BadRequest(new { Error = "Cet email est déjà utilisé" });
 
         User user = new()
@@ -163,8 +165,9 @@ public class AuthController(
         if (user == null)
             return Unauthorized(new { Error = "Token invalide ou expiré" });
 
-        if (!string.Equals(user.Email, request.Email, StringComparison.OrdinalIgnoreCase)
-            && await _context.Users.AnyAsync(u => u.Email == request.Email))
+        var normalizedEmail = request.Email?.ToUpperInvariant();
+        if (user.NormalizedEmail != normalizedEmail
+            && await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail))
         {
             return BadRequest(new { Error = "Cette adresse email est déjà utilisée" });
         }
