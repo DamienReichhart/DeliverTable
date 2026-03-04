@@ -47,17 +47,14 @@ namespace DeliverTableClient.Services
 
         public async Task<bool> DeleteRestaurant(int id)
         {
-            try
-            {
-                var response = await _httpClient.DeleteAsync($"{ApiRoutes.Restaurant.Base}/{id}");
-                Console.WriteLine(response);
+            var response = await _httpClient.DeleteAsync($"{ApiRoutes.Restaurant.Base}/{id}");
+
+            if (response.IsSuccessStatusCode)
                 return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                return false;
-            }
+
+            ErrorResponse? errorContent = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            throw new HttpRequestException(
+                errorContent?.Error ?? $"Delete failed for restaurant {id} (HTTP {(int)response.StatusCode})");
         }
 
         public async Task<(DetailedRestaurantDto?, ErrorResponse?)> GetRestaurantById(int id, CancellationToken cancellationToken = default)
