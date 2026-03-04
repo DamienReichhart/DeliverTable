@@ -1,82 +1,55 @@
 // -----------------------------------------------------------------------------
-// Top bar and navigation menu (brand, toggler, nav links).
+// Sidebar navigation: brand, section labels, nav links, user card.
+// Based on DeliverTable mockups (March 2026).
 // -----------------------------------------------------------------------------
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// ── Top row (brand + hamburger on mobile) ──
+// ── Sidebar header (brand + mobile toggler) ──
 
-.app-nav-top {
-  min-height: $topbar-height;
+.sidebar-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 $spacing-md;
-  background-color: rgba($color-deep-charcoal, 0.3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-
-  a,
-  .app-link {
-    color: $color-text-inverse;
-    white-space: nowrap;
-    margin-left: $spacing-lg;
-    text-decoration: none;
-  }
-
-  a:hover,
-  .app-link:hover {
-    text-decoration: underline;
-  }
-
-  a:first-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-left: 0;
-  }
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-md;
 }
 
-@media (max-width: $breakpoint-mobile) {
-  .app-nav-top {
-    justify-content: space-between;
-  }
-
-  .app-nav-top a,
-  .app-nav-top .app-link {
-    margin-left: 0;
-  }
-}
-
-@media (min-width: $breakpoint-desktop) {
-  .app-nav-top {
-    position: sticky;
-    top: 0;
-    z-index: $z-topbar;
-  }
-}
-
-// ── Brand ──
-
-.app-nav-brand {
-  font-family: $font-family-display;
-  font-size: 1.25rem;
-  font-weight: $font-weight-bold;
-  color: $color-text-inverse;
+.sidebar-brand {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  letter-spacing: -0.01em;
+  text-decoration: none;
+  color: $color-text-inverse;
+
+  &:hover {
+    text-decoration: none;
+    color: $color-text-inverse;
+  }
 }
 
-.app-nav-brand-logo {
-  width: 32px;
-  height: 32px;
+.sidebar-brand-logo {
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
+  color: $color-coral-fire;
 }
 
-// ── Toggler ──
+.sidebar-brand-text {
+  font-family: $font-family-display;
+  font-size: 1.25rem;
+  color: $color-text-inverse;
+  white-space: nowrap;
 
-.app-nav-toggler {
+  em {
+    font-style: italic;
+    color: $color-coral-fire;
+  }
+}
+
+// ── Mobile toggler ──
+
+.sidebar-toggler {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,7 +58,7 @@
   padding: 0;
   border: none;
   border-radius: $radius-md;
-  background-color: $color-nav-hover;
+  background-color: rgba(255, 255, 255, 0.1);
   color: $color-text-inverse;
   cursor: pointer;
   transition: background-color $transition-fast;
@@ -94,12 +67,12 @@
     background-color: rgba(255, 255, 255, 0.2);
   }
 
-  &:focus {
+  &:focus-visible {
     @include focus-ring;
   }
 }
 
-.app-nav-toggler-icon {
+.sidebar-toggler-icon {
   display: block;
   width: 1.25rem;
   height: 1rem;
@@ -109,75 +82,150 @@
 }
 
 @media (min-width: $breakpoint-desktop) {
-  .app-nav-toggler {
+  .sidebar-toggler {
     display: none;
   }
 }
 
-// ── Collapsible nav (mobile) ──
+// ── Sidebar body (collapsible on mobile, always visible on desktop) ──
 
-.app-nav-collapse {
+.sidebar-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.sidebar-collapse {
   display: none;
 }
 
 @media (min-width: $breakpoint-desktop) {
-  .app-nav-collapse {
-    display: block;
-  }
-
-  .app-nav-list {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity $transition-fast, visibility 0s linear 150ms;
+  .sidebar-collapse {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
   }
 }
 
-.app-nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+// ── Section labels ──
+
+.nav-section-label {
+  display: block;
+  font-family: $font-family-mono;
+  font-size: 0.6875rem;
+  font-weight: $font-weight-medium;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: $spacing-lg $spacing-lg $spacing-sm;
+}
+
+// ── Nav list ──
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0 $spacing-sm;
+}
+
+.nav-item {
+  margin-bottom: 2px;
+}
+
+.nav-link {
   display: flex;
-  flex-direction: column;
-}
-
-// ── Nav items ──
-
-.app-nav-item {
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-family: $font-family-base;
   font-size: $font-size-sm;
-  padding-bottom: $spacing-xs;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-md;
+  height: 2.5rem;
+  transition: background-color $transition-fast, color $transition-fast;
 
-  &:first-of-type {
-    padding-top: $spacing-md;
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: $color-text-inverse;
+    text-decoration: none;
   }
 
-  &:last-of-type {
-    padding-bottom: $spacing-md;
-  }
-
-  .app-nav-link,
-  a {
-    @include nav-link-base;
+  &.active {
+    background-color: $color-coral-fire;
+    color: $color-text-inverse;
+    font-weight: $font-weight-semibold;
   }
 }
 
-.btn-logout {
+.nav-link-logout {
   width: 100%;
   border: none;
   cursor: pointer;
   background: none;
+  text-align: left;
 }
 
-// ── Nav icon ──
-
-.app-nav-icon {
+.nav-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
   flex-shrink: 0;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 1rem 1rem;
+}
+
+// ── User card (bottom of sidebar) ──
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: auto;
+}
+
+.sidebar-user-avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: $radius-full;
+  background-color: $color-coral-fire;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-family-display;
+  font-size: 0.875rem;
+  font-weight: $font-weight-bold;
+  color: $color-text-inverse;
+  user-select: none;
+}
+
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-user-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-inverse;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: capitalize;
 }

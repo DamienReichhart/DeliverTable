@@ -1,17 +1,10 @@
 // -----------------------------------------------------------------------------
 // Form controls, validation states, placeholders.
+// Based on DeliverTable Brand Guidelines v1.0.
 // -----------------------------------------------------------------------------
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
-
-.app-input,
-.app-input:focus,
-.app-checkbox:focus {
-  &:focus {
-    @include focus-ring;
-  }
-}
 
 .valid.modified:not([type='checkbox']) {
   outline: 2px solid $color-success-outline;
@@ -38,16 +31,14 @@
   transition: border-color $transition-fast, box-shadow $transition-fast;
 
   &:focus {
+    outline: none;
     border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.12);
   }
-}
 
-.app-input::placeholder {
-  color: $color-text-muted;
-}
-
-.app-input:focus::placeholder {
-  color: lighten($color-text-muted, 15%);
+  &::placeholder {
+    color: $color-text-muted;
+  }
 }
 
 form .text-danger {
@@ -76,7 +67,7 @@ form .text-danger {
   &:focus {
     outline: none;
     border-color: $color-primary;
-    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.15);
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.12);
   }
 
   &::placeholder {
@@ -94,4 +85,24 @@ form .text-danger {
     font-size: $font-size-sm;
     color: $color-text;
   }
+}
+
+.form-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+
+  h2 {
+    font-family: $font-family-display;
+    font-size: $font-size-h2;
+    color: $color-text;
+    margin-bottom: $spacing-lg;
+  }
+}
+
+.form-controls {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-wrap: wrap;
 }

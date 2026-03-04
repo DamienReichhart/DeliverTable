@@ -1,60 +1,163 @@
 @page "/Register"
+@layout AuthLayout
 @using DeliverTableSharedLibrary.Dtos.Auth
 @inject NavigationManager Nav
 @inject AuthService AuthService
 
-<div class="container register-page">
-    <div class="register-page-illustration">
-        <div class="register-illustration-content">
-            <h2>Rejoignez-nous</h2>
-            <p>Découvrez les meilleurs restaurants près de chez vous.</p>
-        </div>
-    </div>
-    <div class="row justify-content-center w-full">
-        <div class="register-form">
-            <h3>Créer son compte</h3>
+<PageTitle>Inscription — DeliverTable</PageTitle>
 
-            <EditForm Model="@_registerModel" OnValidSubmit="HandleRegister">
+<div class="auth-split">
+    <section class="auth-showcase">
+        <div class="showcase-cards">
+            <div class="showcase-card showcase-card--1">
+                <div class="showcase-card-icon showcase-card-icon--coral">
+                    <Blazicon Svg="Lucide.UtensilsCrossed" />
+                </div>
+                <div>
+                    <p class="showcase-card-name">Truffle Tagliatelle</p>
+                    <p class="showcase-card-meta">La Bottega · Italian</p>
+                    <p class="showcase-card-price">€24.00</p>
+                    <p class="showcase-card-rating">★ 4.9</p>
+                </div>
+            </div>
+
+            <div class="showcase-card showcase-card--2">
+                <div class="showcase-card-icon showcase-card-icon--sage">
+                    <Blazicon Svg="Lucide.Flame" />
+                </div>
+                <div>
+                    <p class="showcase-card-name">Wagyu Steak</p>
+                    <p class="showcase-card-meta">Le Boeuf · Steakhouse</p>
+                    <p class="showcase-card-price">€42.00</p>
+                </div>
+            </div>
+
+            <div class="showcase-card showcase-card--3">
+                <div class="showcase-card-icon showcase-card-icon--gold">
+                    <Blazicon Svg="Lucide.Globe" />
+                </div>
+                <div>
+                    <p class="showcase-card-name">Omakase Set</p>
+                    <p class="showcase-card-meta">Sakura · Japanese</p>
+                    <p class="showcase-card-price">€38.00</p>
+                    <p class="showcase-card-rating">★ 5.0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="showcase-content">
+            <h1 class="showcase-tagline">
+                Every meal<br/>
+                deserves a <span class="text-accent">proper<br/>table.</span>
+            </h1>
+            <p class="showcase-description">
+                Discover restaurants, book your table, pre-order your meal
+                — all in one place. From intimate dinners to grand events.
+            </p>
+            <div class="showcase-stats">
+                <div class="showcase-stat">
+                    <span class="showcase-stat-value">2,400+</span>
+                    <span class="showcase-stat-label">Restaurants</span>
+                </div>
+                <div class="showcase-stat">
+                    <span class="showcase-stat-value">180k+</span>
+                    <span class="showcase-stat-label">Bookings</span>
+                </div>
+                <div class="showcase-stat">
+                    <span class="showcase-stat-value">4.8</span>
+                    <span class="showcase-stat-label">Avg Rating</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="auth-panel">
+        <div class="auth-panel-content">
+            <div class="auth-brand">
+                <svg class="auth-brand-logo" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 4L25 22H3L14 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <line x1="7" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span class="auth-brand-text">Deliver<em>Table</em></span>
+            </div>
+
+            <div class="auth-tabs">
+                <a href="/login" class="auth-tab">Se connecter</a>
+                <a href="/register" class="auth-tab auth-tab--active">Créer un compte</a>
+            </div>
+
+            <h2 class="auth-heading">Créer son compte</h2>
+            <p class="auth-subheading">Rejoignez DeliverTable pour découvrir les meilleurs restaurants</p>
+
+            <EditForm Model="@_registerModel" OnValidSubmit="HandleRegister" class="auth-form">
                 <DataAnnotationsValidator />
-                <div class="mb-1 col">
-                    <label class="form-label">Prénom</label>
-                    <InputText @bind-Value="_registerModel.FirstName" class="form-control" placeholder="Votre prénom" />
+
+                <div class="auth-field">
+                    <label class="auth-label">Prénom</label>
+                    <div class="auth-input-wrapper">
+                        <Blazicon Svg="Lucide.User" class="auth-input-icon" />
+                        <InputText @bind-Value="_registerModel.FirstName"
+                                   class="auth-input"
+                                   placeholder="Votre prénom" />
+                    </div>
                     <ValidationMessage For="@(() => _registerModel.FirstName)" class="validation-message" />
                 </div>
 
-                <div class="mb-1 col">
-                    <label class="form-label">Nom</label>
-                    <InputText @bind-Value="_registerModel.LastName" class="form-control" placeholder="Votre nom" />
+                <div class="auth-field">
+                    <label class="auth-label">Nom</label>
+                    <div class="auth-input-wrapper">
+                        <Blazicon Svg="Lucide.User" class="auth-input-icon" />
+                        <InputText @bind-Value="_registerModel.LastName"
+                                   class="auth-input"
+                                   placeholder="Votre nom" />
+                    </div>
                     <ValidationMessage For="@(() => _registerModel.LastName)" class="validation-message" />
                 </div>
 
-                <div class="mb-1 col">
-                    <label class="form-label">Email</label>
-                    <InputText @bind-Value="_registerModel.Email" class="form-control" placeholder="exemple@mail.com" />
+                <div class="auth-field">
+                    <label class="auth-label">Adresse email</label>
+                    <div class="auth-input-wrapper">
+                        <Blazicon Svg="Lucide.Mail" class="auth-input-icon" />
+                        <InputText @bind-Value="_registerModel.Email"
+                                   class="auth-input"
+                                   placeholder="votre@email.com" />
+                    </div>
                     <ValidationMessage For="@(() => _registerModel.Email)" class="validation-message" />
                 </div>
 
-                <div class="mb-1 col">
-                    <label class="form-label">Mot de passe (12 caractères min.)</label>
-                    <InputText @bind-Value="_registerModel.Password" type="password" class="form-control" placeholder="••••••••••••" />
+                <div class="auth-field">
+                    <label class="auth-label">Mot de passe (12 caractères min.)</label>
+                    <div class="auth-input-wrapper">
+                        <Blazicon Svg="Lucide.Lock" class="auth-input-icon" />
+                        <InputText @bind-Value="_registerModel.Password"
+                                   type="password"
+                                   class="auth-input"
+                                   placeholder="••••••••••••" />
+                    </div>
                     <ValidationMessage For="@(() => _registerModel.Password)" class="validation-message" />
                 </div>
 
-                <div class="mb-1 col">
-                    <label class="form-label">Confirmer le mot de passe</label>
-                    <InputText @bind-Value="_registerModel.ConfirmPassword" type="password" class="form-control" placeholder="••••••••••••" />
+                <div class="auth-field">
+                    <label class="auth-label">Confirmer le mot de passe</label>
+                    <div class="auth-input-wrapper">
+                        <Blazicon Svg="Lucide.Lock" class="auth-input-icon" />
+                        <InputText @bind-Value="_registerModel.ConfirmPassword"
+                                   type="password"
+                                   class="auth-input"
+                                   placeholder="••••••••••••" />
+                    </div>
                     <ValidationMessage For="@(() => _registerModel.ConfirmPassword)" class="validation-message" />
                 </div>
 
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
-                    <div class="alert alert-danger w-70">@_errorMessage</div>
+                    <div class="alert alert-danger">@_errorMessage</div>
                 }
 
-                <button type="submit" class="app-btn w-full mt-1" disabled="@_isSubmitting">
+                <button type="submit" class="auth-submit" disabled="@_isSubmitting">
                     @if (_isSubmitting)
                     {
-                        <span class="profile-spinner-sm"></span>
+                        <span class="auth-spinner"></span>
                         <span>Création du compte...</span>
                     }
                     else
@@ -64,34 +167,40 @@
                 </button>
             </EditForm>
 
-            <div class="text-center mt-2">
-                <p class="text-muted">Déjà un compte ? <a href="/login">Connectez-vous</a></p>
-            </div>
+            <p class="auth-footer">
+                Déjà un compte ? <a href="/login">Connectez-vous</a>
+            </p>
         </div>
-    </div>
+    </section>
 </div>
+
 @code {
     private RegisterRequest _registerModel = new RegisterRequest();
     private string? _errorMessage;
     private bool _isSubmitting = false;
+
     private async Task HandleRegister()
     {
         _isSubmitting = true;
         _errorMessage = null;
 
-        try{
+        try
+        {
             AuthResponse? response = await AuthService.Register(_registerModel);
 
             if (response?.Success == true)
             {
-                Nav.NavigateTo(uri: "/"); 
+                Nav.NavigateTo(uri: "/");
                 return;
             }
             _errorMessage = response?.Error ?? "Une erreur est survenue";
-        
-        } catch (Exception exception) {
+        }
+        catch (Exception exception)
+        {
             _errorMessage = exception.Message;
-        } finally {
+        }
+        finally
+        {
             _isSubmitting = false;
         }
     }

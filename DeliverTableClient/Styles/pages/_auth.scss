@@ -1,0 +1,433 @@
+// -----------------------------------------------------------------------------
+// Auth pages (login, register): shared split-layout styles.
+// Matches the LOGIN mockup — dark showcase left, form panel right.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// ── Split layout ──
+
+.auth-split {
+  display: flex;
+  min-height: 100vh;
+  background-color: $color-bg;
+}
+
+// ── Left showcase panel ──
+
+.auth-showcase {
+  display: none;
+  width: 50%;
+  background: linear-gradient(165deg, #1A1A2E 0%, #15152A 40%, #1D1520 100%);
+  position: relative;
+  overflow: hidden;
+  padding: $spacing-3xl;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: -15%;
+    left: -5%;
+    width: 50%;
+    height: 45%;
+    background: radial-gradient(circle, rgba($color-coral-fire, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    right: -10%;
+    width: 35%;
+    height: 30%;
+    background: radial-gradient(circle, rgba($color-amber-gold, 0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+}
+
+// ── Showcase food cards ──
+
+.showcase-cards {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 40%;
+}
+
+.showcase-card {
+  position: absolute;
+  padding: $spacing-md $spacing-lg;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: $radius-xl;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  min-width: 170px;
+
+  p {
+    margin: 0;
+  }
+}
+
+.showcase-card--1 {
+  top: 10%;
+  left: 8%;
+}
+
+.showcase-card--2 {
+  top: 32%;
+  right: 8%;
+  left: auto;
+}
+
+.showcase-card--3 {
+  top: 56%;
+  left: 10%;
+}
+
+.showcase-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-xs;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.showcase-card-icon--coral {
+  background: rgba($color-coral-fire, 0.2);
+  color: $color-coral-fire;
+}
+
+.showcase-card-icon--sage {
+  background: rgba($color-garden-sage, 0.2);
+  color: $color-garden-sage;
+}
+
+.showcase-card-icon--gold {
+  background: rgba($color-amber-gold, 0.2);
+  color: $color-amber-gold;
+}
+
+.showcase-card-name {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text-inverse;
+}
+
+.showcase-card-meta {
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.showcase-card-price {
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: $color-coral-fire;
+  margin-top: 2px !important;
+}
+
+.showcase-card-rating {
+  font-size: $font-size-xs;
+  color: $color-amber-gold;
+}
+
+// ── Showcase bottom content (tagline, stats) ──
+
+.showcase-content {
+  position: relative;
+  z-index: 1;
+}
+
+.showcase-tagline {
+  font-family: $font-family-display;
+  font-size: 2.5rem;
+  line-height: 1.15;
+  color: $color-text-inverse;
+  margin-bottom: $spacing-lg;
+
+  .text-accent {
+    color: $color-coral-fire;
+    font-style: italic;
+  }
+}
+
+.showcase-description {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: $font-size-sm;
+  line-height: $line-height-base;
+  max-width: 380px;
+  margin-bottom: $spacing-xl;
+}
+
+.showcase-stats {
+  display: flex;
+  gap: $spacing-2xl;
+}
+
+.showcase-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.showcase-stat-value {
+  font-family: $font-family-display;
+  font-size: $font-size-h3;
+  color: $color-text-inverse;
+}
+
+.showcase-stat-label {
+  font-family: $font-family-mono;
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+// ── Right form panel ──
+
+.auth-panel {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+  background: $color-bg;
+  overflow-y: auto;
+}
+
+.auth-panel-content {
+  width: 100%;
+  max-width: 420px;
+}
+
+// ── Brand in form panel ──
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-2xl;
+}
+
+.auth-brand-logo {
+  width: 28px;
+  height: 28px;
+  color: $color-deep-charcoal;
+}
+
+.auth-brand-text {
+  font-family: $font-family-display;
+  font-size: 1.25rem;
+  color: $color-deep-charcoal;
+
+  em {
+    font-style: italic;
+    color: $color-coral-fire;
+  }
+}
+
+// ── Tab toggle ──
+
+.auth-tabs {
+  display: flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  margin-bottom: $spacing-xl;
+}
+
+.auth-tab {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  text-decoration: none;
+  transition: background-color $transition-fast, color $transition-fast;
+
+  &:hover {
+    background-color: $color-bg-subtle;
+    color: $color-text;
+    text-decoration: none;
+  }
+}
+
+.auth-tab--active {
+  background-color: $color-bg-white;
+  color: $color-text;
+  font-weight: $font-weight-semibold;
+  box-shadow: $shadow-sm;
+
+  &:hover {
+    background-color: $color-bg-white;
+  }
+}
+
+// ── Heading ──
+
+.auth-heading {
+  font-family: $font-family-display;
+  font-size: $font-size-h2;
+  color: $color-text;
+  margin-bottom: $spacing-xs;
+}
+
+.auth-subheading {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-xl;
+}
+
+// ── Form ──
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.auth-label {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: $spacing-md;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: $color-text-muted;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $color-text;
+  background-color: $color-bg-white;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.12);
+  }
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+}
+
+.auth-input--no-icon {
+  padding-left: 1rem;
+}
+
+// ── Submit button ──
+
+.auth-submit {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: 0.75rem $spacing-lg;
+  background-color: $color-primary;
+  color: $color-text-inverse;
+  border: none;
+  border-radius: $radius-md;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: background-color $transition-fast;
+  margin-top: $spacing-sm;
+
+  &:hover:not(:disabled) {
+    background-color: $color-primary-hover;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.auth-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: $radius-full;
+  animation: auth-spin 0.7s linear infinite;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ── Footer link ──
+
+.auth-footer {
+  text-align: center;
+  margin-top: $spacing-xl;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+
+  a {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+// ── Responsive ──
+
+@media (min-width: $breakpoint-desktop) {
+  .auth-showcase {
+    display: flex;
+  }
+
+  .auth-panel {
+    width: 50%;
+  }
+}
