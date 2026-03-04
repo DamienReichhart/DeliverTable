@@ -23,7 +23,8 @@ public sealed class UserService(HttpClient httpClient) : IUserService
 
         var user = await response.Content.ReadFromJsonAsync<UserResponse>(cancellationToken: cancellationToken);
 
-        if (user is null){
+        if (user is null)
+        {
             return (null, new ErrorResponse { Error = "Failed to deserialize UserResponse from HTTP response", Status = (int)response.StatusCode });
         }
 
