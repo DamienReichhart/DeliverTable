@@ -195,9 +195,9 @@
             }
             _errorMessage = response?.Error ?? "Une erreur est survenue";
         }
-        catch (Exception exception)
+        catch
         {
-            _errorMessage = exception.Message;
+            _errorMessage = "Une erreur inattendue est survenue. Veuillez réessayer.";
         }
         finally
         {

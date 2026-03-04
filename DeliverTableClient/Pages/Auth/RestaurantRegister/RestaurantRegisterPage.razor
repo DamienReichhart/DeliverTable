@@ -216,6 +216,12 @@
         {
             AuthResponse? response = await AuthService.RegisterRestaurant(_restaurantRegisterModel);
 
+            if (response is null)
+            {
+                _errorMessage = "Une erreur inattendue est survenue. Veuillez réessayer.";
+                return;
+            }
+
             if (response.Success)
             {
                 Nav.NavigateTo("/");
@@ -223,9 +229,9 @@
             }
             _errorMessage = response.Error;
         }
-        catch (Exception ex)
+        catch
         {
-            _errorMessage = ex.Message;
+            _errorMessage = "Une erreur inattendue est survenue. Veuillez réessayer.";
         }
         finally
         {

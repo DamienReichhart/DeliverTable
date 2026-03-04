@@ -158,6 +158,10 @@
     text-decoration: none;
   }
 
+  &:focus-visible {
+    @include focus-ring;
+  }
+
   &.active {
     background-color: $color-coral-fire;
     color: $color-text-inverse;
@@ -171,6 +175,10 @@
   cursor: pointer;
   background: none;
   text-align: left;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
 }
 
 .nav-icon {
