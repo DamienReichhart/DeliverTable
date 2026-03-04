@@ -176,8 +176,8 @@ public class AuthController(
         user.LastName = request.LastName;
         user.Email = request.Email;
         user.UserName = request.Email;
-        user.NormalizedEmail = request.Email.ToUpperInvariant();
-        user.NormalizedUserName = request.Email.ToUpperInvariant();
+        user.NormalizedEmail = normalizedEmail;
+        user.NormalizedUserName = normalizedEmail;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
