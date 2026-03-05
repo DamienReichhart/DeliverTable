@@ -13,6 +13,7 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
     private static readonly HashSet<string> _allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     private readonly IAmazonS3 _s3Client = s3Client ?? throw new ArgumentNullException(nameof(s3Client));
     private readonly ObjectStorageConfig _config = config ?? throw new ArgumentNullException(nameof(config));
+    private const string _defaultFileExtension = ".png";
 
     /// <inheritdoc />
     public async Task<ObjectStorageResult?> GetObjectAsync(string key, CancellationToken cancellationToken = default)
@@ -42,22 +43,24 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
             return null;
         }
     }
-    public async Task<string?> UploadAsync(IFormFile file, string folder = "dish", CancellationToken cancellationToken = default)
+    public async Task<string?> UploadAsync(IFormFile file, string folder = "dish", int? identifier = null, CancellationToken cancellationToken = default)
     {
-        // Validate file extension
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if(identifier == null)
+        {
+            return null;
+        }
+        string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!_allowedExtensions.Contains(extension))
         {
             throw new ArgumentException($"File extension {extension} is not allowed. Allowed extensions: {string.Join(", ", _allowedExtensions)}");
         }
 
-        string imageKey = $"{Guid.NewGuid()}{extension}";
+        string imageKey = $"{identifier}{_defaultFileExtension}";
         string key = string.IsNullOrEmpty(folder) ? imageKey : $"{folder.Trim('/')}/{imageKey}";
 
-        // CRITICAL FIX FOR GARAGE: Copy to MemoryStream first
         using var memoryStream = new MemoryStream();
         await file.CopyToAsync(memoryStream, cancellationToken);
-        memoryStream.Position = 0; // Reset stream position
+        memoryStream.Position = 0;
 
         var request = new PutObjectRequest
         {
@@ -95,7 +98,11 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
 
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
-        Console.WriteLine($"Deleting object with key: {key}");
-        await _s3Client.DeleteObjectAsync(_config.BucketName, key, cancellationToken);
+        try
+        {
+            await _s3Client.DeleteObjectAsync(_config.BucketName, key + _defaultFileExtension, cancellationToken);
+        }
+        catch (Exception)
+        {}
     }
 }
