@@ -16,6 +16,7 @@ namespace DeliverTableServer.Repositories
     {
         private readonly DeliverTableContext _context = context;
         private readonly IObjectStorageService _objectStorage = objectStorage;
+        private const string _dishImageFolder = "dish";
 
         public async Task<List<Dish>> GetAllDishes(DishQuery query)
         {
@@ -54,11 +55,14 @@ namespace DeliverTableServer.Repositories
                 RestaurantId = restaurantId,
             };
 
+            _context.Dishes.Add(dish);
+            await _context.SaveChangesAsync();
+
             try
             {
                 if (image != null)
                 {
-                    dish.ImageKey = await _objectStorage.UploadAsync(image, "dish") ?? throw new ArgumentException("Image non uploadée");
+                    await _objectStorage.UploadAsync(image, _dishImageFolder, dish.Id);
                 }
             }
             catch (Exception ex)
@@ -66,29 +70,23 @@ namespace DeliverTableServer.Repositories
                 throw new Exception(ex.Message);
             }
 
-            _context.Dishes.Add(dish);
-            await _context.SaveChangesAsync();
-
             return dish;
         }
 
         public async Task<Dish> UpdateDish(int id, CreateDishDto createDishDto, IFormFile? image)
         {
-            Dish? dishToUpdate = await _context.Dishes.FindAsync(id) ?? throw new ArgumentException("Dish non trouvé");
-            if (image != null)
+            Dish? dishToUpdate = await _context.Dishes.FindAsync(id) ?? throw new ArgumentException("Plat introuvable");
+            try
             {
-                try
+                await _objectStorage.DeleteAsync($"{_dishImageFolder}/{dishToUpdate.Id}");
+                if (image != null)
                 {
-                    if (!string.IsNullOrWhiteSpace(dishToUpdate.ImageKey))
-                    {
-                        await _objectStorage.DeleteAsync($"dish/{dishToUpdate.ImageKey}");
-                    }
-                    dishToUpdate.ImageKey = await _objectStorage.UploadAsync(image, "dish") ?? throw new ArgumentException("Image non uploadée");
+                    await _objectStorage.UploadAsync(image, _dishImageFolder, dishToUpdate.Id);
                 }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
             dishToUpdate.Name = createDishDto.Name;
             dishToUpdate.Description = createDishDto.Description;
@@ -105,10 +103,14 @@ namespace DeliverTableServer.Repositories
 
         public async Task DeleteDish(int id)
         {
-            Dish? dishToDelete = await _context.Dishes.FindAsync(id) ?? throw new ArgumentException("Dish non trouvé");
-            if (!string.IsNullOrWhiteSpace(dishToDelete.ImageKey))
+            Dish? dishToDelete = await _context.Dishes.FindAsync(id) ?? throw new ArgumentException("Plat introuvable");
+            try
             {
-                await _objectStorage.DeleteAsync($"dish/{dishToDelete.ImageKey}");
+                await _objectStorage.DeleteAsync($"dish/{dishToDelete.Id}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
             _context.Dishes.Remove(dishToDelete);
             await _context.SaveChangesAsync();

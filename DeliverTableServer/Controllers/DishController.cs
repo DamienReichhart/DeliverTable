@@ -31,7 +31,7 @@ namespace DeliverTableServer.Controllers
         [HttpGet(ApiRoutes.Dish.ByIdRoute)]
         public async Task<IActionResult> GetDishById(int id)
         {
-            Dish dish = await _dishRepository.GetDishById(id) ?? throw new KeyNotFoundException("Dish non trouvé");
+            Dish dish = await _dishRepository.GetDishById(id) ?? throw new KeyNotFoundException("Plat introuvable");
             return Ok(dish.ToDto());
         }
 

@@ -23,7 +23,6 @@ namespace DeliverTableServer.Models
         public bool IsAllergenHazard { get; set; } = false;
         public bool IsDishOfTheDay { get; set; } = false;
         public bool IsActive { get; set; } = true;
-        public string ImageKey { get; set; } = "";
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public int RestaurantId { get; set; }
