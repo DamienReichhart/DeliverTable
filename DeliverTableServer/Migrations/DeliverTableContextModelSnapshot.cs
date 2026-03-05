@@ -80,10 +80,6 @@ namespace DeliverTableServer.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasDefaultValue("");
 
-                    b.Property<string>("ImageKey")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
