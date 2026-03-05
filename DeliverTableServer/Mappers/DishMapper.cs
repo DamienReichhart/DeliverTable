@@ -9,7 +9,8 @@ using DeliverTableSharedLibrary.Dtos.Dish;
 namespace DeliverTableServer.Mappers
 {
     public static class DishMapper
-    {
+    { 
+        private const string _defaultFileExtension = ".png";
         public static DishDto ToDto(this Dish dish)
         {
             return new DishDto
@@ -24,7 +25,7 @@ namespace DeliverTableServer.Mappers
                 IsAllergenHazard = dish.IsAllergenHazard,
                 IsDishOfTheDay = dish.IsDishOfTheDay,
                 IsActive = dish.IsActive,
-                Image = !string.IsNullOrWhiteSpace(dish.ImageKey) ? ApiRoutes.Dish.ImageRoute + dish.ImageKey : ""
+                Image = ApiRoutes.Dish.ImageRoute + dish.Id + _defaultFileExtension
             };
         }
     }
