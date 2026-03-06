@@ -20,8 +20,6 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
     {
         try
         {
-            key = key.Substring(key.IndexOf("/") + 1);
-
             var request = new GetObjectRequest
             {
                 BucketName = _config.BucketName,

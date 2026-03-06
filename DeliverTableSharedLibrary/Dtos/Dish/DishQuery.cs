@@ -14,5 +14,7 @@ namespace DeliverTableSharedLibrary.Dtos.Dish
         public bool? IsGlutenFree { get; set; } = null;
         public bool? IsAllergenHazard { get; set; } = null;
         public bool? IsDishOfTheDay { get; set; } = null;
+        public int PageSize { get; set; } = 100;
+        public int PageNumber { get; set; } = 1;
     }
 }

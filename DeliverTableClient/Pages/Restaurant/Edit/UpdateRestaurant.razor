@@ -49,6 +49,10 @@
             </button>
             <NavLink href="/mes-restaurants" class="app-btn bg-secondary mt-4">Revenir en arrière</NavLink>
         </div>
+
+        <hr class="my-5" />
+
+        <DeliverTableClient.Components.Dish.DishManagement RestaurantId="Id" />
     }
 </div>
 
@@ -89,7 +93,8 @@
 
         try
         {
-            UpdateRestaurantDto updateDto = new (){
+            UpdateRestaurantDto updateDto = new()
+            {
                 Name = form.Name,
                 AdressLine1 = form.AdressLine1,
                 AdressLine2 = form.AdressLine2,
