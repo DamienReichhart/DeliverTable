@@ -62,15 +62,15 @@ namespace DeliverTableServer.Repositories
             var restaurants = _dbContext.Restaurants.AsQueryable();
             if (!string.IsNullOrWhiteSpace(query.Name))
             {
-                restaurants = restaurants.Where(r => r.Name.Contains(query.Name));
+                restaurants = restaurants.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
             }
             if (!string.IsNullOrWhiteSpace(query.City))
             {
-                restaurants = restaurants.Where(r => r.City.Contains(query.City));
+                restaurants = restaurants.Where(r => r.City.ToLower().Contains(query.City.ToLower()));
             }
             if (!string.IsNullOrWhiteSpace(query.Type))
             {
-                restaurants = restaurants.Where(r => r.Type.ToString().Contains(query.Type));
+                restaurants = restaurants.Where(r => r.Type.ToString().ToLower().Contains(query.Type.ToLower()));
             }
 
             restaurants = restaurants.OrderBy(r => r.Id);
@@ -95,11 +95,11 @@ namespace DeliverTableServer.Repositories
             restaurants = restaurants.Where(r => r.OwnerId == id);
             if (!string.IsNullOrWhiteSpace(query.Name))
             {
-                restaurants = restaurants.Where(r => r.Name.Contains(query.Name));
+                restaurants = restaurants.Where(r => r.Name.Contains(query.Name.ToLower()));
             }
             if (!string.IsNullOrWhiteSpace(query.City))
             {
-                restaurants = restaurants.Where(r => r.City.Contains(query.City));
+                restaurants = restaurants.Where(r => r.City.Contains(query.City.ToLower()));
             }
 
 
