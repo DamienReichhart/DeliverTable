@@ -180,7 +180,7 @@ public class RestaurantControllerTests
         // Arrange
         var restoId = 1;
         var dto = new UpdateRestaurantDto { AdressLine1 = "123 Real St", City = "RealTown", ZipCode = "12345" };
-        _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode).Returns((lat: 45.0, lon: 4.0));
+        _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode).Returns((45.0, 4.0));
 
         var updatedResto = new Restaurant { Id = restoId, Name = "Real Resto" };
         _restaurantRepository.GetRestaurantById(restoId).Returns(updatedResto);
