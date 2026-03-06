@@ -9,7 +9,7 @@ using DeliverTableSharedLibrary.Dtos.Dish;
 namespace DeliverTableServer.Mappers
 {
     public static class DishMapper
-    { 
+    {
         private const string _defaultFileExtension = ".png";
         public static DishDto ToDto(this Dish dish)
         {
