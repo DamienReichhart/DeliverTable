@@ -16,7 +16,7 @@ namespace DeliverTableServer.Repositories
     {
         private readonly DeliverTableContext _context = context;
         private readonly IObjectStorageService _objectStorage = objectStorage;
-        private const string _dishImageFolder = "dish";
+        private const string _dishImageFolder = "images/dish";
 
         public async Task<List<Dish>> GetAllDishes(DishQuery query)
         {

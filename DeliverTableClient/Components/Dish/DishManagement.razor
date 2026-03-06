@@ -1,0 +1,304 @@
+@using DeliverTableSharedLibrary.Dtos.Dish
+@using DeliverTableSharedLibrary.Dtos
+@using DeliverTableClient.Services.Interfaces
+@inject IDishService DishService
+
+<div class="dish-management-container mt-5">
+    <h3>Gestion des Plats</h3>
+
+    @if (loading)
+    {
+        <p>Chargement des plats...</p>
+    }
+    else if (error != null)
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+    else
+    {
+        @if (dishes != null && dishes.Any())
+        {
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Prix</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dish in dishes)
+                        {
+                            <tr>
+                                <td>@dish.Name</td>
+                                <td>@dish.BasePrice.ToString("C")</td>
+                                <td>
+                                    @if(dish.IsDishOfTheDay) { <span class="badge bg-success me-1">Plat du jour</span> }
+                                    @if(dish.IsVegetarian) { <span class="badge bg-success me-1">Végétarien</span> }
+                                    @if(dish.IsVegan) { <span class="badge bg-success me-1">Vegan</span> }
+                                    @if(dish.IsGlutenFree) { <span class="badge bg-info me-1">Sans gluten</span> }
+                                    @if(!dish.IsActive) { <span class="badge bg-secondary">Inactif</span> }
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-2" @onclick="() => EditDish(dish)">Modifier</button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteDish(dish.Id)">Supprimer</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p>Aucun plat n'a été ajouté pour ce restaurant.</p>
+        }
+
+        <button class="btn btn-success mt-3" @onclick="ShowAddForm" disabled="@isFormVisible">
+            Ajouter un plat
+        </button>
+
+        @if (isFormVisible)
+        {
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>@(isEditing ? "Modifier le plat" : "Nouveau plat")</h4>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="currentDish" OnValidSubmit="HandleSubmit">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="form-group mb-3">
+                            <label>Nom du plat</label>
+                            <InputText class="form-control" @bind-Value="currentDish.Name" />
+                            <ValidationMessage For="@(() => currentDish.Name)" />
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label>Description</label>
+                            <InputTextArea class="form-control" @bind-Value="currentDish.Description" />
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Prix de base (€)</label>
+                                <InputNumber class="form-control" @bind-Value="currentDish.BasePrice" />
+                                <ValidationMessage For="@(() => currentDish.BasePrice)" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <InputCheckbox class="form-check-input" @bind-Value="currentDish.IsVegetarian" id="isVegetarian" />
+                                    <label class="form-check-label" for="isVegetarian">Végétarien</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <InputCheckbox class="form-check-input" @bind-Value="currentDish.IsVegan" id="isVegan" />
+                                    <label class="form-check-label" for="isVegan">Vegan</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <InputCheckbox class="form-check-input" @bind-Value="currentDish.IsGlutenFree" id="isGlutenFree" />
+                                    <label class="form-check-label" for="isGlutenFree">Sans gluten</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <InputCheckbox class="form-check-input" @bind-Value="currentDish.IsAllergenHazard" id="isAllergenHazard" />
+                                    <label class="form-check-label" for="isAllergenHazard">Risque d'allergène</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <InputCheckbox class="form-check-input" @bind-Value="currentDish.IsDishOfTheDay" id="isDishOfTheDay" />
+                                    <label class="form-check-label" for="isDishOfTheDay">Plat du jour</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>Image du plat (Optionnel)</label>
+                            <InputFile class="form-control" OnChange="HandleImageSelected" accept="image/*" />
+                        </div>
+
+                        @if (formError != null)
+                        {
+                            <div class="alert alert-danger">@formError</div>
+                        }
+
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary me-2" disabled="@isSubmitting">
+                                @(isSubmitting ? "Enregistrement..." : "Enregistrer")
+                            </button>
+                            <button type="button" class="btn btn-secondary" @onclick="CancelForm" disabled="@isSubmitting">
+                                Annuler
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private List<DishDto>? dishes;
+    private bool loading = true;
+    private string? error;
+
+    private bool isFormVisible = false;
+    private bool isEditing = false;
+    private bool isSubmitting = false;
+    private string? formError;
+    private int editingDishId = 0;
+    
+    private CreateDishDto currentDish = new();
+    private IBrowserFile? selectedImage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDishes();
+    }
+
+    private async Task LoadDishes()
+    {
+        loading = true;
+        error = null;
+        try
+        {
+            var query = new DishQuery { PageSize = 100 };
+            var (result, errorResult) = await DishService.GetDishesByRestaurantId(RestaurantId, query);
+            
+            if (errorResult != null)
+            {
+                error = errorResult.Error;
+            }
+            else
+            {
+                dishes = result;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Erreur lors du chargement des plats: " + ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ShowAddForm()
+    {
+        isEditing = false;
+        isFormVisible = true;
+        currentDish = new CreateDishDto();
+        selectedImage = null;
+        formError = null;
+    }
+
+    private void EditDish(DishDto dish)
+    {
+        isEditing = true;
+        isFormVisible = true;
+        editingDishId = dish.Id;
+        
+        // Map DTO to CreateDto for editing
+        currentDish = new CreateDishDto
+        {
+            Name = dish.Name,
+            Description = dish.Description,
+            BasePrice = dish.BasePrice,
+            IsVegetarian = dish.IsVegetarian,
+            IsVegan = dish.IsVegan,
+            IsGlutenFree = dish.IsGlutenFree,
+            IsAllergenHazard = dish.IsAllergenHazard,
+            IsDishOfTheDay = dish.IsDishOfTheDay
+        };
+        
+        selectedImage = null;
+        formError = null;
+    }
+
+    private void CancelForm()
+    {
+        isFormVisible = false;
+    }
+
+    private void HandleImageSelected(InputFileChangeEventArgs e)
+    {
+        selectedImage = e.File;
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        formError = null;
+
+        try
+        {
+            DishDto? resultDish;
+            ErrorResponse? errorResponse;
+
+            if (isEditing)
+            {
+                (resultDish, errorResponse) = await DishService.UpdateDish(editingDishId, currentDish, selectedImage);
+            }
+            else
+            {
+                (resultDish, errorResponse) = await DishService.CreateDish(RestaurantId, currentDish, selectedImage);
+            }
+
+            if (errorResponse != null)
+            {
+                formError = errorResponse.Error;
+            }
+            else
+            {
+                isFormVisible = false;
+                await LoadDishes(); // Reload to get fresh data including updated images/IDs
+            }
+        }
+        catch (Exception ex)
+        {
+            formError = "Erreur lors de l'enregistrement: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteDish(int id)
+    {
+        // Simple confirmation before delete (could be enhanced with a proper modal)
+        bool confirm = true; // For now assuming confirmed, could use a JS interop or blazor modal later
+        
+        if (confirm)
+        {
+            error = null;
+            var errorResponse = await DishService.DeleteDish(id);
+            
+            if (errorResponse != null)
+            {
+                error = errorResponse.Error;
+            }
+            else
+            {
+                await LoadDishes();
+            }
+        }
+    }
+}
