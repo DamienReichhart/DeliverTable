@@ -43,7 +43,7 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
     }
     public async Task<string?> UploadAsync(IFormFile file, string folder = "dish", int? identifier = null, CancellationToken cancellationToken = default)
     {
-        if(identifier == null)
+        if (identifier == null)
         {
             return null;
         }
@@ -101,6 +101,6 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
             await _s3Client.DeleteObjectAsync(_config.BucketName, key + _defaultFileExtension, cancellationToken);
         }
         catch (Exception)
-        {}
+        { }
     }
 }
