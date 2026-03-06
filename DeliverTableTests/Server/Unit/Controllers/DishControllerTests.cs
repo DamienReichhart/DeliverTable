@@ -33,8 +33,8 @@ public class DishControllerTests
         var query = new DishQuery();
         var dishes = new List<Dish>
         {
-            new Dish { Id = 1, Name = "Pizza Margherita", BasePrice = 10, Description = "Classic", ImageKey = "img1.png" },
-            new Dish { Id = 2, Name = "Pasta Carbonara", BasePrice = 12, Description = "Creamy", ImageKey = "img2.png" }
+            new Dish { Id = 1, Name = "Pizza Margherita", BasePrice = 10, Description = "Classic"},
+            new Dish { Id = 2, Name = "Pasta Carbonara", BasePrice = 12, Description = "Creamy"}
         };
         _dishRepository.GetAllDishes(query).Returns(dishes);
 
