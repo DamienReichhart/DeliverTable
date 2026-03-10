@@ -1,0 +1,181 @@
+@use "../../Styles/abstracts/variables" as *;
+
+.plats-container {
+    background:    $color-bg;
+    border-radius: $radius-lg;
+    padding:       $spacing-xl $spacing-2xl $spacing-2xl;
+    max-width:     860px;
+    font-family:   $font-family-base;
+    color:         $color-text;
+}
+
+.plats-title,
+.plats-container h2 {
+    font-family:  $font-family-display;
+    font-weight:  $font-weight-bold;
+    font-size:    $font-size-h3;
+    color:        $color-text;
+    margin-bottom: $spacing-lg;
+    line-height:  $line-height-heading;
+    letter-spacing: -0.01em;
+}
+
+.table-responsive {
+    overflow-x:    auto;
+    border-radius: $radius-lg;
+}
+
+.table {
+    width:           100%;
+    border-collapse: collapse;
+    background:      transparent;
+    font-size:       $font-size-base;
+}
+
+.table thead tr {
+    border-bottom: 2px solid $color-border;
+}
+
+.table thead th {
+    font-family:    $font-family-base;
+    font-weight:    $font-weight-semibold;
+    font-size:      $font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color:          $color-text-muted;
+    padding:        $spacing-sm $spacing-md $spacing-md;
+    text-align:     left;
+    white-space:    nowrap;
+    background:     transparent;
+    border:         none;
+
+    &:last-child { text-align: center; }
+}
+
+.table tbody tr {
+    border-bottom: 1px solid $color-border;
+    transition:    background $transition-fast;
+
+    &:last-child { border-bottom: none; }
+
+    &:hover { background: rgba($color-coral-fire, 0.04); }
+}
+
+.table tbody td {
+    padding:        $spacing-md;
+    vertical-align: middle;
+    color:          $color-text;
+    border:         none;
+    background:     transparent;
+
+    &:first-child { font-weight: $font-weight-semibold; }
+
+    &:nth-child(2) {
+        white-space:       nowrap;
+        font-variant-numeric: tabular-nums;
+        color:             $color-text-muted;
+    }
+
+    &:last-child {
+        text-align:  center;
+        white-space: nowrap;
+    }
+}
+
+.badge {
+    display:       inline-block;
+    padding:       0.28em 0.7em;
+    border-radius: $radius-sm;
+    font-size:     $font-size-xs;
+    font-weight:   $font-weight-semibold;
+    line-height:   1.4;
+    letter-spacing: 0.02em;
+    margin-right:  $spacing-xs;
+}
+
+.badge.bg-success {
+    background: rgba($color-garden-sage, 0.15);
+    color:      darken($color-garden-sage, 10%);
+}
+
+.badge.bg-info {
+    background: rgba($color-amber-gold, 0.15);
+    color:      darken($color-amber-gold, 20%);
+}
+
+.badge.bg-secondary {
+    background: rgba($color-deep-charcoal, 0.08);
+    color:      $color-text-muted;
+}
+
+.app-btn {
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    border:          none;
+    border-radius:   $radius-md;
+    font-family:     $font-family-base;
+    font-weight:     $font-weight-bold;
+    font-size:       $font-size-base;
+    letter-spacing:  0.01em;
+    cursor:          pointer;
+    padding:         $spacing-sm $spacing-lg;
+    transition:      background $transition-base, transform $transition-fast, box-shadow $transition-base;
+    white-space:     nowrap;
+
+    &:active { transform: translateY(1px); }
+
+    &:focus-visible { box-shadow: $focus-ring; outline: none; }
+}
+
+.app-btn.btn-primary {
+    background: $color-primary;
+    color:      $color-text-inverse;
+    box-shadow: 0 2px 6px rgba($color-coral-fire, 0.25);
+
+    &:hover {
+        background: $color-primary-dark;
+        box-shadow: 0 4px 12px rgba($color-coral-fire, 0.35);
+    }
+}
+
+.app-btn.btn-danger {
+    background: $color-deep-charcoal;
+    color:      $color-text-inverse;
+    box-shadow: $shadow-sm;
+
+    &:hover {
+        background: $color-accent-hover;
+        box-shadow: $shadow-md;
+    }
+}
+
+.app-btn.btn-sm {
+    font-size:     $font-size-sm;
+    padding:       $spacing-xs $spacing-md;
+    border-radius: $radius-sm;
+}
+
+.btn-add-dish {
+    margin-top:    $spacing-lg;
+    padding:       $spacing-sm $spacing-xl;
+    font-family:   $font-family-base;
+    font-size:     $font-size-base;
+    font-weight:   $font-weight-bold;
+    border-radius: $radius-md;
+    background:    $color-primary;
+    color:         $color-text-inverse;
+    border:        none;
+    cursor:        pointer;
+    box-shadow:    0 2px 8px rgba($color-coral-fire, 0.28);
+    transition:    background $transition-base, box-shadow $transition-base, transform $transition-fast;
+
+    &:hover {
+        background: $color-primary-dark;
+        box-shadow: 0 4px 14px rgba($color-coral-fire, 0.38);
+    }
+
+    &:active { transform: translateY(1px); }
+
+    &:focus-visible { box-shadow: $focus-ring; outline: none; }
+}
