@@ -1,4 +1,5 @@
 @page "/restaurant/update/{Id:int}"
+@using DeliverTableClient.Components.Dish
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 @inject IRestaurantService RestaurantService
 @inject NavigationManager NavigationManager
@@ -14,7 +15,7 @@
     }
     else
     {
-        <h2>Update Restaurant</h2>
+        <h2>Mettre à jour @form.Name</h2>
         <div class="form-group">
             <label>Nom du restaurant</label>
             <input class="form-control" placeholder="Nom du restaurant" @bind="form.Name" />
@@ -44,15 +45,15 @@
             <div class="alert alert-danger">@error</div>
         }
         <div class="form-controls">
-            <button class="app-btn my-2" @onclick="HandleSubmit" disabled="@submitting">
+            <button class="app-btn my-2 mx-auto" @onclick="HandleSubmit" disabled="@submitting">
                 @(submitting ? "Vérification..." : "Enregistrer")
             </button>
-            <NavLink href="/mes-restaurants" class="app-btn bg-secondary mt-4">Revenir en arrière</NavLink>
+            <NavLink href="/mes-restaurants" class="app-btn bg-secondary">Revenir en arrière</NavLink>
         </div>
 
         <hr class="my-5" />
 
-        <DeliverTableClient.Components.Dish.DishManagement RestaurantId="Id" />
+        <DishManagement RestaurantId="Id" />
     }
 </div>
 

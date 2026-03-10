@@ -42,8 +42,8 @@
                                     @if(!dish.IsActive) { <span class="badge bg-secondary">Inactif</span> }
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary me-2" @onclick="() => EditDish(dish)">Modifier</button>
-                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteDish(dish.Id)">Supprimer</button>
+                                    <button class="app-btn btn-sm btn-primary me-2" @onclick="() => EditDish(dish)">Modifier</button>
+                                    <button class="app-btn btn-sm btn-danger" @onclick="() => DeleteDish(dish.Id)">Supprimer</button>
                                 </td>
                             </tr>
                         }
@@ -56,7 +56,7 @@
             <p>Aucun plat n'a été ajouté pour ce restaurant.</p>
         }
 
-        <button class="btn btn-success mt-3" @onclick="ShowAddForm" disabled="@isFormVisible">
+        <button class="app-btn mt-1" @onclick="ShowAddForm" disabled="@isFormVisible">
             Ajouter un plat
         </button>
 
@@ -64,7 +64,7 @@
         {
             <div class="card mt-4">
                 <div class="card-header">
-                    <h4>@(isEditing ? "Modifier le plat" : "Nouveau plat")</h4>
+                    <h4 class="mb-2">@(isEditing ? "Modifier le plat" : "Nouveau plat")</h4>
                 </div>
                 <div class="card-body">
                     <EditForm Model="currentDish" OnValidSubmit="HandleSubmit">
@@ -78,13 +78,13 @@
                         
                         <div class="form-group mb-3">
                             <label>Description</label>
-                            <InputTextArea class="form-control" @bind-Value="currentDish.Description" />
+                            <InputTextArea class="form-control" @bind-Value="currentDish.Description" rows="3"/>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
+                        <div>
+                            <div class="mb-3">
                                 <label>Prix de base (€)</label>
-                                <InputNumber class="form-control" @bind-Value="currentDish.BasePrice" />
+                                <InputNumber class="form-control" @bind-Value="currentDish.BasePrice" step="0.01" />
                                 <ValidationMessage For="@(() => currentDish.BasePrice)" />
                             </div>
                         </div>
@@ -136,10 +136,10 @@
                         }
 
                         <div class="mt-3">
-                            <button type="submit" class="btn btn-primary me-2" disabled="@isSubmitting">
+                            <button type="submit" class="app-btn me-2" disabled="@isSubmitting">
                                 @(isSubmitting ? "Enregistrement..." : "Enregistrer")
                             </button>
-                            <button type="button" class="btn btn-secondary" @onclick="CancelForm" disabled="@isSubmitting">
+                            <button type="button" class="app-btn bg-secondary" @onclick="CancelForm" disabled="@isSubmitting">
                                 Annuler
                             </button>
                         </div>
@@ -215,7 +215,6 @@
         isFormVisible = true;
         editingDishId = dish.Id;
         
-        // Map DTO to CreateDto for editing
         currentDish = new CreateDishDto
         {
             Name = dish.Name,
@@ -268,7 +267,7 @@
             else
             {
                 isFormVisible = false;
-                await LoadDishes(); // Reload to get fresh data including updated images/IDs
+                await LoadDishes();
             }
         }
         catch (Exception ex)
@@ -283,8 +282,7 @@
 
     private async Task DeleteDish(int id)
     {
-        // Simple confirmation before delete (could be enhanced with a proper modal)
-        bool confirm = true; // For now assuming confirmed, could use a JS interop or blazor modal later
+        bool confirm = true; 
         
         if (confirm)
         {
@@ -297,6 +295,9 @@
             }
             else
             {
+                isFormVisible = false;
+                editingDishId = 0;
+                isEditing = false;
                 await LoadDishes();
             }
         }
