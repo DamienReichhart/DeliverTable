@@ -4,18 +4,19 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using DeliverTableServer.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace DeliverTableServer.Middleware.ActionFilters
 {
-    public class RestaurantOwnerAttribute: TypeFilterAttribute
+    public class RestaurantOwnerAttribute : TypeFilterAttribute
     {
-        public RestaurantOwnerAttribute(): base(typeof(RestaurantOwnerAttribute))
+        public RestaurantOwnerAttribute() : base(typeof(RestaurantOwnerAttribute))
         {
         }
 
-        private sealed class RestaurantOwnerFilter(DeliverTableContext dbContext): IAsyncActionFilter
+        private sealed class RestaurantOwnerFilter(DeliverTableContext dbContext) : IAsyncActionFilter
         {
             private readonly DeliverTableContext _dbContext = dbContext;
             public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -32,7 +33,7 @@ namespace DeliverTableServer.Middleware.ActionFilters
                     context.Result = new NotFoundResult();
                     return;
                 }
-                var restaurantOwnerId = await _dbContext.Restaurants
+                int? restaurantOwnerId = await _dbContext.Restaurants
                     .Where(r => r.Id == dish.RestaurantId)
                     .Select(r => r.OwnerId)
                     .FirstOrDefaultAsync();
@@ -41,7 +42,7 @@ namespace DeliverTableServer.Middleware.ActionFilters
                     context.Result = new NotFoundResult();
                     return;
                 }
-                var currentUserId = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                string? currentUserId = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (currentUserId == null || !int.TryParse(currentUserId, out int userId))
                 {
                     context.Result = new UnauthorizedResult();

@@ -36,15 +36,14 @@ namespace DeliverTableClient.Services
             {
                 string queryString = $"?PageNumber={query.PageNumber}&PageSize={query.PageSize}";
                 if (!string.IsNullOrEmpty(query.Name)) queryString += $"&Name={Uri.EscapeDataString(query.Name)}";
-                if (!string.IsNullOrEmpty(query.IsDishOfTheDay.ToString())) queryString += $"&IsDishOfTheDay={Uri.EscapeDataString(query.IsDishOfTheDay.ToString())}";
-                if (!string.IsNullOrEmpty(query.IsVegetarian.ToString())) queryString += $"&IsVegetarian={Uri.EscapeDataString(query.IsVegetarian.ToString())}";
-                if (!string.IsNullOrEmpty(query.IsVegan.ToString())) queryString += $"&IsVegan={Uri.EscapeDataString(query.IsVegan.ToString())}";
-                if (!string.IsNullOrEmpty(query.IsGlutenFree.ToString())) queryString += $"&IsGlutenFree={Uri.EscapeDataString(query.IsGlutenFree.ToString())}";
-                if (!string.IsNullOrEmpty(query.IsAllergenHazard.ToString())) queryString += $"&IsAllergenHazard={Uri.EscapeDataString(query.IsAllergenHazard.ToString())}";
+                if (!string.IsNullOrEmpty(query.IsDishOfTheDay.ToString())) queryString += $"&IsDishOfTheDay={Uri.EscapeDataString(query.IsDishOfTheDay.ToString() ?? "")}";
+                if (!string.IsNullOrEmpty(query.IsVegetarian.ToString())) queryString += $"&IsVegetarian={Uri.EscapeDataString(query.IsVegetarian.ToString() ?? "")}";
+                if (!string.IsNullOrEmpty(query.IsVegan.ToString())) queryString += $"&IsVegan={Uri.EscapeDataString(query.IsVegan.ToString() ?? "")}";
+                if (!string.IsNullOrEmpty(query.IsGlutenFree.ToString())) queryString += $"&IsGlutenFree={Uri.EscapeDataString(query.IsGlutenFree.ToString() ?? "")}";
 
                 string url = ApiRoutes.Dish.Base + queryString;
-                List<DishDto> dishes = await _httpClient.GetFromJsonAsync<List<DishDto>>(url, cancellationToken);
-                return (dishes, null);
+                List<DishDto>? dishes = await _httpClient.GetFromJsonAsync<List<DishDto>>(url, cancellationToken);
+                return (dishes ?? [], null);
             }
             catch (Exception ex)
             {
