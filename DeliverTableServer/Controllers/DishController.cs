@@ -10,6 +10,7 @@ using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Mappers;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableServer.Middleware.ActionFilters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DeliverTableServer.Controllers
 {
@@ -43,6 +44,7 @@ namespace DeliverTableServer.Controllers
         }
 
         [HttpPost(ApiRoutes.Dish.DishesByRestaurantIdRoute)]
+        [Authorize(Roles = "RestaurantOwner")]
         [EnsureOwner]
         public async Task<ActionResult<DishDto>> CreateDish([FromForm] CreateDishDto createDishDto, [FromRoute] int id, IFormFile? image)
         {
@@ -51,6 +53,8 @@ namespace DeliverTableServer.Controllers
         }
 
         [HttpPut(ApiRoutes.Dish.ByIdRoute)]
+        [Authorize(Roles = "RestaurantOwner")]
+        [RestaurantOwner]
         public async Task<ActionResult<DishDto>> UpdateDish([FromRoute] int id, [FromForm] CreateDishDto createDishDto, IFormFile? image)
         {
             Dish updatedDish = await _dishRepository.UpdateDish(id, createDishDto, image);
@@ -58,6 +62,8 @@ namespace DeliverTableServer.Controllers
         }
 
         [HttpDelete(ApiRoutes.Dish.ByIdRoute)]
+        [Authorize(Roles = "RestaurantOwner")]
+        [RestaurantOwner]
         public async Task<ActionResult> DeleteDish(int id)
         {
             await _dishRepository.DeleteDish(id);
