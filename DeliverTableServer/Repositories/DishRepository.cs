@@ -39,7 +39,7 @@ namespace DeliverTableServer.Repositories
         {
             return await _context.Dishes.FindAsync(id);
         }
-        
+
         public async Task<Dish> CreateDish(CreateDishDto createDishDto, int restaurantId, IFormFile? image)
         {
             Dish dish = new()
