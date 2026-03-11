@@ -16,12 +16,34 @@ namespace DeliverTableClient.Services
         {
             try
             {
-                var queryString = $"?PageNumber={query.PageNumber}&PageSize={query.PageSize}";
+                string queryString = $"?PageNumber={query.PageNumber}&PageSize={query.PageSize}";
                 if (!string.IsNullOrEmpty(query.Name)) queryString += $"&Name={Uri.EscapeDataString(query.Name)}";
 
                 string url = $"{ApiRoutes.Dish.DishesByRestaurantId.Replace("{id:int}", restaurantId.ToString())}{queryString}";
 
                 var dishes = await _httpClient.GetFromJsonAsync<List<DishDto>>(url, cancellationToken);
+                return (dishes, null);
+            }
+            catch (Exception ex)
+            {
+                return (null, new ErrorResponse { Error = ex.Message });
+            }
+        }
+
+        public async Task<(List<DishDto>?, ErrorResponse?)> GetAllDishes(DishQuery query, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                string queryString = $"?PageNumber={query.PageNumber}&PageSize={query.PageSize}";
+                if (!string.IsNullOrEmpty(query.Name)) queryString += $"&Name={Uri.EscapeDataString(query.Name)}";
+                if (!string.IsNullOrEmpty(query.IsDishOfTheDay.ToString())) queryString += $"&IsDishOfTheDay={Uri.EscapeDataString(query.IsDishOfTheDay.ToString())}";
+                if (!string.IsNullOrEmpty(query.IsVegetarian.ToString())) queryString += $"&IsVegetarian={Uri.EscapeDataString(query.IsVegetarian.ToString())}";
+                if (!string.IsNullOrEmpty(query.IsVegan.ToString())) queryString += $"&IsVegan={Uri.EscapeDataString(query.IsVegan.ToString())}";
+                if (!string.IsNullOrEmpty(query.IsGlutenFree.ToString())) queryString += $"&IsGlutenFree={Uri.EscapeDataString(query.IsGlutenFree.ToString())}";
+                if (!string.IsNullOrEmpty(query.IsAllergenHazard.ToString())) queryString += $"&IsAllergenHazard={Uri.EscapeDataString(query.IsAllergenHazard.ToString())}";
+
+                string url = ApiRoutes.Dish.Base + queryString;
+                List<DishDto> dishes = await _httpClient.GetFromJsonAsync<List<DishDto>>(url, cancellationToken);
                 return (dishes, null);
             }
             catch (Exception ex)
