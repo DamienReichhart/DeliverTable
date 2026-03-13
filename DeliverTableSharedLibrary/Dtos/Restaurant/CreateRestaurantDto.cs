@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableSharedLibrary.Dtos.Restaurant
 {

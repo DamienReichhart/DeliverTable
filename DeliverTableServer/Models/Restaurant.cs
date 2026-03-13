@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableServer.Models
 {
