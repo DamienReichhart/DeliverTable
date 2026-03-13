@@ -1,6 +1,6 @@
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Models;
-using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableTests.Server.Factories;
 

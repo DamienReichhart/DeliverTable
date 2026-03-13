@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableSharedLibrary.Dtos.Restaurant
 {

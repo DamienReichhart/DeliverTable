@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Enums;
 using Microsoft.AspNetCore.Identity;
 
 namespace DeliverTableServer.Models;
