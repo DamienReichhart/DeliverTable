@@ -1,7 +1,7 @@
 using DeliverTableServer.Data;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
-using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
