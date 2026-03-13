@@ -1,4 +1,4 @@
-namespace DeliverTableSharedLibrary.Constants.Enums
+namespace DeliverTableSharedLibrary.Enums
 {
     public enum AvailableCountries
     {
