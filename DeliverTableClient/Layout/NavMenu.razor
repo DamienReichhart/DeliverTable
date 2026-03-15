@@ -77,22 +77,6 @@
             </NotAuthorized>
         </AuthorizeView>
     </nav>
-
-    <AuthorizeView Context="userCtx">
-        <Authorized>
-            <div class="sidebar-user">
-                <div class="sidebar-user-avatar">
-                    @(userCtx.User.Identity?.Name is { Length: > 0 } name
-                        ? name[..1].ToUpperInvariant()
-                        : "?")
-                </div>
-                <div class="sidebar-user-info">
-                    <span class="sidebar-user-name">@userCtx.User.Identity?.Name</span>
-                    <span class="sidebar-user-role">@userCtx.User.FindFirst(ClaimTypes.Role)?.Value</span>
-                </div>
-            </div>
-        </Authorized>
-    </AuthorizeView>
 </div>
 
 @code {
