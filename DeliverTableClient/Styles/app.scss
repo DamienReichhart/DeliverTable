@@ -15,6 +15,7 @@
 @use 'pages/health';
 @use 'pages/auth';
 @use 'utilities/blazor';
+@use 'layout/modale';
 
 textarea {
   resize: vertical;
