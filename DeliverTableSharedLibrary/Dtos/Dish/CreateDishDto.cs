@@ -18,5 +18,6 @@ namespace DeliverTableSharedLibrary.Dtos.Dish
         public bool IsGlutenFree { get; set; } = false;
         public bool IsAllergenHazard { get; set; } = false;
         public bool IsDishOfTheDay { get; set; } = false;
+        public bool IsActive { get; set; } = true;
     }
 }
