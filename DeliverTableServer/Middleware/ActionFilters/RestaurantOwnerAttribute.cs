@@ -12,7 +12,7 @@ namespace DeliverTableServer.Middleware.ActionFilters
 {
     public class RestaurantOwnerAttribute : TypeFilterAttribute
     {
-        public RestaurantOwnerAttribute() : base(typeof(RestaurantOwnerAttribute))
+        public RestaurantOwnerAttribute() : base(typeof(RestaurantOwnerFilter))
         {
         }
 

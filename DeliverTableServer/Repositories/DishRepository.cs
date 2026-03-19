@@ -78,9 +78,9 @@ namespace DeliverTableServer.Repositories
             Dish? dishToUpdate = await _context.Dishes.FindAsync(id) ?? throw new ArgumentException("Plat introuvable");
             try
             {
-                await _objectStorage.DeleteAsync($"{_dishImageFolder}/{dishToUpdate.Id}");
                 if (image != null)
                 {
+                    await _objectStorage.DeleteAsync($"{_dishImageFolder}/{dishToUpdate.Id}");
                     await _objectStorage.UploadAsync(image, _dishImageFolder, dishToUpdate.Id);
                 }
             }
