@@ -64,7 +64,7 @@ namespace DeliverTableServer.Controllers
         [HttpDelete(ApiRoutes.Dish.ByIdRoute)]
         [Authorize(Roles = "RestaurantOwner")]
         [RestaurantOwner]
-        public async Task<ActionResult> DeleteDish(int id)
+        public async Task<ActionResult> DeleteDish([FromRoute] int id)
         {
             await _dishRepository.DeleteDish(id);
             return NoContent();
