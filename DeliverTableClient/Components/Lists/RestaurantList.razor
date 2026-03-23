@@ -31,10 +31,13 @@
                             </p>
                         </div>
                         <div class="restaurant-card-controls">
-                            <NavLink href=@($"/restaurant/update/{restaurant.Id}") class="app-btn">
+                            <NavLink href=@($"/restaurant/{restaurant.Id}/commandes") class="app-btn" title="Commandes">
+                                <Blazicon Svg="Lucide.ShoppingBag" class="app-icon" />
+                            </NavLink>
+                            <NavLink href=@($"/restaurant/update/{restaurant.Id}") class="app-btn" title="Modifier">
                                 <Blazicon Svg="Lucide.Pencil" class="app-icon" />
                             </NavLink>
-                            <button class="app-btn bg-danger" @onclick="() => DeleteRestaurant(restaurant.Id)">
+                            <button class="app-btn bg-danger" @onclick="() => DeleteRestaurant(restaurant.Id)" title="Supprimer">
                                 <Blazicon Svg="Lucide.Trash2" class="app-icon" />
                             </button>
                         </div>

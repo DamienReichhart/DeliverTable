@@ -1,0 +1,235 @@
+@page "/restaurant/{RestaurantId:int}/commande/{OrderId:int}"
+@inject IOrderService OrderService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableSharedLibrary.Dtos.Order
+
+<PageTitle>Commande #@OrderId — DeliverTable</PageTitle>
+
+<div class="order-detail-page">
+    <div class="page-header">
+        <h1>Commande #@OrderId</h1>
+        <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+            Retour aux commandes
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_order is not null)
+    {
+        <div class="order-detail-grid">
+            <div class="order-info-card">
+                <h2>Informations</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Type</span>
+                        <span class="order-type-badge order-type--@_order.OrderType.ToLower()">
+                            @TranslateOrderType(_order.OrderType)
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Convives</span>
+                        <span>@_order.GuestCount personne(s)</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Date</span>
+                        <span>@_order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Paiement</span>
+                        <span class="status-badge status--@_order.PaymentStatus.ToLower()">
+                            @TranslatePaymentStatus(_order.PaymentStatus)
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_order.DeliveryAddress))
+                    {
+                        <div class="info-item info-item--full">
+                            <span class="info-label">Adresse de livraison</span>
+                            <span>@_order.DeliveryAddress</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_order.Notes))
+                    {
+                        <div class="info-item info-item--full">
+                            <span class="info-label">Notes du client</span>
+                            <span class="customer-notes">@_order.Notes</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="order-status-card">
+                <h2>Statut</h2>
+                <div class="current-status">
+                    <span class="status-badge status-badge--lg status--@_order.Status.ToLower()">
+                        @TranslateStatus(_order.Status)
+                    </span>
+                </div>
+
+                @if (_order.Status is not "Delivered" and not "Cancelled")
+                {
+                    <div class="status-actions">
+                        <h3>Changer le statut</h3>
+                        <div class="status-flow">
+                            @foreach (var next in GetNextStatuses(_order.Status, _order.OrderType))
+                            {
+                                <button type="button"
+                                        class="app-btn @(next.IsPrimary ? "app-btn--primary" : "app-btn--danger")"
+                                        @onclick="() => ChangeStatus(next.Value)">
+                                    @next.Label
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="order-items-card">
+            <h2>Articles commandés</h2>
+            <table class="order-items-table">
+                <thead>
+                    <tr>
+                        <th>Plat</th>
+                        <th>Prix unitaire</th>
+                        <th>Quantité</th>
+                        <th>Sous-total</th>
+                        <th>Instructions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _order.Items)
+                    {
+                        <tr>
+                            <td><strong>@item.DishName</strong></td>
+                            <td>@item.UnitPrice.ToString("C", _frCulture)</td>
+                            <td>@item.Quantity</td>
+                            <td><strong>@item.Subtotal.ToString("C", _frCulture)</strong></td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.SpecialInstructions))
+                                {
+                                    <span class="item-instructions">@item.SpecialInstructions</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"><strong>Total</strong></td>
+                        <td><strong>@_order.TotalAmount.ToString("C", _frCulture)</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    [Parameter]
+    public int OrderId { get; set; }
+
+    private static readonly System.Globalization.CultureInfo _frCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    private OrderDto? _order;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrder();
+    }
+
+    private async Task LoadOrder()
+    {
+        _loading = true;
+        _error = null;
+
+        var (order, error) = await OrderService.GetOrderByIdAsync(OrderId);
+        if (error is not null)
+            _error = error.Error;
+        else
+            _order = order;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task ChangeStatus(string newStatus)
+    {
+        _error = null;
+        var (updated, error) = await OrderService.UpdateOrderStatusAsync(OrderId, newStatus);
+        if (error is not null)
+        {
+            _error = error.Error;
+            StateHasChanged();
+        }
+        else
+        {
+            _order = updated;
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo($"/restaurant/{RestaurantId}/commandes");
+
+    private record StatusAction(string Value, string Label, bool IsPrimary);
+
+    private static List<StatusAction> GetNextStatuses(string currentStatus, string orderType) => currentStatus switch
+    {
+        "Pending" => [new("Confirmed", "Confirmer", true), new("Cancelled", "Annuler", false)],
+        "Confirmed" => [new("Preparing", "Commencer la préparation", true), new("Cancelled", "Annuler", false)],
+        "Preparing" => [new("Ready", "Marquer comme prêt", true), new("Cancelled", "Annuler", false)],
+        "Ready" when orderType == "Delivery" => [new("Delivering", "Envoyer en livraison", true)],
+        "Ready" when orderType == "DineIn" => [new("Delivered", "Marquer comme servi", true)],
+        "Ready" => [new("Delivered", "Terminé", true)],
+        "Delivering" => [new("Delivered", "Marquer comme livré", true)],
+        _ => []
+    };
+
+    private static string TranslateOrderType(string orderType) => orderType switch
+    {
+        "Delivery" => "Livraison",
+        "DineIn" => "Sur place",
+        _ => orderType
+    };
+
+    private static string TranslateStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Confirmed" => "Confirmée",
+        "Preparing" => "En préparation",
+        "Ready" => "Prête",
+        "Delivering" => "En livraison",
+        "Delivered" => "Livrée",
+        "Cancelled" => "Annulée",
+        _ => status
+    };
+
+    private static string TranslatePaymentStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Completed" => "Payé",
+        "Failed" => "Échoué",
+        "Refunded" => "Remboursé",
+        _ => status
+    };
+}

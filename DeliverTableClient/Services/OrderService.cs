@@ -71,4 +71,40 @@ public sealed class OrderService(HttpClient httpClient) : IOrderService
         var result = await response.Content.ReadFromJsonAsync<OrderDto>(cancellationToken: ct);
         return (result, null);
     }
+
+    public async Task<(PaginatedResult<OrderDto>?, ErrorResponse?)> GetRestaurantOrdersAsync(int restaurantId, OrderQuery query, CancellationToken ct = default)
+    {
+        try
+        {
+            var queryParams = new List<string>
+            {
+                $"PageNumber={query.PageNumber}",
+                $"PageSize={query.PageSize}"
+            };
+            if (!string.IsNullOrWhiteSpace(query.Status))
+                queryParams.Add($"Status={Uri.EscapeDataString(query.Status)}");
+
+            var url = $"{ApiRoutes.Order.Base}/restaurant/{restaurantId}?{string.Join("&", queryParams)}";
+            var result = await _httpClient.GetFromJsonAsync<PaginatedResult<OrderDto>>(url, ct);
+            return (result, null);
+        }
+        catch (Exception ex)
+        {
+            return (null, new ErrorResponse { Error = ex.Message });
+        }
+    }
+
+    public async Task<(OrderDto?, ErrorResponse?)> UpdateOrderStatusAsync(int orderId, string status, CancellationToken ct = default)
+    {
+        var request = new UpdateOrderStatusRequest { Status = status };
+        var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Order.Base}/{orderId}/status", request, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            return (null, error);
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<OrderDto>(cancellationToken: ct);
+        return (result, null);
+    }
 }

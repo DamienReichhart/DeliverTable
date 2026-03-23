@@ -106,6 +106,27 @@ public sealed class OrderService(
         };
     }
 
+    public async Task<ServiceResult<PaginatedResult<OrderDto>>> GetRestaurantOrdersAsync(
+        int restaurantId, int ownerId, OrderQuery query, CancellationToken ct = default)
+    {
+        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
+        if (restaurant is null)
+            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+
+        if (restaurant.OwnerId != ownerId)
+            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+
+        var (items, totalCount) = await _orderRepository.GetByRestaurantAsync(restaurantId, query, ct);
+
+        return new PaginatedResult<OrderDto>
+        {
+            Items = items.Select(o => o.ToDto()).ToList(),
+            TotalCount = totalCount,
+            Page = query.PageNumber > 0 ? query.PageNumber : 1,
+            PageSize = query.PageSize
+        };
+    }
+
     public async Task<ServiceResult<OrderDto>> UpdateStatusAsync(
         int orderId, UpdateOrderStatusRequest request, CancellationToken ct = default)
     {
