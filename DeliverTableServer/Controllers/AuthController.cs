@@ -8,6 +8,7 @@ using DeliverTableServer.Models;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -42,6 +43,9 @@ public class AuthController(
 
         if (user == null || !await _userManager.CheckPasswordAsync(user, loginRequest.Password))
             return Unauthorized(new { Error = "Identifiants invalides" });
+
+        if (user.Status == UserStatus.Suspended || user.Status == UserStatus.Banned)
+            return Unauthorized(new { Error = "Compte suspendu ou banni" });
 
         var token = await _tokenService.CreateToken(user);
         var userRoles = await _userManager.GetRolesAsync(user);
