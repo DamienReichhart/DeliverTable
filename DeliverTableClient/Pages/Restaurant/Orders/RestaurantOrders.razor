@@ -27,6 +27,7 @@
             <option value="">Toutes</option>
             <option value="Pending">En attente</option>
             <option value="Confirmed">Confirmées</option>
+            <option value="Refused">Refusées</option>
             <option value="Preparing">En préparation</option>
             <option value="Ready">Prêtes</option>
             <option value="Delivering">En livraison</option>
@@ -96,6 +97,10 @@
                                     <button type="button" class="app-btn app-btn--primary app-btn--sm"
                                             @onclick="() => UpdateStatus(order.Id, nameof(OrderStatus.Preparing))">
                                         Préparer
+                                    </button>
+                                    <button type="button" class="app-btn app-btn--danger app-btn--sm"
+                                            @onclick="() => UpdateStatus(order.Id, nameof(OrderStatus.Refused))">
+                                        Refuser
                                     </button>
                                 }
                                 else if (order.Status == "Preparing")
@@ -247,6 +252,7 @@
     {
         "Pending" => "En attente",
         "Confirmed" => "Confirmée",
+        "Refused" => "Refusée",
         "Preparing" => "En préparation",
         "Ready" => "Prête",
         "Delivering" => "En livraison",

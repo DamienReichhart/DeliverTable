@@ -154,7 +154,7 @@ public sealed class OrderService(
         if (order.CustomerId != customerId)
             return new ServiceError(ErrorMessages.OrderNotFound, 404);
 
-        if (order.Status is OrderStatus.Delivering or OrderStatus.Delivered or OrderStatus.Cancelled)
+        if (order.Status is OrderStatus.Delivering or OrderStatus.Delivered or OrderStatus.Cancelled or OrderStatus.Refused)
             return new ServiceError(ErrorMessages.OrderCannotBeCancelled);
 
         order.Status = OrderStatus.Cancelled;
