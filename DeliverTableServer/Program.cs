@@ -1,15 +1,23 @@
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Middleware;
+using DeliverTableSharedLibrary.Constants;
 
 EnvLoader.Load();
 var env = AppEnvironment.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+var maxUploadBytes = UploadLimits.ToBytes(env.UploadMaxSizeMb);
+
 builder.Services.AddSingleton(env);
 builder.Services.AddSingleton(env.Jwt);
 builder.Services.AddSingleton(env.ObjectStorage);
+
+builder.WebHost.ConfigureKestrel(options =>
+    options.Limits.MaxRequestBodySize = maxUploadBytes);
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+    options.MultipartBodyLengthLimit = maxUploadBytes);
 
 builder.Services.AddIdentityParams();
 builder.Services.AddJwtAuthentication(env.Jwt);

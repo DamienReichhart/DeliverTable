@@ -32,6 +32,9 @@ public static class ErrorMessages
     public const string CartItemNotFound = "Article du panier introuvable";
     public const string CartEmpty = "Le panier est vide";
     public const string DishNotAvailable = "Ce plat n'est pas disponible";
+
+    public static string FileTooLarge(int maxSizeMb) =>
+        $"Le fichier dépasse la taille maximale autorisée ({maxSizeMb} Mo)";
     public const string DishNotFromRestaurant = "Ce plat n'appartient pas à ce restaurant";
     public const string RestaurantNotActive = "Cet établissement n'est pas actif";
 

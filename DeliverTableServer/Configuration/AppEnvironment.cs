@@ -13,6 +13,7 @@ public sealed class AppEnvironment
     public ObjectStorageConfig ObjectStorage { get; }
     public bool OpenApiEnableDocumentation { get; }
     public string[] CorsAllowedOrigins { get; }
+    public int UploadMaxSizeMb { get; }
 
     private AppEnvironment(
         string databaseConnectionString,
@@ -20,7 +21,8 @@ public sealed class AppEnvironment
         JwtConfig jwt,
         ObjectStorageConfig objectStorage,
         bool openApiEnableDocumentation,
-        string[] corsAllowedOrigins)
+        string[] corsAllowedOrigins,
+        int uploadMaxSizeMb)
     {
         DatabaseConnectionString = databaseConnectionString;
         RedisConnectionString = redisConnectionString;
@@ -28,6 +30,7 @@ public sealed class AppEnvironment
         ObjectStorage = objectStorage;
         OpenApiEnableDocumentation = openApiEnableDocumentation;
         CorsAllowedOrigins = corsAllowedOrigins;
+        UploadMaxSizeMb = uploadMaxSizeMb;
     }
 
     /// <summary>
@@ -59,6 +62,9 @@ public sealed class AppEnvironment
             ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             ?? [];
 
+        var uploadMaxSizeMb = ParseInt("UPLOAD_MAX_SIZE_MB",
+            DeliverTableSharedLibrary.Constants.UploadLimits.DefaultMaxSizeMb, errors);
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
@@ -77,7 +83,8 @@ public sealed class AppEnvironment
             },
             new ObjectStorageConfig(osUrl!, osAccessKey!, osSecretKey!, osBucket!, osForcePathStyle, osRegion),
             openApiEnable,
-            corsOrigins);
+            corsOrigins,
+            uploadMaxSizeMb);
     }
 
     private static string? GetVar(string name)
