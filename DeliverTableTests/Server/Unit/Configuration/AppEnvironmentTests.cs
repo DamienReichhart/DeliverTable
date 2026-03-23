@@ -18,7 +18,8 @@ public class AppEnvironmentTests
         "CONNECTION_STRING_REDIS",
         "JWT_EXPIRE_MINUTES",
         "OBJECT_STORAGE_FORCE_PATH_STYLE",
-        "OPENAPI_ENABLE_DOCUMENTATION"
+        "OPENAPI_ENABLE_DOCUMENTATION",
+        "CORS_ALLOWED_ORIGINS"
     ];
 
     [TearDown]
@@ -63,6 +64,7 @@ public class AppEnvironmentTests
             Assert.That(env.Jwt.ExpireMinutes, Is.EqualTo(60));
             Assert.That(env.ObjectStorage.ForcePathStyle, Is.True);
             Assert.That(env.OpenApiEnableDocumentation, Is.False);
+            Assert.That(env.CorsAllowedOrigins, Is.Empty);
         });
     }
 
