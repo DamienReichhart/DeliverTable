@@ -1,0 +1,257 @@
+@page "/restaurant/{RestaurantId:int}/commandes"
+@inject IOrderService OrderService
+@inject IRestaurantService RestaurantService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableSharedLibrary.Dtos.Order
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<PageTitle>Commandes — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
+
+<div class="restaurant-orders-page">
+    <div class="page-header">
+        <div>
+            <h1>Commandes</h1>
+            @if (_restaurantName is not null)
+            {
+                <p class="page-subtitle">@_restaurantName</p>
+            }
+        </div>
+        <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+            Retour
+        </button>
+    </div>
+
+    <div class="order-filters">
+        <select @bind="_selectedStatus" @bind:after="FilterOrders" class="filter-select">
+            <option value="">Toutes</option>
+            <option value="Pending">En attente</option>
+            <option value="Confirmed">Confirmées</option>
+            <option value="Preparing">En préparation</option>
+            <option value="Ready">Prêtes</option>
+            <option value="Delivering">En livraison</option>
+            <option value="Delivered">Livrées</option>
+            <option value="Cancelled">Annulées</option>
+        </select>
+
+        <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="LoadOrders">
+            Actualiser
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Chargement des commandes...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_orders is null || _orders.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Aucune commande pour le moment.</p>
+        </div>
+    }
+    else
+    {
+        <div class="orders-table-container">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Type</th>
+                        <th>Convives</th>
+                        <th>Articles</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in _orders.Items)
+                    {
+                        <tr class="order-row @(IsActiveOrder(order.Status) ? "order-row--active" : "")">
+                            <td><strong>@order.Id</strong></td>
+                            <td>
+                                <span class="order-type-badge order-type--@order.OrderType.ToLower()">
+                                    @TranslateOrderType(order.OrderType)
+                                </span>
+                            </td>
+                            <td>@order.GuestCount</td>
+                            <td>@order.Items.Count</td>
+                            <td><strong>@order.TotalAmount.ToString("C", _frCulture)</strong></td>
+                            <td>@order.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                            <td>
+                                <span class="status-badge status--@order.Status.ToLower()">
+                                    @TranslateStatus(order.Status)
+                                </span>
+                            </td>
+                            <td class="order-actions-cell">
+                                @if (order.Status == "Confirmed")
+                                {
+                                    <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                            @onclick="() => UpdateStatus(order.Id, nameof(OrderStatus.Preparing))">
+                                        Préparer
+                                    </button>
+                                }
+                                else if (order.Status == "Preparing")
+                                {
+                                    <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                            @onclick="() => UpdateStatus(order.Id, nameof(OrderStatus.Ready))">
+                                        Prêt
+                                    </button>
+                                }
+                                else if (order.Status == "Ready" && order.OrderType == "Delivery")
+                                {
+                                    <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                            @onclick="() => UpdateStatus(order.Id, nameof(OrderStatus.Delivering))">
+                                        En livraison
+                                    </button>
+                                }
+                                else if (order.Status == "Ready" && order.OrderType == "DineIn")
+                                {
+                                    <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                            @onclick="() => UpdateStatus(order.Id, nameof(OrderStatus.Delivered))">
+                                        Servi
+                                    </button>
+                                }
+                                else if (order.Status == "Delivering")
+                                {
+                                    <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                            @onclick="() => UpdateStatus(order.Id, nameof(OrderStatus.Delivered))">
+                                        Livré
+                                    </button>
+                                }
+
+                                <button type="button" class="app-btn app-btn--secondary app-btn--sm"
+                                        @onclick="() => ViewDetail(order.Id)">
+                                    Détail
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_orders.HasNextPage || _query.PageNumber > 1)
+        {
+            <div class="pagination">
+                @if (_query.PageNumber > 1)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                }
+                <span class="page-info">Page @_query.PageNumber / @((_orders.TotalCount + _query.PageSize - 1) / _query.PageSize)</span>
+                @if (_orders.HasNextPage)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private static readonly System.Globalization.CultureInfo _frCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    private PaginatedResult<OrderDto>? _orders;
+    private OrderQuery _query = new() { PageSize = 20 };
+    private string? _restaurantName;
+    private string _selectedStatus = string.Empty;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
+        _restaurantName = restaurant?.Name;
+
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        _query.Status = string.IsNullOrWhiteSpace(_selectedStatus) ? null : _selectedStatus;
+
+        var (result, error) = await OrderService.GetRestaurantOrdersAsync(RestaurantId, _query);
+        if (error is not null)
+            _error = error.Error;
+        else
+            _orders = result;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task UpdateStatus(int orderId, string newStatus)
+    {
+        var (_, error) = await OrderService.UpdateOrderStatusAsync(orderId, newStatus);
+        if (error is not null)
+        {
+            _error = error.Error;
+            StateHasChanged();
+        }
+        else
+        {
+            await LoadOrders();
+        }
+    }
+
+    private async Task FilterOrders()
+    {
+        _query.PageNumber = 1;
+        await LoadOrders();
+    }
+
+    private async Task NextPage()
+    {
+        _query.PageNumber++;
+        await LoadOrders();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_query.PageNumber > 1)
+        {
+            _query.PageNumber--;
+            await LoadOrders();
+        }
+    }
+
+    private void ViewDetail(int orderId) => Nav.NavigateTo($"/restaurant/{RestaurantId}/commande/{orderId}");
+    private void GoBack() => Nav.NavigateTo("/mes-restaurants");
+
+    private static bool IsActiveOrder(string status) =>
+        status is "Confirmed" or "Preparing" or "Ready" or "Delivering";
+
+    private static string TranslateOrderType(string orderType) => orderType switch
+    {
+        "Delivery" => "Livraison",
+        "DineIn" => "Sur place",
+        _ => orderType
+    };
+
+    private static string TranslateStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Confirmed" => "Confirmée",
+        "Preparing" => "En préparation",
+        "Ready" => "Prête",
+        "Delivering" => "En livraison",
+        "Delivered" => "Livrée",
+        "Cancelled" => "Annulée",
+        _ => status
+    };
+}

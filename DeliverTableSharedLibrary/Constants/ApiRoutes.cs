@@ -110,6 +110,7 @@ public static class ApiRoutes
 
         public const string ByIdRoute = "{id:int}";
         public const string StatusRoute = "{id:int}/status";
+        public const string RestaurantOrdersRoute = "restaurant/{id:int}";
     }
 
     /// <summary>Test controller route (development only).</summary>
