@@ -19,7 +19,8 @@ public class AppEnvironmentTests
         "JWT_EXPIRE_MINUTES",
         "OBJECT_STORAGE_FORCE_PATH_STYLE",
         "OPENAPI_ENABLE_DOCUMENTATION",
-        "CORS_ALLOWED_ORIGINS"
+        "CORS_ALLOWED_ORIGINS",
+        "UPLOAD_MAX_SIZE_MB"
     ];
 
     [TearDown]
@@ -65,6 +66,7 @@ public class AppEnvironmentTests
             Assert.That(env.ObjectStorage.ForcePathStyle, Is.True);
             Assert.That(env.OpenApiEnableDocumentation, Is.False);
             Assert.That(env.CorsAllowedOrigins, Is.Empty);
+            Assert.That(env.UploadMaxSizeMb, Is.EqualTo(5));
         });
     }
 
@@ -76,6 +78,7 @@ public class AppEnvironmentTests
         Environment.SetEnvironmentVariable("JWT_EXPIRE_MINUTES", "120");
         Environment.SetEnvironmentVariable("OBJECT_STORAGE_FORCE_PATH_STYLE", "false");
         Environment.SetEnvironmentVariable("OPENAPI_ENABLE_DOCUMENTATION", "true");
+        Environment.SetEnvironmentVariable("UPLOAD_MAX_SIZE_MB", "10");
 
         var env = AppEnvironment.Load();
 
@@ -85,6 +88,7 @@ public class AppEnvironmentTests
             Assert.That(env.Jwt.ExpireMinutes, Is.EqualTo(120));
             Assert.That(env.ObjectStorage.ForcePathStyle, Is.False);
             Assert.That(env.OpenApiEnableDocumentation, Is.True);
+            Assert.That(env.UploadMaxSizeMb, Is.EqualTo(10));
         });
     }
 

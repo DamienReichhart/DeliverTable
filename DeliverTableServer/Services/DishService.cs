@@ -1,9 +1,11 @@
 using DeliverTableServer.Common;
+using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Dish;
 
@@ -11,11 +13,14 @@ namespace DeliverTableServer.Services;
 
 public sealed class DishService(
     IDishRepository dishRepository,
-    IObjectStorageService objectStorage
+    IObjectStorageService objectStorage,
+    AppEnvironment appEnvironment
 ) : IDishService
 {
     private readonly IDishRepository _dishRepository = dishRepository;
     private readonly IObjectStorageService _objectStorage = objectStorage;
+    private readonly long _maxUploadBytes = UploadLimits.ToBytes(appEnvironment.UploadMaxSizeMb);
+    private readonly int _maxUploadMb = appEnvironment.UploadMaxSizeMb;
     private const string DishImageFolder = "images/dish";
 
     public async Task<ServiceResult<PaginatedResult<DishDto>>> GetAllAsync(DishQuery query, CancellationToken ct = default)
@@ -55,6 +60,9 @@ public sealed class DishService(
     public async Task<ServiceResult<DishDto>> CreateAsync(
         CreateDishDto dto, int restaurantId, IFormFile? image, CancellationToken ct = default)
     {
+        if (image is not null && image.Length > _maxUploadBytes)
+            return new ServiceError(ErrorMessages.FileTooLarge(_maxUploadMb), 413);
+
         var dish = new Dish
         {
             Name = dto.Name,
@@ -79,6 +87,9 @@ public sealed class DishService(
     public async Task<ServiceResult<DishDto>> UpdateAsync(
         int id, CreateDishDto dto, IFormFile? image, CancellationToken ct = default)
     {
+        if (image is not null && image.Length > _maxUploadBytes)
+            return new ServiceError(ErrorMessages.FileTooLarge(_maxUploadMb), 413);
+
         var dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
             return new ServiceError(ErrorMessages.DishNotFound, 404);
