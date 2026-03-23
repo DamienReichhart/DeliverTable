@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 using DeliverTableClient.Services.Interfaces;
@@ -91,9 +92,9 @@ namespace DeliverTableClient.Services
                 if (!string.IsNullOrWhiteSpace(query.Name)) queryParams.Add($"Name={Uri.EscapeDataString(query.Name)}");
                 if (!string.IsNullOrWhiteSpace(query.City)) queryParams.Add($"City={Uri.EscapeDataString(query.City)}");
                 if (!string.IsNullOrWhiteSpace(query.Type)) queryParams.Add($"Type={Uri.EscapeDataString(query.Type)}");
-                if (query.Latitude.HasValue) queryParams.Add($"Latitude={query.Latitude.Value}");
-                if (query.Longitude.HasValue) queryParams.Add($"Longitude={query.Longitude.Value}");
-                if (query.RadiusKm.HasValue) queryParams.Add($"RadiusKm={query.RadiusKm.Value}");
+                if (query.Latitude.HasValue) queryParams.Add($"Latitude={query.Latitude.Value.ToString(CultureInfo.InvariantCulture)}");
+                if (query.Longitude.HasValue) queryParams.Add($"Longitude={query.Longitude.Value.ToString(CultureInfo.InvariantCulture)}");
+                if (query.RadiusKm.HasValue) queryParams.Add($"RadiusKm={query.RadiusKm.Value.ToString(CultureInfo.InvariantCulture)}");
                 queryParams.Add($"PageNumber={query.PageNumber}");
                 queryParams.Add($"PageSize={query.PageSize}");
 

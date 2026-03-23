@@ -1,6 +1,7 @@
 @page "/restaurants"
 @inject IRestaurantService RestaurantService
 @inject NavigationManager Nav
+@inject IJSRuntime Js
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 
 <PageTitle>Restaurants — DeliverTable</PageTitle>
@@ -147,13 +148,24 @@
 
     private async Task GetLocationAndSearch()
     {
-        _query.RadiusKm = _radiusKm;
-        // Geolocation is handled via JS interop in Blazor WASM
-        // For now, we'll use a default location if JS interop is not set up
-        // The user can also enter coordinates manually
-        _query.Latitude = 48.8566; // Paris default
-        _query.Longitude = 2.3522;
-        await SearchRestaurants();
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        try
+        {
+            var coords = await Js.InvokeAsync<double[]>("getGeolocation");
+            _query.Latitude = coords[0];
+            _query.Longitude = coords[1];
+            _query.RadiusKm = _radiusKm;
+            await SearchRestaurants();
+        }
+        catch
+        {
+            _error = "Impossible d'obtenir votre position. Veuillez autoriser la géolocalisation dans votre navigateur.";
+            _loading = false;
+            StateHasChanged();
+        }
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
