@@ -48,7 +48,9 @@ public class RestaurantControllerTests
         var paginated = new PaginatedResult<RestaurantDto>
         {
             Items = [new RestaurantDto { Id = 1, Name = "Resto 1" }, new RestaurantDto { Id = 2, Name = "Resto 2" }],
-            TotalCount = 2, Page = 1, PageSize = 20
+            TotalCount = 2,
+            Page = 1,
+            PageSize = 20
         };
         _restaurantService.GetAllAsync(query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<RestaurantDto>>.Success(paginated));
@@ -67,7 +69,9 @@ public class RestaurantControllerTests
         var paginated = new PaginatedResult<RestaurantDto>
         {
             Items = [new RestaurantDto { Id = 1, Name = "My Resto" }],
-            TotalCount = 1, Page = 1, PageSize = 20
+            TotalCount = 1,
+            Page = 1,
+            PageSize = 20
         };
         _restaurantService.GetByOwnerAsync(userId, query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<RestaurantDto>>.Success(paginated));
