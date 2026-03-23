@@ -1,74 +1,65 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using DeliverTableSharedLibrary.Dtos.Dish;
+using DeliverTableServer.Extensions;
+using DeliverTableServer.Middleware.ActionFilters;
+using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Constants.Enums;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
-using DeliverTableServer.Mappers;
-using DeliverTableSharedLibrary.Dtos;
-using DeliverTableServer.Middleware.ActionFilters;
+using DeliverTableSharedLibrary.Dtos.Dish;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace DeliverTableServer.Controllers
+namespace DeliverTableServer.Controllers;
+
+[ApiController]
+[Route(ApiRoutes.Dish.Base)]
+public class DishController(IDishService dishService) : ControllerBase
 {
-    [ApiController]
-    [Route(ApiRoutes.Dish.Base)]
-    public class DishController(
-        IDishRepository dishRepository
-    ) : ControllerBase
+    private readonly IDishService _dishService = dishService;
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllDishes([FromQuery] DishQuery query, CancellationToken ct)
     {
-        private readonly IDishRepository _dishRepository = dishRepository;
+        var result = await _dishService.GetAllAsync(query, ct);
+        return result.ToOkResult();
+    }
 
-        [HttpGet]
-        public async Task<ActionResult<List<DishDto>>> GetAllDishes([FromQuery] DishQuery query)
-        {
-            List<Dish> dishes = await _dishRepository.GetAllDishes(query);
-            return Ok(dishes.Select(d => d.ToDto()));
-        }
+    [HttpGet(ApiRoutes.Dish.ByIdRoute)]
+    public async Task<IActionResult> GetDishById(int id, CancellationToken ct)
+    {
+        var result = await _dishService.GetByIdAsync(id, ct);
+        return result.ToOkResult();
+    }
 
-        [HttpGet(ApiRoutes.Dish.ByIdRoute)]
-        public async Task<IActionResult> GetDishById(int id)
-        {
-            Dish dish = await _dishRepository.GetDishById(id) ?? throw new KeyNotFoundException("Plat introuvable");
-            return Ok(dish.ToDto());
-        }
+    [HttpGet(ApiRoutes.Dish.DishesByRestaurantIdRoute)]
+    public async Task<IActionResult> GetDishesByRestaurantId([FromQuery] DishQuery query, int id, CancellationToken ct)
+    {
+        var result = await _dishService.GetByRestaurantIdAsync(query, id, ct);
+        return result.ToOkResult();
+    }
 
-        [HttpGet(ApiRoutes.Dish.DishesByRestaurantIdRoute)]
-        public async Task<ActionResult<List<DishDto>>> GetDishesByRestaurantId([FromQuery] DishQuery query, int id)
-        {
-            List<Dish> dishes = await _dishRepository.GetDishesByRestaurantId(query, id);
-            return Ok(dishes.Select(d => d.ToDto()));
-        }
+    [HttpPost(ApiRoutes.Dish.DishesByRestaurantIdRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+    [EnsureOwner]
+    public async Task<IActionResult> CreateDish([FromForm] CreateDishDto createDishDto, [FromRoute] int id, IFormFile? image, CancellationToken ct)
+    {
+        var result = await _dishService.CreateAsync(createDishDto, id, image, ct);
+        return result.ToOkResult();
+    }
 
-        [HttpPost(ApiRoutes.Dish.DishesByRestaurantIdRoute)]
-        [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
-        [EnsureOwner]
-        public async Task<ActionResult<DishDto>> CreateDish([FromForm] CreateDishDto createDishDto, [FromRoute] int id, IFormFile? image)
-        {
-            Dish createdDish = await _dishRepository.CreateDish(createDishDto, id, image);
-            return Ok(createdDish.ToDto());
-        }
+    [HttpPut(ApiRoutes.Dish.ByIdRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+    [RestaurantOwner]
+    public async Task<IActionResult> UpdateDish([FromRoute] int id, [FromForm] CreateDishDto createDishDto, IFormFile? image, CancellationToken ct)
+    {
+        var result = await _dishService.UpdateAsync(id, createDishDto, image, ct);
+        return result.ToOkResult();
+    }
 
-        [HttpPut(ApiRoutes.Dish.ByIdRoute)]
-        [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
-        [RestaurantOwner]
-        public async Task<ActionResult<DishDto>> UpdateDish([FromRoute] int id, [FromForm] CreateDishDto createDishDto, IFormFile? image)
-        {
-            Dish updatedDish = await _dishRepository.UpdateDish(id, createDishDto, image);
-            return Ok(updatedDish.ToDto());
-        }
-
-        [HttpDelete(ApiRoutes.Dish.ByIdRoute)]
-        [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
-        [RestaurantOwner]
-        public async Task<ActionResult> DeleteDish([FromRoute] int id)
-        {
-            await _dishRepository.DeleteDish(id);
-            return NoContent();
-        }
+    [HttpDelete(ApiRoutes.Dish.ByIdRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+    [RestaurantOwner]
+    public async Task<IActionResult> DeleteDish([FromRoute] int id, CancellationToken ct)
+    {
+        var result = await _dishService.DeleteAsync(id, ct);
+        return result.ToNoContentResult();
     }
 }

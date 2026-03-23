@@ -12,19 +12,22 @@ public sealed class AppEnvironment
     public JwtConfig Jwt { get; }
     public ObjectStorageConfig ObjectStorage { get; }
     public bool OpenApiEnableDocumentation { get; }
+    public string[] CorsAllowedOrigins { get; }
 
     private AppEnvironment(
         string databaseConnectionString,
         string redisConnectionString,
         JwtConfig jwt,
         ObjectStorageConfig objectStorage,
-        bool openApiEnableDocumentation)
+        bool openApiEnableDocumentation,
+        string[] corsAllowedOrigins)
     {
         DatabaseConnectionString = databaseConnectionString;
         RedisConnectionString = redisConnectionString;
         Jwt = jwt;
         ObjectStorage = objectStorage;
         OpenApiEnableDocumentation = openApiEnableDocumentation;
+        CorsAllowedOrigins = corsAllowedOrigins;
     }
 
     /// <summary>
@@ -52,6 +55,10 @@ public sealed class AppEnvironment
 
         var openApiEnable = ParseBool("OPENAPI_ENABLE_DOCUMENTATION", defaultValue: false);
 
+        var corsOrigins = GetVar("CORS_ALLOWED_ORIGINS")
+            ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            ?? [];
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
@@ -69,7 +76,8 @@ public sealed class AppEnvironment
                 ExpireMinutes = jwtExpire
             },
             new ObjectStorageConfig(osUrl!, osAccessKey!, osSecretKey!, osBucket!, osForcePathStyle, osRegion),
-            openApiEnable);
+            openApiEnable,
+            corsOrigins);
     }
 
     private static string? GetVar(string name)

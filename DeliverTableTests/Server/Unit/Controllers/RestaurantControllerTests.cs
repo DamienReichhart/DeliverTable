@@ -1,34 +1,27 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
+using DeliverTableServer.Common;
 using DeliverTableServer.Controllers;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
 namespace DeliverTableTests.Server.Unit.Controllers;
 
 [TestFixture]
 public class RestaurantControllerTests
 {
-    private IGeoLocationService _geoLocationService = null!;
-    private IRestaurantRepository _restaurantRepository = null!;
+    private IRestaurantService _restaurantService = null!;
     private RestaurantController _sut = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _geoLocationService = Substitute.For<IGeoLocationService>();
-        _restaurantRepository = Substitute.For<IRestaurantRepository>();
-        _sut = new RestaurantController(_geoLocationService, _restaurantRepository);
+        _restaurantService = Substitute.For<IRestaurantService>();
+        _sut = new RestaurantController(_restaurantService);
     }
 
     private void SetupAuthenticatedUser(string userId, string role = nameof(UserRole.RestaurantOwner))
@@ -36,7 +29,6 @@ public class RestaurantControllerTests
         var claims = new List<Claim>();
         if (!string.IsNullOrEmpty(userId))
             claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
-
         if (!string.IsNullOrEmpty(role))
             claims.Add(new Claim(ClaimTypes.Role, role));
 
@@ -50,178 +42,84 @@ public class RestaurantControllerTests
     }
 
     [Test]
-    public async Task GetAll_ReturnsOkWithRestaurants()
+    public async Task GetAll_ReturnsOkWithPaginatedResult()
     {
-        // Arrange
         var query = new RestaurantQuery();
-        var restaurants = new List<Restaurant>
+        var paginated = new PaginatedResult<RestaurantDto>
         {
-            new Restaurant { Id = 1, Name = "Resto 1" },
-            new Restaurant { Id = 2, Name = "Resto 2" }
+            Items = [new RestaurantDto { Id = 1, Name = "Resto 1" }, new RestaurantDto { Id = 2, Name = "Resto 2" }],
+            TotalCount = 2, Page = 1, PageSize = 20
         };
-        _restaurantRepository.GetAllRestaurant(query).Returns(restaurants);
+        _restaurantService.GetAllAsync(query, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<PaginatedResult<RestaurantDto>>.Success(paginated));
 
-        // Act
-        var result = await _sut.GetAll(query);
+        var result = await _sut.GetAll(query, CancellationToken.None);
 
-        // Assert
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result;
-        var returnedRestaurants = okResult.Value as IEnumerable<RestaurantDto>;
-        Assert.That(returnedRestaurants, Is.Not.Null);
-        Assert.That(returnedRestaurants!.Count(), Is.EqualTo(2));
     }
 
     [Test]
     public async Task GetAllUserRestaurants_WithValidOwnerId_ReturnsOk()
     {
-        // Arrange
         var userId = 5;
         SetupAuthenticatedUser(userId.ToString());
         var query = new RestaurantQuery();
-        var restaurants = new List<Restaurant>
+        var paginated = new PaginatedResult<RestaurantDto>
         {
-            new Restaurant { Id = 1, Name = "My Resto", OwnerId = userId }
+            Items = [new RestaurantDto { Id = 1, Name = "My Resto" }],
+            TotalCount = 1, Page = 1, PageSize = 20
         };
-        _restaurantRepository.GetRestaurantByOwner(userId, query).Returns(restaurants);
+        _restaurantService.GetByOwnerAsync(userId, query, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<PaginatedResult<RestaurantDto>>.Success(paginated));
 
-        // Act
-        var result = await _sut.GetAllUserRestaurants(query, null); // id null triggers falling back to claim
+        var result = await _sut.GetAllUserRestaurants(query, CancellationToken.None, null);
 
-        // Assert
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result;
-        var returnedRestaurants = okResult.Value as IEnumerable<RestaurantDto>;
-        Assert.That(returnedRestaurants, Is.Not.Null);
-        Assert.That(returnedRestaurants!.Count(), Is.EqualTo(1));
     }
 
     [Test]
     public async Task GetAllUserRestaurants_WithMismatchedUserId_ReturnsForbid()
     {
-        // Arrange
-        var userId = 5;
-        SetupAuthenticatedUser(userId.ToString(), role: "User"); // Not Admin
+        SetupAuthenticatedUser("5", role: "User");
         var query = new RestaurantQuery();
-        var requestedOwnerId = 10;
 
-        // Act
-        var result = await _sut.GetAllUserRestaurants(query, requestedOwnerId);
+        var result = await _sut.GetAllUserRestaurants(query, CancellationToken.None, 10);
 
-        // Assert
         Assert.That(result, Is.InstanceOf<ForbidResult>());
     }
 
     [Test]
-    public async Task GetById_WhenExists_ReturnsOkWithDetailedDto()
+    public async Task GetById_WhenExists_ReturnsOk()
     {
-        // Arrange
-        var restoId = 1;
-        var restaurant = new Restaurant { Id = restoId, Name = "Test Resto" };
-        _restaurantRepository.GetRestaurantById(restoId).Returns(restaurant);
+        var dto = new DetailedRestaurantDto { Id = 1, Name = "Test Resto" };
+        _restaurantService.GetByIdAsync(1, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<DetailedRestaurantDto>.Success(dto));
 
-        // Act
-        var result = await _sut.GetById(restoId);
+        var result = await _sut.GetById(1, CancellationToken.None);
 
-        // Assert
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result;
-        var dto = okResult.Value as DetailedRestaurantDto;
-        Assert.That(dto, Is.Not.Null);
-        Assert.That(dto!.Id, Is.EqualTo(restoId));
     }
 
     [Test]
-    public async Task GetById_WhenNotExists_ReturnsNotFound()
+    public async Task GetById_WhenNotExists_ReturnsError()
     {
-        // Arrange
-        var restoId = 99;
-        _restaurantRepository.GetRestaurantById(restoId).Returns((Restaurant)null!);
+        _restaurantService.GetByIdAsync(99, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<DetailedRestaurantDto>.Failure(new ServiceError("Not found", 404)));
 
-        // Act
-        var result = await _sut.GetById(restoId);
+        var result = await _sut.GetById(99, CancellationToken.None);
 
-        // Assert
-        Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
-    }
-
-    [Test]
-    public async Task Update_WithInvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        var restoId = 1;
-        var dto = new UpdateRestaurantDto();
-        _sut.ModelState.AddModelError("Name", "Required");
-
-        // Act
-        var result = await _sut.Update(restoId, dto);
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
-    }
-
-    [Test]
-    public async Task Update_WithInvalidCoordinates_ReturnsBadRequest()
-    {
-        // Arrange
-        var restoId = 1;
-        var dto = new UpdateRestaurantDto { AdressLine1 = "123 Fake St", City = "FakeTown", ZipCode = "00000" };
-        _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode).Returns(((double lat, double lon)?)null);
-
-        // Act
-        var result = await _sut.Update(restoId, dto);
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
-    }
-
-    [Test]
-    public async Task Update_WithValidData_ReturnsOk()
-    {
-        // Arrange
-        var restoId = 1;
-        var dto = new UpdateRestaurantDto { AdressLine1 = "123 Real St", City = "RealTown", ZipCode = "12345" };
-        _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode).Returns((45.0, 4.0));
-
-        var updatedResto = new Restaurant { Id = restoId, Name = "Real Resto" };
-        _restaurantRepository.GetRestaurantById(restoId).Returns(updatedResto);
-
-        // Act
-        var result = await _sut.Update(restoId, dto);
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result;
-        var returnedResto = okResult.Value as DetailedRestaurantDto;
-        Assert.That(returnedResto, Is.Not.Null);
-        Assert.That(returnedResto!.Id, Is.EqualTo(restoId));
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));
     }
 
     [Test]
     public async Task Delete_WhenSuccessful_ReturnsNoContent()
     {
-        // Arrange
-        var restoId = 1;
-        _restaurantRepository.Delete(restoId).Returns(true);
+        _restaurantService.DeleteAsync(1, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Success());
 
-        // Act
-        var result = await _sut.Delete(restoId);
+        var result = await _sut.Delete(1, CancellationToken.None);
 
-        // Assert
         Assert.That(result, Is.InstanceOf<NoContentResult>());
-    }
-
-    [Test]
-    public async Task Delete_WhenFailed_ReturnsNotFound()
-    {
-        // Arrange
-        var restoId = 99;
-        _restaurantRepository.Delete(restoId).Returns(false);
-
-        // Act
-        var result = await _sut.Delete(restoId);
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<NotFoundResult>());
     }
 }

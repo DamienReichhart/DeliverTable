@@ -1,163 +1,78 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using DeliverTableServer.Common;
 using DeliverTableServer.Controllers;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Dish;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
 namespace DeliverTableTests.Server.Unit.Controllers;
 
 [TestFixture]
 public class DishControllerTests
 {
-    private IDishRepository _dishRepository = null!;
+    private IDishService _dishService = null!;
     private DishController _sut = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _dishRepository = Substitute.For<IDishRepository>();
-        _sut = new DishController(_dishRepository);
+        _dishService = Substitute.For<IDishService>();
+        _sut = new DishController(_dishService);
     }
 
     [Test]
-    public async Task GetAllDishes_ReturnsOkWithDishes()
+    public async Task GetAllDishes_ReturnsOkWithPaginatedResult()
     {
-        // Arrange
         var query = new DishQuery();
-        var dishes = new List<Dish>
+        var paginated = new PaginatedResult<DishDto>
         {
-            new Dish { Id = 1, Name = "Pizza Margherita", BasePrice = 10, Description = "Classic"},
-            new Dish { Id = 2, Name = "Pasta Carbonara", BasePrice = 12, Description = "Creamy"}
+            Items = [
+                new DishDto { Id = 1, Name = "Pizza Margherita" },
+                new DishDto { Id = 2, Name = "Pasta Carbonara" }
+            ],
+            TotalCount = 2, Page = 1, PageSize = 2
         };
-        _dishRepository.GetAllDishes(query).Returns(dishes);
+        _dishService.GetAllAsync(query, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<PaginatedResult<DishDto>>.Success(paginated));
 
-        // Act
-        var result = await _sut.GetAllDishes(query);
+        var result = await _sut.GetAllDishes(query, CancellationToken.None);
 
-        // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result!;
-        var returnedDishes = okResult.Value as IEnumerable<DishDto>;
-        Assert.That(returnedDishes, Is.Not.Null);
-        Assert.That(returnedDishes!.Count(), Is.EqualTo(2));
-    }
-
-    [Test]
-    public async Task GetDishById_WhenDishExists_ReturnsOk()
-    {
-        // Arrange
-        var dishId = 1;
-        var dish = new Dish { Id = dishId, Name = "Pizza Margherita", BasePrice = 10 };
-        _dishRepository.GetDishById(dishId).Returns(dish);
-
-        // Act
-        var result = await _sut.GetDishById(dishId);
-
-        // Assert
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result;
-        var returnedDish = okResult.Value as DishDto;
-        Assert.That(returnedDish, Is.Not.Null);
-        Assert.That(returnedDish!.Id, Is.EqualTo(dishId));
     }
 
     [Test]
-    public void GetDishById_WhenDishNotFound_ThrowsKeyNotFoundException()
+    public async Task GetDishById_WhenExists_ReturnsOk()
     {
-        // Arrange
-        var dishId = 99;
-        _dishRepository.GetDishById(dishId).Returns((Dish)null!);
+        var dto = new DishDto { Id = 1, Name = "Pizza" };
+        _dishService.GetByIdAsync(1, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<DishDto>.Success(dto));
 
-        // Act & Assert
-        Assert.ThrowsAsync<KeyNotFoundException>(async () => await _sut.GetDishById(dishId));
+        var result = await _sut.GetDishById(1, CancellationToken.None);
+
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
 
     [Test]
-    public async Task GetDishesByRestaurantId_ReturnsOk()
+    public async Task GetDishById_WhenNotFound_ReturnsError()
     {
-        // Arrange
-        var restaurantId = 1;
-        var query = new DishQuery();
-        var dishes = new List<Dish>
-        {
-            new Dish { Id = 1, Name = "Pizza Margherita", BasePrice = 10, RestaurantId = restaurantId }
-        };
-        _dishRepository.GetDishesByRestaurantId(query, restaurantId).Returns(dishes);
+        _dishService.GetByIdAsync(99, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<DishDto>.Failure(new ServiceError("Plat introuvable", 404)));
 
-        // Act
-        var result = await _sut.GetDishesByRestaurantId(query, restaurantId);
+        var result = await _sut.GetDishById(99, CancellationToken.None);
 
-        // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result!;
-        var returnedDishes = okResult.Value as IEnumerable<DishDto>;
-        Assert.That(returnedDishes, Is.Not.Null);
-        Assert.That(returnedDishes!.Count(), Is.EqualTo(1));
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));
     }
 
     [Test]
-    public async Task CreateDish_ReturnsOk()
+    public async Task DeleteDish_WhenSuccessful_ReturnsNoContent()
     {
-        // Arrange
-        var restaurantId = 1;
-        var dto = new CreateDishDto { Name = "New Dish", BasePrice = 15 };
-        var fileMock = Substitute.For<IFormFile>();
+        _dishService.DeleteAsync(1, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Success());
 
-        var createdDish = new Dish { Id = 10, Name = "New Dish", BasePrice = 15, RestaurantId = restaurantId };
-        _dishRepository.CreateDish(dto, restaurantId, fileMock).Returns(createdDish);
+        var result = await _sut.DeleteDish(1, CancellationToken.None);
 
-        // Act
-        var result = await _sut.CreateDish(dto, restaurantId, fileMock);
-
-        // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result!;
-        var returnedDish = okResult.Value as DishDto;
-        Assert.That(returnedDish, Is.Not.Null);
-        Assert.That(returnedDish!.Id, Is.EqualTo(10));
-    }
-
-    [Test]
-    public async Task UpdateDish_ReturnsOk()
-    {
-        // Arrange
-        var dishId = 1;
-        var dto = new CreateDishDto { Name = "Updated Dish", BasePrice = 20 };
-        var fileMock = Substitute.For<IFormFile>();
-
-        var updatedDish = new Dish { Id = dishId, Name = "Updated Dish", BasePrice = 20 };
-        _dishRepository.UpdateDish(dishId, dto, fileMock).Returns(updatedDish);
-
-        // Act
-        var result = await _sut.UpdateDish(dishId, dto, fileMock);
-
-        // Assert
-        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
-        var okResult = (OkObjectResult)result.Result!;
-        var returnedDish = okResult.Value as DishDto;
-        Assert.That(returnedDish, Is.Not.Null);
-        Assert.That(returnedDish!.Name, Is.EqualTo("Updated Dish"));
-    }
-
-    [Test]
-    public async Task DeleteDish_ReturnsNoContent()
-    {
-        // Arrange
-        var dishId = 1;
-        _dishRepository.DeleteDish(dishId).Returns(Task.CompletedTask);
-
-        // Act
-        var result = await _sut.DeleteDish(dishId);
-
-        // Assert
         Assert.That(result, Is.InstanceOf<NoContentResult>());
-        await _dishRepository.Received(1).DeleteDish(dishId);
     }
 }

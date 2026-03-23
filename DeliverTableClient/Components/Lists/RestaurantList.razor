@@ -56,7 +56,7 @@
 
         try
         {
-            (List<RestaurantDto>? result, ErrorResponse? errorObject) = await RestaurantService.GetConnectedUserRestaurants();
+            var (result, errorObject) = await RestaurantService.GetConnectedUserRestaurants();
 
             if (errorObject != null)
             {
@@ -64,7 +64,7 @@
             }
             else
             {
-                restaurants = result;
+                restaurants = result?.Items.ToList();
             }
         }
         catch (Exception)
