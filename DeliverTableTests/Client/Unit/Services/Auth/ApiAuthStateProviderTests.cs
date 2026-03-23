@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Claims;
 using DeliverTableClient.Services.Auth;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using DeliverTableTests.Client.Factories;
 using DeliverTableTests.Client.Helpers;
@@ -198,7 +199,7 @@ public class ApiAuthStateProviderTests
 
         _sut.NotifyUserAuthentication(
             ClientTestFactory.ValidToken,
-            "RestaurantOwner",
+            nameof(UserRole.RestaurantOwner),
             "99",
             "Marie");
 
@@ -208,7 +209,7 @@ public class ApiAuthStateProviderTests
         Assert.Multiple(() =>
         {
             Assert.That(claims.First(c => c.Type == ClaimTypes.Role).Value,
-                Is.EqualTo("RestaurantOwner"));
+                Is.EqualTo(nameof(UserRole.RestaurantOwner)));
             Assert.That(claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value,
                 Is.EqualTo("99"));
             Assert.That(claims.First(c => c.Type == ClaimTypes.Name).Value,

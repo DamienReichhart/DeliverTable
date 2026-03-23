@@ -1,3 +1,5 @@
+using DeliverTableSharedLibrary.Constants.Enums;
+
 namespace DeliverTableSharedLibrary.Dtos;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace DeliverTableSharedLibrary.Dtos;
 public sealed class HealthResponse
 {
     /// <summary>Current service health status (e.g. Healthy, Degraded, Unhealthy).</summary>
-    public string Status { get; init; } = "Healthy";
+    public string Status { get; init; } = nameof(HealthStatus.Healthy);
 
     /// <summary>UTC timestamp when the health was checked.</summary>
     public DateTime TimestampUtc { get; init; }

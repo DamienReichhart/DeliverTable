@@ -1,4 +1,5 @@
 using DeliverTableServer.Mappers;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableTests.Server.Factories;
 
 namespace DeliverTableTests.Server.Unit.Mappers;
@@ -14,7 +15,7 @@ public class UserMappersTests
         user.FirstName = "Marie";
         user.LastName = "Curie";
 
-        var dto = user.ToDto("Customer");
+        var dto = user.ToDto(nameof(UserRole.Customer));
 
         Assert.Multiple(() =>
         {
@@ -22,7 +23,7 @@ public class UserMappersTests
             Assert.That(dto.Email, Is.EqualTo("map@example.com"));
             Assert.That(dto.FirstName, Is.EqualTo("Marie"));
             Assert.That(dto.LastName, Is.EqualTo("Curie"));
-            Assert.That(dto.Role, Is.EqualTo("Customer"));
+            Assert.That(dto.Role, Is.EqualTo(nameof(UserRole.Customer)));
         });
     }
 
@@ -32,15 +33,15 @@ public class UserMappersTests
         var user = ServerEntityFactory.CreateValidUser();
         user.Email = null;
 
-        var dto = user.ToDto("Customer");
+        var dto = user.ToDto(nameof(UserRole.Customer));
 
         Assert.That(dto.Email, Is.EqualTo(string.Empty));
     }
 
     [Test]
-    [TestCase("Customer")]
-    [TestCase("Restaurant_Owner")]
-    [TestCase("Administrator")]
+    [TestCase(nameof(UserRole.Customer))]
+    [TestCase(nameof(UserRole.RestaurantOwner))]
+    [TestCase(nameof(UserRole.Administrator))]
     public void ToDto_PreservesRole(string role)
     {
         var user = ServerEntityFactory.CreateValidUser();

@@ -1,4 +1,5 @@
 using DeliverTableServer.Services;
+using DeliverTableSharedLibrary.Constants.Enums;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -18,7 +19,7 @@ public class HealthServiceTests
     {
         var result = await _sut.GetHealthAsync();
 
-        Assert.That(result.Status, Is.EqualTo("Healthy"));
+        Assert.That(result.Status, Is.EqualTo(nameof(HealthStatus.Healthy)));
     }
 
     [Test]
@@ -40,6 +41,6 @@ public class HealthServiceTests
         var result = await _sut.GetHealthAsync(cts.Token);
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Status, Is.EqualTo("Healthy"));
+        Assert.That(result.Status, Is.EqualTo(nameof(HealthStatus.Healthy)));
     }
 }

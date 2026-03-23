@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using DeliverTableSharedLibrary.Dtos.Dish;
 using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Mappers;
@@ -44,7 +45,7 @@ namespace DeliverTableServer.Controllers
         }
 
         [HttpPost(ApiRoutes.Dish.DishesByRestaurantIdRoute)]
-        [Authorize(Roles = "RestaurantOwner")]
+        [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
         [EnsureOwner]
         public async Task<ActionResult<DishDto>> CreateDish([FromForm] CreateDishDto createDishDto, [FromRoute] int id, IFormFile? image)
         {
@@ -53,7 +54,7 @@ namespace DeliverTableServer.Controllers
         }
 
         [HttpPut(ApiRoutes.Dish.ByIdRoute)]
-        [Authorize(Roles = "RestaurantOwner")]
+        [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
         [RestaurantOwner]
         public async Task<ActionResult<DishDto>> UpdateDish([FromRoute] int id, [FromForm] CreateDishDto createDishDto, IFormFile? image)
         {
@@ -62,7 +63,7 @@ namespace DeliverTableServer.Controllers
         }
 
         [HttpDelete(ApiRoutes.Dish.ByIdRoute)]
-        [Authorize(Roles = "RestaurantOwner")]
+        [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
         [RestaurantOwner]
         public async Task<ActionResult> DeleteDish([FromRoute] int id)
         {

@@ -4,7 +4,7 @@
 
 <PageTitle>Ajouter un restaurant</PageTitle>
 
-<AuthorizeView Roles="RestaurantOwner">
+<AuthorizeView Roles="@nameof(UserRole.RestaurantOwner)">
     <NotAuthorized>
         <RedirectToHomePage/>
     </NotAuthorized>

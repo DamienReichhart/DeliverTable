@@ -11,6 +11,7 @@ using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -45,7 +46,7 @@ namespace DeliverTableServer.Controllers
             if (id != null)
             {
                 var role = User.FindFirst(ClaimTypes.Role)?.Value;
-                if (role != "Admin")
+                if (role != nameof(UserRole.Administrator))
                 {
                     if (userId != id)
                     {
@@ -128,7 +129,7 @@ namespace DeliverTableServer.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "RestaurantOwner")]
+        [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
         public async Task<IActionResult> CreateRestaurant([FromBody] CreateRestaurantDto creationDto)
         {
             if (!ModelState.IsValid)

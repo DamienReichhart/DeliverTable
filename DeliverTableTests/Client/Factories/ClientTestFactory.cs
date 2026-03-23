@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.IdentityModel.Tokens;
 
@@ -13,7 +14,7 @@ namespace DeliverTableTests.Client.Factories;
 public static class ClientTestFactory
 {
     public static string ValidToken => GenerateToken();
-    public const string ValidRole = "Customer";
+    public const string ValidRole = nameof(UserRole.Customer);
     public const string ValidUserId = "42";
     public const string ValidUserName = "Jean";
 

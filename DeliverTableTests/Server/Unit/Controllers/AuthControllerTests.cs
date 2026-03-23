@@ -2,6 +2,7 @@ using System.Security.Claims;
 using DeliverTableServer.Controllers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -36,7 +37,7 @@ public class AuthControllerTests
         _env.EnvironmentName.Returns("Development");
 
         _tokenService.CreateToken(Arg.Any<User>()).Returns(TestToken);
-        _userManager.GetRolesAsync(Arg.Any<User>()).Returns(new List<string> { "Customer" });
+        _userManager.GetRolesAsync(Arg.Any<User>()).Returns(new List<string> { nameof(UserRole.Customer) });
 
         _sut = new AuthController(_db.Context, _tokenService, _userManager, _env);
     }
@@ -184,7 +185,7 @@ public class AuthControllerTests
     [Test]
     public async Task RegisterRestaurant_WithValidData_ReturnsOkWithConnectionResponse()
     {
-        SetupSuccessfulUserCreation("Restaurant_Owner");
+        SetupSuccessfulUserCreation(nameof(UserRole.RestaurantOwner));
 
         var request = new RestaurantRegister
         {
@@ -311,7 +312,7 @@ public class AuthControllerTests
         return user;
     }
 
-    private void SetupSuccessfulUserCreation(string role = "Customer")
+    private void SetupSuccessfulUserCreation(string role = nameof(UserRole.Customer))
     {
         _userManager.CreateAsync(Arg.Any<User>(), Arg.Any<string>())
             .Returns(IdentityResult.Success);

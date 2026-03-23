@@ -7,6 +7,7 @@ using DeliverTableServer.Controllers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +31,7 @@ public class RestaurantControllerTests
         _sut = new RestaurantController(_geoLocationService, _restaurantRepository);
     }
 
-    private void SetupAuthenticatedUser(string userId, string role = "RestaurantOwner")
+    private void SetupAuthenticatedUser(string userId, string role = nameof(UserRole.RestaurantOwner))
     {
         var claims = new List<Claim>();
         if (!string.IsNullOrEmpty(userId))
