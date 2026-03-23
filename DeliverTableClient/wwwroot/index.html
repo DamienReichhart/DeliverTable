@@ -37,6 +37,21 @@
 </div>
 <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 <script>navigator.serviceWorker.register('service-worker.js', {updateViaCache: 'none'});</script>
+<script>
+    window.getGeolocation = function () {
+        return new Promise(function (resolve, reject) {
+            if (!navigator.geolocation) {
+                reject("Geolocation not supported");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                function (pos) { console.log("Geolocation position:", pos); resolve([pos.coords.latitude, pos.coords.longitude]); },
+                function (err) { reject(err.message); },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+    };
+</script>
 </body>
 
 </html>
