@@ -195,8 +195,8 @@
 
     private static List<StatusAction> GetNextStatuses(string currentStatus, string orderType) => currentStatus switch
     {
-        "Pending" => [new("Confirmed", "Confirmer", true), new("Cancelled", "Annuler", false)],
-        "Confirmed" => [new("Preparing", "Commencer la préparation", true), new("Cancelled", "Annuler", false)],
+        "Pending" => [new("Confirmed", "Confirmer", true), new("Refused", "Refuser", false)],
+        "Confirmed" => [new("Preparing", "Commencer la préparation", true), new("Refused", "Refuser", false)],
         "Preparing" => [new("Ready", "Marquer comme prêt", true), new("Cancelled", "Annuler", false)],
         "Ready" when orderType == "Delivery" => [new("Delivering", "Envoyer en livraison", true)],
         "Ready" when orderType == "DineIn" => [new("Delivered", "Marquer comme servi", true)],
@@ -216,6 +216,7 @@
     {
         "Pending" => "En attente",
         "Confirmed" => "Confirmée",
+        "Refused" => "Refusée",
         "Preparing" => "En préparation",
         "Ready" => "Prête",
         "Delivering" => "En livraison",
