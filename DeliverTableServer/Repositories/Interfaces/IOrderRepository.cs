@@ -1,0 +1,13 @@
+using DeliverTableServer.Models;
+using DeliverTableSharedLibrary.Dtos.Order;
+
+namespace DeliverTableServer.Repositories.Interfaces;
+
+public interface IOrderRepository
+{
+    Task<Order> CreateAsync(Order order, CancellationToken ct = default);
+    Task<Order?> GetByIdAsync(int orderId, CancellationToken ct = default);
+    Task<(List<Order> Items, int TotalCount)> GetByCustomerAsync(int customerId, OrderQuery query, CancellationToken ct = default);
+    Task<(List<Order> Items, int TotalCount)> GetByRestaurantAsync(int restaurantId, OrderQuery query, CancellationToken ct = default);
+    Task<Order> UpdateAsync(Order order, CancellationToken ct = default);
+}

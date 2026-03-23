@@ -1,0 +1,160 @@
+@page "/commande/{Id:int}/confirmation"
+@inject IOrderService OrderService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableSharedLibrary.Dtos.Order
+
+<PageTitle>Commande confirmée — DeliverTable</PageTitle>
+
+<div class="order-confirmation-page">
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_order is not null)
+    {
+        <div class="confirmation-header">
+            <div class="confirmation-icon">&#10003;</div>
+            <h1>Commande confirmée !</h1>
+            @if (_order.OrderType == "DineIn")
+            {
+                <p class="confirmation-subtitle">Votre paiement a été accepté. Votre table pour @_order.GuestCount personne(s) est en cours de préparation.</p>
+            }
+            else
+            {
+                <p class="confirmation-subtitle">Votre paiement a été accepté et votre commande est en cours de préparation pour livraison.</p>
+            }
+        </div>
+
+        <div class="order-details-card">
+            <h2>Détails de la commande #@_order.Id</h2>
+
+            <div class="order-meta">
+                <div class="order-meta-item">
+                    <span class="meta-label">Restaurant :</span>
+                    <span>@_order.RestaurantName</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="meta-label">Type :</span>
+                    <span class="order-type-label">@TranslateOrderType(_order.OrderType)</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="meta-label">Convives :</span>
+                    <span>@_order.GuestCount personne(s)</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="meta-label">Statut :</span>
+                    <span class="status-badge status--@_order.Status.ToLower()">@TranslateStatus(_order.Status)</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="meta-label">Paiement :</span>
+                    <span class="status-badge status--@_order.PaymentStatus.ToLower()">@TranslatePaymentStatus(_order.PaymentStatus)</span>
+                </div>
+                <div class="order-meta-item">
+                    <span class="meta-label">Date :</span>
+                    <span>@_order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_order.DeliveryAddress))
+                {
+                    <div class="order-meta-item">
+                        <span class="meta-label">Adresse de livraison :</span>
+                        <span>@_order.DeliveryAddress</span>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(_order.Notes))
+                {
+                    <div class="order-meta-item">
+                        <span class="meta-label">Notes :</span>
+                        <span>@_order.Notes</span>
+                    </div>
+                }
+            </div>
+
+            <div class="order-items">
+                <h3>Articles commandés</h3>
+                @foreach (var item in _order.Items)
+                {
+                    <div class="order-item-row">
+                        <span class="item-qty">@item.Quantity x</span>
+                        <span class="item-name">@item.DishName</span>
+                        <span class="item-price">@item.Subtotal.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                    </div>
+                }
+            </div>
+
+            <div class="order-total">
+                <span>Total :</span>
+                <strong>@_order.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</strong>
+            </div>
+        </div>
+
+        <div class="confirmation-actions">
+            <button type="button" class="app-btn app-btn--primary" @onclick="GoToOrders">
+                Voir mes commandes
+            </button>
+            <button type="button" class="app-btn app-btn--secondary" @onclick="GoToRestaurants">
+                Continuer à explorer
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private OrderDto? _order;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (order, error) = await OrderService.GetOrderByIdAsync(Id);
+        if (error is not null)
+        {
+            _error = error.Error;
+        }
+        else
+        {
+            _order = order;
+        }
+        _loading = false;
+    }
+
+    private void GoToOrders() => Nav.NavigateTo("/mes-commandes");
+    private void GoToRestaurants() => Nav.NavigateTo("/restaurants");
+
+    private static string TranslateOrderType(string orderType) => orderType switch
+    {
+        "Delivery" => "Livraison",
+        "DineIn" => "Sur place",
+        _ => orderType
+    };
+
+    private static string TranslateStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Confirmed" => "Confirmée",
+        "Preparing" => "En préparation",
+        "Ready" => "Prête",
+        "Delivering" => "En livraison",
+        "Delivered" => "Livrée",
+        "Cancelled" => "Annulée",
+        _ => status
+    };
+
+    private static string TranslatePaymentStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Completed" => "Payé",
+        "Failed" => "Échoué",
+        "Refunded" => "Remboursé",
+        _ => status
+    };
+}

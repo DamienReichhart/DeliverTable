@@ -88,6 +88,30 @@ public static class ApiRoutes
         public const string Users = Base + "/" + UsersRoute;
     }
 
+    /// <summary>Cart routes (Customer role required).</summary>
+    public static class Cart
+    {
+        /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
+        public const string Base = "api/v1/cart";
+
+        public const string ByRestaurantRoute = "restaurant/{id:int}";
+        public const string ItemsRoute = "items";
+        public const string ItemByIdRoute = "items/{id:int}";
+
+        /// <summary>Full paths for client HTTP calls.</summary>
+        public const string Items = Base + "/" + ItemsRoute;
+    }
+
+    /// <summary>Order routes (Authorized).</summary>
+    public static class Order
+    {
+        /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
+        public const string Base = "api/v1/order";
+
+        public const string ByIdRoute = "{id:int}";
+        public const string StatusRoute = "{id:int}/status";
+    }
+
     /// <summary>Test controller route (development only).</summary>
     public const string Test = "api/v1/test";
 }

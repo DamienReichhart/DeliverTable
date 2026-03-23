@@ -19,7 +19,7 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
 
     public async Task<(List<Restaurant> Items, int TotalCount)> GetAllAsync(RestaurantQuery query, CancellationToken ct = default)
     {
-        var q = _dbContext.Restaurants.AsQueryable();
+        var q = _dbContext.Restaurants.Where(r => r.IsActive);
 
         if (!string.IsNullOrWhiteSpace(query.Name))
             q = q.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
@@ -28,15 +28,55 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
         if (!string.IsNullOrWhiteSpace(query.Type))
             q = q.Where(r => r.Type.ToString().ToLower().Contains(query.Type.ToLower()));
 
+        if (query is { Latitude: not null, Longitude: not null, RadiusKm: not null })
+        {
+            var lat = query.Latitude.Value;
+            var lon = query.Longitude.Value;
+            var radiusKm = query.RadiusKm.Value;
+
+            // Bounding box pre-filter for performance
+            var latDelta = radiusKm / 111.0;
+            var lonDelta = radiusKm / (111.0 * Math.Cos(lat * Math.PI / 180.0));
+
+            q = q.Where(r =>
+                r.Latitude >= lat - latDelta && r.Latitude <= lat + latDelta &&
+                r.Longitude >= lon - lonDelta && r.Longitude <= lon + lonDelta);
+
+            // Fetch candidates and apply Haversine in memory
+            var candidates = await q.ToListAsync(ct);
+            var filtered = candidates
+                .Where(r => HaversineDistanceKm(lat, lon, r.Latitude, r.Longitude) <= radiusKm)
+                .OrderBy(r => HaversineDistanceKm(lat, lon, r.Latitude, r.Longitude))
+                .ToList();
+
+            var totalCount = filtered.Count;
+            int page = query.PageNumber > 0 ? query.PageNumber : 1;
+            int skip = (page - 1) * query.PageSize;
+            var items = filtered.Skip(skip).Take(query.PageSize).ToList();
+            return (items, totalCount);
+        }
+
         q = q.OrderBy(r => r.Id);
 
-        var totalCount = await q.CountAsync(ct);
+        var total = await q.CountAsync(ct);
 
-        int page = query.PageNumber > 0 ? query.PageNumber : 1;
-        int skip = (page - 1) * query.PageSize;
+        int p = query.PageNumber > 0 ? query.PageNumber : 1;
+        int s = (p - 1) * query.PageSize;
 
-        var items = await q.Skip(skip).Take(query.PageSize).ToListAsync(ct);
-        return (items, totalCount);
+        var result = await q.Skip(s).Take(query.PageSize).ToListAsync(ct);
+        return (result, total);
+    }
+
+    private static double HaversineDistanceKm(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371.0;
+        var dLat = (lat2 - lat1) * Math.PI / 180.0;
+        var dLon = (lon2 - lon1) * Math.PI / 180.0;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c;
     }
 
     public async Task<Restaurant?> GetByIdAsync(int id, CancellationToken ct = default)
