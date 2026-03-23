@@ -38,6 +38,7 @@ public static class ApiClientServiceCollectionExtensions
         RegisterRestaurantService(services);
         RegisterUserService(services);
         RegisterDishService(services);
+        RegisterAdminService(services);
 
         return services;
     }
@@ -63,5 +64,10 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterDishService(IServiceCollection services)
     {
         services.AddScoped<IDishService, DishService>();
+    }
+
+    private static void RegisterAdminService(IServiceCollection services)
+    {
+        services.AddScoped<IAdminService, AdminService>();
     }
 }

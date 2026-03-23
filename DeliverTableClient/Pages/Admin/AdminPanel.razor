@@ -1,0 +1,24 @@
+@page "/admin"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Panneau d'administration</PageTitle>
+
+<div class="admin-panel">
+    <section class="admin-header">
+        <h1>Panneau d'administration</h1>
+        <p>Gérez les utilisateurs et les paramètres de la plateforme.</p>
+    </section>
+
+    <div class="admin-grid">
+        <NavLink href="/admin/users" class="admin-card-link">
+            <section class="admin-card">
+                <div class="admin-card-icon">
+                    <Blazicon Svg="Lucide.Users" />
+                </div>
+                <h3>Gestion des utilisateurs</h3>
+                <p>Consulter, modifier les rôles et le statut de tous les utilisateurs.</p>
+            </section>
+        </NavLink>
+    </div>
+</div>

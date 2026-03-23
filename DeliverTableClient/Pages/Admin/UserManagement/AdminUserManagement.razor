@@ -1,0 +1,466 @@
+@page "/admin/users"
+@attribute [Authorize(Roles = "Administrator")]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminService AdminService
+
+<PageTitle>Gestion des utilisateurs</PageTitle>
+
+<div class="admin-users-page">
+    <section class="admin-users-header">
+        <div>
+            <h1>Gestion des utilisateurs</h1>
+            <p>@(_users?.Count ?? 0) utilisateurs enregistrés</p>
+        </div>
+        <div class="admin-users-header-actions">
+            <button class="app-btn" @onclick="OpenCreateForm" disabled="@(_showCreateForm || _editingUserId.HasValue)">
+                + Créer un utilisateur
+            </button>
+            <NavLink href="/admin" class="app-btn app-btn--secondary">
+                ← Retour
+            </NavLink>
+        </div>
+    </section>
+
+    @* ── Feedback messages ── *@
+    @if (!string.IsNullOrEmpty(_actionSuccess))
+    {
+        <div class="alert alert-success">@_actionSuccess</div>
+    }
+    @if (!string.IsNullOrEmpty(_actionError))
+    {
+        <div class="alert alert-danger">@_actionError</div>
+    }
+
+    @* ── Create user form ── *@
+    @if (_showCreateForm)
+    {
+        <section class="admin-users-card">
+            <div class="admin-users-card-header">
+                <h3>Créer un utilisateur</h3>
+            </div>
+            <EditForm Model="@_createModel" OnValidSubmit="HandleCreate">
+                <DataAnnotationsValidator />
+                <div class="admin-users-form-grid">
+                    <div class="col">
+                        <label class="form-label" for="create-firstname">Prénom</label>
+                        <InputText id="create-firstname" @bind-Value="_createModel.FirstName"
+                                   class="form-control app-input" placeholder="Prénom" />
+                        <ValidationMessage For="@(() => _createModel.FirstName)" class="validation-message" />
+                    </div>
+                    <div class="col">
+                        <label class="form-label" for="create-lastname">Nom</label>
+                        <InputText id="create-lastname" @bind-Value="_createModel.LastName"
+                                   class="form-control app-input" placeholder="Nom" />
+                        <ValidationMessage For="@(() => _createModel.LastName)" class="validation-message" />
+                    </div>
+                </div>
+
+                <div class="col mt-1">
+                    <label class="form-label" for="create-email">Email</label>
+                    <InputText id="create-email" @bind-Value="_createModel.Email"
+                               class="form-control app-input" placeholder="email@exemple.com" />
+                    <ValidationMessage For="@(() => _createModel.Email)" class="validation-message" />
+                </div>
+
+                <div class="col mt-1">
+                    <label class="form-label" for="create-password">Mot de passe (12 caractères min.)</label>
+                    <InputText id="create-password" @bind-Value="_createModel.Password" type="password"
+                               class="form-control app-input" placeholder="••••••••••••" />
+                    <ValidationMessage For="@(() => _createModel.Password)" class="validation-message" />
+                </div>
+
+                <div class="col mt-1">
+                    <label class="form-label" for="create-role">Rôle</label>
+                    <InputSelect id="create-role" @bind-Value="_createModel.Role" class="form-control app-input">
+                        @foreach (var role in AvailableRoles)
+                        {
+                            <option value="@role">@TranslateRole(role)</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="admin-users-form-actions">
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="CloseCreateForm"
+                            disabled="@_isSaving">
+                        Annuler
+                    </button>
+                    <button type="submit" class="app-btn" disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <span class="admin-users-spinner-sm"></span>
+                            <span>Création...</span>
+                        }
+                        else
+                        {
+                            <span>Créer</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </section>
+    }
+
+    @* ── Loading / Error ── *@
+    @if (_isLoading)
+    {
+        <div class="admin-users-loading centered">
+            <div class="admin-users-spinner"></div>
+            <p>Chargement des utilisateurs...</p>
+        </div>
+    }
+    else if (_loadError is not null)
+    {
+        <div class="alert alert-danger">@_loadError</div>
+        <button class="app-btn mt-1" @onclick="LoadUsers">Réessayer</button>
+    }
+    else if (_users is not null)
+    {
+        <div class="admin-users-search">
+            <input type="text"
+                   class="app-input admin-users-search-input"
+                   placeholder="Rechercher par nom ou email..."
+                   @bind="_searchQuery"
+                   @bind:event="oninput" />
+        </div>
+
+        <div class="admin-users-table-wrapper">
+            <table class="admin-users-table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Inscrit le</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in FilteredUsers)
+                    {
+                        @if (_editingUserId == user.Id)
+                        {
+                            @* ── Inline edit row ── *@
+                            <tr class="admin-users-row--editing">
+                                <td>
+                                    <div class="admin-users-edit-cell">
+                                        <input class="app-input admin-users-inline-input"
+                                               @bind="_editModel.FirstName" placeholder="Prénom" />
+                                        <input class="app-input admin-users-inline-input"
+                                               @bind="_editModel.LastName" placeholder="Nom" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <input class="app-input admin-users-inline-input"
+                                           @bind="_editModel.Email" placeholder="Email" />
+                                </td>
+                                <td>
+                                    <select class="app-input admin-users-select" @bind="_editModel.Role">
+                                        @foreach (var role in AvailableRoles)
+                                        {
+                                            <option value="@role">@TranslateRole(role)</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="app-input admin-users-select" @bind="_editModel.Status">
+                                        @foreach (var status in AvailableStatuses)
+                                        {
+                                            <option value="@status">@TranslateStatus(status)</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td class="admin-users-date">@user.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td class="admin-users-actions">
+                                    <button class="app-btn app-btn--accent admin-users-action-btn"
+                                            @onclick="() => HandleUpdate(user.Id)" disabled="@_isSaving">
+                                        @(_isSaving ? "..." : "Sauver")
+                                    </button>
+                                    <button class="app-btn app-btn--secondary admin-users-action-btn"
+                                            @onclick="CancelEditing" disabled="@_isSaving">
+                                        Annuler
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            <tr class="@(user.Status != "Active" ? "admin-users-row--inactive" : "")">
+                                <td class="admin-users-name">
+                                    <div class="admin-users-avatar">
+                                        @(GetInitials(user.FirstName, user.LastName))
+                                    </div>
+                                    <span>@user.FirstName @user.LastName</span>
+                                </td>
+                                <td>@user.Email</td>
+                                <td>
+                                    <span class="admin-users-badge admin-users-badge--@RoleBadgeClass(user.Role)">
+                                        @TranslateRole(user.Role)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="admin-users-badge admin-users-badge--@StatusBadgeClass(user.Status)">
+                                        @TranslateStatus(user.Status)
+                                    </span>
+                                </td>
+                                <td class="admin-users-date">@user.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td class="admin-users-actions">
+                                    <button class="app-btn app-btn--link admin-users-action-btn"
+                                            @onclick="() => StartEditing(user)"
+                                            disabled="@(_isSaving || _showCreateForm)">
+                                        Modifier
+                                    </button>
+                                    @if (_deletingUserId == user.Id)
+                                    {
+                                        <span class="admin-users-confirm-group">
+                                            <span class="admin-users-confirm-label">Confirmer ?</span>
+                                            <button class="app-btn app-btn--link admin-users-action-btn admin-users-action-btn--danger"
+                                                    @onclick="() => HandleDelete(user.Id)" disabled="@_isSaving">
+                                                Oui
+                                            </button>
+                                            <button class="app-btn app-btn--link admin-users-action-btn"
+                                                    @onclick="CancelDelete" disabled="@_isSaving">
+                                                Non
+                                            </button>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <button class="app-btn app-btn--link admin-users-action-btn admin-users-action-btn--danger"
+                                                @onclick="() => StartDelete(user.Id)"
+                                                disabled="@(_isSaving || _showCreateForm || _editingUserId.HasValue)">
+                                            Supprimer
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!FilteredUsers.Any())
+        {
+            <div class="admin-users-empty">
+                <p>Aucun utilisateur trouvé pour « @_searchQuery »</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<AdminUserResponse>? _users;
+    private bool _isLoading = true;
+    private string? _loadError;
+    private string _searchQuery = "";
+
+    private bool _showCreateForm;
+    private AdminCreateUserRequest _createModel = new();
+
+    private int? _editingUserId;
+    private AdminUpdateUserRequest _editModel = new();
+
+    private int? _deletingUserId;
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private static readonly string[] AvailableRoles = ["Administrator", "Customer", "RestaurantOwner"];
+    private static readonly string[] AvailableStatuses = ["Active", "Suspended", "Banned"];
+
+    private IEnumerable<AdminUserResponse> FilteredUsers =>
+        _users?.Where(u =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || u.FirstName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || u.LastName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || u.Email.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _isLoading = true;
+        _loadError = null;
+        StateHasChanged();
+
+        var (users, error) = await AdminService.GetAllUsersAsync();
+        _users = users;
+        _loadError = error?.Error;
+        _isLoading = false;
+    }
+
+    // ── Create ──
+
+    private void OpenCreateForm()
+    {
+        ClearMessages();
+        _createModel = new AdminCreateUserRequest();
+        _showCreateForm = true;
+    }
+
+    private void CloseCreateForm()
+    {
+        _showCreateForm = false;
+        _createModel = new AdminCreateUserRequest();
+    }
+
+    private async Task HandleCreate()
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (created, error) = await AdminService.CreateUserAsync(_createModel);
+        if (created is not null)
+        {
+            _users?.Add(created);
+            _actionSuccess = $"Utilisateur {created.FirstName} {created.LastName} créé avec succès";
+            CloseCreateForm();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la création de l'utilisateur";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Update ──
+
+    private void StartEditing(AdminUserResponse user)
+    {
+        ClearMessages();
+        _deletingUserId = null;
+        _editingUserId = user.Id;
+        _editModel = new AdminUpdateUserRequest
+        {
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Role = user.Role,
+            Status = user.Status
+        };
+    }
+
+    private void CancelEditing()
+    {
+        _editingUserId = null;
+        _editModel = new AdminUpdateUserRequest();
+    }
+
+    private async Task HandleUpdate(int userId)
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (updated, error) = await AdminService.UpdateUserAsync(userId, _editModel);
+        if (updated is not null)
+        {
+            ReplaceUser(updated);
+            _actionSuccess = $"Utilisateur {updated.FirstName} {updated.LastName} mis à jour";
+            _editingUserId = null;
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la mise à jour de l'utilisateur";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Delete ──
+
+    private void StartDelete(int userId)
+    {
+        ClearMessages();
+        _editingUserId = null;
+        _deletingUserId = userId;
+    }
+
+    private void CancelDelete()
+    {
+        _deletingUserId = null;
+    }
+
+    private async Task HandleDelete(int userId)
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (success, error) = await AdminService.DeleteUserAsync(userId);
+        if (success)
+        {
+            var removed = _users?.FirstOrDefault(u => u.Id == userId);
+            _users?.RemoveAll(u => u.Id == userId);
+            _actionSuccess = removed is not null
+                ? $"Utilisateur {removed.FirstName} {removed.LastName} supprimé"
+                : "Utilisateur supprimé";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression de l'utilisateur";
+        }
+
+        _deletingUserId = null;
+        _isSaving = false;
+    }
+
+    // ── Helpers ──
+
+    private void ReplaceUser(AdminUserResponse updated)
+    {
+        if (_users is null) return;
+        var idx = _users.FindIndex(u => u.Id == updated.Id);
+        if (idx >= 0) _users[idx] = updated;
+    }
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+
+    private static string GetInitials(string firstName, string lastName)
+    {
+        var f = string.IsNullOrEmpty(firstName) ? "" : firstName[..1].ToUpperInvariant();
+        var l = string.IsNullOrEmpty(lastName) ? "" : lastName[..1].ToUpperInvariant();
+        return $"{f}{l}";
+    }
+
+    private static string RoleBadgeClass(string role) => role switch
+    {
+        "Administrator" => "admin",
+        "RestaurantOwner" => "owner",
+        _ => "customer"
+    };
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "Active" => "active",
+        "Suspended" => "warning",
+        "Banned" => "danger",
+        _ => "active"
+    };
+
+    private static string TranslateRole(string role) => role switch
+    {
+        "Administrator" => "Administrateur",
+        "RestaurantOwner" => "Restaurateur",
+        "Customer" => "Client",
+        _ => role
+    };
+
+    private static string TranslateStatus(string status) => status switch
+    {
+        "Active" => "Actif",
+        "Suspended" => "Suspendu",
+        "Banned" => "Banni",
+        _ => status
+    };
+}
