@@ -1,0 +1,104 @@
+@use '../../Styles/abstracts/variables' as *;
+@use '../../Styles/abstracts/mixins' as *;
+
+.restaurants-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  > h1 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0;
+  }
+}
+
+.restaurants-filters {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.radius-input {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+
+  label {
+    white-space: nowrap;
+    color: $color-text-muted;
+  }
+}
+
+.restaurants-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+
+  @media (min-width: $breakpoint-desktop) {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+.restaurant-card {
+  @include card;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  transition: box-shadow $transition-base, border-color $transition-base, transform $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: $color-primary;
+    transform: translateY(-2px);
+  }
+}
+
+.restaurant-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-sm;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0;
+    line-height: 1.3;
+  }
+}
+
+.restaurant-type-badge {
+  display: inline-block;
+  padding: 0.15em 0.55em;
+  border-radius: $radius-sm;
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($color-amber-gold, 0.12);
+  color: darken($color-amber-gold, 18%);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.restaurant-card-body {
+  .restaurant-location {
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+    margin: 0;
+  }
+}

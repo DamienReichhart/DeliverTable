@@ -1,0 +1,97 @@
+@use '../../Styles/abstracts/variables' as *;
+@use '../../Styles/abstracts/mixins' as *;
+
+.order-history-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  > h1 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0;
+  }
+}
+
+.order-filters {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.order-card {
+  @include card;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  transition: box-shadow $transition-base, border-color $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: $color-primary;
+  }
+}
+
+.order-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-sm;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-lg;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.order-restaurant {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+}
+
+.order-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+}
+
+.order-date {
+  color: $color-text-muted;
+}
+
+.order-guests {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.order-items-count {
+  color: $color-text-muted;
+}
+
+.order-total {
+  font-family: $font-family-display;
+  font-size: $font-size-base;
+  color: $color-text;
+}
+
+.order-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $color-border;
+}

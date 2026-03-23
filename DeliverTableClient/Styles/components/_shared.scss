@@ -1,0 +1,328 @@
+// -----------------------------------------------------------------------------
+// Shared component styles used across multiple pages.
+// -----------------------------------------------------------------------------
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// ---------------------------------------------------------------------------
+// Status badges
+// ---------------------------------------------------------------------------
+.status-badge {
+  display: inline-block;
+  padding: 0.2em 0.65em;
+  border-radius: $radius-sm;
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  line-height: 1.5;
+
+  &.status-badge--lg {
+    font-size: $font-size-sm;
+    padding: 0.35em 0.85em;
+    border-radius: $radius-md;
+  }
+}
+
+.status--pending    { background: rgba($color-amber-gold, 0.14); color: darken($color-amber-gold, 18%); }
+.status--confirmed  { background: rgba($color-garden-sage, 0.14); color: darken($color-garden-sage, 12%); }
+.status--refused    { background: rgba($color-error, 0.10); color: $color-error; }
+.status--preparing  { background: rgba(#5B8DEF, 0.12); color: #3A6BD6; }
+.status--ready      { background: rgba($color-garden-sage, 0.18); color: darken($color-garden-sage, 8%); }
+.status--delivering { background: rgba($color-amber-gold, 0.18); color: darken($color-amber-gold, 12%); }
+.status--delivered  { background: rgba($color-garden-sage, 0.22); color: darken($color-garden-sage, 18%); }
+.status--cancelled  { background: rgba($color-deep-charcoal, 0.08); color: $color-text-muted; }
+.status--completed  { background: rgba($color-garden-sage, 0.14); color: darken($color-garden-sage, 12%); }
+.status--failed     { background: rgba($color-error, 0.10); color: $color-error; }
+.status--refunded   { background: rgba($color-amber-gold, 0.14); color: darken($color-amber-gold, 18%); }
+
+// ---------------------------------------------------------------------------
+// Order type badges
+// ---------------------------------------------------------------------------
+.order-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 0.2em 0.6em;
+  border-radius: $radius-sm;
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.02em;
+
+  &.order-type--delivery { background: rgba(#5B8DEF, 0.10); color: #3A6BD6; }
+  &.order-type--dinein   { background: rgba($color-amber-gold, 0.12); color: darken($color-amber-gold, 15%); }
+}
+
+.order-type-label {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+// ---------------------------------------------------------------------------
+// Dish tags
+// ---------------------------------------------------------------------------
+.tag {
+  display: inline-block;
+  padding: 0.15em 0.55em;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.01em;
+
+  &.tag--green  { background: rgba($color-garden-sage, 0.14); color: darken($color-garden-sage, 12%); }
+  &.tag--blue   { background: rgba(#5B8DEF, 0.10); color: #3A6BD6; }
+  &.tag--red    { background: rgba($color-error, 0.10); color: $color-error; }
+  &.tag--orange { background: rgba($color-amber-gold, 0.14); color: darken($color-amber-gold, 18%); }
+}
+
+// ---------------------------------------------------------------------------
+// Quantity selector (reusable +/- control)
+// ---------------------------------------------------------------------------
+.quantity-selector,
+.guest-count-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+
+  .qty-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background: $color-bg-white;
+    border: none;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    cursor: pointer;
+    transition: background $transition-fast;
+    user-select: none;
+
+    &:hover:not(:disabled) {
+      background: $color-bg-subtle;
+    }
+
+    &:disabled {
+      color: $color-text-muted;
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  .qty-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.25rem;
+    height: 2rem;
+    font-family: $font-family-mono;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    background: $color-bg-white;
+    border-left: 1px solid $color-border;
+    border-right: 1px solid $color-border;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+  padding-top: $spacing-lg;
+  border-top: 1px solid $color-border;
+}
+
+.page-info {
+  font-family: $font-family-mono;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+// ---------------------------------------------------------------------------
+// Filter controls
+// ---------------------------------------------------------------------------
+.filter-input {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $color-text;
+  background: $color-bg-white;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &::placeholder { color: $color-text-muted; }
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.12);
+  }
+
+  &.filter-input--small { max-width: 5rem; }
+}
+
+.filter-select {
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  color: $color-text;
+  background: $color-bg-white;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+  }
+}
+
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  color: $color-text;
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    accent-color: $color-primary;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Toast notification
+// ---------------------------------------------------------------------------
+.toast-message {
+  position: fixed;
+  bottom: $spacing-xl;
+  right: $spacing-xl;
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  box-shadow: $shadow-lg;
+  z-index: 100;
+  animation: toast-in 300ms ease;
+
+  &.toast--success {
+    background: $color-deep-charcoal;
+    color: $color-text-inverse;
+  }
+
+  &.toast--error {
+    background: $color-error;
+    color: $color-text-inverse;
+  }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-3xl $spacing-lg;
+  text-align: center;
+  color: $color-text-muted;
+}
+
+// ---------------------------------------------------------------------------
+// Error message
+// ---------------------------------------------------------------------------
+.error-message {
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-md;
+  background: rgba($color-error, 0.08);
+  border-left: 3px solid $color-error;
+  color: $color-error;
+  font-size: $font-size-sm;
+}
+
+// ---------------------------------------------------------------------------
+// Loading
+// ---------------------------------------------------------------------------
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-3xl;
+  color: $color-text-muted;
+}
+
+// ---------------------------------------------------------------------------
+// Page header pattern
+// ---------------------------------------------------------------------------
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+
+  h1 {
+    font-family: $font-family-display;
+    font-size: $font-size-h2;
+    color: $color-text;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  @media (min-width: $breakpoint-desktop) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.page-subtitle {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  margin: $spacing-xs 0 0;
+}
+
+// ---------------------------------------------------------------------------
+// Form group (shared)
+// ---------------------------------------------------------------------------
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-md;
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Text utilities
+// ---------------------------------------------------------------------------
+.text-muted { color: $color-text-muted; }
