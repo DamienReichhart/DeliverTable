@@ -47,6 +47,16 @@ public class OrderController(IOrderService orderService) : ControllerBase
         return result.ToOkResult();
     }
 
+    [HttpGet(ApiRoutes.Order.RestaurantOrdersRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+    public async Task<IActionResult> GetRestaurantOrders([FromRoute] int id, [FromQuery] OrderQuery query, CancellationToken ct)
+    {
+        if (!TryGetUserId(out int userId)) return Unauthorized();
+
+        var result = await _orderService.GetRestaurantOrdersAsync(id, userId, query, ct);
+        return result.ToOkResult();
+    }
+
     [HttpPut(ApiRoutes.Order.StatusRoute)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> UpdateStatus([FromRoute] int id, [FromBody] UpdateOrderStatusRequest request, CancellationToken ct)
