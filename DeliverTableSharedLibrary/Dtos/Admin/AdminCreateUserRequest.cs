@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DeliverTableSharedLibrary.Constants.Enums;
 
 namespace DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -22,5 +23,5 @@ public class AdminCreateUserRequest
     public string Password { get; set; } = "";
 
     [Required(ErrorMessage = "Le rôle est requis")]
-    public string Role { get; set; } = "Customer";
+    public string Role { get; set; } = nameof(UserRole.Customer);
 }

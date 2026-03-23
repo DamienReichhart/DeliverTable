@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Models;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,7 +18,7 @@ namespace DeliverTableServer.Services
     {
         private readonly JwtConfig _jwtConfig = jwtConfig;
         private readonly UserManager<User> _userManager = userManager;
-        private readonly string _defaultRoleValue = "Customer";
+        private readonly string _defaultRoleValue = nameof(UserRole.Customer);
 
         public async Task<string> CreateToken(User user)
         {

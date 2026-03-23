@@ -7,6 +7,7 @@ using DeliverTableServer.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableTests.Global.Helpers;
 using DeliverTableTests.Server.Factories;
 
@@ -31,7 +32,7 @@ public class TokenServiceTests
         _testUser.Id = 42;
 
         _userManager.GetRolesAsync(Arg.Any<User>())
-            .Returns(new List<string> { "Customer" });
+            .Returns(new List<string> { nameof(UserRole.Customer) });
     }
 
     [TearDown]
@@ -73,7 +74,7 @@ public class TokenServiceTests
         var token = await _sut.CreateToken(_testUser);
 
         var roleValue = ExtractRoleClaim(token);
-        Assert.That(roleValue, Is.EqualTo("Customer"));
+        Assert.That(roleValue, Is.EqualTo(nameof(UserRole.Customer)));
     }
 
     [Test]
@@ -85,7 +86,7 @@ public class TokenServiceTests
         var token = await _sut.CreateToken(_testUser);
 
         var roleValue = ExtractRoleClaim(token);
-        Assert.That(roleValue, Is.EqualTo("Customer"));
+        Assert.That(roleValue, Is.EqualTo(nameof(UserRole.Customer)));
     }
 
     [Test]

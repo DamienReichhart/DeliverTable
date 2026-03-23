@@ -1,4 +1,5 @@
 using DeliverTableServer.Models;
+using DeliverTableSharedLibrary.Constants.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,22 +16,22 @@ public partial class DeliverTableContext(DbContextOptions<DeliverTableContext> o
             [
                 new() {
                     Id=1,
-                    Name = "Administrator",
-                    NormalizedName = "ADMINISTRATOR",
+                    Name = nameof(UserRole.Administrator),
+                    NormalizedName = nameof(UserRole.Administrator).ToUpperInvariant(),
                     ConcurrencyStamp = "1"
                 },
 
                 new() {
                     Id=2,
-                    Name = "Customer",
-                    NormalizedName = "CUSTOMER",
-                    ConcurrencyStamp = "2"
+                    Name = nameof(UserRole.Customer),
+                    NormalizedName = nameof(UserRole.Customer).ToUpperInvariant(),
+                    ConcurrencyStamp = "3"
                 },
 
                 new() {
                     Id=3,
-                    Name = "RestaurantOwner",
-                    NormalizedName = "RESTAURANT_OWNER",
+                    Name = nameof(UserRole.RestaurantOwner),
+                    NormalizedName = nameof(UserRole.RestaurantOwner).ToUpperInvariant(),
                     ConcurrencyStamp = "3"
                 }
             ];

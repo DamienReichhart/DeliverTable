@@ -1,3 +1,4 @@
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 
 namespace DeliverTableTests.SharedLibrary.Unit.Dtos;
@@ -14,7 +15,7 @@ public class HealthResponseTests
     public void DefaultStatus_ShouldBeHealthy()
     {
         var response = new HealthResponse();
-        Assert.That(response.Status, Is.EqualTo("Healthy"));
+        Assert.That(response.Status, Is.EqualTo(nameof(HealthStatus.Healthy)));
     }
 
     [Test]
@@ -24,9 +25,9 @@ public class HealthResponseTests
         Assert.That(response.TimestampUtc, Is.EqualTo(default(DateTime)));
     }
 
-    [TestCase("Healthy")]
-    [TestCase("Degraded")]
-    [TestCase("Unhealthy")]
+    [TestCase(nameof(HealthStatus.Healthy))]
+    [TestCase(nameof(HealthStatus.Degraded))]
+    [TestCase(nameof(HealthStatus.Unhealthy))]
     public void Status_ShouldAcceptStandardHealthValues(string status)
     {
         var response = new HealthResponse { Status = status };

@@ -1,5 +1,5 @@
 @page "/mes-restaurants"
-@attribute [Authorize(Roles = "RestaurantOwner")]
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
 
 @using DeliverTableClient.Components.Lists
 @using Microsoft.AspNetCore.Authorization

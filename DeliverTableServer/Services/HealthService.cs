@@ -1,4 +1,5 @@
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 
 namespace DeliverTableServer.Services;
@@ -11,7 +12,7 @@ public sealed class HealthService : IHealthService
     {
         return Task.FromResult(new HealthResponse
         {
-            Status = "Healthy",
+            Status = nameof(HealthStatus.Healthy),
             TimestampUtc = DateTime.UtcNow
         });
     }

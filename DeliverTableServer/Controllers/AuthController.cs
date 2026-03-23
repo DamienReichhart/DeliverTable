@@ -8,6 +8,7 @@ using DeliverTableServer.Models;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
@@ -27,7 +28,7 @@ public class AuthController(
     IHostEnvironment env
     ) : ControllerBase
 {
-    private readonly string _defaultRoleValue = "Customer";
+    private readonly string _defaultRoleValue = nameof(UserRole.Customer);
     private readonly DeliverTableContext _context = context;
     private readonly ITokenService _tokenService = tokenService;
     private readonly UserManager<User> _userManager = userManager;
@@ -77,7 +78,7 @@ public class AuthController(
             Customer = new Customer()
         };
 
-        var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Customer");
+        var (createdUser, errors) = await CreateUser(user, registerRequest.Password, nameof(UserRole.Customer));
         if (createdUser == null) return BadRequest(
             _env.IsDevelopment() ?
             new { Errors = errors }
@@ -121,7 +122,7 @@ public class AuthController(
             Customer = new Customer()
         };
 
-        var (createdUser, errors) = await CreateUser(user, registerRequest.Password, "Restaurant_Owner");
+        var (createdUser, errors) = await CreateUser(user, registerRequest.Password, nameof(UserRole.RestaurantOwner));
         if (createdUser == null) return BadRequest(
             _env.IsDevelopment() ?
             new { Errors = errors }
@@ -130,7 +131,7 @@ public class AuthController(
             );
 
         var userRoles = await _userManager.GetRolesAsync(user);
-        var role = userRoles.FirstOrDefault("Restaurant_Owner");
+        var role = userRoles.FirstOrDefault(nameof(UserRole.RestaurantOwner));
         var token = await _tokenService.CreateToken(user);
 
         return Ok(new ConnectionResponse
@@ -233,7 +234,7 @@ public class AuthController(
         return await _context.Users.FindAsync(userId);
     }
 
-    private async Task<(User? user, IEnumerable<string> errors)> CreateUser(User user, string password, string role = "Customer")
+    private async Task<(User? user, IEnumerable<string> errors)> CreateUser(User user, string password, string role = nameof(UserRole.Customer))
     {
         try
         {

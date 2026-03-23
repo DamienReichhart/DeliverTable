@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -18,8 +20,8 @@ public class AdminUpdateUserRequest
     public string Email { get; set; } = "";
 
     [Required(ErrorMessage = "Le rôle est requis")]
-    public string Role { get; set; } = "Customer";
+    public string Role { get; set; } = nameof(UserRole.Customer);
 
     [Required(ErrorMessage = "Le statut est requis")]
-    public string Status { get; set; } = "Active";
+    public string Status { get; set; } = nameof(UserStatus.Active);
 }
