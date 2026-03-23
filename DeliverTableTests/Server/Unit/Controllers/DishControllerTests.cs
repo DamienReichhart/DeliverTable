@@ -31,7 +31,9 @@ public class DishControllerTests
                 new DishDto { Id = 1, Name = "Pizza Margherita" },
                 new DishDto { Id = 2, Name = "Pasta Carbonara" }
             ],
-            TotalCount = 2, Page = 1, PageSize = 2
+            TotalCount = 2,
+            Page = 1,
+            PageSize = 2
         };
         _dishService.GetAllAsync(query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<DishDto>>.Success(paginated));
