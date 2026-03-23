@@ -25,7 +25,7 @@ public partial class DeliverTableContext(DbContextOptions<DeliverTableContext> o
                     Id=2,
                     Name = nameof(UserRole.Customer),
                     NormalizedName = nameof(UserRole.Customer).ToUpperInvariant(),
-                    ConcurrencyStamp = "3"
+                    ConcurrencyStamp = "2"
                 },
 
                 new() {

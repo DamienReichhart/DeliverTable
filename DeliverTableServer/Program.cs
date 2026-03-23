@@ -73,6 +73,7 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();
+app.UseMiddleware<RefreshClaimsMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 
