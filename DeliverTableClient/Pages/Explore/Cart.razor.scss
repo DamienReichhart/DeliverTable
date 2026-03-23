@@ -1,0 +1,198 @@
+@use '../../Styles/abstracts/variables' as *;
+@use '../../Styles/abstracts/mixins' as *;
+
+.cart-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  > h1 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0;
+  }
+}
+
+.cart-restaurant-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+
+  h2 {
+    font-family: $font-family-display;
+    font-size: $font-size-h3;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+// Cart items list
+.cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md 0;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child { border-bottom: none; }
+}
+
+.cart-item-img {
+  width: 64px;
+  height: 64px;
+  border-radius: $radius-md;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: $color-bg-subtle;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.cart-item-info {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-base;
+    color: $color-text;
+    margin: 0 0 2px;
+  }
+
+  .cart-item-price {
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+    margin: 0;
+  }
+
+  .cart-item-instructions {
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+    font-style: italic;
+    margin: $spacing-xs 0 0;
+  }
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-shrink: 0;
+}
+
+.cart-item-subtotal {
+  font-family: $font-family-mono;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  min-width: 4.5rem;
+  text-align: right;
+}
+
+// Checkout form
+.cart-summary {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.cart-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: $spacing-lg;
+  border-bottom: 2px solid $color-border;
+
+  span {
+    font-size: $font-size-lg;
+    color: $color-text;
+  }
+
+  strong {
+    font-family: $font-family-display;
+    font-size: $font-size-h3;
+    color: $color-text;
+  }
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.order-type-selector {
+  display: flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.order-type-btn {
+  flex: 1;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  background: $color-bg-white;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: all $transition-fast;
+  text-align: center;
+
+  &:first-child { border-right: 1px solid $color-border; }
+
+  &:hover:not(.order-type-btn--active) {
+    background: $color-bg-subtle;
+    color: $color-text;
+  }
+
+  &.order-type-btn--active {
+    background: $color-deep-charcoal;
+    color: $color-text-inverse;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.dine-in-info {
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  background: rgba($color-garden-sage, 0.08);
+  border-left: 3px solid $color-garden-sage;
+  font-size: $font-size-sm;
+  color: $color-text;
+
+  p { margin: 0; }
+}
+
+.cart-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-border;
+}

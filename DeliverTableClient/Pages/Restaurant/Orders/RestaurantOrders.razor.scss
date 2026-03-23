@@ -1,0 +1,79 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-orders-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.order-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+// Table
+.orders-table-container {
+  overflow-x: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-white;
+  box-shadow: $shadow-card;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  thead {
+    background: rgba($color-deep-charcoal, 0.03);
+
+    th {
+      @include label-mono;
+      color: $color-text-muted;
+      padding: $spacing-sm $spacing-md;
+      text-align: left;
+      border-bottom: 1px solid $color-border;
+      white-space: nowrap;
+
+      &:last-child { text-align: right; }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid $color-border;
+    transition: background-color $transition-fast;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: $color-bg-subtle; }
+  }
+
+  tbody td {
+    padding: $spacing-sm $spacing-md;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    &:last-child { text-align: right; }
+  }
+}
+
+.order-row--active {
+  background: rgba($color-coral-fire, 0.03);
+
+  &:hover {
+    background: rgba($color-coral-fire, 0.06) !important;
+  }
+}
+
+.order-actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+}
