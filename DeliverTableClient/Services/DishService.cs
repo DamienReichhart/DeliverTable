@@ -10,6 +10,7 @@ namespace DeliverTableClient.Services
 {
     public sealed class DishService(HttpClient httpClient) : IDishService
     {
+        private static readonly long MaxUploadBytes = UploadLimits.ToBytes(UploadLimits.DefaultMaxSizeMb);
         private readonly HttpClient _httpClient = httpClient;
 
         public async Task<(PaginatedResult<DishDto>?, ErrorResponse?)> GetDishesByRestaurantId(int restaurantId, DishQuery query, CancellationToken cancellationToken = default)
@@ -68,7 +69,7 @@ namespace DeliverTableClient.Services
 
                 if (image is not null)
                 {
-                    var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024)); // 5MB max
+                    var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: MaxUploadBytes));
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue(image.ContentType);
                     content.Add(fileContent, "image", image.Name);
                 }
@@ -110,7 +111,7 @@ namespace DeliverTableClient.Services
 
                 if (image is not null)
                 {
-                    var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024));
+                    var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: MaxUploadBytes));
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue(image.ContentType);
                     content.Add(fileContent, "image", image.Name);
                 }
