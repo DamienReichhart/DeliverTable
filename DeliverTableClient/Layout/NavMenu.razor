@@ -50,6 +50,16 @@
                     </div>
                 </AuthorizeView>
 
+                <AuthorizeView Roles="Administrator" Context="adminCtx">
+                    <span class="nav-section-label">Administration</span>
+                    <div class="nav-item">
+                        <NavLink href="/admin" class="nav-link">
+                            <Blazicon Svg="Lucide.Shield" class="nav-icon" />
+                            <span>Panneau Admin</span>
+                        </NavLink>
+                    </div>
+                </AuthorizeView>
+
                 <span class="nav-section-label">Compte</span>
 
                 <div class="nav-item">

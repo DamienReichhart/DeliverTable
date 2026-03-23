@@ -73,6 +73,21 @@ public static class ApiRoutes
         public const string ImageRoute = "images/dish/";
     }
 
+    /// <summary>Admin routes (Administrator role required).</summary>
+    public static class Admin
+    {
+        /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
+        public const string Base = "api/v1/admin";
+
+        public const string UsersRoute = "users";
+        public const string UserByIdRoute = "users/{id:int}";
+        public const string UserByIdRoleRoute = "users/{id:int}/role";
+        public const string UserByIdStatusRoute = "users/{id:int}/status";
+
+        /// <summary>Full paths for client HTTP calls.</summary>
+        public const string Users = Base + "/" + UsersRoute;
+    }
+
     /// <summary>Test controller route (development only).</summary>
     public const string Test = "api/v1/test";
 }
