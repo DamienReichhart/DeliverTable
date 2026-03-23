@@ -26,4 +26,24 @@ public static class ErrorMessages
 
     public static string InvalidStatus(string validValues) =>
         $"Statut invalide. Valeurs possibles : {validValues}";
+
+    // Cart
+    public const string CartNotFound = "Panier introuvable";
+    public const string CartItemNotFound = "Article du panier introuvable";
+    public const string CartEmpty = "Le panier est vide";
+    public const string DishNotAvailable = "Ce plat n'est pas disponible";
+    public const string DishNotFromRestaurant = "Ce plat n'appartient pas à ce restaurant";
+    public const string RestaurantNotActive = "Cet établissement n'est pas actif";
+
+    // Order
+    public const string OrderNotFound = "Commande introuvable";
+    public const string OrderCannotBeCancelled = "Cette commande ne peut pas être annulée";
+    public const string DeliveryAddressRequired = "L'adresse de livraison est obligatoire pour une commande en livraison";
+    public const string GuestCountRequired = "Le nombre de convives doit être compris entre 1 et 50";
+
+    public static string InvalidOrderStatus(string validValues) =>
+        $"Statut de commande invalide. Valeurs possibles : {validValues}";
+
+    public static string InvalidOrderType(string validValues) =>
+        $"Type de commande invalide. Valeurs possibles : {validValues}";
 }

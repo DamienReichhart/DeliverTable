@@ -1,0 +1,188 @@
+@page "/mes-commandes"
+@inject IOrderService OrderService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableSharedLibrary.Dtos.Order
+
+<PageTitle>Mes commandes — DeliverTable</PageTitle>
+
+<div class="order-history-page">
+    <h1>Mes commandes</h1>
+
+    <div class="order-filters">
+        <select @bind="_selectedStatus" @bind:after="FilterOrders" class="filter-select">
+            <option value="">Toutes les commandes</option>
+            <option value="Pending">En attente</option>
+            <option value="Confirmed">Confirmées</option>
+            <option value="Preparing">En préparation</option>
+            <option value="Ready">Prêtes</option>
+            <option value="Delivering">En livraison</option>
+            <option value="Delivered">Livrées</option>
+            <option value="Cancelled">Annulées</option>
+        </select>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Chargement des commandes...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_orders is null || _orders.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Aucune commande trouvée.</p>
+            <button type="button" class="app-btn app-btn--primary" @onclick="GoToRestaurants">
+                Découvrir les restaurants
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="orders-list">
+            @foreach (var order in _orders.Items)
+            {
+                <div class="order-card" @onclick="() => GoToOrder(order.Id)">
+                    <div class="order-card-header">
+                        <div>
+                            <h3>Commande #@order.Id</h3>
+                            <span class="order-restaurant">@order.RestaurantName</span>
+                        </div>
+                        <span class="status-badge status--@order.Status.ToLower()">@TranslateStatus(order.Status)</span>
+                    </div>
+                    <div class="order-card-body">
+                        <span class="order-type-label">@TranslateOrderType(order.OrderType)</span>
+                        <span class="order-guests">@order.GuestCount pers.</span>
+                        <span class="order-date">@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
+                        <span class="order-items-count">@order.Items.Count article(s)</span>
+                        <strong class="order-total">@order.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</strong>
+                    </div>
+                    @if (CanCancel(order.Status))
+                    {
+                        <div class="order-card-actions">
+                            <button type="button" class="app-btn app-btn--danger app-btn--sm"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => CancelOrder(order.Id)">
+                                Annuler
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (_orders.HasNextPage || _query.PageNumber > 1)
+        {
+            <div class="pagination">
+                @if (_query.PageNumber > 1)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                }
+                <span class="page-info">Page @_query.PageNumber</span>
+                @if (_orders.HasNextPage)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private PaginatedResult<OrderDto>? _orders;
+    private OrderQuery _query = new() { PageSize = 10 };
+    private string _selectedStatus = string.Empty;
+    private bool _loading = true;
+    private string? _error;
+
+    private void GoToRestaurants() => Nav.NavigateTo("/restaurants");
+    private void GoToOrder(int orderId) => Nav.NavigateTo($"/commande/{orderId}/confirmation");
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        _query.Status = string.IsNullOrWhiteSpace(_selectedStatus) ? null : _selectedStatus;
+
+        var (result, error) = await OrderService.GetMyOrdersAsync(_query);
+        if (error is not null)
+        {
+            _error = error.Error;
+        }
+        else
+        {
+            _orders = result;
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task FilterOrders()
+    {
+        _query.PageNumber = 1;
+        await LoadOrders();
+    }
+
+    private async Task NextPage()
+    {
+        _query.PageNumber++;
+        await LoadOrders();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_query.PageNumber > 1)
+        {
+            _query.PageNumber--;
+            await LoadOrders();
+        }
+    }
+
+    private async Task CancelOrder(int orderId)
+    {
+        var (_, error) = await OrderService.CancelOrderAsync(orderId);
+        if (error is not null)
+        {
+            _error = error.Error;
+            StateHasChanged();
+        }
+        else
+        {
+            await LoadOrders();
+        }
+    }
+
+    private static bool CanCancel(string status) =>
+        status is "Pending" or "Confirmed";
+
+    private static string TranslateOrderType(string orderType) => orderType switch
+    {
+        "Delivery" => "Livraison",
+        "DineIn" => "Sur place",
+        _ => orderType
+    };
+
+    private static string TranslateStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Confirmed" => "Confirmée",
+        "Preparing" => "En préparation",
+        "Ready" => "Prête",
+        "Delivering" => "En livraison",
+        "Delivered" => "Livrée",
+        "Cancelled" => "Annulée",
+        _ => status
+    };
+}

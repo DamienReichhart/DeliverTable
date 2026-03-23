@@ -82,5 +82,29 @@ namespace DeliverTableClient.Services
             var result = await response.Content.ReadFromJsonAsync<DetailedRestaurantDto>();
             return (result, null);
         }
+
+        public async Task<(PaginatedResult<RestaurantDto>?, ErrorResponse?)> GetAllRestaurants(RestaurantQuery query, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = new List<string>();
+                if (!string.IsNullOrWhiteSpace(query.Name)) queryParams.Add($"Name={Uri.EscapeDataString(query.Name)}");
+                if (!string.IsNullOrWhiteSpace(query.City)) queryParams.Add($"City={Uri.EscapeDataString(query.City)}");
+                if (!string.IsNullOrWhiteSpace(query.Type)) queryParams.Add($"Type={Uri.EscapeDataString(query.Type)}");
+                if (query.Latitude.HasValue) queryParams.Add($"Latitude={query.Latitude.Value}");
+                if (query.Longitude.HasValue) queryParams.Add($"Longitude={query.Longitude.Value}");
+                if (query.RadiusKm.HasValue) queryParams.Add($"RadiusKm={query.RadiusKm.Value}");
+                queryParams.Add($"PageNumber={query.PageNumber}");
+                queryParams.Add($"PageSize={query.PageSize}");
+
+                var url = $"{ApiRoutes.Restaurant.Base}?{string.Join("&", queryParams)}";
+                var result = await _httpClient.GetFromJsonAsync<PaginatedResult<RestaurantDto>>(url, cancellationToken);
+                return (result, null);
+            }
+            catch (Exception ex)
+            {
+                return (null, new ErrorResponse { Error = ex.Message });
+            }
+        }
     }
 }

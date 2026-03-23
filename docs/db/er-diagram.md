@@ -168,6 +168,52 @@ erDiagram
         datetime created_at
     }
 
+    %% Cart & orders (implemented)
+    CART {
+        int     id PK
+        int     customer_user_id FK
+        int     restaurant_id FK
+        datetime created_at
+        datetime updated_at
+    }
+
+    CART_ITEM {
+        int     id PK
+        int     cart_id FK
+        int     dish_id FK
+        int     quantity
+        float   unit_price          "snapshot at add‑to‑cart time"
+        string  special_instructions
+        datetime created_at
+        datetime updated_at
+    }
+
+    ORDER {
+        int     id PK
+        int     customer_user_id FK
+        int     restaurant_id FK
+        string  order_type          "DELIVERY | DINE_IN"
+        string  status              "PENDING | CONFIRMED | PREPARING | READY | DELIVERING | DELIVERED | CANCELLED"
+        string  payment_status      "PENDING | COMPLETED | FAILED | REFUNDED"
+        float   total_amount
+        int     guest_count
+        string  delivery_address    "required for DELIVERY only"
+        string  notes
+        string  source              "CUSTOMER_APP | RESTAURANT_PORTAL | ADMIN"
+        datetime created_at
+        datetime updated_at
+    }
+
+    ORDER_ITEM {
+        int     id PK
+        int     order_id FK
+        int     dish_id FK
+        string  dish_name           "snapshot at order time"
+        int     quantity
+        float   unit_price          "snapshot at order time"
+        string  special_instructions
+    }
+
     %% Bookings, pre‑orders, payments (Stripe‑ready)
     BOOKING {
         string  id PK
@@ -309,7 +355,18 @@ erDiagram
         datetime created_at
     }
 
-    %% Relationships
+    %% Relationships – Cart & Orders
+    USER ||--o{ CART : "has carts"
+    RESTAURANT ||--o{ CART : "carts target"
+    CART ||--o{ CART_ITEM : "contains"
+    MENU_ITEM ||--o{ CART_ITEM : "is added to cart"
+
+    USER ||--o{ ORDER : "places orders"
+    RESTAURANT ||--o{ ORDER : "receives orders"
+    ORDER ||--o{ ORDER_ITEM : "contains"
+    MENU_ITEM ||--o{ ORDER_ITEM : "is ordered in"
+
+    %% Relationships – Core
     USER ||--o{ CUSTOMER_PROFILE : "extends (customer only)"
     USER ||--o{ RESTAURANT_OWNER_PROFILE : "extends (restaurant owner only)"
     USER ||--o{ RESTAURANT : "owns"

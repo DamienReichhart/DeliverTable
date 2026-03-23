@@ -32,6 +32,13 @@
             </NavLink>
         </div>
 
+        <div class="nav-item">
+            <NavLink href="/restaurants" class="nav-link">
+                <Blazicon Svg="Lucide.Search" class="nav-icon" />
+                <span>Restaurants</span>
+            </NavLink>
+        </div>
+
         <AuthorizeView Context="auth">
             <Authorized>
                 <div class="nav-item">
@@ -40,6 +47,16 @@
                         <span>Mon Profil</span>
                     </NavLink>
                 </div>
+
+                <AuthorizeView Roles="@nameof(UserRole.Customer)" Context="customerCtx">
+                    <span class="nav-section-label">Commander</span>
+                    <div class="nav-item">
+                        <NavLink href="/mes-commandes" class="nav-link">
+                            <Blazicon Svg="Lucide.ShoppingBag" class="nav-icon" />
+                            <span>Mes Commandes</span>
+                        </NavLink>
+                    </div>
+                </AuthorizeView>
 
                 <AuthorizeView Roles="@nameof(UserRole.RestaurantOwner)" Context="ownerCtx">
                     <div class="nav-item">

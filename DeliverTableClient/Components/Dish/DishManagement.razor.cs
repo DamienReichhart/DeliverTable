@@ -47,7 +47,7 @@ namespace DeliverTableClient.Components.Dish
                 }
                 else
                 {
-                    dishes = result;
+                    dishes = result?.Items;
                 }
             }
             catch (Exception ex)
