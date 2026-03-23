@@ -12,7 +12,7 @@ namespace DeliverTableClient.Services
     {
         private readonly HttpClient _httpClient = httpClient;
 
-        public async Task<(List<DishDto>?, ErrorResponse?)> GetDishesByRestaurantId(int restaurantId, DishQuery query, CancellationToken cancellationToken = default)
+        public async Task<(PaginatedResult<DishDto>?, ErrorResponse?)> GetDishesByRestaurantId(int restaurantId, DishQuery query, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -21,8 +21,8 @@ namespace DeliverTableClient.Services
 
                 string url = $"{ApiRoutes.Dish.DishesByRestaurantId.Replace("{id:int}", restaurantId.ToString())}{queryString}";
 
-                var dishes = await _httpClient.GetFromJsonAsync<List<DishDto>>(url, cancellationToken);
-                return (dishes, null);
+                var result = await _httpClient.GetFromJsonAsync<PaginatedResult<DishDto>>(url, cancellationToken);
+                return (result, null);
             }
             catch (Exception ex)
             {
@@ -30,7 +30,7 @@ namespace DeliverTableClient.Services
             }
         }
 
-        public async Task<(List<DishDto>?, ErrorResponse?)> GetAllDishes(DishQuery query, CancellationToken cancellationToken = default)
+        public async Task<(PaginatedResult<DishDto>?, ErrorResponse?)> GetAllDishes(DishQuery query, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -42,8 +42,8 @@ namespace DeliverTableClient.Services
                 if (!string.IsNullOrEmpty(query.IsGlutenFree.ToString())) queryString += $"&IsGlutenFree={Uri.EscapeDataString(query.IsGlutenFree.ToString() ?? "")}";
 
                 string url = ApiRoutes.Dish.Base + queryString;
-                List<DishDto>? dishes = await _httpClient.GetFromJsonAsync<List<DishDto>>(url, cancellationToken);
-                return (dishes ?? [], null);
+                var result = await _httpClient.GetFromJsonAsync<PaginatedResult<DishDto>>(url, cancellationToken);
+                return (result, null);
             }
             catch (Exception ex)
             {

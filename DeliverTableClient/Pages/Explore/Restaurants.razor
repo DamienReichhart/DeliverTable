@@ -1,0 +1,187 @@
+@page "/restaurants"
+@inject IRestaurantService RestaurantService
+@inject NavigationManager Nav
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<PageTitle>Restaurants — DeliverTable</PageTitle>
+
+<div class="restaurants-page">
+    <h1>Découvrir les restaurants</h1>
+
+    <div class="restaurants-filters">
+        <div class="filter-row">
+            <input type="text" placeholder="Rechercher un restaurant..." @bind="_query.Name" @bind:event="oninput"
+                   @onkeydown="HandleKeyDown" class="filter-input" />
+            <input type="text" placeholder="Ville" @bind="_query.City" @bind:event="oninput"
+                   @onkeydown="HandleKeyDown" class="filter-input" />
+            <select @bind="_query.Type" class="filter-select">
+                <option value="">Tous les types</option>
+                @foreach (var type in Enum.GetValues<RestaurantType>())
+                {
+                    <option value="@type.ToString()">@type</option>
+                }
+            </select>
+            <button type="button" class="app-btn app-btn--primary" @onclick="SearchRestaurants">
+                Rechercher
+            </button>
+        </div>
+
+        <div class="filter-row">
+            <label class="filter-checkbox">
+                <input type="checkbox" @bind="_useLocation" />
+                <span>Autour de moi</span>
+            </label>
+            @if (_useLocation)
+            {
+                <div class="radius-input">
+                    <label>Rayon (km) :</label>
+                    <input type="number" min="1" max="100" @bind="_radiusKm" class="filter-input filter-input--small" />
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="GetLocationAndSearch">
+                        Localiser
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-container">
+            <p>Chargement des restaurants...</p>
+        </div>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_restaurants is null || _restaurants.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Aucun restaurant trouvé.</p>
+        </div>
+    }
+    else
+    {
+        <div class="restaurants-grid">
+            @foreach (var restaurant in _restaurants.Items)
+            {
+                <div class="restaurant-card" @onclick="() => NavigateToRestaurant(restaurant.Id)">
+                    <div class="restaurant-card-header">
+                        <h3>@restaurant.Name</h3>
+                        <span class="restaurant-type-badge">@restaurant.Type</span>
+                    </div>
+                    <div class="restaurant-card-body">
+                        <p class="restaurant-location">@restaurant.City, @restaurant.ZipCode</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (_restaurants.HasNextPage)
+        {
+            <div class="pagination">
+                @if (_query.PageNumber > 1)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                }
+                <span class="page-info">Page @_query.PageNumber</span>
+                <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+            </div>
+        }
+        else if (_query.PageNumber > 1)
+        {
+            <div class="pagination">
+                <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                <span class="page-info">Page @_query.PageNumber</span>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private PaginatedResult<RestaurantDto>? _restaurants;
+    private RestaurantQuery _query = new() { PageSize = 12 };
+    private bool _loading = true;
+    private string? _error;
+    private bool _useLocation;
+    private double _radiusKm = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SearchRestaurants();
+    }
+
+    private async Task SearchRestaurants()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        try
+        {
+            if (!_useLocation)
+            {
+                _query.Latitude = null;
+                _query.Longitude = null;
+                _query.RadiusKm = null;
+            }
+
+            var (result, err) = await RestaurantService.GetAllRestaurants(_query);
+            if (err is not null)
+            {
+                _error = err.Error;
+            }
+            else
+            {
+                _restaurants = result;
+            }
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetLocationAndSearch()
+    {
+        _query.RadiusKm = _radiusKm;
+        // Geolocation is handled via JS interop in Blazor WASM
+        // For now, we'll use a default location if JS interop is not set up
+        // The user can also enter coordinates manually
+        _query.Latitude = 48.8566; // Paris default
+        _query.Longitude = 2.3522;
+        await SearchRestaurants();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _query.PageNumber = 1;
+            await SearchRestaurants();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        _query.PageNumber++;
+        await SearchRestaurants();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_query.PageNumber > 1)
+        {
+            _query.PageNumber--;
+            await SearchRestaurants();
+        }
+    }
+
+    private void NavigateToRestaurant(int id)
+    {
+        Nav.NavigateTo($"/restaurant/{id}");
+    }
+}

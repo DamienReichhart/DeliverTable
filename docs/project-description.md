@@ -13,6 +13,7 @@ DeliverTable is a web platform connecting **customers**, **restaurants**, and **
 - **User account**: account creation, profile updates, and allergy information so unsuitable dishes can be hidden.
 - **Search and discovery**: search and filter restaurants (type, distance), manage favourites, hide restaurants from results, and get restaurant suggestions via AI assistance.
 - **Booking and ordering**: book tables, pre‑order meals, request specific services (seating preferences, dietary requirements), and pay online to confirm the booking.
+- **Cart and checkout**: persistent cart per restaurant, choose between delivery (with address) or dine‑in (table at the restaurant), specify number of guests, add special instructions, and pay to confirm the order.
 - **Follow‑up**: receive notifications when bookings are accepted or rejected, and rate restaurants after visits.
 
 ### 2. Restaurant side

@@ -35,20 +35,23 @@
 11. [DISCOUNT_CODE](#11-discount_code)
 12. [CUSTOMER_FAVOURITE_RESTAURANT](#12-customer_favourite_restaurant)
 13. [CUSTOMER_HIDDEN_RESTAURANT](#13-customer_hidden_restaurant)
-14. [BOOKING](#14-booking)
-15. [BOOKING_RULE](#15-booking_rule)
-16. [BOOKING_BLOCKED_SLOT](#16-booking_blocked_slot)
-17. [BOOKING_ITEM](#17-booking_item)
-18. [PAYMENT](#18-payment)
-19. [BOOKING_DISCOUNT_CODE](#19-booking_discount_code)
-20. [EVENT](#20-event)
-21. [EVENT_MENU_ITEM](#21-event_menu_item)
-22. [EVENT_BOOKING_POLICY](#22-event_booking_policy)
-23. [RESTAURANT_RATING](#23-restaurant_rating)
-24. [CUSTOMER_RATING](#24-customer_rating)
-25. [NOTIFICATION](#25-notification)
-26. [MODERATION_ACTION](#26-moderation_action)
-27. [Relationship Summary](#relationship-summary)
+14. [CART](#14-cart)
+15. [CART_ITEM](#15-cart_item)
+16. [ORDER](#16-order)
+17. [ORDER_ITEM](#17-order_item)
+18. [BOOKING](#18-booking)
+19. [BOOKING_RULE](#19-booking_rule)
+20. [BOOKING_BLOCKED_SLOT](#20-booking_blocked_slot)
+21. [BOOKING_ITEM](#21-booking_item)
+22. [PAYMENT](#22-payment)
+23. [BOOKING_DISCOUNT_CODE](#23-booking_discount_code)
+24. [EVENT](#24-event)
+25. [EVENT_MENU_ITEM](#25-event_menu_item)
+26. [EVENT_BOOKING_POLICY](#26-event_booking_policy)
+27. [RESTAURANT_RATING](#27-restaurant_rating)
+28. [CUSTOMER_RATING](#28-customer_rating)
+29. [NOTIFICATION](#29-notification)
+30. [MODERATION_ACTION](#30-moderation_action)
 
 ---
 
@@ -73,6 +76,8 @@ Central account table for all platform participants. Role-based extensions (see 
 - `1 → 0..1` **CUSTOMER_PROFILE** — extended profile for customers.
 - `1 → 0..1` **RESTAURANT_OWNER_PROFILE** — extended profile for restaurant owners.
 - `1 → 0..*` **RESTAURANT** — a restaurant owner can own multiple restaurants.
+- `1 → 0..*` **CART** — a customer can have carts at multiple restaurants (one per restaurant).
+- `1 → 0..*` **ORDER** — a customer can place multiple orders.
 - `1 → 0..*` **BOOKING** — a customer can make multiple bookings.
 - `1 → 0..*` **LOYALTY_ACCOUNT** — a customer can have accounts across multiple loyalty programs.
 - `1 → 0..*` **CUSTOMER_FAVOURITE_RESTAURANT** — customer favourites.
@@ -152,6 +157,8 @@ Represents a dining establishment managed by a restaurant owner.
 - `1 → 0..*` **DISCOUNT_CODE** — a restaurant can issue discount codes.
 - `1 → 0..*` **BOOKING_RULE** — a restaurant configures booking rules.
 - `1 → 0..*` **BOOKING_BLOCKED_SLOT** — a restaurant can block booking slots.
+- `1 → 0..*` **CART** — customers can have carts targeting this restaurant.
+- `1 → 0..*` **ORDER** — a restaurant receives orders.
 - `1 → 0..*` **BOOKING** — a restaurant receives bookings.
 - `1 → 0..*` **CUSTOMER_FAVOURITE_RESTAURANT** — customers can favourite the restaurant.
 - `1 → 0..*` **CUSTOMER_HIDDEN_RESTAURANT** — customers can hide the restaurant.
@@ -203,6 +210,8 @@ A dish or beverage offered by a restaurant. Used in pre-orders (via `BOOKING_ITE
 **Relationships:**
 
 - `N → 1` **RESTAURANT** — each menu item belongs to one restaurant.
+- `1 → 0..*` **CART_ITEM** — a menu item can be added to multiple carts.
+- `1 → 0..*` **ORDER_ITEM** — a menu item can appear in multiple orders.
 - `1 → 0..*` **BOOKING_ITEM** — a menu item can be pre-ordered in many bookings.
 - `1 → 0..*` **EVENT_MENU_ITEM** — a menu item can appear in event-specific menus.
 
@@ -355,7 +364,113 @@ Join table recording which restaurants a customer has chosen to hide from their 
 
 ---
 
-## 14. BOOKING
+## 14. CART
+
+Persistent shopping cart, one per customer per restaurant. Allows customers to build an order across sessions before checking out.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `integer` | **PK** | Unique cart identifier. |
+| `customer_user_id` | `integer` | **FK → USER.id, NOT NULL** | The customer who owns this cart. |
+| `restaurant_id` | `integer` | **FK → RESTAURANT.id, NOT NULL** | The restaurant this cart targets. |
+| `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
+| `updated_at` | `datetime` | **NOT NULL** | Last update timestamp (UTC). |
+
+**Constraints:**
+
+- `UNIQUE (customer_user_id, restaurant_id)` — one cart per customer per restaurant.
+
+**Relationships:**
+
+- `N → 1` **USER** — each cart belongs to one customer.
+- `N → 1` **RESTAURANT** — each cart targets one restaurant.
+- `1 → 0..*` **CART_ITEM** — a cart contains zero or more items.
+
+---
+
+## 15. CART_ITEM
+
+A line item in a cart, linking a cart to a menu item with quantity, price snapshot, and optional special instructions.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `integer` | **PK** | Unique cart item identifier. |
+| `cart_id` | `integer` | **FK → CART.id, NOT NULL** | The parent cart. |
+| `dish_id` | `integer` | **FK → MENU_ITEM.id, NOT NULL** | The menu item added to the cart. |
+| `quantity` | `int` | **NOT NULL, DEFAULT 1** | Number of units. Must be ≥ 1 and ≤ 99. |
+| `unit_price` | `decimal(7,2)` | **NOT NULL** | Price per unit at the time of adding (snapshot). |
+| `special_instructions` | `string` | NULLABLE, MAX 500 | Customer notes (allergies, preferences, etc.). |
+| `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
+| `updated_at` | `datetime` | **NOT NULL** | Last update timestamp (UTC). |
+
+**Constraints:**
+
+- `UNIQUE (cart_id, dish_id)` — a dish appears at most once per cart (quantity is incremented on re-add).
+- `ON DELETE RESTRICT` on `dish_id` — prevents deleting a dish while it is in a cart.
+
+**Relationships:**
+
+- `N → 1` **CART** — each item belongs to one cart. Cascade delete: removing a cart removes all its items.
+- `N → 1` **MENU_ITEM** — each item references one menu item.
+
+---
+
+## 16. ORDER
+
+A confirmed customer order. Supports two order types: delivery (food brought to an address) and dine-in (table at the restaurant). Created from a cart at checkout; the cart is deleted upon successful order creation.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `integer` | **PK** | Unique order identifier. |
+| `customer_user_id` | `integer` | **FK → USER.id, NOT NULL** | The customer who placed the order. |
+| `restaurant_id` | `integer` | **FK → RESTAURANT.id, NOT NULL** | The restaurant fulfilling the order. |
+| `order_type` | `string` (enum) | **NOT NULL** | Fulfilment mode. Allowed values: `DELIVERY`, `DINE_IN`. |
+| `status` | `string` (enum) | **NOT NULL** | Order lifecycle state. Allowed values: `PENDING`, `CONFIRMED`, `PREPARING`, `READY`, `DELIVERING`, `DELIVERED`, `CANCELLED`. |
+| `payment_status` | `string` (enum) | **NOT NULL** | Payment lifecycle state. Allowed values: `PENDING`, `COMPLETED`, `FAILED`, `REFUNDED`. |
+| `total_amount` | `decimal(9,2)` | **NOT NULL** | Sum of all order item subtotals. |
+| `guest_count` | `int` | **NOT NULL, DEFAULT 1** | Number of people dining (1–50). For delivery: how many will eat. For dine-in: how many seats to prepare. |
+| `delivery_address` | `string` | NULLABLE, MAX 500 | Required for `DELIVERY` orders. Empty for `DINE_IN`. |
+| `notes` | `string` | NULLABLE, MAX 500 | Free-text notes (delivery instructions, seating preferences, etc.). |
+| `source` | `string` (enum) | **NOT NULL** | Channel the order was placed from. Allowed values: `CUSTOMER_APP`, `RESTAURANT_PORTAL`, `ADMIN`. |
+| `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
+| `updated_at` | `datetime` | **NOT NULL** | Last update timestamp (UTC). |
+
+**Indexes:**
+
+- `IX_Orders_CustomerId` — accelerates customer order history queries.
+- `IX_Orders_RestaurantId` — accelerates restaurant order dashboard queries.
+- `IX_Orders_Status` — accelerates filtering by order status.
+
+**Relationships:**
+
+- `N → 1` **USER** — each order belongs to one customer. `ON DELETE RESTRICT`.
+- `N → 1` **RESTAURANT** — each order targets one restaurant. `ON DELETE RESTRICT`.
+- `1 → 0..*` **ORDER_ITEM** — an order contains one or more line items.
+
+---
+
+## 17. ORDER_ITEM
+
+A line item in an order. Snapshots the dish name and price at order time so the order remains accurate even if the menu changes later.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `integer` | **PK** | Unique order item identifier. |
+| `order_id` | `integer` | **FK → ORDER.id, NOT NULL** | The parent order. |
+| `dish_id` | `integer` | **FK → MENU_ITEM.id, NOT NULL** | The menu item that was ordered. |
+| `dish_name` | `string` | **NOT NULL, MAX 255** | Snapshot of the dish name at order time. |
+| `quantity` | `int` | **NOT NULL, DEFAULT 1** | Number of units ordered. Must be ≥ 1. |
+| `unit_price` | `decimal(7,2)` | **NOT NULL** | Price per unit at order time (snapshot). |
+| `special_instructions` | `string` | NULLABLE, MAX 500 | Customer notes for this specific item. |
+
+**Relationships:**
+
+- `N → 1` **ORDER** — each item belongs to one order. Cascade delete: removing an order removes all its items.
+- `N → 1` **MENU_ITEM** — each item references one menu item. `ON DELETE RESTRICT`.
+
+---
+
+## 18. BOOKING
 
 Core transactional entity representing a reservation at a restaurant (or for an event). Reused for both standard bookings and event bookings via the `is_event_booking` flag.
 
@@ -388,7 +503,7 @@ Core transactional entity representing a reservation at a restaurant (or for an 
 
 ---
 
-## 15. BOOKING_RULE
+## 19. BOOKING_RULE
 
 Configurable rules that govern how bookings work for a given restaurant (lead time, advance window, slot duration, availability, pre-order, delivery, minimum confirmation amount).
 
@@ -412,7 +527,7 @@ Configurable rules that govern how bookings work for a given restaurant (lead ti
 
 ---
 
-## 16. BOOKING_BLOCKED_SLOT
+## 20. BOOKING_BLOCKED_SLOT
 
 Represents a time range during which a restaurant (or a specific table) is unavailable for bookings (e.g. maintenance, private events, holidays).
 
@@ -433,7 +548,7 @@ Represents a time range during which a restaurant (or a specific table) is unava
 
 ---
 
-## 17. BOOKING_ITEM
+## 21. BOOKING_ITEM
 
 Line item in a booking's pre-order, linking a booking to one or more menu items with quantity and pricing.
 
@@ -453,7 +568,7 @@ Line item in a booking's pre-order, linking a booking to one or more menu items 
 
 ---
 
-## 18. PAYMENT
+## 22. PAYMENT
 
 Records a payment transaction against a booking. Designed to be Stripe-ready: persists Stripe identifiers while never storing raw card data.
 
@@ -479,7 +594,7 @@ Records a payment transaction against a booking. Designed to be Stripe-ready: pe
 
 ---
 
-## 19. BOOKING_DISCOUNT_CODE
+## 23. BOOKING_DISCOUNT_CODE
 
 Join table that links a discount code to a booking and records the applied discount amount.
 
@@ -496,7 +611,7 @@ Join table that links a discount code to a booking and records the applied disco
 
 ---
 
-## 20. EVENT
+## 24. EVENT
 
 A special dining or social event, optionally hosted at a restaurant. Events reuse the `BOOKING` entity for reservations and can have custom menus and booking policies.
 
@@ -525,7 +640,7 @@ A special dining or social event, optionally hosted at a restaurant. Events reus
 
 ---
 
-## 21. EVENT_MENU_ITEM
+## 25. EVENT_MENU_ITEM
 
 Links a menu item to an event with an optional price override (e.g. prix-fixe pricing, event-only specials).
 
@@ -543,7 +658,7 @@ Links a menu item to an event with an optional price override (e.g. prix-fixe pr
 
 ---
 
-## 22. EVENT_BOOKING_POLICY
+## 26. EVENT_BOOKING_POLICY
 
 Defines per-event booking and payment rules (minimum prepayment, custom policy schemas) that override or extend the restaurant's default `BOOKING_RULE`.
 
@@ -560,7 +675,7 @@ Defines per-event booking and payment rules (minimum prepayment, custom policy s
 
 ---
 
-## 23. RESTAURANT_RATING
+## 27. RESTAURANT_RATING
 
 A rating left by a customer for a restaurant following a completed booking.
 
@@ -582,7 +697,7 @@ A rating left by a customer for a restaurant following a completed booking.
 
 ---
 
-## 24. CUSTOMER_RATING
+## 28. CUSTOMER_RATING
 
 A rating left by a restaurant (owner/staff) for a customer following a completed booking (e.g. no-show, good guest).
 
@@ -606,7 +721,7 @@ A rating left by a restaurant (owner/staff) for a customer following a completed
 
 ---
 
-## 25. NOTIFICATION
+## 29. NOTIFICATION
 
 A notification delivered to a user (push, email, in-app, etc.) triggered by system events.
 
@@ -625,7 +740,7 @@ A notification delivered to a user (push, email, in-app, etc.) triggered by syst
 
 ---
 
-## 26. MODERATION_ACTION
+## 30. MODERATION_ACTION
 
 Audit log of administrative actions taken on platform content or users (approvals, rejections, bans, warnings).
 

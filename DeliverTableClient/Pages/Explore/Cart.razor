@@ -1,0 +1,307 @@
+@page "/panier/{RestaurantId:int}"
+@inject ICartService CartService
+@inject IOrderService OrderService
+@inject IRestaurantService RestaurantService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableSharedLibrary.Dtos.Cart
+@using DeliverTableSharedLibrary.Dtos.Order
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<PageTitle>Panier — DeliverTable</PageTitle>
+
+<div class="cart-page">
+    <h1>Mon panier</h1>
+
+    @if (_loading)
+    {
+        <p>Chargement du panier...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_cart is null || _cart.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Votre panier est vide.</p>
+            <button type="button" class="app-btn app-btn--primary" @onclick="GoToRestaurant">
+                Retour au restaurant
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="cart-restaurant-info">
+            <h2>@_cart.RestaurantName</h2>
+            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="GoToRestaurant">
+                Continuer les achats
+            </button>
+        </div>
+
+        <div class="cart-items">
+            @foreach (var item in _cart.Items)
+            {
+                <div class="cart-item">
+                    <div class="cart-item-img">
+                        <img src="@item.DishImage" alt="@item.DishName" loading="lazy"
+                             onerror="this.style.display='none'" />
+                    </div>
+                    <div class="cart-item-info">
+                        <h3>@item.DishName</h3>
+                        <p class="cart-item-price">@item.UnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR")) / unité</p>
+                        @if (!string.IsNullOrWhiteSpace(item.SpecialInstructions))
+                        {
+                            <p class="cart-item-instructions">@item.SpecialInstructions</p>
+                        }
+                    </div>
+                    <div class="cart-item-actions">
+                        <div class="quantity-selector">
+                            <button type="button" class="qty-btn" @onclick="() => UpdateQuantity(item, item.Quantity - 1)"
+                                    disabled="@(item.Quantity <= 1)">−</button>
+                            <span class="qty-value">@item.Quantity</span>
+                            <button type="button" class="qty-btn" @onclick="() => UpdateQuantity(item, item.Quantity + 1)"
+                                    disabled="@(item.Quantity >= 99)">+</button>
+                        </div>
+                        <span class="cart-item-subtotal">@item.Subtotal.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                        <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => RemoveItem(item.Id)">
+                            Supprimer
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="cart-summary">
+            <div class="cart-total">
+                <span>Total :</span>
+                <strong>@_cart.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</strong>
+            </div>
+
+            <div class="checkout-form">
+                <h3>Type de commande</h3>
+                <div class="order-type-selector">
+                    <button type="button"
+                            class="order-type-btn @(_orderType == "Delivery" ? "order-type-btn--active" : "")"
+                            @onclick="() => SelectOrderType(OrderTypeValue.Delivery)">
+                        Livraison
+                    </button>
+                    <button type="button"
+                            class="order-type-btn @(_orderType == "DineIn" ? "order-type-btn--active" : "")"
+                            @onclick="() => SelectOrderType(OrderTypeValue.DineIn)">
+                        Sur place
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label for="guest-count">Nombre de convives</label>
+                    <div class="guest-count-selector">
+                        <button type="button" class="qty-btn" @onclick="DecrementGuests" disabled="@(_guestCount <= 1)">−</button>
+                        <span class="qty-value">@_guestCount</span>
+                        <button type="button" class="qty-btn" @onclick="IncrementGuests" disabled="@(_guestCount >= 50)">+</button>
+                    </div>
+                </div>
+
+                @if (_orderType == "Delivery")
+                {
+                    <div class="form-group">
+                        <label for="delivery-address">Adresse de livraison *</label>
+                        <input type="text" id="delivery-address" @bind="_deliveryAddress" class="filter-input"
+                               placeholder="Entrez votre adresse de livraison" />
+                    </div>
+                }
+                else
+                {
+                    <div class="dine-in-info">
+                        <p>Vous mangerez directement au restaurant. Une table pour <strong>@_guestCount</strong> personne(s) sera préparée.</p>
+                    </div>
+                }
+
+                <div class="form-group">
+                    <label for="notes">Notes pour le restaurant</label>
+                    <textarea id="notes" @bind="_notes" class="filter-input" rows="2"
+                              placeholder="@(_orderType == "DineIn" ? "Préférences de table, allergies..." : "Instructions de livraison, étage, code...")"></textarea>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_validationError))
+            {
+                <div class="error-message">
+                    <p>@_validationError</p>
+                </div>
+            }
+
+            <div class="cart-actions">
+                <button type="button" class="app-btn app-btn--danger" @onclick="ClearCart">
+                    Vider le panier
+                </button>
+                <button type="button" class="app-btn app-btn--primary app-btn--lg" @onclick="Checkout"
+                        disabled="@_processing">
+                    @if (_processing)
+                    {
+                        <span>Traitement en cours...</span>
+                    }
+                    else
+                    {
+                        <span>Payer — @_cart.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                    }
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private CartDto? _cart;
+    private bool _loading = true;
+    private bool _processing;
+    private string? _error;
+    private string? _validationError;
+    private string _orderType = "Delivery";
+    private int _guestCount = 1;
+    private string _deliveryAddress = string.Empty;
+    private string _notes = string.Empty;
+
+    private enum OrderTypeValue { Delivery, DineIn }
+
+    private void GoToRestaurant() => Nav.NavigateTo($"/restaurant/{RestaurantId}");
+
+    private void SelectOrderType(OrderTypeValue type)
+    {
+        _orderType = type.ToString();
+        _validationError = null;
+    }
+
+    private void IncrementGuests()
+    {
+        if (_guestCount < 50) _guestCount++;
+    }
+
+    private void DecrementGuests()
+    {
+        if (_guestCount > 1) _guestCount--;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCart();
+    }
+
+    private async Task LoadCart()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        var (cart, error) = await CartService.GetCartAsync(RestaurantId);
+        if (error is not null)
+        {
+            _error = error.Error;
+        }
+        else
+        {
+            _cart = cart;
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task UpdateQuantity(CartItemDto item, int newQuantity)
+    {
+        if (newQuantity < 1 || newQuantity > 99) return;
+
+        var request = new UpdateCartItemRequest
+        {
+            Quantity = newQuantity,
+            SpecialInstructions = item.SpecialInstructions
+        };
+
+        var (_, error) = await CartService.UpdateItemAsync(item.Id, request);
+        if (error is null)
+        {
+            await LoadCart();
+        }
+        else
+        {
+            _error = error.Error;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveItem(int cartItemId)
+    {
+        var error = await CartService.RemoveItemAsync(cartItemId);
+        if (error is null)
+        {
+            await LoadCart();
+        }
+        else
+        {
+            _error = error.Error;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClearCart()
+    {
+        var error = await CartService.ClearCartAsync(RestaurantId);
+        if (error is null)
+        {
+            _cart = new CartDto { RestaurantId = RestaurantId };
+            StateHasChanged();
+        }
+        else
+        {
+            _error = error.Error;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Checkout()
+    {
+        _validationError = null;
+
+        if (_orderType == "Delivery" && string.IsNullOrWhiteSpace(_deliveryAddress))
+        {
+            _validationError = "L'adresse de livraison est obligatoire pour une commande en livraison.";
+            return;
+        }
+
+        if (_guestCount < 1 || _guestCount > 50)
+        {
+            _validationError = "Le nombre de convives doit être compris entre 1 et 50.";
+            return;
+        }
+
+        _processing = true;
+        _error = null;
+        StateHasChanged();
+
+        var request = new CreateOrderRequest
+        {
+            RestaurantId = RestaurantId,
+            OrderType = _orderType,
+            GuestCount = _guestCount,
+            DeliveryAddress = _deliveryAddress,
+            Notes = _notes
+        };
+
+        var (order, error) = await OrderService.CreateOrderAsync(request);
+        if (error is not null)
+        {
+            _error = error.Error;
+            _processing = false;
+            StateHasChanged();
+        }
+        else if (order is not null)
+        {
+            Nav.NavigateTo($"/commande/{order.Id}/confirmation");
+        }
+    }
+}

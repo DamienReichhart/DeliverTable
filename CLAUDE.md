@@ -65,6 +65,8 @@ Repository (EF Core queries, entity CRUD, no business logic)
 | Admin | AdminController | IAdminService / AdminService | IUserRepository / UserRepository |
 | Restaurant | RestaurantController | IRestaurantService / RestaurantService | IRestaurantRepository |
 | Dish | DishController | IDishService / DishService | IDishRepository |
+| Cart | CartController | ICartService / CartService | ICartRepository / CartRepository |
+| Order | OrderController | IOrderService / OrderService | IOrderRepository / OrderRepository |
 | Health | HealthController | IHealthService | — |
 
 ### Enums
@@ -73,6 +75,7 @@ Roles, statuses, and health states use enums with `nameof()` for compile-time sa
 
 - `UserRole`, `HealthStatus` — in `DeliverTableSharedLibrary/Constants/Enums/`
 - `UserStatus`, `RestaurantType`, `AvailableCountries` — in `DeliverTableSharedLibrary/Enums/`
+- `OrderStatus`, `OrderType`, `PaymentStatus`, `BookingStatus`, `BookingSource` — in `DeliverTableSharedLibrary/Enums/`
 
 ### Client (Blazor WASM)
 
