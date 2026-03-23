@@ -88,8 +88,11 @@ public class AuthControllerTests
         _authService.GetProfileAsync(42, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<UserResponse>.Success(new UserResponse
             {
-                Id = 42, FirstName = "Jean", LastName = "Dupont",
-                Email = "jean@example.com", Role = nameof(UserRole.Customer)
+                Id = 42,
+                FirstName = "Jean",
+                LastName = "Dupont",
+                Email = "jean@example.com",
+                Role = nameof(UserRole.Customer)
             }));
 
         var result = await _sut.GetProfile(CancellationToken.None);
