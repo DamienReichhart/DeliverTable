@@ -1,0 +1,129 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.order-detail-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+// Two-column grid for info + status
+.order-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+
+  @media (min-width: $breakpoint-desktop) {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.order-info-card,
+.order-status-card,
+.order-items-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  h2 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &.info-item--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.info-label {
+  @include label-mono;
+  color: $color-text-muted;
+}
+
+.customer-notes {
+  font-style: italic;
+  font-size: $font-size-sm;
+  color: $color-text;
+  padding: $spacing-sm;
+  background: $color-bg-subtle;
+  border-radius: $radius-sm;
+}
+
+// Status card
+.current-status {
+  display: flex;
+  justify-content: center;
+  padding: $spacing-md 0;
+}
+
+.status-actions {
+  border-top: 1px solid $color-border;
+  padding-top: $spacing-md;
+
+  h3 {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    margin: 0 0 $spacing-md;
+  }
+}
+
+.status-flow {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+// Items table
+.order-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  thead th {
+    @include label-mono;
+    color: $color-text-muted;
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    border-bottom: 2px solid $color-border;
+  }
+
+  tbody td {
+    padding: $spacing-sm $spacing-md;
+    vertical-align: middle;
+    border-bottom: 1px solid $color-border;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tfoot td {
+    padding: $spacing-md;
+    border-top: 2px solid $color-border;
+  }
+}
+
+.item-instructions {
+  font-style: italic;
+  color: $color-text-muted;
+  font-size: $font-size-xs;
+}
