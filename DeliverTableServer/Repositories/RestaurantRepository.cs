@@ -1,156 +1,82 @@
 using DeliverTableServer.Data;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
-using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace DeliverTableServer.Repositories
+namespace DeliverTableServer.Repositories;
+
+public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRepository
 {
-    public class RestaurantRepository(
-        DeliverTableContext dbContext
-    ) : IRestaurantRepository
+    private readonly DeliverTableContext _dbContext = dbContext;
+
+    public async Task<Restaurant> CreateAsync(Restaurant restaurant, CancellationToken ct = default)
     {
-        private readonly DeliverTableContext _dbContext = dbContext;
+        _dbContext.Restaurants.Add(restaurant);
+        await _dbContext.SaveChangesAsync(ct);
+        return restaurant;
+    }
 
-        public async Task<Restaurant> CreateRestaurant(
-            CreateRestaurantDto creationDto,
-            int ownerId,
-            double lon,
-            double lat
-        )
-        {
-            _ = Enum.TryParse<RestaurantType>(creationDto.Type, out var restaurantType);
-            Restaurant restaurant = new()
-            {
-                Name = creationDto.Name,
-                Description = creationDto.Description ?? string.Empty,
-                AdressLine1 = creationDto.AdressLine1,
-                City = creationDto.City,
-                ZipCode = creationDto.ZipCode,
-                Type = restaurantType,
-                Country = char.ToUpper(creationDto.Country[0]) + creationDto.Country.Substring(1),
-                AdressLine2 = creationDto.AdressLine2 ?? string.Empty,
-                OwnerId = ownerId,
-                Longitude = lon,
-                Latitude = lat,
-            };
+    public async Task<(List<Restaurant> Items, int TotalCount)> GetAllAsync(RestaurantQuery query, CancellationToken ct = default)
+    {
+        var q = _dbContext.Restaurants.AsQueryable();
 
-            _dbContext.Restaurants.Add(restaurant);
+        if (!string.IsNullOrWhiteSpace(query.Name))
+            q = q.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
+        if (!string.IsNullOrWhiteSpace(query.City))
+            q = q.Where(r => r.City.ToLower().Contains(query.City.ToLower()));
+        if (!string.IsNullOrWhiteSpace(query.Type))
+            q = q.Where(r => r.Type.ToString().ToLower().Contains(query.Type.ToLower()));
 
-            await _dbContext.SaveChangesAsync();
+        q = q.OrderBy(r => r.Id);
 
-            return restaurant;
-        }
+        var totalCount = await q.CountAsync(ct);
 
-        public async Task<bool> Delete(int id)
-        {
-            Restaurant? restaurant = await _dbContext.Restaurants.FirstOrDefaultAsync(r => r.Id == id);
-            if (restaurant == null)
-            {
-                return false;
-            }
-            _dbContext.Restaurants.Remove(restaurant);
-            await _dbContext.SaveChangesAsync();
+        int page = query.PageNumber > 0 ? query.PageNumber : 1;
+        int skip = (page - 1) * query.PageSize;
 
-            return true;
-        }
+        var items = await q.Skip(skip).Take(query.PageSize).ToListAsync(ct);
+        return (items, totalCount);
+    }
 
-        public async Task<List<Restaurant>> GetAllRestaurant(RestaurantQuery query)
-        {
-            var restaurants = _dbContext.Restaurants.AsQueryable();
-            if (!string.IsNullOrWhiteSpace(query.Name))
-            {
-                restaurants = restaurants.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
-            }
-            if (!string.IsNullOrWhiteSpace(query.City))
-            {
-                restaurants = restaurants.Where(r => r.City.ToLower().Contains(query.City.ToLower()));
-            }
-            if (!string.IsNullOrWhiteSpace(query.Type))
-            {
-                restaurants = restaurants.Where(r => r.Type.ToString().ToLower().Contains(query.Type.ToLower()));
-            }
+    public async Task<Restaurant?> GetByIdAsync(int id, CancellationToken ct = default)
+        => await _dbContext.Restaurants.FirstOrDefaultAsync(r => r.Id == id, ct);
 
-            restaurants = restaurants.OrderBy(r => r.Id);
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+    {
+        var restaurant = await _dbContext.Restaurants.FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (restaurant is null) return false;
 
-            int page = query.PageNumber > 0 ? query.PageNumber : 1;
-            int skipNumber = (page - 1) * query.PageSize;
+        _dbContext.Restaurants.Remove(restaurant);
+        await _dbContext.SaveChangesAsync(ct);
+        return true;
+    }
 
-            List<Restaurant> result = await restaurants.Skip(skipNumber).Take(query.PageSize).ToListAsync();
+    public async Task<Restaurant> UpdateAsync(Restaurant restaurant, CancellationToken ct = default)
+    {
+        _dbContext.Restaurants.Update(restaurant);
+        await _dbContext.SaveChangesAsync(ct);
+        return restaurant;
+    }
 
-            return result;
-        }
+    public async Task<(List<Restaurant> Items, int TotalCount)> GetByOwnerAsync(
+        int ownerId, RestaurantQuery query, CancellationToken ct = default)
+    {
+        var q = _dbContext.Restaurants.Where(r => r.OwnerId == ownerId);
 
-        public async Task<Restaurant?> GetRestaurantById(int id)
-        {
-            return await _dbContext.Restaurants
-            .Where(r => r.Id == id).FirstOrDefaultAsync();
-        }
+        if (!string.IsNullOrWhiteSpace(query.Name))
+            q = q.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
+        if (!string.IsNullOrWhiteSpace(query.City))
+            q = q.Where(r => r.City.ToLower().Contains(query.City.ToLower()));
 
-        public async Task<List<Restaurant>> GetRestaurantByOwner(int id, RestaurantQuery query)
-        {
-            var restaurants = _dbContext.Restaurants.AsQueryable();
-            restaurants = restaurants.Where(r => r.OwnerId == id);
-            if (!string.IsNullOrWhiteSpace(query.Name))
-            {
-                restaurants = restaurants.Where(r => r.Name.Contains(query.Name.ToLower()));
-            }
-            if (!string.IsNullOrWhiteSpace(query.City))
-            {
-                restaurants = restaurants.Where(r => r.City.Contains(query.City.ToLower()));
-            }
+        q = q.OrderBy(r => r.Id);
 
+        var totalCount = await q.CountAsync(ct);
 
-            restaurants = restaurants.OrderBy(r => r.Id);
+        int page = query.PageNumber > 0 ? query.PageNumber : 1;
+        int skip = (page - 1) * query.PageSize;
 
-            int page = query.PageNumber > 0 ? query.PageNumber : 1;
-            int skipNumber = (page - 1) * query.PageSize;
-
-            List<Restaurant> result = await restaurants.Skip(skipNumber).Take(query.PageSize).ToListAsync();
-
-            return result;
-        }
-
-        public async Task<Restaurant> Update(int id, UpdateRestaurantDto restaurantDto, double lon, double lat)
-        {
-            Restaurant? restaurant = await _dbContext.Restaurants
-                .FirstOrDefaultAsync(r => r.Id == id) ?? throw new ArgumentException("Restaurant non trouvé");
-            bool isValid = Enum.TryParse<RestaurantType>(restaurantDto.Type, out var restaurantType);
-
-            if (!isValid) restaurantType = RestaurantType.Autre;
-
-            restaurant.Name = restaurantDto.Name;
-            restaurant.Description = restaurantDto.Description;
-            restaurant.Type = restaurantType;
-            restaurant.AdressLine1 = restaurantDto.AdressLine1;
-            restaurant.AdressLine2 = restaurantDto.AdressLine2;
-            restaurant.City = restaurantDto.City;
-            restaurant.ZipCode = restaurantDto.ZipCode;
-
-            restaurant.Latitude = lat;
-            restaurant.Longitude = lon;
-
-            restaurant.UpdatedAt = DateTime.UtcNow;
-
-            await _dbContext.SaveChangesAsync();
-
-            return new Restaurant
-            {
-                Id = restaurant.Id,
-                Name = restaurant.Name,
-                Type = restaurant.Type,
-                Description = restaurant.Description,
-                AdressLine1 = restaurant.AdressLine1,
-                AdressLine2 = restaurant.AdressLine2,
-                City = restaurant.City,
-                ZipCode = restaurant.ZipCode,
-                Country = restaurant.Country,
-                Latitude = restaurant.Latitude,
-                Longitude = restaurant.Longitude,
-                IsActive = restaurant.IsActive
-            };
-        }
+        var items = await q.Skip(skip).Take(query.PageSize).ToListAsync(ct);
+        return (items, totalCount);
     }
 }

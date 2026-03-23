@@ -30,14 +30,14 @@ namespace DeliverTableClient.Services
             }
         }
 
-        public async Task<(List<RestaurantDto>?, ErrorResponse?)> GetConnectedUserRestaurants(CancellationToken cancellationToken = default)
+        public async Task<(PaginatedResult<RestaurantDto>?, ErrorResponse?)> GetConnectedUserRestaurants(CancellationToken cancellationToken = default)
         {
             try
             {
-                List<RestaurantDto>? restaurants = await _httpClient
-                    .GetFromJsonAsync<List<RestaurantDto>>(ApiRoutes.Restaurant.UserMe, cancellationToken);
+                var result = await _httpClient
+                    .GetFromJsonAsync<PaginatedResult<RestaurantDto>>(ApiRoutes.Restaurant.UserMe, cancellationToken);
 
-                return (restaurants, null);
+                return (result, null);
             }
             catch (Exception jsonEx)
             {

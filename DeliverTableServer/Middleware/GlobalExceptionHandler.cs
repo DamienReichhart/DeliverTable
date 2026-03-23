@@ -1,37 +1,37 @@
+using DeliverTableServer.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using Microsoft.AspNetCore.Diagnostics;
 
-namespace DeliverTableServer.Middleware
-{
-    public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
-    {
-        private readonly ILogger<GlobalExceptionHandler> _logger = logger;
+namespace DeliverTableServer.Middleware;
 
-        public async ValueTask<bool> TryHandleAsync(
+public class GlobalExceptionHandler(
+    ILogger<GlobalExceptionHandler> logger,
+    IHostEnvironment environment
+) : IExceptionHandler
+{
+    private readonly ILogger<GlobalExceptionHandler> _logger = logger;
+    private readonly IHostEnvironment _environment = environment;
+
+    public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
+    {
+        _logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
+
+        var (statusCode, message) = exception switch
         {
-            _logger.LogError(exception, "Une erreur non gérée est survenue : {Message}", exception.Message);
+            KeyNotFoundException => (StatusCodes.Status404NotFound, ErrorMessages.ResourceNotFound),
+            _ => (StatusCodes.Status500InternalServerError,
+                  _environment.IsDevelopment() ? exception.Message : ErrorMessages.InternalServerError)
+        };
 
-            var problemDetails = new ErrorResponse
-            {
-                Status = StatusCodes.Status500InternalServerError,
-                Error = exception.Message
-            };
+        httpContext.Response.StatusCode = statusCode;
 
-            if (exception is KeyNotFoundException)
-            {
-                problemDetails.Status = StatusCodes.Status404NotFound;
-                problemDetails.Error = "Ressource non trouvée";
-            }
+        await httpContext.Response.WriteAsJsonAsync(
+            new ErrorResponse { Status = statusCode, Error = message },
+            cancellationToken);
 
-            httpContext.Response.StatusCode = problemDetails.Status;
-
-            await httpContext.Response
-                .WriteAsJsonAsync(problemDetails, cancellationToken);
-
-            return true;
-        }
+        return true;
     }
 }

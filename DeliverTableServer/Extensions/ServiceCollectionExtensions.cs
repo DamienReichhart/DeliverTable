@@ -2,6 +2,7 @@ using DeliverTableServer.Repositories;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
+
 namespace DeliverTableServer.Extensions;
 
 /// <summary>
@@ -10,40 +11,35 @@ namespace DeliverTableServer.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    ///     Registers all DeliverTable application services (health, and future domain/application services).
+    ///     Registers all DeliverTable application services, repositories, and infrastructure.
     /// </summary>
     public static IServiceCollection AddDeliverTableServices(this IServiceCollection services)
     {
-        RegisterHealthServices(services);
-        RegisterTokenService(services);
-        RegisterGouvGeoLocationService(services);
-        RegisterRestaurantServices(services);
-        RegisterDishServices(services);
+        RegisterRepositories(services);
+        RegisterServices(services);
+        RegisterInfrastructure(services);
         return services;
     }
 
-    private static void RegisterHealthServices(IServiceCollection services)
+    private static void RegisterRepositories(IServiceCollection services)
+    {
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRestaurantRepository, RestaurantRepository>();
+        services.AddScoped<IDishRepository, DishRepository>();
+    }
+
+    private static void RegisterServices(IServiceCollection services)
     {
         services.AddScoped<IHealthService, HealthService>();
-    }
-
-    private static void RegisterTokenService(IServiceCollection services)
-    {
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IRestaurantService, RestaurantService>();
+        services.AddScoped<IDishService, DishService>();
     }
 
-    private static void RegisterGouvGeoLocationService(IServiceCollection services)
+    private static void RegisterInfrastructure(IServiceCollection services)
     {
         services.AddHttpClient<IGeoLocationService, GeoLocationService>();
-    }
-
-    private static void RegisterRestaurantServices(IServiceCollection services)
-    {
-        services.AddScoped<IRestaurantRepository, RestaurantRepository>();
-    }
-
-    private static void RegisterDishServices(IServiceCollection services)
-    {
-        services.AddScoped<IDishRepository, DishRepository>();
     }
 }

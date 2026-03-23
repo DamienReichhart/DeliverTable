@@ -1,18 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
 
-namespace DeliverTableClient.Services.Interfaces
+namespace DeliverTableClient.Services.Interfaces;
+
+public interface IRestaurantService
 {
-    public interface IRestaurantService
-    {
-        Task<bool> CreateRestaurant(CreateRestaurantDto creationDto, CancellationToken cancellationToken = default);
-        Task<(List<RestaurantDto>?, ErrorResponse?)> GetConnectedUserRestaurants(CancellationToken cancellationToken = default);
-        Task<bool> DeleteRestaurant(int id);
-        Task<(DetailedRestaurantDto?, ErrorResponse?)> GetRestaurantById(int id, CancellationToken cancellationToken = default);
-        Task<(DetailedRestaurantDto? dto, ErrorResponse? error)> UpdateRestaurant(UpdateRestaurantDto updateDto, int id, CancellationToken cancellationToken = default);
-    }
+    Task<bool> CreateRestaurant(CreateRestaurantDto creationDto, CancellationToken cancellationToken = default);
+    Task<(PaginatedResult<RestaurantDto>?, ErrorResponse?)> GetConnectedUserRestaurants(CancellationToken cancellationToken = default);
+    Task<bool> DeleteRestaurant(int id);
+    Task<(DetailedRestaurantDto?, ErrorResponse?)> GetRestaurantById(int id, CancellationToken cancellationToken = default);
+    Task<(DetailedRestaurantDto? dto, ErrorResponse? error)> UpdateRestaurant(UpdateRestaurantDto updateDto, int id, CancellationToken cancellationToken = default);
 }
