@@ -1,5 +1,5 @@
 @page "/admin/users"
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
 @using DeliverTableClient.Services.Interfaces
 @using DeliverTableSharedLibrary.Dtos.Admin
 @using Microsoft.AspNetCore.Authorization
@@ -187,7 +187,7 @@
                         }
                         else
                         {
-                            <tr class="@(user.Status != "Active" ? "admin-users-row--inactive" : "")">
+                            <tr class="@(user.Status != nameof(UserStatus.Active) ? "admin-users-row--inactive" : "")">
                                 <td class="admin-users-name">
                                     <div class="admin-users-avatar">
                                         @(GetInitials(user.FirstName, user.LastName))
@@ -268,8 +268,8 @@
     private string? _actionSuccess;
     private string? _actionError;
 
-    private static readonly string[] AvailableRoles = ["Administrator", "Customer", "RestaurantOwner"];
-    private static readonly string[] AvailableStatuses = ["Active", "Suspended", "Banned"];
+    private static readonly string[] AvailableRoles = Enum.GetNames<UserRole>();
+    private static readonly string[] AvailableStatuses = Enum.GetNames<UserStatus>();
 
     private IEnumerable<AdminUserResponse> FilteredUsers =>
         _users?.Where(u =>
@@ -435,32 +435,32 @@
 
     private static string RoleBadgeClass(string role) => role switch
     {
-        "Administrator" => "admin",
-        "RestaurantOwner" => "owner",
+        nameof(UserRole.Administrator) => "admin",
+        nameof(UserRole.RestaurantOwner) => "owner",
         _ => "customer"
     };
 
     private static string StatusBadgeClass(string status) => status switch
     {
-        "Active" => "active",
-        "Suspended" => "warning",
-        "Banned" => "danger",
+        nameof(UserStatus.Active) => "active",
+        nameof(UserStatus.Suspended) => "warning",
+        nameof(UserStatus.Banned) => "danger",
         _ => "active"
     };
 
     private static string TranslateRole(string role) => role switch
     {
-        "Administrator" => "Administrateur",
-        "RestaurantOwner" => "Restaurateur",
-        "Customer" => "Client",
+        nameof(UserRole.Administrator) => "Administrateur",
+        nameof(UserRole.RestaurantOwner) => "Restaurateur",
+        nameof(UserRole.Customer) => "Client",
         _ => role
     };
 
     private static string TranslateStatus(string status) => status switch
     {
-        "Active" => "Actif",
-        "Suspended" => "Suspendu",
-        "Banned" => "Banni",
+        nameof(UserStatus.Active) => "Actif",
+        nameof(UserStatus.Suspended) => "Suspendu",
+        nameof(UserStatus.Banned) => "Banni",
         _ => status
     };
 }

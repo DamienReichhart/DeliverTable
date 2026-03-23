@@ -2,6 +2,7 @@ using DeliverTableServer.Data;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using Microsoft.AspNetCore.Authorization;
@@ -13,13 +14,13 @@ namespace DeliverTableServer.Controllers;
 
 [ApiController]
 [Route(ApiRoutes.Admin.Base)]
-[Authorize(Roles = "Administrator")]
+[Authorize(Roles = nameof(UserRole.Administrator))]
 public class AdminController(
     DeliverTableContext context,
     UserManager<User> userManager
 ) : ControllerBase
 {
-    private static readonly string[] ValidRoles = ["Administrator", "Customer", "RestaurantOwner"];
+    private static readonly string[] ValidRoles = Enum.GetNames<UserRole>();
 
     private readonly DeliverTableContext _context = context;
     private readonly UserManager<User> _userManager = userManager;

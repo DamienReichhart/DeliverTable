@@ -1,5 +1,6 @@
 using DeliverTableServer.Controllers;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
@@ -24,7 +25,7 @@ public class HealthControllerTests
     {
         var expected = new HealthResponse
         {
-            Status = "Healthy",
+            Status = nameof(HealthStatus.Healthy),
             TimestampUtc = DateTime.UtcNow
         };
         _healthService.GetHealthAsync(Arg.Any<CancellationToken>())
@@ -42,7 +43,7 @@ public class HealthControllerTests
     {
         using var cts = new CancellationTokenSource();
         _healthService.GetHealthAsync(Arg.Any<CancellationToken>())
-            .Returns(new HealthResponse { Status = "Healthy", TimestampUtc = DateTime.UtcNow });
+            .Returns(new HealthResponse { Status = nameof(HealthStatus.Healthy), TimestampUtc = DateTime.UtcNow });
 
         await _sut.Get(cts.Token);
 

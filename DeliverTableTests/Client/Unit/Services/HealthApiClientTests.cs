@@ -1,6 +1,7 @@
 using System.Net;
 using DeliverTableClient.Services;
 using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableTests.Client.Helpers;
 
@@ -40,7 +41,7 @@ public class HealthApiClientTests
     {
         var expected = new HealthResponse
         {
-            Status = "Healthy",
+            Status = nameof(HealthStatus.Healthy),
             TimestampUtc = new DateTime(2026, 2, 25, 12, 0, 0, DateTimeKind.Utc)
         };
         _httpHandler.QueueJsonResponse(expected);
@@ -50,7 +51,7 @@ public class HealthApiClientTests
         Assert.Multiple(() =>
         {
             Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Status, Is.EqualTo("Healthy"));
+            Assert.That(result!.Status, Is.EqualTo(nameof(HealthStatus.Healthy)));
             Assert.That(result.TimestampUtc, Is.EqualTo(expected.TimestampUtc));
         });
     }
@@ -107,14 +108,14 @@ public class HealthApiClientTests
     {
         var degraded = new HealthResponse
         {
-            Status = "Degraded",
+            Status = nameof(HealthStatus.Degraded),
             TimestampUtc = DateTime.UtcNow
         };
         _httpHandler.QueueJsonResponse(degraded);
 
         var result = await _sut.GetHealthAsync();
 
-        Assert.That(result!.Status, Is.EqualTo("Degraded"));
+        Assert.That(result!.Status, Is.EqualTo(nameof(HealthStatus.Degraded)));
     }
 
     #endregion

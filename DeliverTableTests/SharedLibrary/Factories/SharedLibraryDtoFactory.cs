@@ -1,3 +1,4 @@
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
 
@@ -38,7 +39,7 @@ public static class SharedLibraryDtoFactory
     };
 
     public static HealthResponse CreateHealthResponse(
-        string status = "Healthy",
+        string status = nameof(HealthStatus.Healthy),
         DateTime? timestampUtc = null) => new()
         {
             Status = status,

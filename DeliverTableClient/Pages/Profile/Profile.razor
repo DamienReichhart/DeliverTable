@@ -227,7 +227,7 @@
                 </section>
 
                 @* ── Quick link to restaurant management (RestaurantOwner only) ── *@
-                <AuthorizeView Roles="RestaurantOwner" Context="ownerCtx">
+                <AuthorizeView Roles="@nameof(UserRole.RestaurantOwner)" Context="ownerCtx">
                     <section class="profile-card">
                         <div class="profile-card-header">
                             <h3>Mes restaurants</h3>

@@ -41,7 +41,7 @@
                     </NavLink>
                 </div>
 
-                <AuthorizeView Roles="RestaurantOwner" Context="ownerCtx">
+                <AuthorizeView Roles="@nameof(UserRole.RestaurantOwner)" Context="ownerCtx">
                     <div class="nav-item">
                         <NavLink href="/mes-restaurants" class="nav-link">
                             <Blazicon Svg="Lucide.UtensilsCrossed" class="nav-icon" />
@@ -50,7 +50,7 @@
                     </div>
                 </AuthorizeView>
 
-                <AuthorizeView Roles="Administrator" Context="adminCtx">
+                <AuthorizeView Roles="@nameof(UserRole.Administrator)" Context="adminCtx">
                     <span class="nav-section-label">Administration</span>
                     <div class="nav-item">
                         <NavLink href="/admin" class="nav-link">
