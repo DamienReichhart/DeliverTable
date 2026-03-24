@@ -30,6 +30,17 @@ public static class ServiceResultExtensions
     }
 
     /// <summary>
+    ///     Returns 200 OK with a message on success, or the appropriate error status code.
+    ///     Use for void operations that should return a success message (e.g. password change).
+    /// </summary>
+    public static IActionResult ToOkMessageResult(this ServiceResult result, string message)
+    {
+        return result.IsSuccess
+            ? new OkObjectResult(new { Message = message })
+            : ToErrorResult(result.Error!);
+    }
+
+    /// <summary>
     ///     Returns the appropriate error status code with a consistent error body.
     ///     Use when the success path requires a different response shape (e.g. CreatedAtAction).
     /// </summary>
