@@ -123,8 +123,6 @@ public sealed class OrderService(
                 Amount = codeDiscount
             });
 
-            discountCode.CurrentRedemptions++;
-            await _discountCodeRepository.UpdateAsync(discountCode, ct);
             appliedDiscountCodes.Add(discountCode);
         }
 
@@ -204,9 +202,11 @@ public sealed class OrderService(
 
         var created = await _orderRepository.CreateAsync(order, ct);
 
-        // Create discount code redemption records after order is created
+        // Create discount code redemption records and increment counters after order is created
         foreach (var dc in appliedDiscountCodes)
         {
+            dc.CurrentRedemptions++;
+            await _discountCodeRepository.UpdateAsync(dc, ct);
             await _discountCodeRepository.CreateRedemptionAsync(new DiscountCodeRedemption
             {
                 DiscountCodeId = dc.Id,

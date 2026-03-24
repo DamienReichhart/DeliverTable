@@ -5,6 +5,7 @@ using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
+using DeliverTableSharedLibrary.Dtos.Dish;
 using DeliverTableSharedLibrary.Dtos.Promotion;
 using DeliverTableSharedLibrary.Enums;
 
@@ -39,14 +40,12 @@ public sealed class PromotionService(
         if (request.EndsAt <= request.StartsAt)
             return new ServiceError(ErrorMessages.InvalidPromotionDates);
 
-        if (promotionType == PromotionType.ItemBased)
+        if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
         {
-            foreach (var dishId in request.DishIds)
-            {
-                var dish = await _dishRepository.GetByIdAsync(dishId, ct);
-                if (dish is null || dish.RestaurantId != restaurantId)
-                    return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
-            }
+            var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurantId, ct);
+            var restaurantDishIds = restaurantDishes.Select(d => d.Id).ToHashSet();
+            if (request.DishIds.Any(id => !restaurantDishIds.Contains(id)))
+                return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
         }
 
         var promotion = new Promotion
@@ -108,14 +107,12 @@ public sealed class PromotionService(
         if (request.EndsAt <= request.StartsAt)
             return new ServiceError(ErrorMessages.InvalidPromotionDates);
 
-        if (promotionType == PromotionType.ItemBased)
+        if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
         {
-            foreach (var dishId in request.DishIds)
-            {
-                var dish = await _dishRepository.GetByIdAsync(dishId, ct);
-                if (dish is null || dish.RestaurantId != restaurant.Id)
-                    return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
-            }
+            var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurant.Id, ct);
+            var restaurantDishIds = restaurantDishes.Select(d => d.Id).ToHashSet();
+            if (request.DishIds.Any(id => !restaurantDishIds.Contains(id)))
+                return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
         }
 
         promotion.Name = request.Name;
