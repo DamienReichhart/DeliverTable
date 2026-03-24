@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;

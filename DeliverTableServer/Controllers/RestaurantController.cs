@@ -69,7 +69,7 @@ public class RestaurantController(IRestaurantService restaurantService) : Contro
 
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
-    public async Task<IActionResult> CreateRestaurant([FromBody] CreateRestaurantDto creationDto, CancellationToken ct)
+    public async Task<IActionResult> Create([FromBody] CreateRestaurantDto creationDto, CancellationToken ct)
     {
         if (!this.TryGetUserId(out int ownerId)) return Unauthorized();
 
