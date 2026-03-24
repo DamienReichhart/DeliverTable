@@ -8,6 +8,7 @@ using DeliverTableSharedLibrary.Dtos.Order;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Helpers;
 using NSubstitute;
+using static DeliverTableTests.Server.Factories.ServerEntityFactory;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -48,18 +49,6 @@ public class OrderServiceTests
 
     [TearDown]
     public void TearDown() => AppEnvironmentTestHelper.CleanupEnvironment();
-
-    private static Restaurant CreateRestaurant() => new()
-    {
-        Id = RestaurantId,
-        Name = "Test",
-        OwnerId = 5,
-        IsActive = true,
-        AdressLine1 = "1 Rue Test",
-        City = "Paris",
-        ZipCode = "75001",
-        Country = "FR"
-    };
 
     private static Cart CreateCartWithItems(decimal price1 = 20m, decimal price2 = 30m) => new()
     {
