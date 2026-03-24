@@ -70,6 +70,7 @@ public static class ErrorMessages
     public const string DiscountCodePerUserLimit = "Vous avez déjà utilisé ce code promo le nombre de fois autorisé";
     public const string DiscountCodeMinOrderNotMet = "Le montant minimum de commande n'est pas atteint pour ce code promo";
     public const string DiscountCodeAlreadyExists = "Un code promo avec ce code existe déjà pour ce restaurant";
+    public const string InvalidDiscountCodeDates = "La date de fin doit être postérieure à la date de début du code promo";
 
     // Loyalty
     public const string LoyaltyProgramNotFound = "Programme de fidélité introuvable";
