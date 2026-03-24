@@ -67,6 +67,10 @@ Repository (EF Core queries, entity CRUD, no business logic)
 | Dish | DishController | IDishService / DishService | IDishRepository |
 | Cart | CartController | ICartService / CartService | ICartRepository / CartRepository |
 | Order | OrderController | IOrderService / OrderService | IOrderRepository / OrderRepository |
+| RestaurantAccount | RestaurantAccountController | IRestaurantAccountService | IRestaurantTransactionRepository |
+| Promotion | PromotionController | IPromotionService / PromotionService | IPromotionRepository |
+| DiscountCode | DiscountCodeController | IDiscountCodeService / DiscountCodeService | IDiscountCodeRepository |
+| Loyalty | LoyaltyController | ILoyaltyService / LoyaltyService | ILoyaltyRepository |
 | Health | HealthController | IHealthService | — |
 
 ### Enums
