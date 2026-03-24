@@ -60,13 +60,22 @@ public class OrderServiceTests
     {
         var restaurant = new Restaurant
         {
-            Id = 1, Name = "Test", Balance = 0m,
-            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
         };
         var order = new Order
         {
-            Id = 10, RestaurantId = 1, Restaurant = restaurant,
-            TotalAmount = 400m, Status = OrderStatus.Ready, Items = []
+            Id = 10,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            TotalAmount = 400m,
+            Status = OrderStatus.Ready,
+            Items = []
         };
         _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
@@ -90,13 +99,22 @@ public class OrderServiceTests
     {
         var restaurant = new Restaurant
         {
-            Id = 1, Name = "Test", Balance = 0m,
-            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
         };
         var order = new Order
         {
-            Id = 10, RestaurantId = 1, Restaurant = restaurant,
-            TotalAmount = 400m, Status = OrderStatus.Confirmed, Items = []
+            Id = 10,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            TotalAmount = 400m,
+            Status = OrderStatus.Confirmed,
+            Items = []
         };
         _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
