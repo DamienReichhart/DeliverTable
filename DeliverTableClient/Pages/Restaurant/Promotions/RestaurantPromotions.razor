@@ -1,7 +1,9 @@
 @page "/restaurant/{RestaurantId:int}/promotions"
 @inject IPromotionService PromotionService
 @inject IRestaurantService RestaurantService
+@inject IDishService DishService
 @inject NavigationManager Nav
+@using DeliverTableSharedLibrary.Dtos.Dish
 @attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 
@@ -49,8 +51,9 @@
                         <label for="promotionType">Type de promotion</label>
                         <InputSelect id="promotionType" @bind-Value="_formModel.PromotionType" class="form-control">
                             <option value="">-- Choisir --</option>
-                            <option value="OrderBased">Sur commande</option>
-                            <option value="ItemBased">Sur article</option>
+                            <option value="Automatic">Automatique (toute la commande)</option>
+                            <option value="Threshold">Seuil (montant minimum)</option>
+                            <option value="ItemBased">Sur articles spécifiques</option>
                         </InputSelect>
                     </div>
 
@@ -86,8 +89,30 @@
                     @if (_formModel.PromotionType == "ItemBased")
                     {
                         <div class="form-group form-group--full">
-                            <label for="dishIds">IDs des plats (séparés par des virgules)</label>
-                            <InputText id="dishIds" @bind-Value="_dishIdsInput" class="form-control" />
+                            <label>Articles concernés</label>
+                            @if (_dishes is null || _dishes.Count == 0)
+                            {
+                                <p class="form-hint">Chargement des plats...</p>
+                            }
+                            else
+                            {
+                                <div class="dish-picker">
+                                    @foreach (var dish in _dishes)
+                                    {
+                                        <label class="dish-picker-item @(_selectedDishIds.Contains(dish.Id) ? "dish-picker-item--selected" : "")">
+                                            <input type="checkbox"
+                                                   checked="@_selectedDishIds.Contains(dish.Id)"
+                                                   @onchange="() => ToggleDish(dish.Id)" />
+                                            <span class="dish-picker-name">@dish.Name</span>
+                                            <span class="dish-picker-price">@dish.BasePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                                        </label>
+                                    }
+                                </div>
+                                @if (_selectedDishIds.Count > 0)
+                                {
+                                    <p class="form-hint">@_selectedDishIds.Count article(s) sélectionné(s)</p>
+                                }
+                            }
                         </div>
                     }
                 </div>
@@ -191,7 +216,8 @@
     private bool _submitting;
     private int? _editingId;
     private CreatePromotionRequest _formModel = new();
-    private string _dishIdsInput = string.Empty;
+    private List<DishDto>? _dishes;
+    private HashSet<int> _selectedDishIds = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -199,6 +225,13 @@
         _restaurantName = restaurant?.Name;
 
         await LoadPromotions();
+        await LoadDishes();
+    }
+
+    private async Task LoadDishes()
+    {
+        var (result, _) = await DishService.GetDishesByRestaurantId(RestaurantId, new DishQuery());
+        _dishes = result?.Items.ToList() ?? [];
     }
 
     private async Task LoadPromotions()
@@ -225,7 +258,7 @@
             StartsAt = DateTime.Today,
             EndsAt = DateTime.Today.AddDays(30)
         };
-        _dishIdsInput = string.Empty;
+        _selectedDishIds = [];
         _showForm = true;
     }
 
@@ -244,8 +277,14 @@
             EndsAt = promo.EndsAt,
             DishIds = promo.DishIds
         };
-        _dishIdsInput = string.Join(", ", promo.DishIds);
+        _selectedDishIds = [..promo.DishIds];
         _showForm = true;
+    }
+
+    private void ToggleDish(int dishId)
+    {
+        if (!_selectedDishIds.Remove(dishId))
+            _selectedDishIds.Add(dishId);
     }
 
     private void CancelForm()
@@ -260,7 +299,7 @@
         _submitting = true;
         _error = null;
 
-        ParseDishIds();
+        _formModel.DishIds = [.._selectedDishIds];
 
         if (_editingId.HasValue)
         {
@@ -317,21 +356,6 @@
         }
     }
 
-    private void ParseDishIds()
-    {
-        if (string.IsNullOrWhiteSpace(_dishIdsInput))
-        {
-            _formModel.DishIds = [];
-            return;
-        }
-
-        _formModel.DishIds = _dishIdsInput
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(s => int.TryParse(s, out _))
-            .Select(int.Parse)
-            .ToList();
-    }
-
     private async Task NextPage()
     {
         _query.PageNumber++;
@@ -369,8 +393,9 @@
 
     private static string TranslatePromotionType(string type) => type switch
     {
-        "OrderBased" => "Sur commande",
-        "ItemBased" => "Sur article",
+        "Automatic" => "Automatique",
+        "Threshold" => "Seuil",
+        "ItemBased" => "Sur articles",
         _ => type
     };
 
