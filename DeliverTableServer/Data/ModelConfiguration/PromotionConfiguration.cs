@@ -40,7 +40,6 @@ public class PromotionConfiguration : IEntityTypeConfiguration<Promotion>
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAddOrUpdate();
 
-        builder.HasIndex(p => p.RestaurantId);
-        builder.HasIndex(p => p.IsActive);
+        builder.HasIndex(p => new { p.RestaurantId, p.IsActive });
     }
 }

@@ -23,6 +23,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         return await _dbContext.Orders
             .Include(o => o.Items)
             .Include(o => o.Restaurant)
+            .Include(o => o.Discounts)
             .FirstOrDefaultAsync(o => o.Id == orderId, ct);
     }
 
@@ -32,6 +33,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         var q = _dbContext.Orders
             .Include(o => o.Items)
             .Include(o => o.Restaurant)
+            .Include(o => o.Discounts)
             .Where(o => o.CustomerId == customerId);
 
         if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))
@@ -54,6 +56,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         var q = _dbContext.Orders
             .Include(o => o.Items)
             .Include(o => o.Restaurant)
+            .Include(o => o.Discounts)
             .Where(o => o.RestaurantId == restaurantId);
 
         if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))

@@ -46,7 +46,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     public async Task<IActionResult> Validate([FromRoute] int id, [FromBody] ValidateDiscountCodeRequest request, CancellationToken ct)
     {
         if (!TryGetUserId(out int userId)) return Unauthorized();
-        var result = await _discountCodeService.ValidateAsync(id, userId, request.Code, ct);
+        var result = await _discountCodeService.ValidateAsync(id, userId, request.Code, ct: ct);
         return result.ToOkResult();
     }
 

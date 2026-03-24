@@ -122,7 +122,7 @@ public sealed class DiscountCodeService(
     }
 
     public async Task<ServiceResult<DiscountCodeDto>> ValidateAsync(
-        int restaurantId, int customerId, string code, CancellationToken ct = default)
+        int restaurantId, int customerId, string code, decimal? orderAmount = null, CancellationToken ct = default)
     {
         var discountCode = await _discountCodeRepository.GetByCodeAndRestaurantAsync(code, restaurantId, ct);
 
@@ -139,6 +139,10 @@ public sealed class DiscountCodeService(
             discountCode.Id, customerId, ct);
         if (userRedemptions >= discountCode.PerUserLimit)
             return new ServiceError(ErrorMessages.DiscountCodePerUserLimit);
+
+        if (orderAmount.HasValue && discountCode.MinOrderAmount.HasValue &&
+            orderAmount.Value < discountCode.MinOrderAmount.Value)
+            return new ServiceError(ErrorMessages.DiscountCodeMinOrderNotMet);
 
         return discountCode.ToDto();
     }
