@@ -1,0 +1,251 @@
+@page "/restaurant/{RestaurantId:int}/compte"
+@inject IRestaurantAccountService AccountService
+@inject IRestaurantService RestaurantService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<PageTitle>Compte — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
+
+<div class="restaurant-account-page">
+    <div class="page-header">
+        <div>
+            <h1>Compte</h1>
+            @if (_restaurantName is not null)
+            {
+                <p class="page-subtitle">@_restaurantName</p>
+            }
+        </div>
+        <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+            Retour
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Chargement du compte...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_account is not null)
+    {
+        <div class="balance-card">
+            <span class="balance-label">Solde disponible</span>
+            <span class="balance-amount">@_account.Balance.ToString("C", _frCulture)</span>
+            <button type="button" class="app-btn app-btn--primary" @onclick="ShowWithdrawForm">
+                Retirer des fonds
+            </button>
+        </div>
+
+        @if (_showWithdraw)
+        {
+            <div class="withdraw-card">
+                <h3>Retrait</h3>
+                <EditForm Model="_withdrawRequest" OnValidSubmit="HandleWithdraw">
+                    <DataAnnotationsValidator />
+                    <div class="withdraw-form">
+                        <div class="form-field">
+                            <label for="amount">Montant (€)</label>
+                            <InputNumber id="amount" @bind-Value="_withdrawRequest.Amount" class="form-input" />
+                            <ValidationMessage For="() => _withdrawRequest.Amount" />
+                        </div>
+                        <div class="withdraw-actions">
+                            <button type="submit" class="app-btn app-btn--primary" disabled="@_withdrawing">
+                                @(_withdrawing ? "Traitement..." : "Confirmer le retrait")
+                            </button>
+                            <button type="button" class="app-btn app-btn--secondary" @onclick="HideWithdrawForm">
+                                Annuler
+                            </button>
+                        </div>
+                        @if (_withdrawError is not null)
+                        {
+                            <p class="field-error">@_withdrawError</p>
+                        }
+                        @if (_withdrawSuccess)
+                        {
+                            <p class="field-success">Retrait effectué avec succès.</p>
+                        }
+                    </div>
+                </EditForm>
+            </div>
+        }
+
+        <div class="transactions-section">
+            <h2>Historique des transactions</h2>
+
+            @if (_account.Transactions.Items.Count == 0)
+            {
+                <div class="empty-state">
+                    <p>Aucune transaction pour le moment.</p>
+                </div>
+            }
+            else
+            {
+                <div class="transactions-table-container">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Commande</th>
+                                <th>Montant brut</th>
+                                <th>Commission</th>
+                                <th>Montant net</th>
+                                <th>Solde après</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tx in _account.Transactions.Items)
+                            {
+                                <tr class="tx-row tx-row--@tx.Type.ToLower()">
+                                    <td>@tx.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <span class="tx-type-badge tx-type--@tx.Type.ToLower()">
+                                            @TranslateType(tx.Type)
+                                        </span>
+                                    </td>
+                                    <td>@(tx.OrderId.HasValue ? $"#{tx.OrderId}" : "—")</td>
+                                    <td>@tx.GrossAmount.ToString("C", _frCulture)</td>
+                                    <td>@(tx.CommissionAmount > 0 ? tx.CommissionAmount.ToString("C", _frCulture) : "—")</td>
+                                    <td><strong>@FormatSignedAmount(tx)</strong></td>
+                                    <td>@tx.BalanceAfter.ToString("C", _frCulture)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (_account.Transactions.HasNextPage || _query.PageNumber > 1)
+                {
+                    <div class="pagination">
+                        @if (_query.PageNumber > 1)
+                        {
+                            <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                        }
+                        <span class="page-info">Page @_query.PageNumber / @((_account.Transactions.TotalCount + _query.PageSize - 1) / _query.PageSize)</span>
+                        @if (_account.Transactions.HasNextPage)
+                        {
+                            <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private static readonly System.Globalization.CultureInfo _frCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    private RestaurantAccountDto? _account;
+    private TransactionQuery _query = new() { PageSize = 20 };
+    private string? _restaurantName;
+    private bool _loading = true;
+    private string? _error;
+
+    private bool _showWithdraw;
+    private bool _withdrawing;
+    private string? _withdrawError;
+    private bool _withdrawSuccess;
+    private WithdrawRequest _withdrawRequest = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
+        _restaurantName = restaurant?.Name;
+        await LoadAccount();
+    }
+
+    private async Task LoadAccount()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        var (result, error) = await AccountService.GetAccountAsync(RestaurantId, _query);
+        if (error is not null)
+            _error = error.Error;
+        else
+            _account = result;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void ShowWithdrawForm()
+    {
+        _showWithdraw = true;
+        _withdrawRequest = new WithdrawRequest();
+        _withdrawError = null;
+        _withdrawSuccess = false;
+    }
+
+    private void HideWithdrawForm()
+    {
+        _showWithdraw = false;
+        _withdrawError = null;
+        _withdrawSuccess = false;
+    }
+
+    private async Task HandleWithdraw()
+    {
+        _withdrawing = true;
+        _withdrawError = null;
+        _withdrawSuccess = false;
+        StateHasChanged();
+
+        var (result, error) = await AccountService.WithdrawAsync(RestaurantId, _withdrawRequest);
+        if (error is not null)
+        {
+            _withdrawError = error.Error;
+        }
+        else
+        {
+            _account = result;
+            _withdrawSuccess = true;
+            _withdrawRequest = new WithdrawRequest();
+        }
+
+        _withdrawing = false;
+        StateHasChanged();
+    }
+
+    private async Task NextPage()
+    {
+        _query.PageNumber++;
+        await LoadAccount();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_query.PageNumber > 1)
+        {
+            _query.PageNumber--;
+            await LoadAccount();
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/mes-restaurants");
+
+    private static string TranslateType(string type) => type switch
+    {
+        "Credit" => "Crédit",
+        "Withdrawal" => "Retrait",
+        _ => type
+    };
+
+    private string FormatSignedAmount(RestaurantTransactionDto tx) => tx.Type switch
+    {
+        "Credit" => $"+{tx.NetAmount.ToString("C", _frCulture)}",
+        "Withdrawal" => $"-{tx.NetAmount.ToString("C", _frCulture)}",
+        _ => tx.NetAmount.ToString("C", _frCulture)
+    };
+}
