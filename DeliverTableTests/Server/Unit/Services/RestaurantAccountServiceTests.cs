@@ -5,6 +5,7 @@ using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.RestaurantAccount;
+using DeliverTableTests.Global.Helpers;
 using NSubstitute;
 
 namespace DeliverTableTests.Server.Unit.Services;
@@ -23,33 +24,13 @@ public class RestaurantAccountServiceTests
         _restaurantRepository = Substitute.For<IRestaurantRepository>();
         _transactionRepository = Substitute.For<IRestaurantTransactionRepository>();
 
-        Environment.SetEnvironmentVariable("CONNECTION_STRING_DATABASE", "Host=localhost;Database=test");
-        Environment.SetEnvironmentVariable("JWT_KEY", "TestKeyThatIsLongEnoughForHmacSha256Signing!");
-        Environment.SetEnvironmentVariable("JWT_ISSUER", "TestIssuer");
-        Environment.SetEnvironmentVariable("JWT_AUDIENCE", "TestAudience");
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_SERVICE_URL", "http://localhost:3900");
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_ACCESS_KEY", "key");
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_SECRET_KEY", "secret");
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_BUCKET_NAME", "bucket");
-        Environment.SetEnvironmentVariable("PLATFORM_COMMISSION_RATE", "0.10");
-        _appEnvironment = AppEnvironment.Load();
+        _appEnvironment = AppEnvironmentTestHelper.SetupEnvironment();
 
         _sut = new RestaurantAccountService(_restaurantRepository, _transactionRepository, _appEnvironment);
     }
 
     [TearDown]
-    public void TearDown()
-    {
-        Environment.SetEnvironmentVariable("CONNECTION_STRING_DATABASE", null);
-        Environment.SetEnvironmentVariable("JWT_KEY", null);
-        Environment.SetEnvironmentVariable("JWT_ISSUER", null);
-        Environment.SetEnvironmentVariable("JWT_AUDIENCE", null);
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_SERVICE_URL", null);
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_ACCESS_KEY", null);
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_SECRET_KEY", null);
-        Environment.SetEnvironmentVariable("OBJECT_STORAGE_BUCKET_NAME", null);
-        Environment.SetEnvironmentVariable("PLATFORM_COMMISSION_RATE", null);
-    }
+    public void TearDown() => AppEnvironmentTestHelper.CleanupEnvironment();
 
     [Test]
     public async Task GetAccountAsync_WhenRestaurantNotFound_ReturnsError()

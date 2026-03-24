@@ -1,11 +1,10 @@
-using System.Security.Claims;
 using DeliverTableServer.Common;
 using DeliverTableServer.Controllers;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.DiscountCode;
-using Microsoft.AspNetCore.Http;
+using DeliverTableTests.Global.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 
@@ -25,18 +24,7 @@ public class DiscountCodeControllerTests
     }
 
     private void SetupAuthenticatedUser(string userId, string role = nameof(UserRole.RestaurantOwner))
-    {
-        var claims = new List<Claim>();
-        if (!string.IsNullOrEmpty(userId))
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
-        if (!string.IsNullOrEmpty(role))
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        var identity = new ClaimsIdentity(claims, "TestScheme");
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
-        };
-    }
+        => AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId, role);
 
     [Test]
     public async Task Create_ReturnsOk()
