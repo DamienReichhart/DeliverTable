@@ -1,0 +1,575 @@
+@page "/admin/order-config"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminOrderConfigClientService OrderConfigService
+
+<PageTitle>Configuration — Administration</PageTitle>
+
+<AdminLayout Title="Configuration des commandes" Subtitle="@GetSubtitle()">
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="alert alert-success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        @* ══════════════════════════════════════════════════
+           Section 1: Order Rules
+           ══════════════════════════════════════════════════ *@
+        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Règles de commande</h3>
+
+        <div style="margin-bottom: 1rem;">
+            <button class="app-btn app-btn--sm" @onclick="OpenCreateRuleModal">
+                <Blazicon Svg="Lucide.Plus" />
+                Créer une règle
+            </button>
+        </div>
+
+        <AdminDataTable TItem="AdminOrderRuleResponse"
+                         Items="FilteredRules"
+                         TotalCount="@(FilteredRules.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par restaurant..."
+                         SearchText="@_rulesSearchQuery"
+                         SearchTextChanged="@(q => { _rulesSearchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Restaurant</th>
+                <th>Montant min. (€)</th>
+                <th>Délai min. (h)</th>
+                <th>Jours max.</th>
+                <th>Précommande</th>
+                <th>Livraison</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="rule">
+                <tr>
+                    <td>@rule.RestaurantName</td>
+                    <td class="adm-cell-mono">@(rule.MinConfirmAmount?.ToString("F2") ?? "—")</td>
+                    <td class="adm-cell-mono">@(rule.MinLeadTimeHours?.ToString() ?? "—")</td>
+                    <td class="adm-cell-mono">@(rule.MaxAdvanceDays?.ToString() ?? "—")</td>
+                    <td>
+                        <AdminBadge Text="@(rule.AllowPreorder ? "Oui" : "Non")"
+                                    Variant="@(rule.AllowPreorder ? "active" : "warning")" ShowDot />
+                    </td>
+                    <td>
+                        <AdminBadge Text="@(rule.AllowDelivery ? "Oui" : "Non")"
+                                    Variant="@(rule.AllowDelivery ? "active" : "warning")" ShowDot />
+                    </td>
+                    <td>
+                        <div class="adm-cell-actions">
+                            <button class="app-btn app-btn--link app-btn--sm" @onclick="@(() => OpenEditRuleModal(rule))">
+                                Modifier
+                            </button>
+                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                                    @onclick="@(() => OpenDeleteRuleConfirm(rule))">
+                                Supprimer
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucune règle trouvée"
+                                 Message="@($"Aucun résultat pour « {_rulesSearchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.Settings" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ══════════════════════════════════════════════════
+           Section 2: Blocked Slots
+           ══════════════════════════════════════════════════ *@
+        <h3 style="margin-top: 2.5rem; margin-bottom: 1rem;">Créneaux bloqués</h3>
+
+        <div style="margin-bottom: 1rem;">
+            <button class="app-btn app-btn--sm" @onclick="OpenCreateSlotModal">
+                <Blazicon Svg="Lucide.Plus" />
+                Bloquer un créneau
+            </button>
+        </div>
+
+        <AdminDataTable TItem="AdminBlockedSlotResponse"
+                         Items="FilteredSlots"
+                         TotalCount="@(FilteredSlots.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par restaurant ou raison..."
+                         SearchText="@_slotsSearchQuery"
+                         SearchTextChanged="@(q => { _slotsSearchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Restaurant</th>
+                <th>Début</th>
+                <th>Fin</th>
+                <th>Raison</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="slot">
+                <tr>
+                    <td>@slot.RestaurantName</td>
+                    <td class="adm-cell-mono">@slot.StartsAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="adm-cell-mono">@slot.EndsAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@Truncate(slot.Reason, 60)</td>
+                    <td>
+                        <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                                @onclick="@(() => OpenDeleteSlotConfirm(slot))">
+                            Supprimer
+                        </button>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucun créneau bloqué trouvé"
+                                 Message="@($"Aucun résultat pour « {_slotsSearchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.Clock" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ── Create Rule modal ── *@
+        <AdminFormModal IsVisible="@_showCreateRuleModal" Title="Créer une règle de commande" OnClose="CloseCreateRuleModal">
+            <ChildContent>
+                <EditForm Model="@_createRuleModel" OnValidSubmit="HandleCreateRule">
+                    <DataAnnotationsValidator />
+                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <label class="adm-form-label" for="rule-restaurant">Restaurant (ID)</label>
+                        <InputNumber id="rule-restaurant" @bind-Value="_createRuleModel.RestaurantId"
+                                     class="adm-form-input" />
+                        <ValidationMessage For="@(() => _createRuleModel.RestaurantId)" class="adm-form-error" />
+                    </div>
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="rule-amount">Montant min. confirmation (€)</label>
+                            <InputNumber id="rule-amount" @bind-Value="_createRuleModel.MinConfirmAmount"
+                                         class="adm-form-input" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="rule-lead">Délai min. (heures)</label>
+                            <InputNumber id="rule-lead" @bind-Value="_createRuleModel.MinLeadTimeHours"
+                                         class="adm-form-input" />
+                        </div>
+                    </div>
+                    <div class="adm-form-row" style="margin-top: 1rem;">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="rule-advance">Jours d'avance max.</label>
+                            <InputNumber id="rule-advance" @bind-Value="_createRuleModel.MaxAdvanceDays"
+                                         class="adm-form-input" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="rule-slot">Durée créneau (min.)</label>
+                            <InputNumber id="rule-slot" @bind-Value="_createRuleModel.SlotDurationMinutes"
+                                         class="adm-form-input" />
+                        </div>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 1rem;">
+                        <label class="adm-form-label">
+                            <InputCheckbox @bind-Value="_createRuleModel.AllowPreorder" />
+                            Autoriser la précommande
+                        </label>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 0.5rem;">
+                        <label class="adm-form-label">
+                            <InputCheckbox @bind-Value="_createRuleModel.AllowDelivery" />
+                            Autoriser la livraison
+                        </label>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateRuleModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button type="submit" class="app-btn app-btn--sm" disabled="@_isSaving">
+                            @(_isSaving ? "Création..." : "Créer")
+                        </button>
+                    </div>
+                </EditForm>
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Edit Rule modal ── *@
+        <AdminFormModal IsVisible="@(_editingRule is not null)" Title="Modifier la règle" OnClose="CloseEditRuleModal">
+            <ChildContent>
+                @if (_editingRule is not null)
+                {
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label">Montant min. confirmation (€)</label>
+                            <input type="number" class="adm-form-input" @bind="_editRuleModel.MinConfirmAmount" step="0.01" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label">Délai min. (heures)</label>
+                            <input type="number" class="adm-form-input" @bind="_editRuleModel.MinLeadTimeHours" />
+                        </div>
+                    </div>
+                    <div class="adm-form-row" style="margin-top: 1rem;">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label">Jours d'avance max.</label>
+                            <input type="number" class="adm-form-input" @bind="_editRuleModel.MaxAdvanceDays" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label">Durée créneau (min.)</label>
+                            <input type="number" class="adm-form-input" @bind="_editRuleModel.SlotDurationMinutes" />
+                        </div>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 1rem;">
+                        <label class="adm-form-label">
+                            <input type="checkbox" @bind="_editRuleModel.AllowPreorder" />
+                            Autoriser la précommande
+                        </label>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 0.5rem;">
+                        <label class="adm-form-label">
+                            <input type="checkbox" @bind="_editRuleModel.AllowDelivery" />
+                            Autoriser la livraison
+                        </label>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditRuleModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button class="app-btn app-btn--sm" @onclick="HandleUpdateRule" disabled="@_isSaving">
+                            @(_isSaving ? "Sauvegarde..." : "Sauvegarder")
+                        </button>
+                    </div>
+                }
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Create Blocked Slot modal ── *@
+        <AdminFormModal IsVisible="@_showCreateSlotModal" Title="Bloquer un créneau" OnClose="CloseCreateSlotModal">
+            <ChildContent>
+                <EditForm Model="@_createSlotModel" OnValidSubmit="HandleCreateSlot">
+                    <DataAnnotationsValidator />
+                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <label class="adm-form-label" for="slot-restaurant">Restaurant (ID)</label>
+                        <InputNumber id="slot-restaurant" @bind-Value="_createSlotModel.RestaurantId"
+                                     class="adm-form-input" />
+                        <ValidationMessage For="@(() => _createSlotModel.RestaurantId)" class="adm-form-error" />
+                    </div>
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="slot-start">Date de début</label>
+                            <InputDate id="slot-start" @bind-Value="_createSlotModel.StartsAt"
+                                       Type="InputDateType.DateTimeLocal" class="adm-form-input" />
+                            <ValidationMessage For="@(() => _createSlotModel.StartsAt)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="slot-end">Date de fin</label>
+                            <InputDate id="slot-end" @bind-Value="_createSlotModel.EndsAt"
+                                       Type="InputDateType.DateTimeLocal" class="adm-form-input" />
+                            <ValidationMessage For="@(() => _createSlotModel.EndsAt)" class="adm-form-error" />
+                        </div>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 1rem;">
+                        <label class="adm-form-label" for="slot-reason">Raison</label>
+                        <InputTextArea id="slot-reason" @bind-Value="_createSlotModel.Reason"
+                                       class="adm-form-input" placeholder="Raison du blocage" rows="2" />
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateSlotModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button type="submit" class="app-btn app-btn--sm" disabled="@_isSaving">
+                            @(_isSaving ? "Création..." : "Bloquer")
+                        </button>
+                    </div>
+                </EditForm>
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Delete Rule confirmation ── *@
+        <AdminConfirmDialog IsVisible="@(_deletingRule is not null)"
+                            Title="Supprimer la règle"
+                            Message="@($"Voulez-vous vraiment supprimer la règle de {_deletingRule?.RestaurantName} ? Cette action est irréversible.")"
+                            ConfirmText="Supprimer"
+                            Variant="danger"
+                            IsProcessing="@_isSaving"
+                            OnConfirm="HandleDeleteRule"
+                            OnCancel="CloseDeleteRuleConfirm" />
+
+        @* ── Delete Slot confirmation ── *@
+        <AdminConfirmDialog IsVisible="@(_deletingSlot is not null)"
+                            Title="Supprimer le créneau bloqué"
+                            Message="@($"Voulez-vous vraiment supprimer ce créneau bloqué pour {_deletingSlot?.RestaurantName} ? Cette action est irréversible.")"
+                            ConfirmText="Supprimer"
+                            Variant="danger"
+                            IsProcessing="@_isSaving"
+                            OnConfirm="HandleDeleteSlot"
+                            OnCancel="CloseDeleteSlotConfirm" />
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminOrderRuleResponse>? _rules;
+    private List<AdminBlockedSlotResponse>? _slots;
+    private bool _isLoading = true;
+    private string _rulesSearchQuery = "";
+    private string _slotsSearchQuery = "";
+
+    // Rule CRUD
+    private bool _showCreateRuleModal;
+    private AdminCreateOrderRuleRequest _createRuleModel = new();
+    private AdminOrderRuleResponse? _editingRule;
+    private AdminUpdateOrderRuleRequest _editRuleModel = new();
+    private AdminOrderRuleResponse? _deletingRule;
+
+    // Slot CRUD
+    private bool _showCreateSlotModal;
+    private AdminCreateBlockedSlotRequest _createSlotModel = new();
+    private AdminBlockedSlotResponse? _deletingSlot;
+
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Configuration", Href = "/admin/order-config" }
+    ];
+
+    private IEnumerable<AdminOrderRuleResponse> FilteredRules =>
+        _rules?.Where(r =>
+            string.IsNullOrWhiteSpace(_rulesSearchQuery)
+            || r.RestaurantName.Contains(_rulesSearchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    private IEnumerable<AdminBlockedSlotResponse> FilteredSlots =>
+        _slots?.Where(s =>
+            string.IsNullOrWhiteSpace(_slotsSearchQuery)
+            || s.RestaurantName.Contains(_slotsSearchQuery, StringComparison.OrdinalIgnoreCase)
+            || s.Reason.Contains(_slotsSearchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var rulesTask = OrderConfigService.GetAllRulesAsync();
+        var slotsTask = OrderConfigService.GetAllBlockedSlotsAsync();
+
+        var (rules, rulesError) = await rulesTask;
+        var (slots, slotsError) = await slotsTask;
+
+        _rules = rules;
+        _slots = slots;
+        _actionError = rulesError?.Error ?? slotsError?.Error;
+        _isLoading = false;
+    }
+
+    private string GetSubtitle()
+    {
+        var rulesCount = _rules?.Count ?? 0;
+        var slotsCount = _slots?.Count ?? 0;
+        return $"{rulesCount} règles, {slotsCount} créneaux bloqués";
+    }
+
+    // ══════════ Rules ══════════
+
+    private void OpenCreateRuleModal()
+    {
+        ClearMessages();
+        _createRuleModel = new AdminCreateOrderRuleRequest();
+        _showCreateRuleModal = true;
+    }
+
+    private void CloseCreateRuleModal()
+    {
+        _showCreateRuleModal = false;
+        _createRuleModel = new AdminCreateOrderRuleRequest();
+    }
+
+    private async Task HandleCreateRule()
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (created, error) = await OrderConfigService.CreateRuleAsync(_createRuleModel);
+        if (created is not null)
+        {
+            _rules?.Add(created);
+            _actionSuccess = $"Règle pour {created.RestaurantName} créée avec succès";
+            CloseCreateRuleModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la création de la règle";
+        }
+
+        _isSaving = false;
+    }
+
+    private void OpenEditRuleModal(AdminOrderRuleResponse rule)
+    {
+        ClearMessages();
+        _deletingRule = null;
+        _editingRule = rule;
+        _editRuleModel = new AdminUpdateOrderRuleRequest
+        {
+            MinConfirmAmount = rule.MinConfirmAmount,
+            MinLeadTimeHours = rule.MinLeadTimeHours,
+            MaxAdvanceDays = rule.MaxAdvanceDays,
+            SlotDurationMinutes = rule.SlotDurationMinutes,
+            AvailabilityRanges = rule.AvailabilityRanges,
+            AllowPreorder = rule.AllowPreorder,
+            AllowDelivery = rule.AllowDelivery
+        };
+    }
+
+    private void CloseEditRuleModal()
+    {
+        _editingRule = null;
+        _editRuleModel = new AdminUpdateOrderRuleRequest();
+    }
+
+    private async Task HandleUpdateRule()
+    {
+        if (_editingRule is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var (updated, error) = await OrderConfigService.UpdateRuleAsync(_editingRule.Id, _editRuleModel);
+        if (updated is not null)
+        {
+            ReplaceRule(updated);
+            _actionSuccess = $"Règle pour {updated.RestaurantName} mise à jour";
+            CloseEditRuleModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la mise à jour de la règle";
+        }
+
+        _isSaving = false;
+    }
+
+    private void OpenDeleteRuleConfirm(AdminOrderRuleResponse rule)
+    {
+        ClearMessages();
+        _editingRule = null;
+        _deletingRule = rule;
+    }
+
+    private void CloseDeleteRuleConfirm()
+    {
+        _deletingRule = null;
+    }
+
+    private async Task HandleDeleteRule()
+    {
+        if (_deletingRule is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var ruleId = _deletingRule.Id;
+        var (success, error) = await OrderConfigService.DeleteRuleAsync(ruleId);
+        if (success)
+        {
+            var removed = _deletingRule;
+            _rules?.RemoveAll(r => r.Id == ruleId);
+            _actionSuccess = $"Règle pour {removed.RestaurantName} supprimée";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression de la règle";
+        }
+
+        _deletingRule = null;
+        _isSaving = false;
+    }
+
+    // ══════════ Blocked Slots ══════════
+
+    private void OpenCreateSlotModal()
+    {
+        ClearMessages();
+        _createSlotModel = new AdminCreateBlockedSlotRequest();
+        _showCreateSlotModal = true;
+    }
+
+    private void CloseCreateSlotModal()
+    {
+        _showCreateSlotModal = false;
+        _createSlotModel = new AdminCreateBlockedSlotRequest();
+    }
+
+    private async Task HandleCreateSlot()
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (created, error) = await OrderConfigService.CreateBlockedSlotAsync(_createSlotModel);
+        if (created is not null)
+        {
+            _slots?.Add(created);
+            _actionSuccess = $"Créneau bloqué pour {created.RestaurantName} créé avec succès";
+            CloseCreateSlotModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la création du créneau bloqué";
+        }
+
+        _isSaving = false;
+    }
+
+    private void OpenDeleteSlotConfirm(AdminBlockedSlotResponse slot)
+    {
+        ClearMessages();
+        _deletingSlot = slot;
+    }
+
+    private void CloseDeleteSlotConfirm()
+    {
+        _deletingSlot = null;
+    }
+
+    private async Task HandleDeleteSlot()
+    {
+        if (_deletingSlot is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var slotId = _deletingSlot.Id;
+        var (success, error) = await OrderConfigService.DeleteBlockedSlotAsync(slotId);
+        if (success)
+        {
+            var removed = _deletingSlot;
+            _slots?.RemoveAll(s => s.Id == slotId);
+            _actionSuccess = $"Créneau bloqué pour {removed.RestaurantName} supprimé";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression du créneau bloqué";
+        }
+
+        _deletingSlot = null;
+        _isSaving = false;
+    }
+
+    // ══════════ Helpers ══════════
+
+    private void ReplaceRule(AdminOrderRuleResponse updated)
+    {
+        if (_rules is null) return;
+        var idx = _rules.FindIndex(r => r.Id == updated.Id);
+        if (idx >= 0) _rules[idx] = updated;
+    }
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text)) return "—";
+        return text.Length <= maxLength ? text : text[..maxLength] + "...";
+    }
+}
