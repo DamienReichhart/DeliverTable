@@ -5,7 +5,6 @@ using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Promotion;
 using DeliverTableTests.Global.Helpers;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 
@@ -24,13 +23,10 @@ public class PromotionControllerTests
         _sut = new PromotionController(_promotionService);
     }
 
-    private void SetupAuthenticatedUser(string userId, string role = nameof(UserRole.RestaurantOwner))
-        => AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId, role);
-
     [Test]
     public async Task Create_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var request = new CreatePromotionRequest();
         var dto = new PromotionDto { Id = 1, RestaurantId = 10, Name = "Promo été" };
         _promotionService.CreateAsync(10, 5, request, Arg.Any<CancellationToken>())
@@ -44,10 +40,7 @@ public class PromotionControllerTests
     [Test]
     public async Task Create_WhenUnauthorized_ReturnsUnauthorized()
     {
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext()
-        };
+        AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
         var result = await _sut.Create(10, new CreatePromotionRequest(), CancellationToken.None);
 
@@ -57,7 +50,7 @@ public class PromotionControllerTests
     [Test]
     public async Task GetByRestaurant_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var query = new PromotionQuery();
         var paginated = new PaginatedResult<PromotionDto>
         {
@@ -77,7 +70,7 @@ public class PromotionControllerTests
     [Test]
     public async Task Update_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var request = new UpdatePromotionRequest();
         var dto = new PromotionDto { Id = 1, Name = "Promo mise à jour" };
         _promotionService.UpdateAsync(1, 5, request, Arg.Any<CancellationToken>())
@@ -91,7 +84,7 @@ public class PromotionControllerTests
     [Test]
     public async Task Delete_ReturnsNoContent()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         _promotionService.DeleteAsync(1, 5, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
@@ -103,7 +96,7 @@ public class PromotionControllerTests
     [Test]
     public async Task Delete_WhenServiceFails_ReturnsError()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         _promotionService.DeleteAsync(1, 5, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Promotion introuvable", 404)));
 

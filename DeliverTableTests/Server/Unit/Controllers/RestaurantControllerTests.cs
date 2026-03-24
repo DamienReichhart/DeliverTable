@@ -23,9 +23,6 @@ public class RestaurantControllerTests
         _sut = new RestaurantController(_restaurantService);
     }
 
-    private void SetupAuthenticatedUser(string userId, string role = nameof(UserRole.RestaurantOwner))
-        => AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId, role);
-
     [Test]
     public async Task GetAll_ReturnsOkWithPaginatedResult()
     {
@@ -49,7 +46,7 @@ public class RestaurantControllerTests
     public async Task GetAllUserRestaurants_WithValidOwnerId_ReturnsOk()
     {
         var userId = 5;
-        SetupAuthenticatedUser(userId.ToString());
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId.ToString(), nameof(UserRole.RestaurantOwner));
         var query = new RestaurantQuery();
         var paginated = new PaginatedResult<RestaurantDto>
         {
@@ -69,7 +66,7 @@ public class RestaurantControllerTests
     [Test]
     public async Task GetAllUserRestaurants_WithMismatchedUserId_ReturnsForbid()
     {
-        SetupAuthenticatedUser("5", role: "User");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", role: "User");
         var query = new RestaurantQuery();
 
         var result = await _sut.GetAllUserRestaurants(query, CancellationToken.None, 10);

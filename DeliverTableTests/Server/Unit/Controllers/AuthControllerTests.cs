@@ -83,7 +83,7 @@ public class AuthControllerTests
     [Test]
     public async Task GetProfile_WithValidUser_ReturnsOk()
     {
-        SetupAuthenticatedUser("42");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "42");
         _authService.GetProfileAsync(42, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<UserResponse>.Success(new UserResponse
             {
@@ -102,7 +102,7 @@ public class AuthControllerTests
     [Test]
     public async Task GetProfile_WithMissingClaim_ReturnsUnauthorized()
     {
-        SetupAuthenticatedUser(null);
+        AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
         var result = await _sut.GetProfile(CancellationToken.None);
 
@@ -125,9 +125,6 @@ public class AuthControllerTests
             Role = nameof(UserRole.Customer)
         }
     };
-
-    private void SetupAuthenticatedUser(string? userId)
-        => AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId ?? string.Empty);
 
     #endregion
 }

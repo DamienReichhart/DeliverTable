@@ -5,7 +5,6 @@ using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.RestaurantAccount;
 using DeliverTableTests.Global.Helpers;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 
@@ -24,14 +23,10 @@ public class RestaurantAccountControllerTests
         _sut = new RestaurantAccountController(_accountService);
     }
 
-    private void SetupAuthenticatedUser(string userId)
-        => AuthenticationTestHelper.SetupAuthenticatedUser(
-            _sut, userId, nameof(UserRole.RestaurantOwner));
-
     [Test]
     public async Task GetAccount_WithValidOwner_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var accountDto = new RestaurantAccountDto
         {
             Balance = 360m,
@@ -54,10 +49,7 @@ public class RestaurantAccountControllerTests
     [Test]
     public async Task GetAccount_WhenUnauthorized_ReturnsUnauthorized()
     {
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext()
-        };
+        AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
         var result = await _sut.GetAccount(1, new TransactionQuery(), CancellationToken.None);
 
@@ -67,7 +59,7 @@ public class RestaurantAccountControllerTests
     [Test]
     public async Task Withdraw_WithValidRequest_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var accountDto = new RestaurantAccountDto
         {
             Balance = 300m,
@@ -90,7 +82,7 @@ public class RestaurantAccountControllerTests
     [Test]
     public async Task Withdraw_WhenServiceFails_ReturnsError()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         _accountService.WithdrawAsync(1, 5, Arg.Any<WithdrawRequest>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RestaurantAccountDto>.Failure(new ServiceError("Solde insuffisant", 400)));
 
