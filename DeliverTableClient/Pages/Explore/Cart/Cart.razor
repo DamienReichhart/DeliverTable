@@ -168,7 +168,7 @@
                 }
 
                 <div class="discount-code-input">
-                    <input type="text" @bind="_discountCodeInput" class="filter-input"
+                    <input type="text" @bind="_discountCodeInput" @bind:event="oninput" class="filter-input"
                            placeholder="Entrez un code promo" @onkeydown="HandleCodeKeyDown" />
                     <button type="button" class="app-btn app-btn--primary app-btn--sm" @onclick="ApplyCode"
                             disabled="@(_applyingCode || string.IsNullOrWhiteSpace(_discountCodeInput))">
@@ -196,7 +196,7 @@
                     </p>
                     <div class="loyalty-redeem">
                         <label for="loyalty-points">Points à utiliser</label>
-                        <input type="number" id="loyalty-points" @bind="_loyaltyPointsToRedeem"
+                        <input type="number" id="loyalty-points" @bind="_loyaltyPointsToRedeem" @bind:event="oninput"
                                min="0" max="@_loyaltyAccount.PointsBalance" class="filter-input"
                                style="max-width: 150px;" />
                         @if (_loyaltyPointsToRedeem > 0 && _loyaltyAccount.EurosPerPoint > 0)
@@ -321,7 +321,16 @@
     private bool _applyingCode;
     private string? _codeError;
     private string? _codeSuccess;
-    private int _loyaltyPointsToRedeem;
+    private int _loyaltyPointsToRedeemBacking;
+    private int _loyaltyPointsToRedeem
+    {
+        get => _loyaltyPointsToRedeemBacking;
+        set
+        {
+            var max = _loyaltyAccount?.PointsBalance ?? 0;
+            _loyaltyPointsToRedeemBacking = Math.Clamp(value, 0, max);
+        }
+    }
     private LoyaltyAccountDto? _loyaltyAccount;
     private List<PromotionDto>? _activePromotions;
 
