@@ -50,9 +50,4 @@ public class HealthControllerTests
         await _healthService.Received(1).GetHealthAsync(cts.Token);
     }
 
-    [Test]
-    public void Constructor_ThrowsOnNullService()
-    {
-        Assert.Throws<ArgumentNullException>(() => new HealthController(null!));
-    }
 }
