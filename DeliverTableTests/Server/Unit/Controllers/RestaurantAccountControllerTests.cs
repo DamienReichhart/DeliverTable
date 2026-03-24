@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using DeliverTableServer.Common;
 using DeliverTableServer.Controllers;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.RestaurantAccount;
+using DeliverTableTests.Global.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
@@ -25,19 +25,8 @@ public class RestaurantAccountControllerTests
     }
 
     private void SetupAuthenticatedUser(string userId)
-    {
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, userId),
-            new(ClaimTypes.Role, nameof(UserRole.RestaurantOwner))
-        };
-        var identity = new ClaimsIdentity(claims, "TestScheme");
-        var principal = new ClaimsPrincipal(identity);
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext { User = principal }
-        };
-    }
+        => AuthenticationTestHelper.SetupAuthenticatedUser(
+            _sut, userId, nameof(UserRole.RestaurantOwner));
 
     [Test]
     public async Task GetAccount_WithValidOwner_ReturnsOk()
