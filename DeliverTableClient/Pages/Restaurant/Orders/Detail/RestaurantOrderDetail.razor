@@ -129,12 +129,41 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3"><strong>Total</strong></td>
-                        <td><strong>@_order.TotalAmount.ToString("C", _frCulture)</strong></td>
+                        <td colspan="3"><strong>Sous-total articles</strong></td>
+                        <td><strong>@_order.OriginalAmount.ToString("C", _frCulture)</strong></td>
                         <td></td>
                     </tr>
                 </tfoot>
             </table>
+
+            @if (_order.DiscountAmount > 0 || _order.LoyaltyPointsUsed > 0 || _order.LoyaltyPointsEarned > 0)
+            {
+                <div class="order-discounts">
+                    <h3>Réductions appliquées</h3>
+                    @foreach (var discount in _order.Discounts)
+                    {
+                        <div class="discount-line">
+                            <span class="discount-source">@TranslateDiscountSource(discount.Source)</span>
+                            <span class="discount-desc">@discount.Description</span>
+                            <span class="discount-amount">-@discount.Amount.ToString("C", _frCulture)</span>
+                        </div>
+                    }
+
+                    @if (_order.LoyaltyPointsUsed > 0)
+                    {
+                        <div class="discount-meta">Points fidélité utilisés : @_order.LoyaltyPointsUsed</div>
+                    }
+                    @if (_order.LoyaltyPointsEarned > 0)
+                    {
+                        <div class="discount-meta">Points fidélité gagnés : +@_order.LoyaltyPointsEarned</div>
+                    }
+                </div>
+            }
+
+            <div class="order-final-total">
+                <span>Total payé par le client</span>
+                <strong>@_order.TotalAmount.ToString("C", _frCulture)</strong>
+            </div>
         </div>
     }
 </div>
@@ -232,5 +261,13 @@
         "Failed" => "Échoué",
         "Refunded" => "Remboursé",
         _ => status
+    };
+
+    private static string TranslateDiscountSource(string source) => source switch
+    {
+        "Promotion" => "Promotion",
+        "DiscountCode" => "Code promo",
+        "LoyaltyPoints" => "Fidélité",
+        _ => source
     };
 }

@@ -83,14 +83,45 @@
                     <div class="order-item-row">
                         <span class="item-qty">@item.Quantity x</span>
                         <span class="item-name">@item.DishName</span>
-                        <span class="item-price">@item.Subtotal.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                        <span class="item-price">@item.Subtotal.ToString("C", _frCulture)</span>
                     </div>
                 }
             </div>
 
-            <div class="order-total">
-                <span>Total :</span>
-                <strong>@_order.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</strong>
+            <div class="order-pricing">
+                @if (_order.DiscountAmount > 0)
+                {
+                    <div class="pricing-line">
+                        <span>Sous-total</span>
+                        <span>@_order.OriginalAmount.ToString("C", _frCulture)</span>
+                    </div>
+
+                    @foreach (var discount in _order.Discounts)
+                    {
+                        <div class="pricing-line pricing-discount">
+                            <span>@TranslateDiscountSource(discount.Source) @discount.Description</span>
+                            <span>-@discount.Amount.ToString("C", _frCulture)</span>
+                        </div>
+                    }
+
+                    <div class="pricing-line pricing-savings">
+                        <span>Économies</span>
+                        <span>-@_order.DiscountAmount.ToString("C", _frCulture)</span>
+                    </div>
+                }
+
+                @if (_order.LoyaltyPointsEarned > 0)
+                {
+                    <div class="pricing-line pricing-loyalty">
+                        <span>Points fidélité gagnés</span>
+                        <span>+@_order.LoyaltyPointsEarned pts</span>
+                    </div>
+                }
+
+                <div class="order-total">
+                    <span>Total payé :</span>
+                    <strong>@_order.TotalAmount.ToString("C", _frCulture)</strong>
+                </div>
             </div>
         </div>
 
@@ -108,6 +139,9 @@
 @code {
     [Parameter]
     public int Id { get; set; }
+
+    private static readonly System.Globalization.CultureInfo _frCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
 
     private OrderDto? _order;
     private bool _loading = true;
@@ -157,5 +191,13 @@
         "Failed" => "Échoué",
         "Refunded" => "Remboursé",
         _ => status
+    };
+
+    private static string TranslateDiscountSource(string source) => source switch
+    {
+        "Promotion" => "Promotion :",
+        "DiscountCode" => "Code promo :",
+        "LoyaltyPoints" => "Fidélité :",
+        _ => ""
     };
 }
