@@ -188,6 +188,179 @@
   p { margin: 0; }
 }
 
+// Promotions banner
+.promotions-banner {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border-radius: $radius-lg;
+  background: rgba($color-garden-sage, 0.06);
+  border: 1px solid rgba($color-garden-sage, 0.2);
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-base;
+    color: $color-garden-sage;
+    margin: 0;
+  }
+}
+
+.promo-badge {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  background: $color-bg-white;
+}
+
+.promo-badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-full;
+  background: rgba($color-garden-sage, 0.15);
+  color: $color-garden-sage;
+  font-weight: 700;
+  font-size: $font-size-sm;
+  flex-shrink: 0;
+}
+
+.promo-badge-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  strong {
+    font-size: $font-size-sm;
+    color: $color-text;
+  }
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+  }
+}
+
+.promo-badge-value {
+  font-family: $font-family-mono;
+  font-weight: 600;
+  font-size: $font-size-sm;
+  color: $color-garden-sage;
+  flex-shrink: 0;
+}
+
+// Discount section
+.discount-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.discount-code-input {
+  max-width: 300px;
+}
+
+.loyalty-info {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: 0;
+}
+
+.loyalty-redeem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+
+  label {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+  }
+}
+
+.loyalty-value {
+  font-size: $font-size-sm;
+  color: $color-garden-sage;
+  font-weight: 600;
+}
+
+// Order breakdown
+.order-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding-top: $spacing-md;
+  border-top: 2px solid $color-border;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.breakdown-lines {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.breakdown-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $spacing-xs 0;
+}
+
+.breakdown-subtotal {
+  color: $color-text;
+  font-weight: 500;
+  border-top: 1px solid $color-border;
+  padding-top: $spacing-sm;
+  margin-top: $spacing-xs;
+}
+
+.breakdown-discount {
+  color: $color-garden-sage;
+  font-weight: 500;
+}
+
+.breakdown-total {
+  color: $color-text;
+  font-weight: 700;
+  font-size: $font-size-lg;
+  border-top: 2px solid $color-deep-charcoal;
+  padding-top: $spacing-sm;
+  margin-top: $spacing-xs;
+
+  span:last-child {
+    font-family: $font-family-display;
+    font-size: $font-size-h3;
+  }
+}
+
+.savings-message {
+  font-size: $font-size-sm;
+  color: $color-garden-sage;
+  font-weight: 600;
+  text-align: center;
+  margin: $spacing-xs 0 0;
+}
+
 .cart-actions {
   display: flex;
   align-items: center;

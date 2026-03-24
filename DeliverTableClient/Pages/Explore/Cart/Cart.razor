@@ -2,6 +2,7 @@
 @inject ICartService CartService
 @inject IOrderService OrderService
 @inject IRestaurantService RestaurantService
+@inject IPromotionService PromotionService
 @inject ILoyaltyClientService LoyaltyService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
@@ -42,6 +43,7 @@
             </button>
         </div>
 
+        @* ── Cart items ── *@
         <div class="cart-items">
             @foreach (var item in _cart.Items)
             {
@@ -52,7 +54,7 @@
                     </div>
                     <div class="cart-item-info">
                         <h3>@item.DishName</h3>
-                        <p class="cart-item-price">@item.UnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR")) / unité</p>
+                        <p class="cart-item-price">@item.UnitPrice.ToString("C", _frCulture) / unité</p>
                         @if (!string.IsNullOrWhiteSpace(item.SpecialInstructions))
                         {
                             <p class="cart-item-instructions">@item.SpecialInstructions</p>
@@ -66,7 +68,7 @@
                             <button type="button" class="qty-btn" @onclick="() => UpdateQuantity(item, item.Quantity + 1)"
                                     disabled="@(item.Quantity >= 99)">+</button>
                         </div>
-                        <span class="cart-item-subtotal">@item.Subtotal.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                        <span class="cart-item-subtotal">@item.Subtotal.ToString("C", _frCulture)</span>
                         <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => RemoveItem(item.Id)">
                             Supprimer
                         </button>
@@ -76,11 +78,27 @@
         </div>
 
         <div class="cart-summary">
-            <div class="cart-total">
-                <span>Total :</span>
-                <strong>@_cart.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</strong>
-            </div>
 
+            @* ── Active promotions banner ── *@
+            @if (_activePromotions is not null && _activePromotions.Count > 0)
+            {
+                <div class="promotions-banner">
+                    <h3>Promotions actives</h3>
+                    @foreach (var promo in _activePromotions)
+                    {
+                        <div class="promo-badge">
+                            <span class="promo-badge-icon">%</span>
+                            <div class="promo-badge-content">
+                                <strong>@promo.Name</strong>
+                                <span>@FormatPromoDescription(promo)</span>
+                            </div>
+                            <span class="promo-badge-value">-@FormatDiscount(promo.DiscountType, promo.DiscountValue)</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            @* ── Order type & details ── *@
             <div class="checkout-form">
                 <h3>Type de commande</h3>
                 <div class="order-type-selector">
@@ -125,41 +143,91 @@
                     <textarea id="notes" @bind="_notes" class="filter-input" rows="2"
                               placeholder="@(_orderType == "DineIn" ? "Préférences de table, allergies..." : "Instructions de livraison, étage, code...")"></textarea>
                 </div>
+            </div>
 
+            @* ── Discount code ── *@
+            <div class="discount-section">
+                <h3>Code promo</h3>
+                <div class="discount-code-input">
+                    <input type="text" id="discount-code" @bind="_discountCode" class="filter-input"
+                           placeholder="Entrez votre code promo" />
+                </div>
+            </div>
+
+            @* ── Loyalty points ── *@
+            @if (_loyaltyAccount is not null && _loyaltyAccount.PointsBalance > 0)
+            {
                 <div class="discount-section">
-                    <h3>Réductions</h3>
-
-                    <div class="form-group">
-                        <label for="discount-code">Code promo</label>
-                        <div class="discount-code-input">
-                            <input type="text" id="discount-code" @bind="_discountCode" class="filter-input"
-                                   placeholder="Entrez votre code promo" />
-                        </div>
+                    <h3>Points de fidélité</h3>
+                    <p class="loyalty-info">
+                        Vous avez <strong>@_loyaltyAccount.PointsBalance points</strong>
+                        (valeur : @_loyaltyAccount.EuroEquivalent.ToString("C", _frCulture))
+                    </p>
+                    <div class="loyalty-redeem">
+                        <label for="loyalty-points">Points à utiliser</label>
+                        <input type="number" id="loyalty-points" @bind="_loyaltyPointsToRedeem"
+                               min="0" max="@_loyaltyAccount.PointsBalance" class="filter-input"
+                               style="max-width: 150px;" />
+                        @if (_loyaltyPointsToRedeem > 0 && _loyaltyAccount.EurosPerPoint > 0)
+                        {
+                            <span class="loyalty-value">
+                                = @((_loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint).ToString("C", _frCulture)) de réduction
+                            </span>
+                        }
                     </div>
+                </div>
+            }
 
-                    @if (_loyaltyAccount is not null && _loyaltyAccount.PointsBalance > 0)
+            @* ── Order breakdown ── *@
+            <div class="order-breakdown">
+                <h3>Récapitulatif</h3>
+                <div class="breakdown-lines">
+                    @foreach (var item in _cart.Items)
                     {
-                        <div class="form-group loyalty-section">
-                            <label>Points de fidélité</label>
-                            <p class="loyalty-info">
-                                Vous avez <strong>@_loyaltyAccount.PointsBalance points</strong>
-                                (valeur : @_loyaltyAccount.EuroEquivalent.ToString("C", _frCulture))
-                            </p>
-                            <div class="loyalty-redeem">
-                                <label for="loyalty-points">Points à utiliser</label>
-                                <input type="number" id="loyalty-points" @bind="_loyaltyPointsToRedeem"
-                                       min="0" max="@_loyaltyAccount.PointsBalance" class="filter-input"
-                                       style="max-width: 150px;" />
-                                @if (_loyaltyPointsToRedeem > 0)
-                                {
-                                    <span class="loyalty-value">
-                                        = @((_loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint).ToString("C", _frCulture)) de réduction
-                                    </span>
-                                }
-                            </div>
+                        <div class="breakdown-line">
+                            <span>@item.DishName x@item.Quantity</span>
+                            <span>@item.Subtotal.ToString("C", _frCulture)</span>
                         </div>
                     }
+
+                    <div class="breakdown-line breakdown-subtotal">
+                        <span>Sous-total</span>
+                        <span>@_cart.TotalAmount.ToString("C", _frCulture)</span>
+                    </div>
+
+                    @if (_activePromotions is not null)
+                    {
+                        @foreach (var promo in _activePromotions)
+                        {
+                            var promoDiscount = EstimatePromotionDiscount(promo);
+                            if (promoDiscount > 0)
+                            {
+                                <div class="breakdown-line breakdown-discount">
+                                    <span>@promo.Name</span>
+                                    <span>-@promoDiscount.ToString("C", _frCulture)</span>
+                                </div>
+                            }
+                        }
+                    }
+
+                    @if (_loyaltyPointsToRedeem > 0 && _loyaltyAccount is not null)
+                    {
+                        <div class="breakdown-line breakdown-discount">
+                            <span>Points de fidélité (@_loyaltyPointsToRedeem pts)</span>
+                            <span>-@((_loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint).ToString("C", _frCulture))</span>
+                        </div>
+                    }
+
+                    <div class="breakdown-line breakdown-total">
+                        <span>Total estimé</span>
+                        <span>@EstimatedTotal.ToString("C", _frCulture)</span>
+                    </div>
                 </div>
+
+                @if (EstimatedSavings > 0)
+                {
+                    <p class="savings-message">Vous économisez @EstimatedSavings.ToString("C", _frCulture) !</p>
+                }
             </div>
 
             @if (!string.IsNullOrWhiteSpace(_validationError))
@@ -181,7 +249,7 @@
                     }
                     else
                     {
-                        <span>Payer — @_cart.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                        <span>Payer — @EstimatedTotal.ToString("C", _frCulture)</span>
                     }
                 </button>
             </div>
@@ -208,9 +276,50 @@
     private string _discountCode = string.Empty;
     private int _loyaltyPointsToRedeem;
     private LoyaltyAccountDto? _loyaltyAccount;
+    private List<PromotionDto>? _activePromotions;
 
     private enum OrderTypeValue { Delivery, DineIn }
 
+    // ── Estimated totals (client-side preview) ──
+    private decimal EstimatedPromotionDiscount => _activePromotions?.Sum(p => EstimatePromotionDiscount(p)) ?? 0;
+
+    private decimal EstimatedLoyaltyDiscount =>
+        _loyaltyPointsToRedeem > 0 && _loyaltyAccount is not null
+            ? _loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint
+            : 0;
+
+    private decimal EstimatedSavings => Math.Min(EstimatedPromotionDiscount + EstimatedLoyaltyDiscount,
+        _cart?.TotalAmount ?? 0);
+
+    private decimal EstimatedTotal => Math.Max((_cart?.TotalAmount ?? 0) - EstimatedSavings, 0);
+
+    private decimal EstimatePromotionDiscount(PromotionDto promo)
+    {
+        if (_cart is null) return 0;
+        var subtotal = _cart.TotalAmount;
+
+        if (promo.PromotionType == "Threshold" && promo.MinOrderAmount.HasValue && subtotal < promo.MinOrderAmount.Value)
+            return 0;
+
+        if (promo.PromotionType == "ItemBased" && promo.DishIds.Count > 0)
+        {
+            var matchingSubtotal = _cart.Items
+                .Where(i => promo.DishIds.Contains(i.DishId))
+                .Sum(i => i.Subtotal);
+            if (matchingSubtotal == 0) return 0;
+
+            return promo.DiscountType == "Percentage"
+                ? Math.Round(matchingSubtotal * promo.DiscountValue / 100, 2)
+                : Math.Min(promo.DiscountValue, matchingSubtotal);
+        }
+
+        // Automatic or Threshold (met)
+        return promo.DiscountType == "Percentage"
+            ? Math.Round(subtotal * promo.DiscountValue / 100, 2)
+            : Math.Min(promo.DiscountValue, subtotal);
+    }
+
+    // ── Navigation ──
     private void GoToRestaurant() => Nav.NavigateTo($"/restaurant/{RestaurantId}");
 
     private void SelectOrderType(OrderTypeValue type)
@@ -229,16 +338,12 @@
         if (_guestCount > 1) _guestCount--;
     }
 
+    // ── Data loading ──
     protected override async Task OnInitializedAsync()
     {
         await LoadCart();
+        await LoadActivePromotions();
         await LoadLoyaltyAccount();
-    }
-
-    private async Task LoadLoyaltyAccount()
-    {
-        var (account, _) = await LoyaltyService.GetMyAccountAsync(RestaurantId);
-        _loyaltyAccount = account;
     }
 
     private async Task LoadCart()
@@ -249,18 +354,27 @@
 
         var (cart, error) = await CartService.GetCartAsync(RestaurantId);
         if (error is not null)
-        {
             _error = error.Error;
-        }
         else
-        {
             _cart = cart;
-        }
 
         _loading = false;
         StateHasChanged();
     }
 
+    private async Task LoadActivePromotions()
+    {
+        var (promotions, _) = await PromotionService.GetActiveByRestaurantAsync(RestaurantId);
+        _activePromotions = promotions ?? [];
+    }
+
+    private async Task LoadLoyaltyAccount()
+    {
+        var (account, _) = await LoyaltyService.GetMyAccountAsync(RestaurantId);
+        _loyaltyAccount = account;
+    }
+
+    // ── Cart actions ──
     private async Task UpdateQuantity(CartItemDto item, int newQuantity)
     {
         if (newQuantity < 1 || newQuantity > 99) return;
@@ -273,9 +387,7 @@
 
         var (_, error) = await CartService.UpdateItemAsync(item.Id, request);
         if (error is null)
-        {
             await LoadCart();
-        }
         else
         {
             _error = error.Error;
@@ -287,9 +399,7 @@
     {
         var error = await CartService.RemoveItemAsync(cartItemId);
         if (error is null)
-        {
             await LoadCart();
-        }
         else
         {
             _error = error.Error;
@@ -312,6 +422,7 @@
         }
     }
 
+    // ── Checkout ──
     private async Task Checkout()
     {
         _validationError = null;
@@ -355,4 +466,20 @@
             Nav.NavigateTo($"/commande/{order.Id}/confirmation");
         }
     }
+
+    // ── Helpers ──
+    private static string FormatDiscount(string discountType, decimal value) => discountType switch
+    {
+        "Percentage" => $"{value}%",
+        "FixedAmount" => $"{value:0.00} €",
+        _ => $"{value}"
+    };
+
+    private static string FormatPromoDescription(PromotionDto promo) => promo.PromotionType switch
+    {
+        "Automatic" => "Appliquée automatiquement",
+        "Threshold" => $"Dès {promo.MinOrderAmount:0.00} € de commande",
+        "ItemBased" => "Sur articles sélectionnés",
+        _ => ""
+    };
 }
