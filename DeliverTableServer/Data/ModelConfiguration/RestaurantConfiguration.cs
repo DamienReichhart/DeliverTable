@@ -18,6 +18,11 @@ namespace DeliverTableServer.Data.ModelConfiguration
 
             builder.Property(r => r.Type)
                 .HasConversion<string>();
+
+            builder.Property(r => r.Balance)
+                .HasColumnType("decimal(9, 2)")
+                .HasDefaultValue(0m)
+                .IsRequired();
         }
     }
 }
