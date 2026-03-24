@@ -1,0 +1,107 @@
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Stat Card – dashboard KPI card with icon, value, label, trend
+// ---------------------------------------------------------------------------
+
+.adm-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: $spacing-md;
+}
+
+.adm-stat-card {
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  transition: box-shadow $transition-base, border-color $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: rgba($color-coral-fire, 0.2);
+  }
+}
+
+.adm-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+
+  &--primary {
+    background: rgba($color-coral-fire, 0.1);
+    color: $color-coral-fire;
+  }
+
+  &--success {
+    background: rgba($color-garden-sage, 0.12);
+    color: $color-garden-sage;
+  }
+
+  &--warning {
+    background: rgba($color-amber-gold, 0.12);
+    color: darken($color-amber-gold, 12%);
+  }
+
+  &--info {
+    background: rgba($color-deep-charcoal, 0.06);
+    color: $color-deep-charcoal;
+  }
+}
+
+.adm-stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  font-family: $font-family-mono;
+  padding: 2px $spacing-sm;
+  border-radius: $radius-sm;
+
+  &--up {
+    color: darken($color-garden-sage, 10%);
+    background: rgba($color-garden-sage, 0.1);
+  }
+
+  &--down {
+    color: $color-error;
+    background: rgba($color-error, 0.08);
+  }
+
+  &--flat {
+    color: $color-text-muted;
+    background: rgba($color-deep-charcoal, 0.05);
+  }
+}
+
+.adm-stat-value {
+  font-family: $font-family-display;
+  font-size: 1.75rem;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  color: $color-text;
+  letter-spacing: -0.02em;
+}
+
+.adm-stat-label {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

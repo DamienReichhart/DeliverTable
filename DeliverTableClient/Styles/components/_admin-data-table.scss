@@ -1,0 +1,295 @@
+@use "../abstracts/variables" as *;
+@use "../abstracts/mixins" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Data Table – sortable columns, pagination bar, row hover
+// ---------------------------------------------------------------------------
+
+.adm-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-md;
+}
+
+.adm-table-search {
+  position: relative;
+  flex: 1 1 240px;
+  max-width: 360px;
+}
+
+.adm-table-search-icon {
+  position: absolute;
+  left: $spacing-sm;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $color-text-muted;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.adm-table-search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2rem;
+  font-size: $font-size-sm;
+  font-family: $font-family-base;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-white;
+  color: $color-text;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+
+  &:focus {
+    border-color: $color-border-focus;
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.08);
+    outline: none;
+  }
+}
+
+.adm-table-actions {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+// ── Table wrapper ──
+
+.adm-table-wrap {
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-white;
+  box-shadow: $shadow-card;
+  overflow-x: auto;
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  th,
+  td {
+    padding: 0.625rem $spacing-md;
+    text-align: left;
+    white-space: nowrap;
+  }
+}
+
+// ── Header ──
+
+.adm-table thead {
+  background: $color-bg-subtle;
+
+  th {
+    @include label-mono;
+    color: $color-text-muted;
+    border-bottom: 1px solid $color-border;
+    font-size: 0.6875rem;
+    user-select: none;
+  }
+}
+
+.adm-th-sortable {
+  cursor: pointer;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.adm-th-sort-icon {
+  display: inline-block;
+  width: 12px;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.4;
+  transition: opacity $transition-fast;
+}
+
+.adm-th-sortable:hover .adm-th-sort-icon,
+.adm-th-sorted .adm-th-sort-icon {
+  opacity: 1;
+}
+
+// ── Body rows ──
+
+.adm-table tbody tr {
+  border-bottom: 1px solid $color-border;
+  transition: background-color $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: rgba($color-coral-fire, 0.02);
+  }
+}
+
+.adm-table-row--muted {
+  opacity: 0.55;
+}
+
+.adm-table-row--highlight {
+  background-color: rgba($color-coral-fire, 0.04);
+}
+
+// ── Cell helpers ──
+
+.adm-cell-name {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.adm-cell-mono {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.adm-cell-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+// ── Avatar ──
+
+.adm-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: $radius-full;
+  background-color: $color-deep-charcoal;
+  color: $color-text-inverse;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  font-family: $font-family-mono;
+  letter-spacing: 0.03em;
+  user-select: none;
+}
+
+// ── Pagination ──
+
+.adm-table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm $spacing-md;
+  border-top: 1px solid $color-border;
+  background: $color-bg-subtle;
+  border-radius: 0 0 $radius-lg $radius-lg;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.adm-table-pagination-info {
+  font-family: $font-family-mono;
+}
+
+.adm-table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.adm-table-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-bg-white;
+  color: $color-text;
+  font-size: $font-size-xs;
+  font-family: $font-family-mono;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $color-border-focus;
+    background: rgba($color-coral-fire, 0.04);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--active {
+    background: $color-coral-fire;
+    color: $color-text-inverse;
+    border-color: $color-coral-fire;
+    font-weight: $font-weight-semibold;
+
+    &:hover:not(:disabled) {
+      background: $color-primary-hover;
+      border-color: $color-primary-hover;
+    }
+  }
+}
+
+.adm-table-page-size {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  select {
+    padding: 2px $spacing-sm;
+    font-size: $font-size-xs;
+    font-family: $font-family-mono;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    background: $color-bg-white;
+    color: $color-text;
+    cursor: pointer;
+
+    &:focus {
+      border-color: $color-border-focus;
+      outline: none;
+    }
+  }
+}
+
+// ── Loading skeleton ──
+
+.adm-table-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $spacing-md;
+}
+
+.adm-table-skeleton-row {
+  height: 40px;
+  border-radius: $radius-sm;
+  background: linear-gradient(
+    90deg,
+    $color-bg-subtle 25%,
+    rgba($color-border, 0.4) 50%,
+    $color-bg-subtle 75%
+  );
+  background-size: 200% 100%;
+  animation: adm-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes adm-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

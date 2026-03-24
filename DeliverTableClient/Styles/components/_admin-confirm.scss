@@ -1,0 +1,69 @@
+@use "../abstracts/variables" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Confirm Dialog – destructive action confirmation
+// ---------------------------------------------------------------------------
+
+.adm-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-overlay;
+  animation: adm-fade-in 150ms ease;
+}
+
+.adm-confirm {
+  background: $color-bg-white;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-lg;
+  width: 90%;
+  max-width: 400px;
+  padding: $spacing-lg;
+  animation: adm-slide-up 200ms ease;
+}
+
+.adm-confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-full;
+  margin: 0 auto $spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+
+  &--danger {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+
+  &--warning {
+    background: rgba($color-amber-gold, 0.12);
+    color: darken($color-amber-gold, 12%);
+  }
+}
+
+.adm-confirm-title {
+  font-family: $font-family-display;
+  font-size: 1.125rem;
+  color: $color-text;
+  text-align: center;
+  margin: 0 0 $spacing-xs;
+}
+
+.adm-confirm-text {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  text-align: center;
+  margin: 0 0 $spacing-lg;
+  line-height: $line-height-base;
+}
+
+.adm-confirm-actions {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: center;
+}

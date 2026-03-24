@@ -1,0 +1,35 @@
+@use "../abstracts/variables" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Breadcrumbs – navigation trail for admin pages
+// ---------------------------------------------------------------------------
+
+.adm-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.adm-breadcrumb-item {
+  color: $color-text-muted;
+  text-decoration: none;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $color-coral-fire;
+  }
+
+  &--active {
+    color: $color-text;
+    font-weight: $font-weight-semibold;
+    pointer-events: none;
+  }
+}
+
+.adm-breadcrumb-sep {
+  color: $color-border;
+  font-size: $font-size-xs;
+  user-select: none;
+}
