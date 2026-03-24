@@ -1,0 +1,89 @@
+@page "/admin/transactions"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminTransactionClientService TransactionService
+
+<PageTitle>Transactions — Administration</PageTitle>
+
+<AdminLayout Title="Transactions" Subtitle="@($"{(_transactions?.Count ?? 0)} transactions")">
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        <AdminDataTable TItem="AdminTransactionResponse"
+                         Items="FilteredTransactions"
+                         TotalCount="@(FilteredTransactions.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par restaurant..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>ID</th>
+                <th>Restaurant</th>
+                <th>Type</th>
+                <th>Brut (€)</th>
+                <th>Commission (€)</th>
+                <th>Net (€)</th>
+                <th>Solde après (€)</th>
+                <th>Date</th>
+            </HeaderContent>
+            <RowContent Context="tx">
+                <tr>
+                    <td class="adm-cell-mono">@tx.Id</td>
+                    <td>@tx.RestaurantName</td>
+                    <td>
+                        <AdminBadge Text="@tx.Type" Variant="info" />
+                    </td>
+                    <td class="adm-cell-mono">@tx.GrossAmount.ToString("F2")</td>
+                    <td class="adm-cell-mono">@tx.CommissionAmount.ToString("F2")</td>
+                    <td class="adm-cell-mono">@tx.NetAmount.ToString("F2")</td>
+                    <td class="adm-cell-mono">@tx.BalanceAfter.ToString("F2")</td>
+                    <td class="adm-cell-mono">@tx.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucune transaction trouvée"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.Receipt" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminTransactionResponse>? _transactions;
+    private bool _isLoading = true;
+    private string _searchQuery = "";
+    private string? _actionError;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Transactions", Href = "/admin/transactions" }
+    ];
+
+    private IEnumerable<AdminTransactionResponse> FilteredTransactions =>
+        _transactions?.Where(t =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || t.RestaurantName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || t.Type.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var (transactions, error) = await TransactionService.GetAllAsync();
+        _transactions = transactions;
+        _actionError = error?.Error;
+        _isLoading = false;
+    }
+}
