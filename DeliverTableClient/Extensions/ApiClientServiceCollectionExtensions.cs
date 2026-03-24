@@ -45,6 +45,7 @@ public static class ApiClientServiceCollectionExtensions
         RegisterPromotionService(services);
         RegisterDiscountCodeClientService(services);
         RegisterLoyaltyClientService(services);
+        RegisterAdminDomainServices(services);
 
         return services;
     }
@@ -105,5 +106,22 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterLoyaltyClientService(IServiceCollection services)
     {
         services.AddScoped<ILoyaltyClientService, LoyaltyClientService>();
+    }
+
+    private static void RegisterAdminDomainServices(IServiceCollection services)
+    {
+        services.AddScoped<IAdminRestaurantClientService, AdminRestaurantClientService>();
+        services.AddScoped<IAdminDishClientService, AdminDishClientService>();
+        services.AddScoped<IAdminOrderClientService, AdminOrderClientService>();
+        services.AddScoped<IAdminPromotionClientService, AdminPromotionClientService>();
+        services.AddScoped<IAdminDiscountCodeClientService, AdminDiscountCodeClientService>();
+        services.AddScoped<IAdminLoyaltyClientService, AdminLoyaltyClientService>();
+        services.AddScoped<IAdminEventClientService, AdminEventClientService>();
+        services.AddScoped<IAdminTransactionClientService, AdminTransactionClientService>();
+        services.AddScoped<IAdminRatingClientService, AdminRatingClientService>();
+        services.AddScoped<IAdminNotificationClientService, AdminNotificationClientService>();
+        services.AddScoped<IAdminModerationClientService, AdminModerationClientService>();
+        services.AddScoped<IAdminOrderConfigClientService, AdminOrderConfigClientService>();
+        services.AddScoped<IAdminDashboardClientService, AdminDashboardClientService>();
     }
 }
