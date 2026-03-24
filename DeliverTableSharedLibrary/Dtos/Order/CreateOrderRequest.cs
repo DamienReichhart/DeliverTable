@@ -19,6 +19,8 @@ public class CreateOrderRequest
     [MaxLength(500)]
     public string Notes { get; set; } = string.Empty;
 
+    public DateTime? ScheduledAt { get; set; }
+
     public List<string> DiscountCodes { get; set; } = [];
 
     [Range(0, int.MaxValue)]
