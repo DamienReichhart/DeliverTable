@@ -29,6 +29,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IRestaurantTransactionRepository, RestaurantTransactionRepository>();
+        services.AddScoped<IPromotionRepository, PromotionRepository>();
+        services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
+        services.AddScoped<ILoyaltyRepository, LoyaltyRepository>();
     }
 
     private static void RegisterServices(IServiceCollection services)
@@ -42,6 +45,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IRestaurantAccountService, RestaurantAccountService>();
+        services.AddScoped<IPromotionService, PromotionService>();
+        services.AddScoped<IDiscountCodeService, DiscountCodeService>();
+        services.AddScoped<ILoyaltyService, LoyaltyService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
