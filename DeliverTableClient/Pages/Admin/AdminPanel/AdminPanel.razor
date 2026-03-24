@@ -1,25 +1,50 @@
 @page "/admin"
 @attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
 @using Microsoft.AspNetCore.Authorization
+@inject IAdminDashboardClientService DashboardService
 
 <PageTitle>Tableau de bord — Administration</PageTitle>
 
 <AdminLayout Title="Tableau de bord" Subtitle="Vue d'ensemble de la plateforme">
     <ChildContent>
-        <div class="adm-stats-grid">
-            <AdminStatCard Value="—" Label="Utilisateurs" Variant="primary">
-                <IconContent><Blazicon Svg="Lucide.Users" /></IconContent>
-            </AdminStatCard>
-            <AdminStatCard Value="—" Label="Restaurants" Variant="success">
-                <IconContent><Blazicon Svg="Lucide.UtensilsCrossed" /></IconContent>
-            </AdminStatCard>
-            <AdminStatCard Value="—" Label="Commandes" Variant="warning">
-                <IconContent><Blazicon Svg="Lucide.ShoppingBag" /></IconContent>
-            </AdminStatCard>
-            <AdminStatCard Value="—" Label="Revenus" Variant="info">
-                <IconContent><Blazicon Svg="Lucide.Euro" /></IconContent>
-            </AdminStatCard>
-        </div>
+        @if (_isLoading)
+        {
+            <div class="adm-stats-grid">
+                @for (var i = 0; i < 6; i++)
+                {
+                    <div class="adm-stat-card adm-stat-card--skeleton"></div>
+                }
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(_loadError))
+        {
+            <div class="alert alert-danger">@_loadError</div>
+        }
+        else
+        {
+            <div class="adm-stats-grid">
+                <AdminStatCard Value="@(_stats?.TotalUsers.ToString("N0") ?? "0")" Label="Utilisateurs" Variant="primary">
+                    <IconContent><Blazicon Svg="Lucide.Users" /></IconContent>
+                </AdminStatCard>
+                <AdminStatCard Value="@(_stats?.TotalRestaurants.ToString("N0") ?? "0")" Label="Restaurants" Variant="success">
+                    <IconContent><Blazicon Svg="Lucide.UtensilsCrossed" /></IconContent>
+                </AdminStatCard>
+                <AdminStatCard Value="@(_stats?.TotalOrders.ToString("N0") ?? "0")" Label="Commandes" Variant="warning">
+                    <IconContent><Blazicon Svg="Lucide.ShoppingBag" /></IconContent>
+                </AdminStatCard>
+                <AdminStatCard Value="@FormatCurrency(_stats?.TotalRevenue ?? 0)" Label="Revenus" Variant="info">
+                    <IconContent><Blazicon Svg="Lucide.Euro" /></IconContent>
+                </AdminStatCard>
+                <AdminStatCard Value="@(_stats?.ActivePromotions.ToString("N0") ?? "0")" Label="Promotions actives" Variant="success">
+                    <IconContent><Blazicon Svg="Lucide.Tag" /></IconContent>
+                </AdminStatCard>
+                <AdminStatCard Value="@(_stats?.PendingOrders.ToString("N0") ?? "0")" Label="Commandes en attente" Variant="warning">
+                    <IconContent><Blazicon Svg="Lucide.Clock" /></IconContent>
+                </AdminStatCard>
+            </div>
+        }
 
         <section class="adm-dashboard-section">
             <h2 class="adm-dashboard-section-title">Accès rapide</h2>
@@ -64,3 +89,21 @@
         </section>
     </ChildContent>
 </AdminLayout>
+
+@code {
+    private AdminDashboardStatsResponse? _stats;
+    private bool _isLoading = true;
+    private string? _loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        var (stats, error) = await DashboardService.GetStatsAsync();
+        _stats = stats;
+        _loadError = error?.Error;
+        _isLoading = false;
+    }
+
+    private static string FormatCurrency(decimal amount) =>
+        $"{amount:N2} €";
+}
