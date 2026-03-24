@@ -15,4 +15,6 @@ public interface IRestaurantRepository
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
     Task<Restaurant> UpdateAsync(Restaurant restaurant, CancellationToken ct = default);
     Task<(List<Restaurant> Items, int TotalCount)> GetByOwnerAsync(int ownerId, RestaurantQuery query, CancellationToken ct = default);
+    Task<List<Restaurant>> GetAllUnscopedAsync(CancellationToken ct = default);
+    Task<Restaurant?> GetByIdWithOwnerAsync(int id, CancellationToken ct = default);
 }
