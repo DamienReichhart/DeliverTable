@@ -1,0 +1,234 @@
+@page "/admin/moderation"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using DeliverTableSharedLibrary.Enums
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminModerationClientService ModerationService
+
+<PageTitle>Modération — Administration</PageTitle>
+
+<AdminLayout Title="Modération" Subtitle="@($"{(_actions?.Count ?? 0)} actions de modération")">
+    <ActionsContent>
+        <button class="app-btn app-btn--sm" @onclick="OpenCreateModal">
+            <Blazicon Svg="Lucide.Plus" />
+            Nouvelle action
+        </button>
+    </ActionsContent>
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="alert alert-success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        <AdminDataTable TItem="AdminModerationActionResponse"
+                         Items="FilteredActions"
+                         TotalCount="@(FilteredActions.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par type, raison ou administrateur..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Type de cible</th>
+                <th>ID cible</th>
+                <th>Action</th>
+                <th>Raison</th>
+                <th>Administrateur</th>
+                <th>Date</th>
+            </HeaderContent>
+            <RowContent Context="action">
+                <tr>
+                    <td>
+                        <AdminBadge Text="@action.TargetType" Variant="info" />
+                    </td>
+                    <td class="adm-cell-mono">@action.TargetId</td>
+                    <td>
+                        <AdminBadge Text="@action.ActionType" Variant="@ActionTypeBadgeVariant(action.ActionType)" />
+                    </td>
+                    <td>@Truncate(action.Reason, 60)</td>
+                    <td>@action.AdminUserName</td>
+                    <td class="adm-cell-mono">@action.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucune action de modération trouvée"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.Shield" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ── Create modal ── *@
+        <AdminFormModal IsVisible="@_showCreateModal" Title="Nouvelle action de modération" OnClose="CloseCreateModal">
+            <ChildContent>
+                <EditForm Model="@_createModel" OnValidSubmit="HandleCreate">
+                    <DataAnnotationsValidator />
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create-target-type">Type de cible</label>
+                            <InputSelect id="create-target-type" @bind-Value="_createModel.TargetType" class="adm-form-select">
+                                @foreach (var targetType in Enum.GetValues<ModerationTargetType>())
+                                {
+                                    <option value="@targetType">@TranslateTargetType(targetType)</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _createModel.TargetType)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create-target-id">ID de la cible</label>
+                            <InputNumber id="create-target-id" @bind-Value="_createModel.TargetId"
+                                         class="adm-form-input" />
+                            <ValidationMessage For="@(() => _createModel.TargetId)" class="adm-form-error" />
+                        </div>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 1rem;">
+                        <label class="adm-form-label" for="create-action-type">Type d'action</label>
+                        <InputSelect id="create-action-type" @bind-Value="_createModel.ActionType" class="adm-form-select">
+                            @foreach (var actionType in Enum.GetValues<ModerationActionType>())
+                            {
+                                <option value="@actionType">@TranslateActionType(actionType)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => _createModel.ActionType)" class="adm-form-error" />
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 1rem;">
+                        <label class="adm-form-label" for="create-reason">Raison</label>
+                        <InputTextArea id="create-reason" @bind-Value="_createModel.Reason"
+                                       class="adm-form-input" placeholder="Raison de l'action" rows="3" />
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button type="submit" class="app-btn app-btn--sm" disabled="@_isSaving">
+                            @(_isSaving ? "Création..." : "Créer")
+                        </button>
+                    </div>
+                </EditForm>
+            </ChildContent>
+        </AdminFormModal>
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminModerationActionResponse>? _actions;
+    private bool _isLoading = true;
+    private string _searchQuery = "";
+
+    private bool _showCreateModal;
+    private AdminCreateModerationActionRequest _createModel = new();
+
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Modération", Href = "/admin/moderation" }
+    ];
+
+    private IEnumerable<AdminModerationActionResponse> FilteredActions =>
+        _actions?.Where(a =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || a.TargetType.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || a.ActionType.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || a.Reason.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || a.AdminUserName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var (actions, error) = await ModerationService.GetAllAsync();
+        _actions = actions;
+        _actionError = error?.Error;
+        _isLoading = false;
+    }
+
+    // ── Create ──
+
+    private void OpenCreateModal()
+    {
+        ClearMessages();
+        _createModel = new AdminCreateModerationActionRequest();
+        _showCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        _showCreateModal = false;
+        _createModel = new AdminCreateModerationActionRequest();
+    }
+
+    private async Task HandleCreate()
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (created, error) = await ModerationService.CreateAsync(_createModel);
+        if (created is not null)
+        {
+            _actions?.Add(created);
+            _actionSuccess = "Action de modération créée avec succès";
+            CloseCreateModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la création de l'action de modération";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Helpers ──
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text)) return "—";
+        return text.Length <= maxLength ? text : text[..maxLength] + "...";
+    }
+
+    private static string ActionTypeBadgeVariant(string actionType) => actionType switch
+    {
+        nameof(ModerationActionType.Approve) => "active",
+        nameof(ModerationActionType.Reject) => "warning",
+        nameof(ModerationActionType.Ban) => "danger",
+        nameof(ModerationActionType.Warn) => "warning",
+        nameof(ModerationActionType.Unlist) => "danger",
+        _ => "info"
+    };
+
+    private static string TranslateTargetType(ModerationTargetType targetType) => targetType switch
+    {
+        ModerationTargetType.Restaurant => "Restaurant",
+        ModerationTargetType.MenuItem => "Plat",
+        ModerationTargetType.Event => "Événement",
+        ModerationTargetType.User => "Utilisateur",
+        _ => targetType.ToString()
+    };
+
+    private static string TranslateActionType(ModerationActionType actionType) => actionType switch
+    {
+        ModerationActionType.Approve => "Approuver",
+        ModerationActionType.Reject => "Rejeter",
+        ModerationActionType.Ban => "Bannir",
+        ModerationActionType.Warn => "Avertir",
+        ModerationActionType.Unlist => "Retirer",
+        _ => actionType.ToString()
+    };
+}
