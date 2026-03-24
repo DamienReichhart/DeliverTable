@@ -1,0 +1,135 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-discount-codes-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.discount-form-container {
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+
+  h2 {
+    margin-bottom: $spacing-md;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    @include label-mono;
+    color: $color-text-muted;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+}
+
+// Table
+.table-container {
+  overflow-x: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-white;
+  box-shadow: $shadow-card;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  thead {
+    background: rgba($color-deep-charcoal, 0.03);
+
+    th {
+      @include label-mono;
+      color: $color-text-muted;
+      padding: $spacing-sm $spacing-md;
+      text-align: left;
+      border-bottom: 1px solid $color-border;
+      white-space: nowrap;
+
+      &:last-child { text-align: right; }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid $color-border;
+    transition: background-color $transition-fast;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: $color-bg-subtle; }
+  }
+
+  tbody td {
+    padding: $spacing-sm $spacing-md;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    &:last-child { text-align: right; }
+  }
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: 600;
+}
+
+.status--active {
+  background: rgba(#22c55e, 0.1);
+  color: #16a34a;
+}
+
+.status--expired {
+  background: rgba(#ef4444, 0.1);
+  color: #dc2626;
+}
+
+.status--upcoming {
+  background: rgba(#3b82f6, 0.1);
+  color: #2563eb;
+}
+
+.status--inactive {
+  background: rgba(#6b7280, 0.1);
+  color: #4b5563;
+}

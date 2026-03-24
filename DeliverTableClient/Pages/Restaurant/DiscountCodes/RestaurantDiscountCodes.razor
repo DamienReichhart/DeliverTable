@@ -1,0 +1,374 @@
+@page "/restaurant/{RestaurantId:int}/codes-promo"
+@inject IDiscountCodeClientService DiscountCodeService
+@inject IRestaurantService RestaurantService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<PageTitle>Codes promo — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
+
+<div class="restaurant-discount-codes-page">
+    <div class="page-header">
+        <div>
+            <h1>Codes promo</h1>
+            @if (_restaurantName is not null)
+            {
+                <p class="page-subtitle">@_restaurantName</p>
+            }
+        </div>
+        <div class="page-header-actions">
+            <button type="button" class="app-btn app-btn--primary" @onclick="ShowCreateForm">
+                Créer un code promo
+            </button>
+            <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+                Retour
+            </button>
+        </div>
+    </div>
+
+    @if (_showForm)
+    {
+        <div class="discount-form-container">
+            <h2>@(_editingId.HasValue ? "Modifier le code promo" : "Nouveau code promo")</h2>
+            <EditForm Model="_formModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-grid">
+                    @if (!_editingId.HasValue)
+                    {
+                        <div class="form-group">
+                            <label for="code">Code</label>
+                            <InputText id="code" @bind-Value="_createModel.Code" class="form-control" />
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <InputText id="description" @bind-Value="_formModel.Description" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discountType">Type de réduction</label>
+                        <InputSelect id="discountType" @bind-Value="_formModel.DiscountType" class="form-control">
+                            <option value="">-- Choisir --</option>
+                            <option value="Percentage">Pourcentage</option>
+                            <option value="FixedAmount">Montant fixe</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discountValue">Valeur de la réduction</label>
+                        <InputNumber id="discountValue" @bind-Value="_formModel.DiscountValue" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="minOrderAmount">Commande minimum (optionnel)</label>
+                        <InputNumber id="minOrderAmount" @bind-Value="_formModel.MinOrderAmount" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="validFrom">Valide à partir du</label>
+                        <InputDate id="validFrom" @bind-Value="_formModel.ValidFrom" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="validUntil">Valide jusqu'au</label>
+                        <InputDate id="validUntil" @bind-Value="_formModel.ValidUntil" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxRedemptions">Utilisations max (optionnel)</label>
+                        <InputNumber id="maxRedemptions" @bind-Value="_formModel.MaxRedemptions" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="perUserLimit">Limite par utilisateur</label>
+                        <InputNumber id="perUserLimit" @bind-Value="_formModel.PerUserLimit" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="app-btn app-btn--primary" disabled="@_submitting">
+                        @(_editingId.HasValue ? "Modifier" : "Créer")
+                    </button>
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="CancelForm">
+                        Annuler
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    }
+
+    @if (_loading)
+    {
+        <p>Chargement des codes promo...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_codes is null || _codes.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Aucun code promo pour le moment.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Réduction</th>
+                        <th>Min. commande</th>
+                        <th>Dates</th>
+                        <th>Utilisations</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var discountCode in _codes.Items)
+                    {
+                        <tr>
+                            <td><strong>@discountCode.Code</strong></td>
+                            <td>@TranslateDiscountType(discountCode.DiscountType)</td>
+                            <td>@FormatDiscount(discountCode.DiscountType, discountCode.DiscountValue)</td>
+                            <td>@(discountCode.MinOrderAmount.HasValue ? $"{discountCode.MinOrderAmount:0.00} €" : "—")</td>
+                            <td>@discountCode.ValidFrom.ToString("dd/MM/yyyy") — @discountCode.ValidUntil.ToString("dd/MM/yyyy")</td>
+                            <td>@discountCode.CurrentRedemptions / @(discountCode.MaxRedemptions?.ToString() ?? "∞")</td>
+                            <td>
+                                <span class="status-badge status--@GetStatusClass(discountCode)">
+                                    @GetStatusLabel(discountCode)
+                                </span>
+                            </td>
+                            <td class="actions-cell">
+                                <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => EditCode(discountCode)">
+                                    Modifier
+                                </button>
+                                <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => DeleteCode(discountCode.Id)">
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_codes.HasNextPage || _query.PageNumber > 1)
+        {
+            <div class="pagination">
+                @if (_query.PageNumber > 1)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                }
+                <span class="page-info">Page @_query.PageNumber / @((_codes.TotalCount + _query.PageSize - 1) / _query.PageSize)</span>
+                @if (_codes.HasNextPage)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private PaginatedResult<DiscountCodeDto>? _codes;
+    private DiscountCodeQuery _query = new() { PageSize = 20 };
+    private string? _restaurantName;
+    private bool _loading = true;
+    private string? _error;
+    private bool _showForm;
+    private bool _submitting;
+    private int? _editingId;
+
+    // For create, we need the Code field; for update, we don't.
+    // We use UpdateDiscountCodeRequest as the shared form model (has all fields except Code).
+    // _createModel holds the Code for new codes.
+    private UpdateDiscountCodeRequest _formModel = new();
+    private CreateDiscountCodeRequest _createModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
+        _restaurantName = restaurant?.Name;
+
+        await LoadCodes();
+    }
+
+    private async Task LoadCodes()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        var (result, error) = await DiscountCodeService.GetByRestaurantAsync(RestaurantId, _query);
+        if (error is not null)
+            _error = error.Error;
+        else
+            _codes = result;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void ShowCreateForm()
+    {
+        _editingId = null;
+        _createModel = new CreateDiscountCodeRequest
+        {
+            ValidFrom = DateTime.Today,
+            ValidUntil = DateTime.Today.AddDays(30),
+            PerUserLimit = 1
+        };
+        _formModel = new UpdateDiscountCodeRequest
+        {
+            ValidFrom = DateTime.Today,
+            ValidUntil = DateTime.Today.AddDays(30),
+            PerUserLimit = 1
+        };
+        _showForm = true;
+    }
+
+    private void EditCode(DiscountCodeDto code)
+    {
+        _editingId = code.Id;
+        _formModel = new UpdateDiscountCodeRequest
+        {
+            Description = code.Description,
+            DiscountType = code.DiscountType,
+            DiscountValue = code.DiscountValue,
+            MinOrderAmount = code.MinOrderAmount,
+            ValidFrom = code.ValidFrom,
+            ValidUntil = code.ValidUntil,
+            MaxRedemptions = code.MaxRedemptions,
+            PerUserLimit = code.PerUserLimit,
+            IsActive = code.IsActive
+        };
+        _showForm = true;
+    }
+
+    private void CancelForm()
+    {
+        _showForm = false;
+        _editingId = null;
+        _error = null;
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _error = null;
+
+        if (_editingId.HasValue)
+        {
+            var (_, error) = await DiscountCodeService.UpdateAsync(_editingId.Value, _formModel);
+            if (error is not null)
+            {
+                _error = error.Error;
+                _submitting = false;
+                return;
+            }
+        }
+        else
+        {
+            var request = new CreateDiscountCodeRequest
+            {
+                Code = _createModel.Code,
+                Description = _formModel.Description,
+                DiscountType = _formModel.DiscountType,
+                DiscountValue = _formModel.DiscountValue,
+                MinOrderAmount = _formModel.MinOrderAmount,
+                ValidFrom = _formModel.ValidFrom,
+                ValidUntil = _formModel.ValidUntil,
+                MaxRedemptions = _formModel.MaxRedemptions,
+                PerUserLimit = _formModel.PerUserLimit
+            };
+
+            var (_, error) = await DiscountCodeService.CreateAsync(RestaurantId, request);
+            if (error is not null)
+            {
+                _error = error.Error;
+                _submitting = false;
+                return;
+            }
+        }
+
+        _showForm = false;
+        _editingId = null;
+        _submitting = false;
+        await LoadCodes();
+    }
+
+    private async Task DeleteCode(int codeId)
+    {
+        var (success, error) = await DiscountCodeService.DeleteAsync(codeId);
+        if (!success)
+        {
+            _error = error?.Error ?? "Erreur lors de la suppression.";
+            StateHasChanged();
+        }
+        else
+        {
+            await LoadCodes();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        _query.PageNumber++;
+        await LoadCodes();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_query.PageNumber > 1)
+        {
+            _query.PageNumber--;
+            await LoadCodes();
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/mes-restaurants");
+
+    private static string GetStatusLabel(DiscountCodeDto code)
+    {
+        var now = DateTime.UtcNow;
+        if (now < code.ValidFrom) return "À venir";
+        if (now > code.ValidUntil) return "Expirée";
+        if (code.IsActive) return "Active";
+        return "Inactive";
+    }
+
+    private static string GetStatusClass(DiscountCodeDto code)
+    {
+        var now = DateTime.UtcNow;
+        if (now < code.ValidFrom) return "upcoming";
+        if (now > code.ValidUntil) return "expired";
+        if (code.IsActive) return "active";
+        return "inactive";
+    }
+
+    private static string TranslateDiscountType(string type) => type switch
+    {
+        "Percentage" => "Pourcentage",
+        "FixedAmount" => "Montant fixe",
+        _ => type
+    };
+
+    private static string FormatDiscount(string discountType, decimal value) => discountType switch
+    {
+        "Percentage" => $"{value}%",
+        "FixedAmount" => $"{value:0.00} €",
+        _ => $"{value}"
+    };
+}

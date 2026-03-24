@@ -42,6 +42,9 @@ public static class ApiClientServiceCollectionExtensions
         RegisterCartService(services);
         RegisterOrderService(services);
         RegisterRestaurantAccountService(services);
+        RegisterPromotionService(services);
+        RegisterDiscountCodeClientService(services);
+        RegisterLoyaltyClientService(services);
 
         return services;
     }
@@ -87,5 +90,20 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterRestaurantAccountService(IServiceCollection services)
     {
         services.AddScoped<IRestaurantAccountService, RestaurantAccountService>();
+    }
+
+    private static void RegisterPromotionService(IServiceCollection services)
+    {
+        services.AddScoped<IPromotionService, PromotionService>();
+    }
+
+    private static void RegisterDiscountCodeClientService(IServiceCollection services)
+    {
+        services.AddScoped<IDiscountCodeClientService, DiscountCodeClientService>();
+    }
+
+    private static void RegisterLoyaltyClientService(IServiceCollection services)
+    {
+        services.AddScoped<ILoyaltyClientService, LoyaltyClientService>();
     }
 }
