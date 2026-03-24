@@ -133,3 +133,60 @@
   background: rgba(#6b7280, 0.1);
   color: #4b5563;
 }
+
+// Dish picker
+.dish-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: $spacing-sm;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: $spacing-xs;
+}
+
+.dish-picker-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-coral-fire;
+    background: rgba($color-coral-fire, 0.03);
+  }
+
+  &--selected {
+    border-color: $color-coral-fire;
+    background: rgba($color-coral-fire, 0.06);
+  }
+
+  input[type="checkbox"] {
+    accent-color: $color-coral-fire;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+}
+
+.dish-picker-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: $font-size-sm;
+}
+
+.dish-picker-price {
+  @include label-mono;
+  color: $color-text-muted;
+  font-size: $font-size-xs;
+  flex-shrink: 0;
+}
+
+.form-hint {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: $spacing-xs 0 0;
+}
