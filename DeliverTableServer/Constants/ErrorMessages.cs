@@ -50,6 +50,8 @@ public static class ErrorMessages
     public static string InvalidOrderType(string validValues) =>
         $"Type de commande invalide. Valeurs possibles : {validValues}";
 
+    public const string ScheduledAtMustBeFuture = "La date planifiée doit être dans le futur";
+
     public const string PercentageDiscountTooHigh = "Un pourcentage de réduction ne peut pas dépasser 100%";
 
     // Restaurant Account

@@ -58,6 +58,10 @@
                     <div class="order-card-body">
                         <span class="order-type-label">@TranslateOrderType(order.OrderType)</span>
                         <span class="order-guests">@order.GuestCount pers.</span>
+                        @if (order.ScheduledAt.HasValue)
+                        {
+                            <span class="order-scheduled">Prévu le @order.ScheduledAt.Value.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
+                        }
                         <span class="order-date">@order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
                         <span class="order-items-count">@order.Items.Count article(s)</span>
                         <strong class="order-total">@order.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</strong>
