@@ -1,0 +1,97 @@
+@inject NavigationManager Nav
+
+<aside class="adm-sidebar">
+    <div class="adm-sidebar-header">
+        <a href="/admin" class="adm-sidebar-brand">
+            <Blazicon Svg="Lucide.Shield" class="adm-sidebar-brand-icon" />
+            <span class="adm-sidebar-brand-text">Administration</span>
+        </a>
+    </div>
+
+    <nav class="adm-sidebar-nav">
+        <span class="adm-sidebar-section">Général</span>
+
+        <NavLink href="/admin" Match="NavLinkMatch.All" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.LayoutDashboard" class="adm-sidebar-icon" />
+            <span>Tableau de bord</span>
+        </NavLink>
+
+        <span class="adm-sidebar-section">Gestion</span>
+
+        <NavLink href="/admin/users" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.Users" class="adm-sidebar-icon" />
+            <span>Utilisateurs</span>
+        </NavLink>
+
+        <NavLink href="/admin/restaurants" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.UtensilsCrossed" class="adm-sidebar-icon" />
+            <span>Restaurants</span>
+        </NavLink>
+
+        <NavLink href="/admin/dishes" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.ChefHat" class="adm-sidebar-icon" />
+            <span>Plats</span>
+        </NavLink>
+
+        <NavLink href="/admin/orders" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.ShoppingBag" class="adm-sidebar-icon" />
+            <span>Commandes</span>
+        </NavLink>
+
+        <NavLink href="/admin/promotions" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.Tag" class="adm-sidebar-icon" />
+            <span>Promotions</span>
+        </NavLink>
+
+        <NavLink href="/admin/discount-codes" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.Ticket" class="adm-sidebar-icon" />
+            <span>Codes promo</span>
+        </NavLink>
+
+        <NavLink href="/admin/loyalty" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.Heart" class="adm-sidebar-icon" />
+            <span>Fidélité</span>
+        </NavLink>
+
+        <NavLink href="/admin/events" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.CalendarDays" class="adm-sidebar-icon" />
+            <span>Événements</span>
+        </NavLink>
+
+        <span class="adm-sidebar-section">Finances</span>
+
+        <NavLink href="/admin/transactions" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.ArrowLeftRight" class="adm-sidebar-icon" />
+            <span>Transactions</span>
+        </NavLink>
+
+        <span class="adm-sidebar-section">Supervision</span>
+
+        <NavLink href="/admin/ratings" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.Star" class="adm-sidebar-icon" />
+            <span>Avis</span>
+        </NavLink>
+
+        <NavLink href="/admin/notifications" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.Bell" class="adm-sidebar-icon" />
+            <span>Notifications</span>
+        </NavLink>
+
+        <NavLink href="/admin/moderation" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.ShieldAlert" class="adm-sidebar-icon" />
+            <span>Modération</span>
+        </NavLink>
+
+        <NavLink href="/admin/order-config" class="adm-sidebar-link">
+            <Blazicon Svg="Lucide.Settings" class="adm-sidebar-icon" />
+            <span>Configuration</span>
+        </NavLink>
+    </nav>
+
+    <div class="adm-sidebar-footer">
+        <a href="/" class="adm-sidebar-link adm-sidebar-link--back">
+            <Blazicon Svg="Lucide.ArrowLeft" class="adm-sidebar-icon" />
+            <span>Retour au site</span>
+        </a>
+    </div>
+</aside>
