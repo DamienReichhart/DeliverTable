@@ -113,6 +113,13 @@ public static class ApiRoutes
         public const string RestaurantOrdersRoute = "restaurant/{id:int}";
     }
 
+    /// <summary>Restaurant account and transaction routes.</summary>
+    public static class RestaurantAccount
+    {
+        public const string BaseRoute = "api/v1/restaurant/{id:int}/account";
+        public const string WithdrawRoute = "withdraw";
+    }
+
     /// <summary>Test controller route (development only).</summary>
     public const string Test = "api/v1/test";
 }

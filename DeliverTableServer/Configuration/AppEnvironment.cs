@@ -14,6 +14,7 @@ public sealed class AppEnvironment
     public bool OpenApiEnableDocumentation { get; }
     public string[] CorsAllowedOrigins { get; }
     public int UploadMaxSizeMb { get; }
+    public decimal PlatformCommissionRate { get; }
 
     private AppEnvironment(
         string databaseConnectionString,
@@ -22,7 +23,8 @@ public sealed class AppEnvironment
         ObjectStorageConfig objectStorage,
         bool openApiEnableDocumentation,
         string[] corsAllowedOrigins,
-        int uploadMaxSizeMb)
+        int uploadMaxSizeMb,
+        decimal platformCommissionRate)
     {
         DatabaseConnectionString = databaseConnectionString;
         RedisConnectionString = redisConnectionString;
@@ -31,6 +33,7 @@ public sealed class AppEnvironment
         OpenApiEnableDocumentation = openApiEnableDocumentation;
         CorsAllowedOrigins = corsAllowedOrigins;
         UploadMaxSizeMb = uploadMaxSizeMb;
+        PlatformCommissionRate = platformCommissionRate;
     }
 
     /// <summary>
@@ -65,6 +68,8 @@ public sealed class AppEnvironment
         var uploadMaxSizeMb = ParseInt("UPLOAD_MAX_SIZE_MB",
             DeliverTableSharedLibrary.Constants.UploadLimits.DefaultMaxSizeMb, errors);
 
+        var platformCommissionRate = ParseDecimal("PLATFORM_COMMISSION_RATE", 0.10m, errors);
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
@@ -84,7 +89,8 @@ public sealed class AppEnvironment
             new ObjectStorageConfig(osUrl!, osAccessKey!, osSecretKey!, osBucket!, osForcePathStyle, osRegion),
             openApiEnable,
             corsOrigins,
-            uploadMaxSizeMb);
+            uploadMaxSizeMb,
+            platformCommissionRate);
     }
 
     private static string? GetVar(string name)
@@ -117,5 +123,16 @@ public sealed class AppEnvironment
         if (string.IsNullOrWhiteSpace(raw))
             return defaultValue;
         return string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static decimal ParseDecimal(string name, decimal defaultValue, List<string> errors)
+    {
+        var raw = GetVar(name);
+        if (string.IsNullOrWhiteSpace(raw))
+            return defaultValue;
+        if (decimal.TryParse(raw, System.Globalization.CultureInfo.InvariantCulture, out var result))
+            return result;
+        errors.Add($"{name} (expected decimal, got '{raw}')");
+        return defaultValue;
     }
 }
