@@ -17,6 +17,10 @@ public class OrderDto
     public int GuestCount { get; set; }
     public string DeliveryAddress { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
+    public DateTime? ScheduledAt { get; set; }
+    public int? RestaurantTableId { get; set; }
+    public bool IsEventBooking { get; set; }
+    public int? EventId { get; set; }
     public List<OrderItemDto> Items { get; set; } = [];
     public DateTime CreatedAt { get; set; }
 }
