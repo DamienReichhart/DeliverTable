@@ -10,12 +10,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace DeliverTableServer.Controllers;
 
 [ApiController]
-[Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+[Authorize]
 public class DiscountCodeController(IDiscountCodeService discountCodeService) : ControllerBase
 {
     private readonly IDiscountCodeService _discountCodeService = discountCodeService;
 
     [HttpPost(ApiRoutes.DiscountCodeRoutes.RestaurantBaseRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Create([FromRoute] int id, [FromBody] CreateDiscountCodeRequest request, CancellationToken ct)
     {
         if (!TryGetUserId(out int userId)) return Unauthorized();
@@ -24,6 +25,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     }
 
     [HttpGet(ApiRoutes.DiscountCodeRoutes.RestaurantBaseRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> GetByRestaurant([FromRoute] int id, [FromQuery] DiscountCodeQuery query, CancellationToken ct)
     {
         if (!TryGetUserId(out int userId)) return Unauthorized();
@@ -32,6 +34,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     }
 
     [HttpPut(ApiRoutes.DiscountCodeRoutes.Base + "/" + ApiRoutes.DiscountCodeRoutes.ByIdRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateDiscountCodeRequest request, CancellationToken ct)
     {
         if (!TryGetUserId(out int userId)) return Unauthorized();
@@ -40,7 +43,6 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     }
 
     [HttpPost(ApiRoutes.DiscountCodeRoutes.ValidateRoute)]
-    [Authorize(Roles = nameof(UserRole.Customer))]
     public async Task<IActionResult> Validate([FromRoute] int id, [FromBody] ValidateDiscountCodeRequest request, CancellationToken ct)
     {
         if (!TryGetUserId(out int userId)) return Unauthorized();
@@ -49,6 +51,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     }
 
     [HttpDelete(ApiRoutes.DiscountCodeRoutes.Base + "/" + ApiRoutes.DiscountCodeRoutes.ByIdRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {
         if (!TryGetUserId(out int userId)) return Unauthorized();
