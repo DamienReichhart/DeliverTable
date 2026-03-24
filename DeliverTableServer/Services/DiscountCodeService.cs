@@ -27,14 +27,12 @@ public sealed class DiscountCodeService(
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        if (!Enum.TryParse<DiscountType>(request.DiscountType, ignoreCase: true, out var discountType))
-            return new ServiceError(ErrorMessages.InvalidFields);
+        var discountError = DiscountValidationHelper.ValidateDiscountType(
+            request.DiscountType, request.DiscountValue, out var discountType);
+        if (discountError is not null) return discountError;
 
-        if (request.ValidUntil <= request.ValidFrom)
-            return new ServiceError(ErrorMessages.InvalidPromotionDates);
-
-        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+        var dateError = DiscountValidationHelper.ValidateDateRange(request.ValidFrom, request.ValidUntil);
+        if (dateError is not null) return dateError;
 
         var existing = await _discountCodeRepository.GetByCodeAndRestaurantAsync(request.Code, restaurantId, ct);
         if (existing is not null)
@@ -82,14 +80,12 @@ public sealed class DiscountCodeService(
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        if (!Enum.TryParse<DiscountType>(request.DiscountType, ignoreCase: true, out var discountType))
-            return new ServiceError(ErrorMessages.InvalidFields);
+        var discountError = DiscountValidationHelper.ValidateDiscountType(
+            request.DiscountType, request.DiscountValue, out var discountType);
+        if (discountError is not null) return discountError;
 
-        if (request.ValidUntil <= request.ValidFrom)
-            return new ServiceError(ErrorMessages.InvalidPromotionDates);
-
-        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+        var dateError = DiscountValidationHelper.ValidateDateRange(request.ValidFrom, request.ValidUntil);
+        if (dateError is not null) return dateError;
 
         code.Description = request.Description;
         code.DiscountType = discountType;
