@@ -15,7 +15,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
 {
     private readonly IDiscountCodeService _discountCodeService = discountCodeService;
 
-    [HttpPost(ApiRoutes.DiscountCodeRoutes.RestaurantBaseRoute)]
+    [HttpPost(ApiRoutes.DiscountCode.RestaurantBaseRoute)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Create([FromRoute] int id, [FromBody] CreateDiscountCodeRequest request, CancellationToken ct)
     {
@@ -24,7 +24,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
         return result.ToOkResult();
     }
 
-    [HttpGet(ApiRoutes.DiscountCodeRoutes.RestaurantBaseRoute)]
+    [HttpGet(ApiRoutes.DiscountCode.RestaurantBaseRoute)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> GetByRestaurant([FromRoute] int id, [FromQuery] DiscountCodeQuery query, CancellationToken ct)
     {
@@ -33,7 +33,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
         return result.ToOkResult();
     }
 
-    [HttpPut(ApiRoutes.DiscountCodeRoutes.ById)]
+    [HttpPut(ApiRoutes.DiscountCode.ById)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateDiscountCodeRequest request, CancellationToken ct)
     {
@@ -42,7 +42,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
         return result.ToOkResult();
     }
 
-    [HttpPost(ApiRoutes.DiscountCodeRoutes.ValidateRoute)]
+    [HttpPost(ApiRoutes.DiscountCode.ValidateRoute)]
     public async Task<IActionResult> Validate([FromRoute] int id, [FromBody] ValidateDiscountCodeRequest request, CancellationToken ct)
     {
         if (!this.TryGetUserId(out int userId)) return Unauthorized();
@@ -50,7 +50,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
         return result.ToOkResult();
     }
 
-    [HttpDelete(ApiRoutes.DiscountCodeRoutes.ById)]
+    [HttpDelete(ApiRoutes.DiscountCode.ById)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {

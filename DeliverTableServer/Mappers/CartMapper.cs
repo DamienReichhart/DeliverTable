@@ -6,7 +6,7 @@ namespace DeliverTableServer.Mappers;
 
 public static class CartMapper
 {
-    private const string DefaultFileExtension = ".png";
+    private const string _defaultFileExtension = ".png";
 
     public static CartDto ToDto(this Cart cart)
     {
@@ -29,7 +29,7 @@ public static class CartMapper
             Id = item.Id,
             DishId = item.DishId,
             DishName = item.Dish?.Name ?? string.Empty,
-            DishImage = ApiRoutes.Dish.ImageRoute + item.DishId + DefaultFileExtension,
+            DishImage = ApiRoutes.Dish.ImageRoute + item.DishId + _defaultFileExtension,
             UnitPrice = item.UnitPrice,
             Quantity = item.Quantity,
             SpecialInstructions = item.SpecialInstructions
