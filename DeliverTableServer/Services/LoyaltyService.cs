@@ -1,5 +1,6 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
@@ -19,12 +20,10 @@ public sealed class LoyaltyService(
     public async Task<ServiceResult<LoyaltyProgramDto>> CreateOrUpdateProgramAsync(
         int restaurantId, int ownerId, CreateLoyaltyProgramRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
-        if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
-
-        if (restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, restaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
         var existing = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
 
