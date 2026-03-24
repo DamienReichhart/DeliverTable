@@ -1,0 +1,118 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-loyalty-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.loyalty-summary {
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+
+  h2 {
+    margin-bottom: $spacing-md;
+  }
+}
+
+.loyalty-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-md;
+  background: $color-bg-subtle;
+  border-radius: $radius-md;
+
+  .stat-label {
+    @include label-mono;
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+  }
+
+  .stat-value {
+    font-size: $font-size-xl;
+    font-weight: 700;
+  }
+}
+
+.loyalty-explanation,
+.loyalty-preview {
+  padding: $spacing-md;
+  background: $color-bg-subtle;
+  border-radius: $radius-md;
+  margin-top: $spacing-sm;
+
+  p {
+    margin: $spacing-xs 0;
+  }
+}
+
+.loyalty-form-container {
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+
+  h2 {
+    margin-bottom: $spacing-md;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    @include label-mono;
+    color: $color-text-muted;
+  }
+}
+
+.form-hint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.form-actions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+}
+
+.success-message {
+  padding: $spacing-md;
+  background: rgba(#22c55e, 0.1);
+  border: 1px solid rgba(#22c55e, 0.3);
+  border-radius: $radius-md;
+  color: #16a34a;
+}
