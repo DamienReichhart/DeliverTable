@@ -115,15 +115,6 @@
                     </button>
                 </div>
 
-                <div class="form-group">
-                    <label for="guest-count">Nombre de convives</label>
-                    <div class="guest-count-selector">
-                        <button type="button" class="qty-btn" @onclick="DecrementGuests" disabled="@(_guestCount <= 1)">−</button>
-                        <span class="qty-value">@_guestCount</span>
-                        <button type="button" class="qty-btn" @onclick="IncrementGuests" disabled="@(_guestCount >= 50)">+</button>
-                    </div>
-                </div>
-
                 @if (_orderType == "Delivery")
                 {
                     <div class="form-group">
@@ -134,6 +125,14 @@
                 }
                 else
                 {
+                    <div class="form-group">
+                        <label for="guest-count">Nombre de convives</label>
+                        <div class="guest-count-selector">
+                            <button type="button" class="qty-btn" @onclick="DecrementGuests" disabled="@(_guestCount <= 1)">−</button>
+                            <span class="qty-value">@_guestCount</span>
+                            <button type="button" class="qty-btn" @onclick="IncrementGuests" disabled="@(_guestCount >= 50)">+</button>
+                        </div>
+                    </div>
                     <div class="dine-in-info">
                         <p>Vous mangerez directement au restaurant. Une table pour <strong>@_guestCount</strong> personne(s) sera préparée.</p>
                     </div>
@@ -386,6 +385,9 @@
     {
         _orderType = type.ToString();
         _validationError = null;
+
+        if (type == OrderTypeValue.Delivery)
+            _guestCount = 1;
     }
 
     private void IncrementGuests()
@@ -538,7 +540,7 @@
             return;
         }
 
-        if (_guestCount < 1 || _guestCount > 50)
+        if (_orderType == "DineIn" && (_guestCount < 1 || _guestCount > 50))
         {
             _validationError = "Le nombre de convives doit être compris entre 1 et 50.";
             return;
