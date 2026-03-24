@@ -3,6 +3,7 @@ using DeliverTableServer.Constants;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services;
+using DeliverTableSharedLibrary.Dtos.Dish;
 using DeliverTableSharedLibrary.Dtos.Promotion;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
@@ -133,8 +134,10 @@ public class PromotionServiceTests
         var restaurant = CreateRestaurant(ownerId: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var foreignDish = new Dish { Id = 10, RestaurantId = 999, Name = "Plat étranger" };
-        _dishRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(foreignDish);
+        // Restaurant 1 only has dish 5 — dish 10 does not belong to it
+        var restaurantDishes = new List<Dish> { new() { Id = 5, RestaurantId = 1, Name = "Plat local" } };
+        _dishRepository.GetByRestaurantIdAsync(Arg.Any<DishQuery>(), 1, Arg.Any<CancellationToken>())
+            .Returns((restaurantDishes, 1));
 
         var request = new CreatePromotionRequest
         {

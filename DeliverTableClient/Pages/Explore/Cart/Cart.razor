@@ -401,9 +401,7 @@
     // ── Data loading ──
     protected override async Task OnInitializedAsync()
     {
-        await LoadCart();
-        await LoadActivePromotions();
-        await LoadLoyaltyAccount();
+        await Task.WhenAll(LoadCart(), LoadActivePromotions(), LoadLoyaltyAccount());
     }
 
     private async Task LoadCart()
