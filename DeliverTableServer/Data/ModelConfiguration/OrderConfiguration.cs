@@ -85,6 +85,20 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasForeignKey(o => o.DiscountCodeId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(o => o.RestaurantTable)
+            .WithMany()
+            .HasForeignKey(o => o.RestaurantTableId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(o => o.Event)
+            .WithMany()
+            .HasForeignKey(o => o.EventId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Property(o => o.IsEventBooking)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.HasIndex(o => o.CustomerId);
         builder.HasIndex(o => o.RestaurantId);
         builder.HasIndex(o => o.Status);
