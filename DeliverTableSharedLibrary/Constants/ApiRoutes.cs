@@ -86,6 +86,80 @@ public static class ApiRoutes
 
         /// <summary>Full paths for client HTTP calls.</summary>
         public const string Users = Base + "/" + UsersRoute;
+
+        // ── Restaurants ──
+        public const string RestaurantsRoute = "restaurants";
+        public const string RestaurantByIdRoute = "restaurants/{id:int}";
+        public const string RestaurantTablesRoute = "restaurants/{id:int}/tables";
+        public const string RestaurantTableByIdRoute = "restaurants/{restaurantId:int}/tables/{tableId:int}";
+        public const string Restaurants = Base + "/" + RestaurantsRoute;
+
+        // ── Dishes ──
+        public const string DishesRoute = "dishes";
+        public const string DishByIdRoute = "dishes/{id:int}";
+        public const string Dishes = Base + "/" + DishesRoute;
+
+        // ── Orders ──
+        public const string OrdersRoute = "orders";
+        public const string OrderByIdRoute = "orders/{id:int}";
+        public const string OrderStatusRoute = "orders/{id:int}/status";
+        public const string Orders = Base + "/" + OrdersRoute;
+
+        // ── Promotions ──
+        public const string PromotionsRoute = "promotions";
+        public const string PromotionByIdRoute = "promotions/{id:int}";
+        public const string Promotions = Base + "/" + PromotionsRoute;
+
+        // ── Discount Codes ──
+        public const string DiscountCodesRoute = "discount-codes";
+        public const string DiscountCodeByIdRoute = "discount-codes/{id:int}";
+        public const string DiscountCodeRedemptionsRoute = "discount-codes/{id:int}/redemptions";
+        public const string DiscountCodes = Base + "/" + DiscountCodesRoute;
+
+        // ── Loyalty ──
+        public const string LoyaltyRoute = "loyalty";
+        public const string LoyaltyByIdRoute = "loyalty/{id:int}";
+        public const string LoyaltyAccountsRoute = "loyalty/{id:int}/accounts";
+        public const string LoyaltyTransactionsRoute = "loyalty/{id:int}/accounts/{accountId:int}/transactions";
+        public const string LoyaltyPrograms = Base + "/" + LoyaltyRoute;
+
+        // ── Events ──
+        public const string EventsRoute = "events";
+        public const string EventByIdRoute = "events/{id:int}";
+        public const string Events = Base + "/" + EventsRoute;
+
+        // ── Transactions ──
+        public const string TransactionsRoute = "transactions";
+        public const string Transactions = Base + "/" + TransactionsRoute;
+
+        // ── Ratings ──
+        public const string RatingsRoute = "ratings";
+        public const string RestaurantRatingsRoute = "ratings/restaurants";
+        public const string CustomerRatingsRoute = "ratings/customers";
+        public const string RatingByIdRoute = "ratings/{id:int}";
+        public const string Ratings = Base + "/" + RatingsRoute;
+
+        // ── Notifications ──
+        public const string NotificationsRoute = "notifications";
+        public const string NotificationByIdRoute = "notifications/{id:int}";
+        public const string Notifications = Base + "/" + NotificationsRoute;
+
+        // ── Moderation ──
+        public const string ModerationRoute = "moderation";
+        public const string ModerationByIdRoute = "moderation/{id:int}";
+        public const string Moderation = Base + "/" + ModerationRoute;
+
+        // ── Order Config ──
+        public const string OrderRulesRoute = "order-config/rules";
+        public const string OrderRuleByIdRoute = "order-config/rules/{id:int}";
+        public const string BlockedSlotsRoute = "order-config/blocked-slots";
+        public const string BlockedSlotByIdRoute = "order-config/blocked-slots/{id:int}";
+        public const string OrderRules = Base + "/" + OrderRulesRoute;
+        public const string BlockedSlots = Base + "/" + BlockedSlotsRoute;
+
+        // ── Dashboard ──
+        public const string DashboardRoute = "dashboard";
+        public const string Dashboard = Base + "/" + DashboardRoute;
     }
 
     /// <summary>Cart routes (Customer role required).</summary>
