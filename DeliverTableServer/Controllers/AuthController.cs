@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Services.Interfaces;
@@ -40,11 +39,9 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpGet(ApiRoutes.Auth.MeRoute)]
     public async Task<IActionResult> GetProfile(CancellationToken ct)
     {
-        var userId = GetAuthenticatedUserId();
-        if (userId is null)
-            return Unauthorized(new { Error = ErrorMessages.InvalidOrExpiredToken });
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
-        var result = await _authService.GetProfileAsync(userId.Value, ct);
+        var result = await _authService.GetProfileAsync(userId, ct);
         return result.ToOkResult();
     }
 
@@ -52,11 +49,9 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPut(ApiRoutes.Auth.UpdateProfileRoute)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken ct)
     {
-        var userId = GetAuthenticatedUserId();
-        if (userId is null)
-            return Unauthorized(new { Error = ErrorMessages.InvalidOrExpiredToken });
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
-        var result = await _authService.UpdateProfileAsync(userId.Value, request, ct);
+        var result = await _authService.UpdateProfileAsync(userId, request, ct);
         return result.ToOkResult();
     }
 
@@ -64,22 +59,9 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPut(ApiRoutes.Auth.ChangePasswordRoute)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
     {
-        var userId = GetAuthenticatedUserId();
-        if (userId is null)
-            return Unauthorized(new { Error = ErrorMessages.InvalidOrExpiredToken });
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
-        var result = await _authService.ChangePasswordAsync(userId.Value, request, ct);
-        if (!result.IsSuccess)
-            return result.Error!.ToErrorResult();
-
-        return Ok(new { Message = ErrorMessages.PasswordChangedSuccessfully });
-    }
-
-    private int? GetAuthenticatedUserId()
-    {
-        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(claim) || !int.TryParse(claim, out var userId))
-            return null;
-        return userId;
+        var result = await _authService.ChangePasswordAsync(userId, request, ct);
+        return result.ToOkMessageResult(ErrorMessages.PasswordChangedSuccessfully);
     }
 }

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Middleware.ActionFilters;
 using DeliverTableServer.Services.Interfaces;
@@ -29,12 +28,11 @@ public class RestaurantController(IRestaurantService restaurantService) : Contro
     public async Task<IActionResult> GetAllUserRestaurants(
         [FromQuery] RestaurantQuery query, CancellationToken ct, [FromRoute] int? id = null)
     {
-        _ = int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId);
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         if (id is not null)
         {
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (role != nameof(UserRole.Administrator) && userId != id)
+            if (!User.IsInRole(nameof(UserRole.Administrator)) && userId != id)
                 return Forbid();
         }
         else
@@ -73,9 +71,7 @@ public class RestaurantController(IRestaurantService restaurantService) : Contro
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> CreateRestaurant([FromBody] CreateRestaurantDto creationDto, CancellationToken ct)
     {
-        var ownerIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(ownerIdString, out int ownerId))
-            return Unauthorized();
+        if (!this.TryGetUserId(out int ownerId)) return Unauthorized();
 
         var result = await _restaurantService.CreateAsync(creationDto, ownerId, ct);
         return result.IsSuccess
