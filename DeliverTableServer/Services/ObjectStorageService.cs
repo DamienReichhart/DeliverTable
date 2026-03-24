@@ -3,6 +3,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace DeliverTableServer.Services;
@@ -18,7 +19,6 @@ public sealed class ObjectStorageService(
     private readonly IAmazonS3 _s3Client = s3Client ?? throw new ArgumentNullException(nameof(s3Client));
     private readonly ObjectStorageConfig _config = config ?? throw new ArgumentNullException(nameof(config));
     private readonly ILogger<ObjectStorageService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    private const string _defaultFileExtension = ".png";
 
     /// <inheritdoc />
     public async Task<ObjectStorageResult?> GetObjectAsync(string key, CancellationToken cancellationToken = default)
@@ -58,7 +58,7 @@ public sealed class ObjectStorageService(
             throw new ArgumentException($"File extension {extension} is not allowed. Allowed extensions: {string.Join(", ", _allowedExtensions)}");
         }
 
-        string imageKey = $"{identifier}{_defaultFileExtension}";
+        string imageKey = $"{identifier}{UploadLimits.DefaultImageExtension}";
         string key = string.IsNullOrEmpty(folder) ? imageKey : $"{folder.Trim('/')}/{imageKey}";
 
         using var memoryStream = new MemoryStream();
@@ -101,7 +101,7 @@ public sealed class ObjectStorageService(
     {
         try
         {
-            await _s3Client.DeleteObjectAsync(_config.BucketName, key + _defaultFileExtension, cancellationToken);
+            await _s3Client.DeleteObjectAsync(_config.BucketName, key + UploadLimits.DefaultImageExtension, cancellationToken);
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode is not HttpStatusCode.NotFound)
         {
