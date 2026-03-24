@@ -15,4 +15,6 @@ public interface IDishRepository
     Task<Dish> CreateAsync(Dish dish, CancellationToken ct = default);
     Task<Dish> UpdateAsync(Dish dish, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+    Task<List<Dish>> GetAllUnscopedAsync(CancellationToken ct = default);
+    Task<Dish?> GetByIdWithRestaurantAsync(int id, CancellationToken ct = default);
 }
