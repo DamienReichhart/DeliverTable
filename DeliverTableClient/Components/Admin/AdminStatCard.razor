@@ -1,0 +1,24 @@
+<div class="adm-stat-card">
+    <div class="adm-stat-header">
+        <div class="adm-stat-icon adm-stat-icon--@Variant">
+            @IconContent
+        </div>
+        @if (!string.IsNullOrEmpty(Trend))
+        {
+            <span class="adm-stat-trend adm-stat-trend--@TrendDirection">
+                @Trend
+            </span>
+        }
+    </div>
+    <span class="adm-stat-value">@Value</span>
+    <span class="adm-stat-label">@Label</span>
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Variant { get; set; } = "primary";
+    [Parameter] public string? Trend { get; set; }
+    [Parameter] public string TrendDirection { get; set; } = "flat";
+    [Parameter] public RenderFragment? IconContent { get; set; }
+}

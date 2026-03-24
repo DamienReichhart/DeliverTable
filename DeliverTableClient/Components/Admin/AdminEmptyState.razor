@@ -1,0 +1,19 @@
+
+<div class="adm-empty">
+    <div class="adm-empty-icon">
+        @IconContent
+    </div>
+    <p class="adm-empty-title">@Title</p>
+    <p class="adm-empty-text">@Message</p>
+    @if (ActionContent is not null)
+    {
+        @ActionContent
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Aucun résultat";
+    [Parameter] public string Message { get; set; } = "Aucun élément trouvé.";
+    [Parameter] public RenderFragment? IconContent { get; set; }
+    [Parameter] public RenderFragment? ActionContent { get; set; }
+}

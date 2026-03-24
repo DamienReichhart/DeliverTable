@@ -1,0 +1,57 @@
+@if (IsVisible)
+{
+    <div class="adm-confirm-overlay" @onclick="HandleCancel">
+        <div class="adm-confirm" @onclick:stopPropagation="true">
+            <div class="adm-confirm-icon adm-confirm-icon--@Variant">
+                @if (Variant == "danger")
+                {
+                    <Blazicon Svg="Lucide.Trash2" />
+                }
+                else
+                {
+                    <Blazicon Svg="Lucide.AlertTriangle" />
+                }
+            </div>
+            <h3 class="adm-confirm-title">@Title</h3>
+            <p class="adm-confirm-text">@Message</p>
+            <div class="adm-confirm-actions">
+                <button class="app-btn app-btn--secondary" @onclick="HandleCancel" disabled="@IsProcessing">
+                    Annuler
+                </button>
+                <button class="app-btn @(Variant == "danger" ? "app-btn--danger" : "")" @onclick="HandleConfirm" disabled="@IsProcessing">
+                    @if (IsProcessing)
+                    {
+                        <span>Traitement...</span>
+                    }
+                    else
+                    {
+                        @ConfirmText
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Title { get; set; } = "Confirmer l'action";
+    [Parameter] public string Message { get; set; } = "Cette action est irréversible.";
+    [Parameter] public string ConfirmText { get; set; } = "Confirmer";
+    [Parameter] public string Variant { get; set; } = "danger";
+    [Parameter] public bool IsProcessing { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task HandleConfirm()
+    {
+        if (OnConfirm.HasDelegate)
+            await OnConfirm.InvokeAsync();
+    }
+
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+            await OnCancel.InvokeAsync();
+    }
+}
