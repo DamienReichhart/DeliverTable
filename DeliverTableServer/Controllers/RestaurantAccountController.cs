@@ -19,7 +19,7 @@ public class RestaurantAccountController(IRestaurantAccountService accountServic
     [HttpGet]
     public async Task<IActionResult> GetAccount([FromRoute] int id, [FromQuery] TransactionQuery query, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _accountService.GetAccountAsync(id, userId, query, ct);
         return result.ToOkResult();
@@ -28,14 +28,10 @@ public class RestaurantAccountController(IRestaurantAccountService accountServic
     [HttpPost(ApiRoutes.RestaurantAccount.WithdrawRoute)]
     public async Task<IActionResult> Withdraw([FromRoute] int id, [FromBody] WithdrawRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _accountService.WithdrawAsync(id, userId, request, ct);
         return result.ToOkResult();
     }
 
-    private bool TryGetUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out userId);
-    }
 }

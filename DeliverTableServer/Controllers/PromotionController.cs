@@ -18,7 +18,7 @@ public class PromotionController(IPromotionService promotionService) : Controlle
     [HttpPost(ApiRoutes.Promotion.RestaurantBaseRoute)]
     public async Task<IActionResult> Create([FromRoute] int id, [FromBody] CreatePromotionRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _promotionService.CreateAsync(id, userId, request, ct);
         return result.ToOkResult();
     }
@@ -26,7 +26,7 @@ public class PromotionController(IPromotionService promotionService) : Controlle
     [HttpGet(ApiRoutes.Promotion.RestaurantBaseRoute)]
     public async Task<IActionResult> GetByRestaurant([FromRoute] int id, [FromQuery] PromotionQuery query, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _promotionService.GetByRestaurantAsync(id, userId, query, ct);
         return result.ToOkResult();
     }
@@ -42,7 +42,7 @@ public class PromotionController(IPromotionService promotionService) : Controlle
     [HttpPut(ApiRoutes.Promotion.Base + "/" + ApiRoutes.Promotion.ByIdRoute)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePromotionRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _promotionService.UpdateAsync(id, userId, request, ct);
         return result.ToOkResult();
     }
@@ -50,13 +50,9 @@ public class PromotionController(IPromotionService promotionService) : Controlle
     [HttpDelete(ApiRoutes.Promotion.Base + "/" + ApiRoutes.Promotion.ByIdRoute)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _promotionService.DeleteAsync(id, userId, ct);
         return result.ToNoContentResult();
     }
 
-    private bool TryGetUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out userId);
-    }
 }
