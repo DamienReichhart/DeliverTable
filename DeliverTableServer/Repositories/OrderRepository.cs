@@ -86,4 +86,23 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         await _dbContext.SaveChangesAsync(ct);
         return order;
     }
+
+    public async Task<List<Order>> GetAllUnscopedAsync(CancellationToken ct = default)
+    {
+        return await _dbContext.Orders
+            .Include(o => o.Customer)
+            .Include(o => o.Restaurant)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<Order?> GetByIdWithFullDetailsAsync(int id, CancellationToken ct = default)
+    {
+        return await _dbContext.Orders
+            .Include(o => o.Customer)
+            .Include(o => o.Restaurant)
+            .Include(o => o.Items)
+            .Include(o => o.Payments)
+            .FirstOrDefaultAsync(o => o.Id == id, ct);
+    }
 }
