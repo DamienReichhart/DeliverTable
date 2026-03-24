@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAdminRestaurantService, AdminRestaurantService>();
         services.AddScoped<IRestaurantService, RestaurantService>();
         services.AddScoped<IDishService, DishService>();
         services.AddScoped<ICartService, CartService>();
