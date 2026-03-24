@@ -6,28 +6,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliverTableServer.Repositories;
 
-public sealed class UserRepository(
-    DeliverTableContext context,
+public class UserRepository(
+    DeliverTableContext dbContext,
     UserManager<User> userManager
 ) : IUserRepository
 {
-    private readonly DeliverTableContext _context = context;
+    private readonly DeliverTableContext _dbContext = dbContext;
     private readonly UserManager<User> _userManager = userManager;
 
     public async Task<User?> GetByIdAsync(int id, CancellationToken ct = default)
-        => await _context.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+        => await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
-        => await _context.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
+        => await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
 
     public async Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct = default)
-        => await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail, ct);
+        => await _dbContext.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail, ct);
 
     public async Task<bool> EmailExistsExceptAsync(string normalizedEmail, int excludeUserId, CancellationToken ct = default)
-        => await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail && u.Id != excludeUserId, ct);
+        => await _dbContext.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail && u.Id != excludeUserId, ct);
 
     public async Task<List<User>> GetAllAsync(CancellationToken ct = default)
-        => await _context.Users.OrderBy(u => u.Id).ToListAsync(ct);
+        => await _dbContext.Users.OrderBy(u => u.Id).ToListAsync(ct);
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> CreateAsync(User user, string password)
     {
@@ -73,5 +73,5 @@ public sealed class UserRepository(
     }
 
     public async Task SaveChangesAsync(CancellationToken ct = default)
-        => await _context.SaveChangesAsync(ct);
+        => await _dbContext.SaveChangesAsync(ct);
 }
