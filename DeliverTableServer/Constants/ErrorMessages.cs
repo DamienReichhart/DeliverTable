@@ -53,4 +53,24 @@ public static class ErrorMessages
     // Restaurant Account
     public const string InsufficientBalance = "Solde insuffisant pour effectuer ce retrait";
     public const string InvalidWithdrawalAmount = "Le montant du retrait doit être supérieur à 0";
+
+    // Promotions
+    public const string PromotionNotFound = "Promotion introuvable";
+    public const string InvalidPromotionDates = "La date de fin doit être postérieure à la date de début";
+    public const string PromotionDishNotFromRestaurant = "Un ou plusieurs plats n'appartiennent pas à ce restaurant";
+
+    // Discount Codes
+    public const string DiscountCodeNotFound = "Code promo introuvable";
+    public const string DiscountCodeInvalid = "Code promo invalide ou expiré";
+    public const string DiscountCodeMaxRedemptions = "Ce code promo a atteint le nombre maximum d'utilisations";
+    public const string DiscountCodePerUserLimit = "Vous avez déjà utilisé ce code promo le nombre de fois autorisé";
+    public const string DiscountCodeMinOrderNotMet = "Le montant minimum de commande n'est pas atteint pour ce code promo";
+    public const string DiscountCodeAlreadyExists = "Un code promo avec ce code existe déjà pour ce restaurant";
+
+    // Loyalty
+    public const string LoyaltyProgramNotFound = "Programme de fidélité introuvable";
+    public const string LoyaltyProgramAlreadyExists = "Ce restaurant possède déjà un programme de fidélité";
+    public const string LoyaltyAccountNotFound = "Compte fidélité introuvable";
+    public const string InsufficientLoyaltyPoints = "Nombre de points de fidélité insuffisant";
+    public const string LoyaltyProgramNotActive = "Le programme de fidélité n'est pas actif";
 }
