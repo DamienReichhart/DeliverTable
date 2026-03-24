@@ -1,0 +1,184 @@
+@use "../abstracts/variables" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Modal – overlay dialog for create/edit forms
+// ---------------------------------------------------------------------------
+
+.adm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-overlay;
+  animation: adm-fade-in 200ms ease;
+}
+
+.adm-modal {
+  background: $color-bg-white;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-lg;
+  width: 90%;
+  max-width: 560px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: adm-slide-up 250ms ease;
+}
+
+.adm-modal--wide {
+  max-width: 720px;
+}
+
+.adm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg $spacing-lg $spacing-md;
+  border-bottom: 1px solid $color-border;
+}
+
+.adm-modal-title {
+  font-family: $font-family-display;
+  font-size: 1.125rem;
+  line-height: $line-height-heading;
+  color: $color-text;
+  margin: 0;
+}
+
+.adm-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background-color $transition-fast, color $transition-fast;
+
+  &:hover {
+    background: rgba($color-deep-charcoal, 0.06);
+    color: $color-text;
+  }
+}
+
+.adm-modal-body {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.adm-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-border;
+}
+
+// ── Form layout inside modal ──
+
+.adm-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+
+  @media (min-width: $breakpoint-desktop) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.adm-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adm-form-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.adm-form-input {
+  padding: 0.5rem 0.75rem;
+  font-size: $font-size-sm;
+  font-family: $font-family-base;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-white;
+  color: $color-text;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+
+  &:focus {
+    border-color: $color-border-focus;
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.08);
+    outline: none;
+  }
+
+  &--error {
+    border-color: $color-error;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($color-error, 0.08);
+    }
+  }
+}
+
+.adm-form-select {
+  @extend .adm-form-input;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6B80' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+.adm-form-textarea {
+  @extend .adm-form-input;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.adm-form-error {
+  font-size: $font-size-xs;
+  color: $color-error;
+  margin-top: 2px;
+}
+
+.adm-form-hint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-top: 2px;
+}
+
+// ── Animations ──
+
+@keyframes adm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes adm-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
