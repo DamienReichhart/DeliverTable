@@ -111,12 +111,14 @@ erDiagram
     }
 
     PROMOTION {
-        string  id PK
-        string  restaurant_id FK
+        int     id PK
+        int     restaurant_id FK
         string  name
         string  description
+        string  promotion_type     "AUTOMATIC | ITEM_BASED | THRESHOLD"
         string  discount_type      "PERCENTAGE | FIXED_AMOUNT"
         float   discount_value
+        float   min_order_amount   "nullable – for THRESHOLD type"
         datetime starts_at
         datetime ends_at
         boolean is_active
@@ -124,49 +126,73 @@ erDiagram
         datetime updated_at
     }
 
+    PROMOTION_DISH {
+        int     id PK
+        int     promotion_id FK
+        int     dish_id FK          "links ITEM_BASED promotions to dishes"
+    }
+
     LOYALTY_PROGRAM {
-        string  id PK
-        string  restaurant_id FK
-        string  name
-        string  description
-        string  rules_schema        "JSON describing earning/redeeming rules"
+        int     id PK
+        int     restaurant_id FK    "unique – one per restaurant"
+        float   points_per_euro
+        float   euros_per_point
         boolean is_active
         datetime created_at
         datetime updated_at
     }
 
     LOYALTY_ACCOUNT {
-        string  id PK
-        string  loyalty_program_id FK
-        string  customer_user_id FK
+        int     id PK
+        int     loyalty_program_id FK
+        int     customer_user_id FK "unique per program+customer"
         int     points_balance
         datetime created_at
         datetime updated_at
     }
 
     LOYALTY_TRANSACTION {
-        string  id PK
-        string  loyalty_account_id FK
+        int     id PK
+        int     loyalty_account_id FK
         string  type               "EARN | REDEEM | ADJUST"
         int     points
-        string  source             "BOOKING_ID or admin adjustment"
+        int     order_id FK         "nullable – null for adjustments"
         datetime created_at
     }
 
     DISCOUNT_CODE {
-        string  id PK
-        string  restaurant_id FK
-        string  code
+        int     id PK
+        int     restaurant_id FK
+        string  code                "unique per restaurant"
         string  description
-        string  discount_type
+        string  discount_type       "PERCENTAGE | FIXED_AMOUNT"
         float   discount_value
+        float   min_order_amount    "nullable"
         datetime valid_from
         datetime valid_until
-        int     max_redemptions
-        int     per_user_limit
+        int     max_redemptions     "nullable – null = unlimited"
+        int     per_user_limit      "default 1"
+        int     current_redemptions "default 0"
         boolean is_active
         datetime created_at
         datetime updated_at
+    }
+
+    DISCOUNT_CODE_REDEMPTION {
+        int     id PK
+        int     discount_code_id FK
+        int     customer_user_id FK
+        int     order_id FK
+        datetime created_at
+    }
+
+    ORDER_DISCOUNT {
+        int     id PK
+        int     order_id FK
+        string  source              "PROMOTION | DISCOUNT_CODE | LOYALTY_POINTS"
+        int     source_id           "nullable – FK to source entity"
+        string  description
+        float   amount
     }
 
     CUSTOMER_FAVOURITE_RESTAURANT {
@@ -206,9 +232,14 @@ erDiagram
         int     customer_user_id FK
         int     restaurant_id FK
         string  order_type          "DELIVERY | DINE_IN"
-        string  status              "PENDING | CONFIRMED | PREPARING | READY | DELIVERING | DELIVERED | CANCELLED"
+        string  status              "PENDING | CONFIRMED | PREPARING | READY | DELIVERING | DELIVERED | CANCELLED | REFUSED"
         string  payment_status      "PENDING | COMPLETED | FAILED | REFUNDED"
-        float   total_amount
+        float   original_amount     "sum of items before discounts"
+        float   discount_amount     "total discount applied"
+        float   total_amount        "original - discount (what customer pays)"
+        int     loyalty_points_used
+        int     loyalty_points_earned
+        int     discount_code_id FK "nullable"
         int     guest_count
         string  delivery_address    "required for DELIVERY only"
         string  notes
@@ -397,13 +428,21 @@ erDiagram
 
     RESTAURANT ||--o{ MENU_ITEM : "offers"
     RESTAURANT ||--o{ PROMOTION : "configures"
+    PROMOTION ||--o{ PROMOTION_DISH : "targets dishes"
+    MENU_ITEM ||--o{ PROMOTION_DISH : "is targeted by"
 
     RESTAURANT ||--o{ LOYALTY_PROGRAM : "defines"
     LOYALTY_PROGRAM ||--o{ LOYALTY_ACCOUNT : "has accounts"
     USER ||--o{ LOYALTY_ACCOUNT : "owns account"
     LOYALTY_ACCOUNT ||--o{ LOYALTY_TRANSACTION : "logs"
+    ORDER ||--o{ LOYALTY_TRANSACTION : "triggers"
 
     RESTAURANT ||--o{ DISCOUNT_CODE : "issues"
+    DISCOUNT_CODE ||--o{ DISCOUNT_CODE_REDEMPTION : "tracks usage"
+    USER ||--o{ DISCOUNT_CODE_REDEMPTION : "redeems"
+    ORDER ||--o{ DISCOUNT_CODE_REDEMPTION : "uses code"
+    ORDER ||--o{ ORDER_DISCOUNT : "has discounts"
+    DISCOUNT_CODE ||--o{ ORDER : "applied to"
 
     RESTAURANT ||--o{ BOOKING_RULE : "configures rules"
     RESTAURANT ||--o{ BOOKING_BLOCKED_SLOT : "blocks slots"
