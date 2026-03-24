@@ -44,10 +44,13 @@
                     <span class="meta-label">Type :</span>
                     <span class="order-type-label">@TranslateOrderType(_order.OrderType)</span>
                 </div>
-                <div class="order-meta-item">
-                    <span class="meta-label">Convives :</span>
-                    <span>@_order.GuestCount personne(s)</span>
-                </div>
+                @if (_order.OrderType == "DineIn")
+                {
+                    <div class="order-meta-item">
+                        <span class="meta-label">Convives :</span>
+                        <span>@_order.GuestCount personne(s)</span>
+                    </div>
+                }
                 <div class="order-meta-item">
                     <span class="meta-label">Statut :</span>
                     <span class="status-badge status--@_order.Status.ToLower()">@TranslateStatus(_order.Status)</span>
