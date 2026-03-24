@@ -1,4 +1,5 @@
 using DeliverTableServer.Data;
+using DeliverTableServer.Extensions;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Promotion;
@@ -33,9 +34,8 @@ public class PromotionRepository(DeliverTableContext dbContext) : IPromotionRepo
             .OrderByDescending(p => p.CreatedAt);
 
         var totalCount = await q.CountAsync(ct);
-        int page = query.PageNumber > 0 ? query.PageNumber : 1;
-        int skip = (page - 1) * query.PageSize;
-        var items = await q.Skip(skip).Take(query.PageSize).ToListAsync(ct);
+        var (skip, take) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
+        var items = await q.Skip(skip).Take(take).ToListAsync(ct);
         return (items, totalCount);
     }
 

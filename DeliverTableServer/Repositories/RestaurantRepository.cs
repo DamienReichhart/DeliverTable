@@ -1,4 +1,5 @@
 using DeliverTableServer.Data;
+using DeliverTableServer.Extensions;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
@@ -48,7 +49,7 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
                 .ToList();
 
             var totalCount = filtered.Count;
-            var (offset, size) = GetPaginationOffsets(query);
+            var (offset, size) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
             var items = filtered.Skip(offset).Take(size).ToList();
             return (items, totalCount);
         }
@@ -57,7 +58,7 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
 
         var total = await q.CountAsync(ct);
 
-        var (skip, take) = GetPaginationOffsets(query);
+        var (skip, take) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
         var result = await q.Skip(skip).Take(take).ToListAsync(ct);
         return (result, total);
     }
@@ -105,16 +106,9 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
 
         var totalCount = await q.CountAsync(ct);
 
-        var (skip, take) = GetPaginationOffsets(query);
+        var (skip, take) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
         var items = await q.Skip(skip).Take(take).ToListAsync(ct);
         return (items, totalCount);
-    }
-
-    private static (int Skip, int Take) GetPaginationOffsets(RestaurantQuery query)
-    {
-        int page = query.PageNumber > 0 ? query.PageNumber : 1;
-        int skip = (page - 1) * query.PageSize;
-        return (skip, query.PageSize);
     }
 
     private static IQueryable<Restaurant> ApplyFilters(IQueryable<Restaurant> query, RestaurantQuery filter)
