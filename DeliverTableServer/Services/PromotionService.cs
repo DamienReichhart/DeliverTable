@@ -34,14 +34,12 @@ public sealed class PromotionService(
         if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out var promotionType))
             return new ServiceError(ErrorMessages.InvalidFields);
 
-        if (!Enum.TryParse<DiscountType>(request.DiscountType, ignoreCase: true, out var discountType))
-            return new ServiceError(ErrorMessages.InvalidFields);
+        var discountError = DiscountValidationHelper.ValidateDiscountType(
+            request.DiscountType, request.DiscountValue, out var discountType);
+        if (discountError is not null) return discountError;
 
-        if (request.EndsAt <= request.StartsAt)
-            return new ServiceError(ErrorMessages.InvalidPromotionDates);
-
-        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+        var dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
+        if (dateError is not null) return dateError;
 
         if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
         {
@@ -97,14 +95,12 @@ public sealed class PromotionService(
         if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out var promotionType))
             return new ServiceError(ErrorMessages.InvalidFields);
 
-        if (!Enum.TryParse<DiscountType>(request.DiscountType, ignoreCase: true, out var discountType))
-            return new ServiceError(ErrorMessages.InvalidFields);
+        var discountError = DiscountValidationHelper.ValidateDiscountType(
+            request.DiscountType, request.DiscountValue, out var discountType);
+        if (discountError is not null) return discountError;
 
-        if (request.EndsAt <= request.StartsAt)
-            return new ServiceError(ErrorMessages.InvalidPromotionDates);
-
-        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+        var dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
+        if (dateError is not null) return dateError;
 
         if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
         {
