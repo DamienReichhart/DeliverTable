@@ -40,8 +40,15 @@
                         <span class="info-label">Convives</span>
                         <span>@_order.GuestCount personne(s)</span>
                     </div>
+                    @if (_order.ScheduledAt.HasValue)
+                    {
+                        <div class="info-item">
+                            <span class="info-label">Date planifiée</span>
+                            <span>@_order.ScheduledAt.Value.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
+                        </div>
+                    }
                     <div class="info-item">
-                        <span class="info-label">Date</span>
+                        <span class="info-label">Date de commande</span>
                         <span>@_order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
                     </div>
                     <div class="info-item">

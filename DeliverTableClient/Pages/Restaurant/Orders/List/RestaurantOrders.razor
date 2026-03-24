@@ -85,7 +85,16 @@
                             <td>@order.GuestCount</td>
                             <td>@order.Items.Count</td>
                             <td><strong>@order.TotalAmount.ToString("C", _frCulture)</strong></td>
-                            <td>@order.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                            <td>
+                                @if (order.ScheduledAt.HasValue)
+                                {
+                                    <span title="Date planifiée">@order.ScheduledAt.Value.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                }
+                                else
+                                {
+                                    @order.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")
+                                }
+                            </td>
                             <td>
                                 <span class="status-badge status--@order.Status.ToLower()">
                                     @TranslateStatus(order.Status)

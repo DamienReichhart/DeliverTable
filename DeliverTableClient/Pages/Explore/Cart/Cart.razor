@@ -143,6 +143,21 @@
                     <textarea id="notes" @bind="_notes" class="filter-input" rows="2"
                               placeholder="@(_orderType == "DineIn" ? "Préférences de table, allergies..." : "Instructions de livraison, étage, code...")"></textarea>
                 </div>
+
+                <div class="form-group">
+                    <label for="scheduled-at">
+                        @(_orderType == "DineIn" ? "Date et heure de la réservation" : "Date et heure de livraison souhaitée")
+                        <span class="optional-label">(optionnel)</span>
+                    </label>
+                    <input type="datetime-local" id="scheduled-at" @bind="_scheduledAt" class="filter-input" />
+                    @if (_scheduledAt.HasValue)
+                    {
+                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" style="margin-top: 0.25rem;"
+                                @onclick="() => _scheduledAt = null">
+                            Retirer la date planifiée
+                        </button>
+                    }
+                </div>
             </div>
 
             @* ── Discount codes ── *@
@@ -316,6 +331,7 @@
     private int _guestCount = 1;
     private string _deliveryAddress = string.Empty;
     private string _notes = string.Empty;
+    private DateTime? _scheduledAt;
     private string _discountCodeInput = string.Empty;
     private List<DiscountCodeDto> _appliedCodes = [];
     private bool _applyingCode;
@@ -566,6 +582,7 @@
             GuestCount = _guestCount,
             DeliveryAddress = _deliveryAddress,
             Notes = _notes,
+            ScheduledAt = _scheduledAt.HasValue ? _scheduledAt.Value.ToUniversalTime() : null,
             DiscountCodes = _appliedCodes.Select(c => c.Code).ToList(),
             LoyaltyPointsToRedeem = _loyaltyPointsToRedeem
         };

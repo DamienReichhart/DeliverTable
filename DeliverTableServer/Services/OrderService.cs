@@ -48,6 +48,9 @@ public sealed class OrderService(
         if (orderType == OrderType.Delivery && string.IsNullOrWhiteSpace(request.DeliveryAddress))
             return new ServiceError(ErrorMessages.DeliveryAddressRequired);
 
+        if (request.ScheduledAt.HasValue && request.ScheduledAt.Value <= DateTime.UtcNow)
+            return new ServiceError(ErrorMessages.ScheduledAtMustBeFuture);
+
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
             return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
@@ -103,6 +106,7 @@ public sealed class OrderService(
             GuestCount = orderType == OrderType.Delivery ? 1 : request.GuestCount,
             DeliveryAddress = orderType == OrderType.Delivery ? request.DeliveryAddress : string.Empty,
             Notes = request.Notes,
+            ScheduledAt = request.ScheduledAt,
             Source = BookingSource.CustomerApp,
             Items = orderItems,
             Discounts = orderDiscounts
@@ -110,6 +114,19 @@ public sealed class OrderService(
 
         var created = await _orderRepository.CreateAsync(order, ct);
         await TrackDiscountCodeRedemptionsAsync(appliedDiscountCodes, customerId, created.Id, ct);
+
+        if (totalAmount > 0)
+        {
+            created.Payments.Add(new Payment
+            {
+                OrderId = created.Id,
+                Amount = totalAmount,
+                Currency = "EUR",
+                Status = PaymentGatewayStatus.Succeeded
+            });
+            await _orderRepository.UpdateAsync(created, ct);
+        }
+
         await _cartRepository.DeleteAsync(cart.Id, ct);
 
         var fullOrder = await _orderRepository.GetByIdAsync(created.Id, ct);
