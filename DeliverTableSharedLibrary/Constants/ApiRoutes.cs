@@ -131,7 +131,7 @@ public static class ApiRoutes
     }
 
     /// <summary>Discount code routes (RestaurantOwner).</summary>
-    public static class DiscountCodeRoutes
+    public static class DiscountCode
     {
         public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/discount-codes";
         public const string ValidateRoute = "api/v1/restaurant/{id:int}/discount-codes/validate";
