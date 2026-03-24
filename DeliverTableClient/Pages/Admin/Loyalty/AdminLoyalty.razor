@@ -1,0 +1,335 @@
+@page "/admin/loyalty"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminLoyaltyClientService LoyaltyService
+
+<PageTitle>Fidélité — Administration</PageTitle>
+
+<AdminLayout Title="Fidélité" Subtitle="@($"{(_programs?.Count ?? 0)} programmes de fidélité")">
+    <ActionsContent>
+        <button class="app-btn app-btn--sm" @onclick="OpenCreateModal">
+            <Blazicon Svg="Lucide.Plus" />
+            Créer un programme
+        </button>
+    </ActionsContent>
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="alert alert-success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        <AdminDataTable TItem="AdminLoyaltyProgramResponse"
+                         Items="FilteredPrograms"
+                         TotalCount="@(FilteredPrograms.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par restaurant..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Restaurant</th>
+                <th>Points / €</th>
+                <th>€ / Point</th>
+                <th>Actif</th>
+                <th>Comptes</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="program">
+                <tr>
+                    <td>@program.RestaurantName</td>
+                    <td class="adm-cell-mono">@program.PointsPerEuro</td>
+                    <td class="adm-cell-mono">@program.EurosPerPoint</td>
+                    <td>
+                        <AdminBadge Text="@(program.IsActive ? "Actif" : "Inactif")"
+                                    Variant="@(program.IsActive ? "active" : "warning")" ShowDot />
+                    </td>
+                    <td class="adm-cell-mono">@program.AccountCount</td>
+                    <td>
+                        <div class="adm-cell-actions">
+                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(program)">
+                                Modifier
+                            </button>
+                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                                    @onclick="() => OpenDeleteConfirm(program)">
+                                Supprimer
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucun programme trouvé"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.Heart" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ── Create modal ── *@
+        <AdminFormModal IsVisible="@_showCreateModal" Title="Créer un programme de fidélité" OnClose="CloseCreateModal">
+            <ChildContent>
+                <EditForm Model="@_createModel" OnValidSubmit="HandleCreate">
+                    <DataAnnotationsValidator />
+                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <label class="adm-form-label" for="create-restaurant">Restaurant (ID)</label>
+                        <InputNumber id="create-restaurant" @bind-Value="_createModel.RestaurantId"
+                                     class="adm-form-input" />
+                        <ValidationMessage For="@(() => _createModel.RestaurantId)" class="adm-form-error" />
+                    </div>
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create-ppe">Points par euro</label>
+                            <InputNumber id="create-ppe" @bind-Value="_createModel.PointsPerEuro"
+                                         class="adm-form-input" />
+                            <ValidationMessage For="@(() => _createModel.PointsPerEuro)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create-epp">Euros par point</label>
+                            <InputNumber id="create-epp" @bind-Value="_createModel.EurosPerPoint"
+                                         class="adm-form-input" />
+                            <ValidationMessage For="@(() => _createModel.EurosPerPoint)" class="adm-form-error" />
+                        </div>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 1rem;">
+                        <label class="adm-form-label">
+                            <InputCheckbox @bind-Value="_createModel.IsActive" />
+                            Actif
+                        </label>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button type="submit" class="app-btn app-btn--sm" disabled="@_isSaving">
+                            @(_isSaving ? "Création..." : "Créer")
+                        </button>
+                    </div>
+                </EditForm>
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Edit modal ── *@
+        <AdminFormModal IsVisible="@(_editingProgram is not null)" Title="Modifier le programme" OnClose="CloseEditModal">
+            <ChildContent>
+                @if (_editingProgram is not null)
+                {
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label">Points par euro</label>
+                            <input type="number" class="adm-form-input" @bind="_editModel.PointsPerEuro" step="0.01" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label">Euros par point</label>
+                            <input type="number" class="adm-form-input" @bind="_editModel.EurosPerPoint" step="0.0001" />
+                        </div>
+                    </div>
+                    <div class="adm-form-group" style="margin-top: 1rem;">
+                        <label class="adm-form-label">
+                            <input type="checkbox" @bind="_editModel.IsActive" />
+                            Actif
+                        </label>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button class="app-btn app-btn--sm" @onclick="HandleUpdate" disabled="@_isSaving">
+                            @(_isSaving ? "Sauvegarde..." : "Sauvegarder")
+                        </button>
+                    </div>
+                }
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Delete confirmation ── *@
+        <AdminConfirmDialog IsVisible="@(_deletingProgram is not null)"
+                            Title="Supprimer le programme"
+                            Message="@($"Voulez-vous vraiment supprimer le programme de {_deletingProgram?.RestaurantName} ? Cette action est irréversible.")"
+                            ConfirmText="Supprimer"
+                            Variant="danger"
+                            IsProcessing="@_isSaving"
+                            OnConfirm="HandleDelete"
+                            OnCancel="CloseDeleteConfirm" />
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminLoyaltyProgramResponse>? _programs;
+    private bool _isLoading = true;
+    private string _searchQuery = "";
+
+    private bool _showCreateModal;
+    private AdminCreateLoyaltyProgramRequest _createModel = new();
+
+    private AdminLoyaltyProgramResponse? _editingProgram;
+    private AdminUpdateLoyaltyProgramRequest _editModel = new();
+
+    private AdminLoyaltyProgramResponse? _deletingProgram;
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Fidélité", Href = "/admin/loyalty" }
+    ];
+
+    private IEnumerable<AdminLoyaltyProgramResponse> FilteredPrograms =>
+        _programs?.Where(p =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || p.RestaurantName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPrograms();
+    }
+
+    private async Task LoadPrograms()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var (programs, error) = await LoyaltyService.GetAllProgramsAsync();
+        _programs = programs;
+        _actionError = error?.Error;
+        _isLoading = false;
+    }
+
+    // ── Create ──
+
+    private void OpenCreateModal()
+    {
+        ClearMessages();
+        _createModel = new AdminCreateLoyaltyProgramRequest();
+        _showCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        _showCreateModal = false;
+        _createModel = new AdminCreateLoyaltyProgramRequest();
+    }
+
+    private async Task HandleCreate()
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (created, error) = await LoyaltyService.CreateProgramAsync(_createModel);
+        if (created is not null)
+        {
+            _programs?.Add(created);
+            _actionSuccess = $"Programme pour {created.RestaurantName} créé avec succès";
+            CloseCreateModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la création du programme";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Edit ──
+
+    private void OpenEditModal(AdminLoyaltyProgramResponse program)
+    {
+        ClearMessages();
+        _deletingProgram = null;
+        _editingProgram = program;
+        _editModel = new AdminUpdateLoyaltyProgramRequest
+        {
+            PointsPerEuro = program.PointsPerEuro,
+            EurosPerPoint = program.EurosPerPoint,
+            IsActive = program.IsActive
+        };
+    }
+
+    private void CloseEditModal()
+    {
+        _editingProgram = null;
+        _editModel = new AdminUpdateLoyaltyProgramRequest();
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (_editingProgram is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var (updated, error) = await LoyaltyService.UpdateProgramAsync(_editingProgram.Id, _editModel);
+        if (updated is not null)
+        {
+            ReplaceProgram(updated);
+            _actionSuccess = $"Programme pour {updated.RestaurantName} mis à jour";
+            CloseEditModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la mise à jour du programme";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Delete ──
+
+    private void OpenDeleteConfirm(AdminLoyaltyProgramResponse program)
+    {
+        ClearMessages();
+        _editingProgram = null;
+        _deletingProgram = program;
+    }
+
+    private void CloseDeleteConfirm()
+    {
+        _deletingProgram = null;
+    }
+
+    private async Task HandleDelete()
+    {
+        if (_deletingProgram is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var programId = _deletingProgram.Id;
+        var (success, error) = await LoyaltyService.DeleteProgramAsync(programId);
+        if (success)
+        {
+            var removed = _deletingProgram;
+            _programs?.RemoveAll(p => p.Id == programId);
+            _actionSuccess = $"Programme pour {removed.RestaurantName} supprimé";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression du programme";
+        }
+
+        _deletingProgram = null;
+        _isSaving = false;
+    }
+
+    // ── Helpers ──
+
+    private void ReplaceProgram(AdminLoyaltyProgramResponse updated)
+    {
+        if (_programs is null) return;
+        var idx = _programs.FindIndex(p => p.Id == updated.Id);
+        if (idx >= 0) _programs[idx] = updated;
+    }
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+}
