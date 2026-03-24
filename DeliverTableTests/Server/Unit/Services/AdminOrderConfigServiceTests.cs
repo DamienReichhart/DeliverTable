@@ -53,8 +53,11 @@ public class AdminOrderConfigServiceTests
         var restaurant = CreateRestaurant(id: 1, ownerId: 5);
         var rule = new OrderRule
         {
-            Id = 1, RestaurantId = 1, Restaurant = restaurant,
-            MinConfirmAmount = 15.50m, AllowPreorder = true
+            Id = 1,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            MinConfirmAmount = 15.50m,
+            AllowPreorder = true
         };
 
         _orderConfigRepository.GetRuleByIdAsync(1, Arg.Any<CancellationToken>()).Returns(rule);
@@ -145,8 +148,11 @@ public class AdminOrderConfigServiceTests
         var restaurant = CreateRestaurant(id: 1, ownerId: 5);
         var rule = new OrderRule
         {
-            Id = 1, RestaurantId = 1, Restaurant = restaurant,
-            MinConfirmAmount = 10m, AllowPreorder = false
+            Id = 1,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            MinConfirmAmount = 10m,
+            AllowPreorder = false
         };
 
         _orderConfigRepository.GetRuleByIdAsync(1, Arg.Any<CancellationToken>()).Returns(rule);
@@ -256,8 +262,11 @@ public class AdminOrderConfigServiceTests
         var restaurant = CreateRestaurant(id: 1, ownerId: 5);
         var slot = new OrderBlockedSlot
         {
-            Id = 1, RestaurantId = 1, Restaurant = restaurant,
-            StartsAt = DateTime.UtcNow, EndsAt = DateTime.UtcNow.AddHours(2),
+            Id = 1,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            StartsAt = DateTime.UtcNow,
+            EndsAt = DateTime.UtcNow.AddHours(2),
             Reason = "Maintenance"
         };
 
