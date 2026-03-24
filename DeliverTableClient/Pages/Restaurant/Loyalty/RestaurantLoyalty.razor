@@ -1,0 +1,176 @@
+@page "/restaurant/{RestaurantId:int}/fidelite"
+@inject ILoyaltyClientService LoyaltyService
+@inject IRestaurantService RestaurantService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<PageTitle>Fidélité — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
+
+<div class="restaurant-loyalty-page">
+    <div class="page-header">
+        <div>
+            <h1>Programme de fidélité</h1>
+            @if (_restaurantName is not null)
+            {
+                <p class="page-subtitle">@_restaurantName</p>
+            }
+        </div>
+        <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+            Retour
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else
+    {
+        @if (_program is not null)
+        {
+            <div class="loyalty-summary">
+                <h2>Configuration actuelle</h2>
+                <div class="loyalty-stats">
+                    <div class="stat-card">
+                        <span class="stat-label">Points par euro dépensé</span>
+                        <span class="stat-value">@_program.PointsPerEuro</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Euros par point</span>
+                        <span class="stat-value">@_program.EurosPerPoint</span>
+                    </div>
+                </div>
+                <div class="loyalty-explanation">
+                    <p>1€ dépensé = <strong>@_program.PointsPerEuro points</strong></p>
+                    <p>@(Math.Round(1m / _program.EurosPerPoint)) points = <strong>1€ de réduction</strong></p>
+                </div>
+            </div>
+        }
+
+        <div class="loyalty-form-container">
+            <h2>@(_program is not null ? "Modifier le programme" : "Créer un programme de fidélité")</h2>
+            <EditForm Model="_formModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="pointsPerEuro">Points par euro dépensé</label>
+                        <InputNumber id="pointsPerEuro" @bind-Value="_formModel.PointsPerEuro" class="form-control" />
+                        <small class="form-hint">Ex : 10 = le client gagne 10 points par euro dépensé</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eurosPerPoint">Euros par point</label>
+                        <InputNumber id="eurosPerPoint" @bind-Value="_formModel.EurosPerPoint" class="form-control" />
+                        <small class="form-hint">Ex : 0.01 = chaque point vaut 0,01€</small>
+                    </div>
+                </div>
+
+                @if (_formModel.PointsPerEuro > 0 && _formModel.EurosPerPoint > 0)
+                {
+                    <div class="loyalty-preview">
+                        <p>1€ dépensé = <strong>@_formModel.PointsPerEuro points</strong></p>
+                        <p>@(Math.Round(1m / _formModel.EurosPerPoint)) points = <strong>1€ de réduction</strong></p>
+                    </div>
+                }
+
+                <div class="form-actions">
+                    <button type="submit" class="app-btn app-btn--primary" disabled="@_submitting">
+                        @(_program is not null ? "Modifier" : "Créer")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+
+        @if (_successMessage is not null)
+        {
+            <div class="success-message">
+                <p>@_successMessage</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private LoyaltyProgramDto? _program;
+    private CreateLoyaltyProgramRequest _formModel = new();
+    private string? _restaurantName;
+    private bool _loading = true;
+    private bool _submitting;
+    private string? _error;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
+        _restaurantName = restaurant?.Name;
+
+        await LoadProgram();
+    }
+
+    private async Task LoadProgram()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        var (result, error) = await LoyaltyService.GetProgramAsync(RestaurantId);
+        if (error is not null)
+        {
+            // 404 means no program yet — that's fine
+            if (!error.Error.Contains("404") && !error.Error.Contains("Not Found"))
+                _error = error.Error;
+        }
+        else
+        {
+            _program = result;
+            if (_program is not null)
+            {
+                _formModel = new CreateLoyaltyProgramRequest
+                {
+                    PointsPerEuro = _program.PointsPerEuro,
+                    EurosPerPoint = _program.EurosPerPoint
+                };
+            }
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _error = null;
+        _successMessage = null;
+
+        var (result, error) = await LoyaltyService.CreateOrUpdateAsync(RestaurantId, _formModel);
+        if (error is not null)
+        {
+            _error = error.Error;
+        }
+        else
+        {
+            _program = result;
+            _successMessage = _program is not null
+                ? "Programme de fidélité enregistré avec succès."
+                : "Programme mis à jour.";
+        }
+
+        _submitting = false;
+        StateHasChanged();
+    }
+
+    private void GoBack() => Nav.NavigateTo("/mes-restaurants");
+}

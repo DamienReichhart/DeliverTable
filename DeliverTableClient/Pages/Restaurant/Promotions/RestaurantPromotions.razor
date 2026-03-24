@@ -1,0 +1,383 @@
+@page "/restaurant/{RestaurantId:int}/promotions"
+@inject IPromotionService PromotionService
+@inject IRestaurantService RestaurantService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<PageTitle>Promotions — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
+
+<div class="restaurant-promotions-page">
+    <div class="page-header">
+        <div>
+            <h1>Promotions</h1>
+            @if (_restaurantName is not null)
+            {
+                <p class="page-subtitle">@_restaurantName</p>
+            }
+        </div>
+        <div class="page-header-actions">
+            <button type="button" class="app-btn app-btn--primary" @onclick="ShowCreateForm">
+                Créer une promotion
+            </button>
+            <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+                Retour
+            </button>
+        </div>
+    </div>
+
+    @if (_showForm)
+    {
+        <div class="promotion-form-container">
+            <h2>@(_editingId.HasValue ? "Modifier la promotion" : "Nouvelle promotion")</h2>
+            <EditForm Model="_formModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">Nom</label>
+                        <InputText id="name" @bind-Value="_formModel.Name" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <InputText id="description" @bind-Value="_formModel.Description" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="promotionType">Type de promotion</label>
+                        <InputSelect id="promotionType" @bind-Value="_formModel.PromotionType" class="form-control">
+                            <option value="">-- Choisir --</option>
+                            <option value="OrderBased">Sur commande</option>
+                            <option value="ItemBased">Sur article</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discountType">Type de réduction</label>
+                        <InputSelect id="discountType" @bind-Value="_formModel.DiscountType" class="form-control">
+                            <option value="">-- Choisir --</option>
+                            <option value="Percentage">Pourcentage</option>
+                            <option value="FixedAmount">Montant fixe</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discountValue">Valeur de la réduction</label>
+                        <InputNumber id="discountValue" @bind-Value="_formModel.DiscountValue" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="minOrderAmount">Commande minimum (optionnel)</label>
+                        <InputNumber id="minOrderAmount" @bind-Value="_formModel.MinOrderAmount" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="startsAt">Date de début</label>
+                        <InputDate id="startsAt" @bind-Value="_formModel.StartsAt" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endsAt">Date de fin</label>
+                        <InputDate id="endsAt" @bind-Value="_formModel.EndsAt" class="form-control" />
+                    </div>
+
+                    @if (_formModel.PromotionType == "ItemBased")
+                    {
+                        <div class="form-group form-group--full">
+                            <label for="dishIds">IDs des plats (séparés par des virgules)</label>
+                            <InputText id="dishIds" @bind-Value="_dishIdsInput" class="form-control" />
+                        </div>
+                    }
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="app-btn app-btn--primary" disabled="@_submitting">
+                        @(_editingId.HasValue ? "Modifier" : "Créer")
+                    </button>
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="CancelForm">
+                        Annuler
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    }
+
+    @if (_loading)
+    {
+        <p>Chargement des promotions...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_promotions is null || _promotions.Items.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Aucune promotion pour le moment.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Type</th>
+                        <th>Réduction</th>
+                        <th>Dates</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var promo in _promotions.Items)
+                    {
+                        <tr>
+                            <td><strong>@promo.Name</strong></td>
+                            <td>@TranslatePromotionType(promo.PromotionType)</td>
+                            <td>@FormatDiscount(promo.DiscountType, promo.DiscountValue)</td>
+                            <td>@promo.StartsAt.ToString("dd/MM/yyyy") — @promo.EndsAt.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="status-badge status--@GetStatusClass(promo)">
+                                    @GetStatusLabel(promo)
+                                </span>
+                            </td>
+                            <td class="actions-cell">
+                                <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => EditPromotion(promo)">
+                                    Modifier
+                                </button>
+                                <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => DeletePromotion(promo.Id)">
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_promotions.HasNextPage || _query.PageNumber > 1)
+        {
+            <div class="pagination">
+                @if (_query.PageNumber > 1)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                }
+                <span class="page-info">Page @_query.PageNumber / @((_promotions.TotalCount + _query.PageSize - 1) / _query.PageSize)</span>
+                @if (_promotions.HasNextPage)
+                {
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private PaginatedResult<PromotionDto>? _promotions;
+    private PromotionQuery _query = new() { PageSize = 20 };
+    private string? _restaurantName;
+    private bool _loading = true;
+    private string? _error;
+    private bool _showForm;
+    private bool _submitting;
+    private int? _editingId;
+    private CreatePromotionRequest _formModel = new();
+    private string _dishIdsInput = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
+        _restaurantName = restaurant?.Name;
+
+        await LoadPromotions();
+    }
+
+    private async Task LoadPromotions()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        var (result, error) = await PromotionService.GetByRestaurantAsync(RestaurantId, _query);
+        if (error is not null)
+            _error = error.Error;
+        else
+            _promotions = result;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void ShowCreateForm()
+    {
+        _editingId = null;
+        _formModel = new CreatePromotionRequest
+        {
+            StartsAt = DateTime.Today,
+            EndsAt = DateTime.Today.AddDays(30)
+        };
+        _dishIdsInput = string.Empty;
+        _showForm = true;
+    }
+
+    private void EditPromotion(PromotionDto promo)
+    {
+        _editingId = promo.Id;
+        _formModel = new CreatePromotionRequest
+        {
+            Name = promo.Name,
+            Description = promo.Description,
+            PromotionType = promo.PromotionType,
+            DiscountType = promo.DiscountType,
+            DiscountValue = promo.DiscountValue,
+            MinOrderAmount = promo.MinOrderAmount,
+            StartsAt = promo.StartsAt,
+            EndsAt = promo.EndsAt,
+            DishIds = promo.DishIds
+        };
+        _dishIdsInput = string.Join(", ", promo.DishIds);
+        _showForm = true;
+    }
+
+    private void CancelForm()
+    {
+        _showForm = false;
+        _editingId = null;
+        _error = null;
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _error = null;
+
+        ParseDishIds();
+
+        if (_editingId.HasValue)
+        {
+            var updateRequest = new UpdatePromotionRequest
+            {
+                Name = _formModel.Name,
+                Description = _formModel.Description,
+                PromotionType = _formModel.PromotionType,
+                DiscountType = _formModel.DiscountType,
+                DiscountValue = _formModel.DiscountValue,
+                MinOrderAmount = _formModel.MinOrderAmount,
+                StartsAt = _formModel.StartsAt,
+                EndsAt = _formModel.EndsAt,
+                IsActive = true,
+                DishIds = _formModel.DishIds
+            };
+
+            var (_, error) = await PromotionService.UpdateAsync(_editingId.Value, updateRequest);
+            if (error is not null)
+            {
+                _error = error.Error;
+                _submitting = false;
+                return;
+            }
+        }
+        else
+        {
+            var (_, error) = await PromotionService.CreateAsync(RestaurantId, _formModel);
+            if (error is not null)
+            {
+                _error = error.Error;
+                _submitting = false;
+                return;
+            }
+        }
+
+        _showForm = false;
+        _editingId = null;
+        _submitting = false;
+        await LoadPromotions();
+    }
+
+    private async Task DeletePromotion(int promotionId)
+    {
+        var (success, error) = await PromotionService.DeleteAsync(promotionId);
+        if (!success)
+        {
+            _error = error?.Error ?? "Erreur lors de la suppression.";
+            StateHasChanged();
+        }
+        else
+        {
+            await LoadPromotions();
+        }
+    }
+
+    private void ParseDishIds()
+    {
+        if (string.IsNullOrWhiteSpace(_dishIdsInput))
+        {
+            _formModel.DishIds = [];
+            return;
+        }
+
+        _formModel.DishIds = _dishIdsInput
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(s => int.TryParse(s, out _))
+            .Select(int.Parse)
+            .ToList();
+    }
+
+    private async Task NextPage()
+    {
+        _query.PageNumber++;
+        await LoadPromotions();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_query.PageNumber > 1)
+        {
+            _query.PageNumber--;
+            await LoadPromotions();
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/mes-restaurants");
+
+    private static string GetStatusLabel(PromotionDto promo)
+    {
+        var now = DateTime.UtcNow;
+        if (now < promo.StartsAt) return "À venir";
+        if (now > promo.EndsAt) return "Expirée";
+        if (promo.IsActive) return "Active";
+        return "Inactive";
+    }
+
+    private static string GetStatusClass(PromotionDto promo)
+    {
+        var now = DateTime.UtcNow;
+        if (now < promo.StartsAt) return "upcoming";
+        if (now > promo.EndsAt) return "expired";
+        if (promo.IsActive) return "active";
+        return "inactive";
+    }
+
+    private static string TranslatePromotionType(string type) => type switch
+    {
+        "OrderBased" => "Sur commande",
+        "ItemBased" => "Sur article",
+        _ => type
+    };
+
+    private static string FormatDiscount(string discountType, decimal value) => discountType switch
+    {
+        "Percentage" => $"{value}%",
+        "FixedAmount" => $"{value:0.00} €",
+        _ => $"{value}"
+    };
+}

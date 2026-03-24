@@ -31,6 +31,15 @@
                             </p>
                         </div>
                         <div class="restaurant-card-controls">
+                            <NavLink href=@($"/restaurant/{restaurant.Id}/promotions") class="app-btn" title="Promotions">
+                                <Blazicon Svg="Lucide.Tag" class="app-icon" />
+                            </NavLink>
+                            <NavLink href=@($"/restaurant/{restaurant.Id}/codes-promo") class="app-btn" title="Codes promo">
+                                <Blazicon Svg="Lucide.Ticket" class="app-icon" />
+                            </NavLink>
+                            <NavLink href=@($"/restaurant/{restaurant.Id}/fidelite") class="app-btn" title="Fidélité">
+                                <Blazicon Svg="Lucide.Heart" class="app-icon" />
+                            </NavLink>
                             <NavLink href=@($"/restaurant/{restaurant.Id}/compte") class="app-btn" title="Compte">
                                 <Blazicon Svg="Lucide.Wallet" class="app-icon" />
                             </NavLink>
