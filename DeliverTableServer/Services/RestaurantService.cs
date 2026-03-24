@@ -1,5 +1,6 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Extensions;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
@@ -21,15 +22,15 @@ public sealed class RestaurantService(
     public async Task<ServiceResult<PaginatedResult<RestaurantDto>>> GetAllAsync(
         RestaurantQuery query, CancellationToken ct = default)
     {
-        var (items, totalCount) = await _restaurantRepository.GetAllAsync(query, ct);
-        return ToPaginatedResult(items, totalCount, query);
+        var data = await _restaurantRepository.GetAllAsync(query, ct);
+        return data.ToPaginatedResult(r => r.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<PaginatedResult<RestaurantDto>>> GetByOwnerAsync(
         int ownerId, RestaurantQuery query, CancellationToken ct = default)
     {
-        var (items, totalCount) = await _restaurantRepository.GetByOwnerAsync(ownerId, query, ct);
-        return ToPaginatedResult(items, totalCount, query);
+        var data = await _restaurantRepository.GetByOwnerAsync(ownerId, query, ct);
+        return data.ToPaginatedResult(r => r.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<DetailedRestaurantDto>> GetByIdAsync(int id, CancellationToken ct = default)
@@ -107,15 +108,4 @@ public sealed class RestaurantService(
         return ServiceResult.Success();
     }
 
-    private static PaginatedResult<RestaurantDto> ToPaginatedResult(
-        List<Restaurant> items, int totalCount, RestaurantQuery query)
-    {
-        return new PaginatedResult<RestaurantDto>
-        {
-            Items = items.Select(r => r.ToDto()).ToList(),
-            TotalCount = totalCount,
-            Page = query.PageNumber > 0 ? query.PageNumber : 1,
-            PageSize = query.PageSize
-        };
-    }
 }
