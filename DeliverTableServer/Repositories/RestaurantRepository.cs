@@ -111,6 +111,12 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
         return (items, totalCount);
     }
 
+    public async Task<List<Restaurant>> GetAllUnscopedAsync(CancellationToken ct = default)
+        => await _dbContext.Restaurants.Include(r => r.Owner).OrderBy(r => r.Id).ToListAsync(ct);
+
+    public async Task<Restaurant?> GetByIdWithOwnerAsync(int id, CancellationToken ct = default)
+        => await _dbContext.Restaurants.Include(r => r.Owner).FirstOrDefaultAsync(r => r.Id == id, ct);
+
     private static IQueryable<Restaurant> ApplyFilters(IQueryable<Restaurant> query, RestaurantQuery filter)
     {
         if (!string.IsNullOrWhiteSpace(filter.Name))
