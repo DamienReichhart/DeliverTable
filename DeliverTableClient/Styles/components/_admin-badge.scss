@@ -1,0 +1,71 @@
+@use "../abstracts/variables" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Badge – semantic colored chips for status/role indicators
+// ---------------------------------------------------------------------------
+
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0.5rem;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  white-space: nowrap;
+
+  // ── Status variants ──
+
+  &--active,
+  &--success {
+    background: rgba($color-garden-sage, 0.12);
+    color: darken($color-garden-sage, 10%);
+  }
+
+  &--warning,
+  &--suspended {
+    background: rgba($color-amber-gold, 0.14);
+    color: darken($color-amber-gold, 18%);
+  }
+
+  &--danger,
+  &--banned,
+  &--error {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+
+  &--info {
+    background: rgba($color-deep-charcoal, 0.06);
+    color: $color-text-muted;
+  }
+
+  // ── Role variants ──
+
+  &--admin {
+    background: rgba($color-coral-fire, 0.1);
+    color: $color-coral-fire;
+  }
+
+  &--owner {
+    background: rgba($color-amber-gold, 0.14);
+    color: darken($color-amber-gold, 18%);
+  }
+
+  &--customer {
+    background: rgba($color-garden-sage, 0.12);
+    color: darken($color-garden-sage, 10%);
+  }
+
+  // ── Dot indicator ──
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: $radius-full;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+}

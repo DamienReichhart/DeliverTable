@@ -1,0 +1,41 @@
+@use "../abstracts/variables" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Empty State – no-data placeholder
+// ---------------------------------------------------------------------------
+
+.adm-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-3xl $spacing-lg;
+  text-align: center;
+}
+
+.adm-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: $radius-lg;
+  background: rgba($color-deep-charcoal, 0.04);
+  color: $color-text-muted;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: $spacing-md;
+}
+
+.adm-empty-title {
+  font-family: $font-family-display;
+  font-size: 1rem;
+  color: $color-text;
+  margin: 0 0 $spacing-xs;
+}
+
+.adm-empty-text {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: 0 0 $spacing-md;
+  max-width: 320px;
+}

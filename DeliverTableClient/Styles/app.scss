@@ -13,6 +13,13 @@
 @use 'components/forms';
 @use 'components/alert';
 @use 'components/shared';
+@use 'components/admin-data-table';
+@use 'components/admin-stat-card';
+@use 'components/admin-badge';
+@use 'components/admin-modal';
+@use 'components/admin-breadcrumbs';
+@use 'components/admin-empty-state';
+@use 'components/admin-confirm';
 @use 'pages/health';
 @use 'pages/auth';
 @use 'utilities/blazor';
