@@ -24,8 +24,13 @@ public class LoyaltyServiceTests
 
     private static Restaurant CreateRestaurant(int ownerId) => new()
     {
-        Id = 1, Name = "Test", OwnerId = ownerId,
-        AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+        Id = 1,
+        Name = "Test",
+        OwnerId = ownerId,
+        AdressLine1 = "1 Rue Test",
+        City = "Paris",
+        ZipCode = "75001",
+        Country = "FR"
     };
 
     // --- CreateOrUpdateProgramAsync ---
@@ -64,7 +69,10 @@ public class LoyaltyServiceTests
 
         var existing = new LoyaltyProgram
         {
-            Id = 5, RestaurantId = 1, PointsPerEuro = 1.0m, EurosPerPoint = 0.10m
+            Id = 5,
+            RestaurantId = 1,
+            PointsPerEuro = 1.0m,
+            EurosPerPoint = 0.10m
         };
         _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
 
@@ -117,7 +125,11 @@ public class LoyaltyServiceTests
     {
         var program = new LoyaltyProgram
         {
-            Id = 7, RestaurantId = 1, PointsPerEuro = 1.5m, EurosPerPoint = 0.08m, IsActive = true
+            Id = 7,
+            RestaurantId = 1,
+            PointsPerEuro = 1.5m,
+            EurosPerPoint = 0.08m,
+            IsActive = true
         };
         _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(program);
 
@@ -148,13 +160,19 @@ public class LoyaltyServiceTests
     {
         var program = new LoyaltyProgram
         {
-            Id = 3, RestaurantId = 1, PointsPerEuro = 1.0m, EurosPerPoint = 0.10m
+            Id = 3,
+            RestaurantId = 1,
+            PointsPerEuro = 1.0m,
+            EurosPerPoint = 0.10m
         };
         _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(program);
 
         var account = new LoyaltyAccount
         {
-            Id = 20, LoyaltyProgramId = 3, CustomerId = 5, PointsBalance = 100
+            Id = 20,
+            LoyaltyProgramId = 3,
+            CustomerId = 5,
+            PointsBalance = 100
         };
         _loyaltyRepository.GetAccountAsync(3, 5, Arg.Any<CancellationToken>()).Returns(account);
 
@@ -171,7 +189,10 @@ public class LoyaltyServiceTests
     {
         var program = new LoyaltyProgram
         {
-            Id = 3, RestaurantId = 1, PointsPerEuro = 1.0m, EurosPerPoint = 0.10m
+            Id = 3,
+            RestaurantId = 1,
+            PointsPerEuro = 1.0m,
+            EurosPerPoint = 0.10m
         };
         _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(program);
         _loyaltyRepository.GetAccountAsync(3, 5, Arg.Any<CancellationToken>()).Returns((LoyaltyAccount?)null);
