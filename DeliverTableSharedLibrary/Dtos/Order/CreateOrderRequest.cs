@@ -19,8 +19,7 @@ public class CreateOrderRequest
     [MaxLength(500)]
     public string Notes { get; set; } = string.Empty;
 
-    [MaxLength(50)]
-    public string? DiscountCode { get; set; }
+    public List<string> DiscountCodes { get; set; } = [];
 
     [Range(0, int.MaxValue)]
     public int LoyaltyPointsToRedeem { get; set; }

@@ -267,8 +267,58 @@
   }
 }
 
+.applied-codes {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.applied-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid rgba($color-garden-sage, 0.3);
+  border-radius: $radius-md;
+  background: rgba($color-garden-sage, 0.05);
+}
+
+.applied-code-info {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  strong {
+    font-family: $font-family-mono;
+    font-size: $font-size-sm;
+    color: $color-text;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    color: $color-garden-sage;
+    font-weight: 600;
+  }
+}
+
 .discount-code-input {
-  max-width: 300px;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  max-width: 400px;
+}
+
+.code-error {
+  font-size: $font-size-sm;
+  color: $color-error;
+  margin: 0;
+}
+
+.code-success {
+  font-size: $font-size-sm;
+  color: $color-garden-sage;
+  font-weight: 500;
+  margin: 0;
 }
 
 .loyalty-info {

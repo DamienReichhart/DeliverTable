@@ -9,4 +9,5 @@ public interface IDiscountCodeClientService
     Task<(DiscountCodeDto?, ErrorResponse?)> CreateAsync(int restaurantId, CreateDiscountCodeRequest request, CancellationToken ct = default);
     Task<(DiscountCodeDto?, ErrorResponse?)> UpdateAsync(int discountCodeId, UpdateDiscountCodeRequest request, CancellationToken ct = default);
     Task<(bool, ErrorResponse?)> DeleteAsync(int discountCodeId, CancellationToken ct = default);
+    Task<(DiscountCodeDto?, ErrorResponse?)> ValidateAsync(int restaurantId, string code, CancellationToken ct = default);
 }
