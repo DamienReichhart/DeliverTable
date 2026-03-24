@@ -17,7 +17,10 @@ public class DishRepository(DeliverTableContext context) : IDishRepository
         q = q.OrderBy(d => d.Id);
 
         var totalCount = await q.CountAsync(ct);
-        var items = await q.ToListAsync(ct);
+
+        int page = query.PageNumber > 0 ? query.PageNumber : 1;
+        int skip = (page - 1) * query.PageSize;
+        var items = await q.Skip(skip).Take(query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
@@ -29,7 +32,10 @@ public class DishRepository(DeliverTableContext context) : IDishRepository
         q = q.OrderBy(d => d.Id);
 
         var totalCount = await q.CountAsync(ct);
-        var items = await q.ToListAsync(ct);
+
+        int page = query.PageNumber > 0 ? query.PageNumber : 1;
+        int skip = (page - 1) * query.PageSize;
+        var items = await q.Skip(skip).Take(query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 

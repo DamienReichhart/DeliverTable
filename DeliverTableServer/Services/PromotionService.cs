@@ -1,5 +1,6 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Extensions;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
@@ -40,6 +41,9 @@ public sealed class PromotionService(
         if (request.EndsAt <= request.StartsAt)
             return new ServiceError(ErrorMessages.InvalidPromotionDates);
 
+        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
+            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+
         if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
         {
             var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurantId, ct);
@@ -57,8 +61,8 @@ public sealed class PromotionService(
             DiscountType = discountType,
             DiscountValue = request.DiscountValue,
             MinOrderAmount = request.MinOrderAmount,
-            StartsAt = DateTime.SpecifyKind(request.StartsAt, DateTimeKind.Utc),
-            EndsAt = DateTime.SpecifyKind(request.EndsAt, DateTimeKind.Utc),
+            StartsAt = request.StartsAt.ToUtc(),
+            EndsAt = request.EndsAt.ToUtc(),
             PromotionDishes = request.DishIds.Select(id => new PromotionDish { DishId = id }).ToList()
         };
 
@@ -107,6 +111,9 @@ public sealed class PromotionService(
         if (request.EndsAt <= request.StartsAt)
             return new ServiceError(ErrorMessages.InvalidPromotionDates);
 
+        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
+            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+
         if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
         {
             var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurant.Id, ct);
@@ -121,10 +128,11 @@ public sealed class PromotionService(
         promotion.DiscountType = discountType;
         promotion.DiscountValue = request.DiscountValue;
         promotion.MinOrderAmount = request.MinOrderAmount;
-        promotion.StartsAt = DateTime.SpecifyKind(request.StartsAt, DateTimeKind.Utc);
-        promotion.EndsAt = DateTime.SpecifyKind(request.EndsAt, DateTimeKind.Utc);
+        promotion.StartsAt = request.StartsAt.ToUtc();
+        promotion.EndsAt = request.EndsAt.ToUtc();
         promotion.IsActive = request.IsActive;
-        promotion.PromotionDishes = request.DishIds.Select(id => new PromotionDish { DishId = id }).ToList();
+        promotion.PromotionDishes.Clear();
+        promotion.PromotionDishes.AddRange(request.DishIds.Select(id => new PromotionDish { DishId = id }));
 
         var updated = await _promotionRepository.UpdateAsync(promotion, ct);
         return updated.ToDto();

@@ -1,5 +1,6 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Extensions;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
@@ -33,6 +34,9 @@ public sealed class DiscountCodeService(
         if (request.ValidUntil <= request.ValidFrom)
             return new ServiceError(ErrorMessages.InvalidPromotionDates);
 
+        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
+            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+
         var existing = await _discountCodeRepository.GetByCodeAndRestaurantAsync(request.Code, restaurantId, ct);
         if (existing is not null)
             return new ServiceError(ErrorMessages.DiscountCodeAlreadyExists);
@@ -45,8 +49,8 @@ public sealed class DiscountCodeService(
             DiscountType = discountType,
             DiscountValue = request.DiscountValue,
             MinOrderAmount = request.MinOrderAmount,
-            ValidFrom = DateTime.SpecifyKind(request.ValidFrom, DateTimeKind.Utc),
-            ValidUntil = DateTime.SpecifyKind(request.ValidUntil, DateTimeKind.Utc),
+            ValidFrom = request.ValidFrom.ToUtc(),
+            ValidUntil = request.ValidUntil.ToUtc(),
             MaxRedemptions = request.MaxRedemptions,
             PerUserLimit = request.PerUserLimit
         };
@@ -93,12 +97,15 @@ public sealed class DiscountCodeService(
         if (request.ValidUntil <= request.ValidFrom)
             return new ServiceError(ErrorMessages.InvalidPromotionDates);
 
+        if (discountType == DiscountType.Percentage && request.DiscountValue > 100)
+            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
+
         code.Description = request.Description;
         code.DiscountType = discountType;
         code.DiscountValue = request.DiscountValue;
         code.MinOrderAmount = request.MinOrderAmount;
-        code.ValidFrom = DateTime.SpecifyKind(request.ValidFrom, DateTimeKind.Utc);
-        code.ValidUntil = DateTime.SpecifyKind(request.ValidUntil, DateTimeKind.Utc);
+        code.ValidFrom = request.ValidFrom.ToUtc();
+        code.ValidUntil = request.ValidUntil.ToUtc();
         code.MaxRedemptions = request.MaxRedemptions;
         code.PerUserLimit = request.PerUserLimit;
         code.IsActive = request.IsActive;
