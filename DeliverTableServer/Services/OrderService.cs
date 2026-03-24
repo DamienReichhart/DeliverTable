@@ -1,4 +1,5 @@
 using DeliverTableServer.Common;
+using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
@@ -13,12 +14,16 @@ namespace DeliverTableServer.Services;
 public sealed class OrderService(
     IOrderRepository orderRepository,
     ICartRepository cartRepository,
-    IRestaurantRepository restaurantRepository
+    IRestaurantRepository restaurantRepository,
+    IRestaurantTransactionRepository transactionRepository,
+    AppEnvironment appEnvironment
 ) : IOrderService
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly ICartRepository _cartRepository = cartRepository;
     private readonly IRestaurantRepository _restaurantRepository = restaurantRepository;
+    private readonly IRestaurantTransactionRepository _transactionRepository = transactionRepository;
+    private readonly decimal _commissionRate = appEnvironment.PlatformCommissionRate;
 
     public async Task<ServiceResult<OrderDto>> CreateFromCartAsync(
         int customerId, CreateOrderRequest request, CancellationToken ct = default)
@@ -142,6 +147,30 @@ public sealed class OrderService(
 
         order.Status = newStatus;
         var updated = await _orderRepository.UpdateAsync(order, ct);
+
+        if (newStatus == OrderStatus.Delivered)
+        {
+            var restaurant = order.Restaurant;
+            var commission = order.TotalAmount * _commissionRate;
+            var netAmount = order.TotalAmount - commission;
+
+            restaurant.Balance += netAmount;
+            await _restaurantRepository.UpdateAsync(restaurant, ct);
+
+            var transaction = new RestaurantTransaction
+            {
+                RestaurantId = restaurant.Id,
+                OrderId = order.Id,
+                Type = TransactionType.Credit,
+                GrossAmount = order.TotalAmount,
+                CommissionAmount = commission,
+                NetAmount = netAmount,
+                BalanceAfter = restaurant.Balance
+            };
+
+            await _transactionRepository.CreateAsync(transaction, ct);
+        }
+
         return updated.ToDto();
     }
 
