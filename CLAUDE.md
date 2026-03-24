@@ -93,7 +93,69 @@ Single source of truth: `DeliverTableSharedLibrary/Constants/ApiRoutes.cs`. Used
 
 All services registered in `DeliverTableServer/Extensions/ServiceCollectionExtensions.cs`, organized as `RegisterRepositories`, `RegisterServices`, `RegisterInfrastructure`.
 
-## Commit Convention
+## Development Workflow
+
+### Test-Driven Development (TDD)
+
+All feature implementation MUST follow TDD. This is non-negotiable.
+
+**For services and controllers**, follow this cycle:
+
+1. **Write the interface first** — define the contract before implementation
+2. **Write failing tests** — cover success, error, and edge cases
+3. **Run tests to confirm they fail** — verify they fail for the right reason
+4. **Write minimal implementation** to make tests pass
+5. **Run tests to confirm they pass**
+6. **Run the full test suite** to catch regressions: `make test`
+
+**Test structure mirrors production code:**
+
+- Controller tests mock the service interface: `Substitute.For<IAuthService>()`
+- Service tests mock the repository interface: `Substitute.For<IOrderRepository>()`
+- Never test implementation details — test behavior through the public interface
+
+**What does NOT need TDD** (create directly):
+
+- Enums, entities/models, DTOs, mappers
+- EF configurations, migrations, DI registrations
+- Constants, error messages, API routes
+- Documentation
+
+### Commit Strategy
+
+Commit early, commit often. Each commit should be a **logical, buildable unit**.
+
+**When to commit — group by layer or concern:**
+
+| What changed | Commit as |
+|---|---|
+| Enum + entity + model update + EF config | One commit: `feat(server): add [domain] data model` |
+| Migration files | Separate commit: `feat(db): add migration for [description]` |
+| Configuration (env vars, constants, error messages, API routes) | One commit: `feat(server): add [feature] configuration and constants` |
+| DTOs + mapper | One commit: `feat(shared): add [domain] DTOs and mapper` |
+| Repository (interface + implementation) | One commit: `feat(server): add [domain] repository` |
+| Service (interface + implementation + tests) | One commit: `feat(server): add [service name] with tests` |
+| Controller (+ tests) | One commit: `feat(server): add [controller name] with tests` |
+| DI registration | One commit (can combine with nearby work if small) |
+| Modification to existing code (+ tests) | One commit: `feat(server): [describe behavior change]` |
+| Documentation | One commit: `docs([scope]): [description]` |
+| Formatting fixes | One commit at the end: `style: apply formatting fixes` |
+
+**Rules:**
+
+- Never mix unrelated changes in a single commit
+- Tests live with the code they test (same commit)
+- Build must pass after every commit — verify with `dotnet build` before committing
+- Run `make format-check` before the final commit; fix with `make format-fix` if needed
+- Run `make test` after the last code commit to catch regressions
+
+**End-of-feature checklist:**
+
+1. `make format-fix` — fix any formatting issues
+2. `make test` — full test suite passes (ignore the known `AppEnvironmentTests` Docker failure)
+3. Commit any formatting fixes as a final `style:` commit
+
+### Commit Convention
 
 Conventional Commits format with **required** Azure Boards references:
 
