@@ -13,4 +13,7 @@ public interface IDiscountCodeRepository
     Task<Models.DiscountCode> UpdateAsync(Models.DiscountCode code, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
     Task<DiscountCodeRedemption> CreateRedemptionAsync(DiscountCodeRedemption redemption, CancellationToken ct = default);
+    Task<List<Models.DiscountCode>> GetAllUnscopedAsync(CancellationToken ct = default);
+    Task<Models.DiscountCode?> GetByIdWithRestaurantAsync(int id, CancellationToken ct = default);
+    Task<List<DiscountCodeRedemption>> GetRedemptionsByCodeIdAsync(int discountCodeId, CancellationToken ct = default);
 }

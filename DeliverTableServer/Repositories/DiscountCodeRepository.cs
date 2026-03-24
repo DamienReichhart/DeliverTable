@@ -71,4 +71,30 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
         await _dbContext.SaveChangesAsync(ct);
         return redemption;
     }
+
+    public async Task<List<Models.DiscountCode>> GetAllUnscopedAsync(CancellationToken ct = default)
+    {
+        return await _dbContext.DiscountCodes
+            .Include(dc => dc.Restaurant)
+            .Include(dc => dc.Redemptions)
+            .OrderByDescending(dc => dc.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<Models.DiscountCode?> GetByIdWithRestaurantAsync(int id, CancellationToken ct = default)
+    {
+        return await _dbContext.DiscountCodes
+            .Include(dc => dc.Restaurant)
+            .Include(dc => dc.Redemptions)
+            .FirstOrDefaultAsync(dc => dc.Id == id, ct);
+    }
+
+    public async Task<List<DiscountCodeRedemption>> GetRedemptionsByCodeIdAsync(int discountCodeId, CancellationToken ct = default)
+    {
+        return await _dbContext.DiscountCodeRedemptions
+            .Include(r => r.Customer)
+            .Where(r => r.DiscountCodeId == discountCodeId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(ct);
+    }
 }
