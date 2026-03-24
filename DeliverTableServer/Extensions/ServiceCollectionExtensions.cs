@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
         services.AddScoped<ILoyaltyRepository, LoyaltyRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IEventRepository, EventRepository>();
     }
 
     private static void RegisterServices(IServiceCollection services)
@@ -48,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminDiscountCodeService, AdminDiscountCodeService>();
         services.AddScoped<IAdminLoyaltyService, AdminLoyaltyService>();
         services.AddScoped<IAdminTransactionService, AdminTransactionService>();
+        services.AddScoped<IAdminEventService, AdminEventService>();
         services.AddScoped<IRestaurantService, RestaurantService>();
         services.AddScoped<IDishService, DishService>();
         services.AddScoped<ICartService, CartService>();
