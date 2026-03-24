@@ -75,4 +75,8 @@ public static class ErrorMessages
     public const string LoyaltyAccountNotFound = "Compte fidélité introuvable";
     public const string InsufficientLoyaltyPoints = "Nombre de points de fidélité insuffisant";
     public const string LoyaltyProgramNotActive = "Le programme de fidélité n'est pas actif";
+
+    // Action Filters
+    public const string MissingOrInvalidRestaurantId = "ID de restaurant manquant ou invalide";
+    public const string MissingOrInvalidDishId = "ID de plat manquant ou invalide";
 }
