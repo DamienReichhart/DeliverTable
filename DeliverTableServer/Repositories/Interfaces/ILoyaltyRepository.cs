@@ -11,4 +11,11 @@ public interface ILoyaltyRepository
     Task<LoyaltyAccount> CreateAccountAsync(LoyaltyAccount account, CancellationToken ct = default);
     Task<LoyaltyAccount> UpdateAccountAsync(LoyaltyAccount account, CancellationToken ct = default);
     Task<LoyaltyTransaction> CreateTransactionAsync(LoyaltyTransaction transaction, CancellationToken ct = default);
+
+    // Admin methods
+    Task<List<LoyaltyProgram>> GetAllProgramsUnscopedAsync(CancellationToken ct = default);
+    Task<LoyaltyProgram?> GetProgramByIdWithAccountsAsync(int id, CancellationToken ct = default);
+    Task<List<LoyaltyAccount>> GetAccountsByProgramIdAsync(int programId, CancellationToken ct = default);
+    Task<List<LoyaltyTransaction>> GetTransactionsByAccountIdAsync(int accountId, CancellationToken ct = default);
+    Task<bool> DeleteProgramAsync(int id, CancellationToken ct = default);
 }

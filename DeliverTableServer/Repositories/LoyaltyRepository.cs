@@ -57,4 +57,47 @@ public class LoyaltyRepository(DeliverTableContext dbContext) : ILoyaltyReposito
         await _dbContext.SaveChangesAsync(ct);
         return transaction;
     }
+
+    public async Task<List<LoyaltyProgram>> GetAllProgramsUnscopedAsync(CancellationToken ct = default)
+    {
+        return await _dbContext.LoyaltyPrograms
+            .Include(lp => lp.Restaurant)
+            .Include(lp => lp.Accounts)
+            .OrderByDescending(lp => lp.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<LoyaltyProgram?> GetProgramByIdWithAccountsAsync(int id, CancellationToken ct = default)
+    {
+        return await _dbContext.LoyaltyPrograms
+            .Include(lp => lp.Restaurant)
+            .Include(lp => lp.Accounts)
+            .FirstOrDefaultAsync(lp => lp.Id == id, ct);
+    }
+
+    public async Task<List<LoyaltyAccount>> GetAccountsByProgramIdAsync(int programId, CancellationToken ct = default)
+    {
+        return await _dbContext.LoyaltyAccounts
+            .Include(la => la.Customer)
+            .Where(la => la.LoyaltyProgramId == programId)
+            .OrderByDescending(la => la.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<List<LoyaltyTransaction>> GetTransactionsByAccountIdAsync(int accountId, CancellationToken ct = default)
+    {
+        return await _dbContext.LoyaltyTransactions
+            .Where(lt => lt.LoyaltyAccountId == accountId)
+            .OrderByDescending(lt => lt.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<bool> DeleteProgramAsync(int id, CancellationToken ct = default)
+    {
+        var program = await _dbContext.LoyaltyPrograms.FindAsync([id], ct);
+        if (program is null) return false;
+        _dbContext.LoyaltyPrograms.Remove(program);
+        await _dbContext.SaveChangesAsync(ct);
+        return true;
+    }
 }
