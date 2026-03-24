@@ -796,4 +796,80 @@ public class OrderServiceTests
         Assert.That(capturedOrder.DiscountAmount, Is.EqualTo(3m)); // capped at originalAmount
         Assert.That(capturedOrder.TotalAmount, Is.EqualTo(0m));
     }
+
+    // ─── GuestCount / OrderType validation tests ─────────────────────────
+
+    [Test]
+    public async Task CreateFromCartAsync_DeliveryOrder_IgnoresGuestCountAndDefaultsToOne()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.Delivery);
+        request.GuestCount = 25; // should be ignored for delivery
+
+        Order? capturedOrder = null;
+        _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                capturedOrder = callInfo.Arg<Order>();
+                return capturedOrder;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(capturedOrder!.GuestCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_DineInOrder_ValidatesGuestCount()
+    {
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 0; // invalid
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.GuestCountRequired));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_DineInOrder_WithValidGuestCount_Succeeds()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 4;
+        request.DeliveryAddress = string.Empty; // not needed for dine-in
+
+        Order? capturedOrder = null;
+        _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                capturedOrder = callInfo.Arg<Order>();
+                return capturedOrder;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(capturedOrder!.GuestCount, Is.EqualTo(4));
+    }
+
+    [TestCase(0)]
+    [TestCase(51)]
+    public async Task CreateFromCartAsync_DineInOrder_WithInvalidGuestCount_ReturnsError(int guestCount)
+    {
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = guestCount;
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.GuestCountRequired));
+    }
 }
