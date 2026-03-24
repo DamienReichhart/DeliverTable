@@ -7,6 +7,7 @@ using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.RestaurantAccount;
 using DeliverTableTests.Global.Helpers;
 using NSubstitute;
+using static DeliverTableTests.Server.Factories.ServerEntityFactory;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -124,18 +125,4 @@ public class RestaurantAccountServiceTests
             Arg.Any<CancellationToken>());
     }
 
-    private static Restaurant CreateRestaurant(int ownerId, decimal balance = 0m)
-    {
-        return new Restaurant
-        {
-            Id = 1,
-            Name = "Test Restaurant",
-            OwnerId = ownerId,
-            Balance = balance,
-            AdressLine1 = "1 Rue Test",
-            City = "Paris",
-            ZipCode = "75001",
-            Country = "FR"
-        };
-    }
 }

@@ -6,6 +6,7 @@ using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.DiscountCode;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
+using static DeliverTableTests.Server.Factories.ServerEntityFactory;
 using DiscountCodeEntity = DeliverTableServer.Models.DiscountCode;
 
 namespace DeliverTableTests.Server.Unit.Services;
@@ -272,17 +273,6 @@ public class DiscountCodeServiceTests
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
     }
-
-    private static Restaurant CreateRestaurant(int ownerId) => new()
-    {
-        Id = 1,
-        Name = "Test Restaurant",
-        OwnerId = ownerId,
-        AdressLine1 = "1 Rue Test",
-        City = "Paris",
-        ZipCode = "75001",
-        Country = "FR"
-    };
 
     private static DiscountCodeEntity CreateDiscountCode(int restaurantId) => new()
     {
