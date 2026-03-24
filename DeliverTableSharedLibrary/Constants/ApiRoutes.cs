@@ -120,6 +120,29 @@ public static class ApiRoutes
         public const string WithdrawRoute = "withdraw";
     }
 
+    /// <summary>Promotion routes (RestaurantOwner).</summary>
+    public static class Promotion
+    {
+        public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/promotions";
+        public const string Base = "api/v1/promotion";
+        public const string ByIdRoute = "{id:int}";
+    }
+
+    /// <summary>Discount code routes (RestaurantOwner).</summary>
+    public static class DiscountCodeRoutes
+    {
+        public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/discount-codes";
+        public const string Base = "api/v1/discount-code";
+        public const string ByIdRoute = "{id:int}";
+    }
+
+    /// <summary>Loyalty program routes.</summary>
+    public static class Loyalty
+    {
+        public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/loyalty";
+        public const string MyAccountRoute = "my-account";
+    }
+
     /// <summary>Test controller route (development only).</summary>
     public const string Test = "api/v1/test";
 }

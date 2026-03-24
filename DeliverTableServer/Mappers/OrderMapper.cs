@@ -20,7 +20,12 @@ public static class OrderMapper
             DeliveryAddress = order.DeliveryAddress,
             Notes = order.Notes,
             Items = order.Items.Select(i => i.ToDto()).ToList(),
-            CreatedAt = order.CreatedAt
+            CreatedAt = order.CreatedAt,
+            OriginalAmount = order.OriginalAmount,
+            DiscountAmount = order.DiscountAmount,
+            LoyaltyPointsUsed = order.LoyaltyPointsUsed,
+            LoyaltyPointsEarned = order.LoyaltyPointsEarned,
+            Discounts = order.Discounts.Select(d => d.ToDto()).ToList()
         };
     }
 
