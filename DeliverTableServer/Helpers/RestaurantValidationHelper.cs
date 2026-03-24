@@ -1,0 +1,18 @@
+using DeliverTableServer.Common;
+using DeliverTableServer.Constants;
+using DeliverTableServer.Models;
+using DeliverTableServer.Repositories.Interfaces;
+
+namespace DeliverTableServer.Helpers;
+
+public static class RestaurantValidationHelper
+{
+    public static async Task<ServiceResult<Restaurant>> ValidateOwnershipAsync(
+        IRestaurantRepository repository, int restaurantId, int ownerId, CancellationToken ct)
+    {
+        var restaurant = await repository.GetByIdAsync(restaurantId, ct);
+        if (restaurant is null || restaurant.OwnerId != ownerId)
+            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        return restaurant;
+    }
+}

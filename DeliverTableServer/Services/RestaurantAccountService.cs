@@ -1,6 +1,8 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Extensions;
+using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
@@ -23,37 +25,29 @@ public sealed class RestaurantAccountService(
     public async Task<ServiceResult<RestaurantAccountDto>> GetAccountAsync(
         int restaurantId, int ownerId, TransactionQuery query, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
-        if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, restaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
+        var restaurant = ownershipResult.Value!;
 
-        if (restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
-
-        var (items, totalCount) = await _transactionRepository.GetByRestaurantAsync(restaurantId, query, ct);
+        var data = await _transactionRepository.GetByRestaurantAsync(restaurantId, query, ct);
 
         return new RestaurantAccountDto
         {
             Balance = restaurant.Balance,
-            Transactions = new PaginatedResult<RestaurantTransactionDto>
-            {
-                Items = items.Select(t => t.ToDto()).ToList(),
-                TotalCount = totalCount,
-                Page = query.PageNumber > 0 ? query.PageNumber : 1,
-                PageSize = query.PageSize
-            }
+            Transactions = data.ToPaginatedResult(t => t.ToDto(), query.PageNumber, query.PageSize)
         };
     }
 
     public async Task<ServiceResult<RestaurantAccountDto>> WithdrawAsync(
         int restaurantId, int ownerId, WithdrawRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
-        if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
-
-        if (restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, restaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
+        var restaurant = ownershipResult.Value!;
 
         if (request.Amount > restaurant.Balance)
             return new ServiceError(ErrorMessages.InsufficientBalance);

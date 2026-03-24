@@ -1,6 +1,7 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Extensions;
+using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
@@ -21,12 +22,10 @@ public sealed class DiscountCodeService(
     public async Task<ServiceResult<DiscountCodeDto>> CreateAsync(
         int restaurantId, int ownerId, CreateDiscountCodeRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
-        if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
-
-        if (restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, restaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
         if (!Enum.TryParse<DiscountType>(request.DiscountType, ignoreCase: true, out var discountType))
             return new ServiceError(ErrorMessages.InvalidFields);
@@ -62,22 +61,13 @@ public sealed class DiscountCodeService(
     public async Task<ServiceResult<PaginatedResult<DiscountCodeDto>>> GetByRestaurantAsync(
         int restaurantId, int ownerId, DiscountCodeQuery query, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
-        if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, restaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
-        if (restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
-
-        var (items, totalCount) = await _discountCodeRepository.GetByRestaurantAsync(restaurantId, query, ct);
-
-        return new PaginatedResult<DiscountCodeDto>
-        {
-            Items = items.Select(c => c.ToDto()).ToList(),
-            TotalCount = totalCount,
-            Page = query.PageNumber,
-            PageSize = query.PageSize
-        };
+        var data = await _discountCodeRepository.GetByRestaurantAsync(restaurantId, query, ct);
+        return data.ToPaginatedResult(c => c.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<DiscountCodeDto>> UpdateAsync(
@@ -87,9 +77,10 @@ public sealed class DiscountCodeService(
         if (code is null)
             return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
 
-        var restaurant = await _restaurantRepository.GetByIdAsync(code.RestaurantId, ct);
-        if (restaurant is null || restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, code.RestaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
         if (!Enum.TryParse<DiscountType>(request.DiscountType, ignoreCase: true, out var discountType))
             return new ServiceError(ErrorMessages.InvalidFields);
@@ -120,9 +111,10 @@ public sealed class DiscountCodeService(
         if (code is null)
             return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
 
-        var restaurant = await _restaurantRepository.GetByIdAsync(code.RestaurantId, ct);
-        if (restaurant is null || restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, code.RestaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
         await _discountCodeRepository.DeleteAsync(discountCodeId, ct);
         return ServiceResult.Success();

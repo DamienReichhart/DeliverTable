@@ -1,6 +1,7 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Extensions;
+using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
@@ -25,12 +26,10 @@ public sealed class PromotionService(
     public async Task<ServiceResult<PromotionDto>> CreateAsync(
         int restaurantId, int ownerId, CreatePromotionRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
-        if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
-
-        if (restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, restaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
         if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out var promotionType))
             return new ServiceError(ErrorMessages.InvalidFields);
@@ -73,22 +72,13 @@ public sealed class PromotionService(
     public async Task<ServiceResult<PaginatedResult<PromotionDto>>> GetByRestaurantAsync(
         int restaurantId, int ownerId, PromotionQuery query, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
-        if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, restaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
-        if (restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
-
-        var (items, totalCount) = await _promotionRepository.GetByRestaurantAsync(restaurantId, query, ct);
-
-        return new PaginatedResult<PromotionDto>
-        {
-            Items = items.Select(p => p.ToDto()).ToList(),
-            TotalCount = totalCount,
-            Page = query.PageNumber,
-            PageSize = query.PageSize
-        };
+        var data = await _promotionRepository.GetByRestaurantAsync(restaurantId, query, ct);
+        return data.ToPaginatedResult(p => p.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<PromotionDto>> UpdateAsync(
@@ -98,9 +88,11 @@ public sealed class PromotionService(
         if (promotion is null)
             return new ServiceError(ErrorMessages.PromotionNotFound, 404);
 
-        var restaurant = await _restaurantRepository.GetByIdAsync(promotion.RestaurantId, ct);
-        if (restaurant is null || restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, promotion.RestaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
+        var restaurant = ownershipResult.Value!;
 
         if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out var promotionType))
             return new ServiceError(ErrorMessages.InvalidFields);
@@ -144,9 +136,10 @@ public sealed class PromotionService(
         if (promotion is null)
             return new ServiceError(ErrorMessages.PromotionNotFound, 404);
 
-        var restaurant = await _restaurantRepository.GetByIdAsync(promotion.RestaurantId, ct);
-        if (restaurant is null || restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+            _restaurantRepository, promotion.RestaurantId, ownerId, ct);
+        if (!ownershipResult.IsSuccess)
+            return ownershipResult.Error!;
 
         await _promotionRepository.DeleteAsync(promotionId, ct);
         return ServiceResult.Success();
