@@ -4,6 +4,7 @@ using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.Loyalty;
 using NSubstitute;
+using static DeliverTableTests.Server.Factories.ServerEntityFactory;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -21,17 +22,6 @@ public class LoyaltyServiceTests
         _restaurantRepository = Substitute.For<IRestaurantRepository>();
         _sut = new LoyaltyService(_loyaltyRepository, _restaurantRepository);
     }
-
-    private static Restaurant CreateRestaurant(int ownerId) => new()
-    {
-        Id = 1,
-        Name = "Test",
-        OwnerId = ownerId,
-        AdressLine1 = "1 Rue Test",
-        City = "Paris",
-        ZipCode = "75001",
-        Country = "FR"
-    };
 
     // --- CreateOrUpdateProgramAsync ---
 

@@ -53,11 +53,12 @@ public static class ServerEntityFactory
     }
 
     /// <summary>Creates a valid <see cref="Restaurant"/> for service tests.</summary>
-    public static Restaurant CreateRestaurant(int id = 1, int ownerId = 5) => new()
+    public static Restaurant CreateRestaurant(int id = 1, int ownerId = 5, decimal balance = 0m) => new()
     {
         Id = id,
-        Name = "Test",
+        Name = "Test Restaurant",
         OwnerId = ownerId,
+        Balance = balance,
         IsActive = true,
         AdressLine1 = "1 Rue Test",
         City = "Paris",

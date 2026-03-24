@@ -7,6 +7,7 @@ using DeliverTableSharedLibrary.Dtos.Dish;
 using DeliverTableSharedLibrary.Dtos.Promotion;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
+using static DeliverTableTests.Server.Factories.ServerEntityFactory;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -285,20 +286,6 @@ public class PromotionServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
-    }
-
-    private static Restaurant CreateRestaurant(int ownerId)
-    {
-        return new Restaurant
-        {
-            Id = 1,
-            Name = "Test Restaurant",
-            OwnerId = ownerId,
-            AdressLine1 = "1 Rue Test",
-            City = "Paris",
-            ZipCode = "75001",
-            Country = "FR"
-        };
     }
 
     private static Promotion CreatePromotion(int restaurantId)
