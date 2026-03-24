@@ -1,0 +1,295 @@
+@page "/admin/restaurants"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminRestaurantClientService RestaurantService
+
+<PageTitle>Restaurants — Administration</PageTitle>
+
+<AdminLayout Title="Restaurants" Subtitle="@($"{(_restaurants?.Count ?? 0)} restaurants enregistrés")">
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="alert alert-success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        <AdminDataTable TItem="AdminRestaurantResponse"
+                         Items="FilteredRestaurants"
+                         TotalCount="@(FilteredRestaurants.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par nom..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Ville</th>
+                <th>Propriétaire</th>
+                <th>Statut</th>
+                <th>Solde</th>
+                <th>Créé le</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="restaurant">
+                <tr class="@(!restaurant.IsActive ? "adm-table-row--muted" : "")">
+                    <td><strong>@restaurant.Name</strong></td>
+                    <td>@restaurant.Type</td>
+                    <td>@restaurant.City</td>
+                    <td>@restaurant.OwnerName</td>
+                    <td>
+                        <AdminBadge Text="@(restaurant.IsActive ? "Actif" : "Inactif")"
+                                    Variant="@(restaurant.IsActive ? "active" : "warning")"
+                                    ShowDot />
+                    </td>
+                    <td class="adm-cell-mono">@restaurant.Balance.ToString("N2") €</td>
+                    <td class="adm-cell-mono">@restaurant.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <div class="adm-cell-actions">
+                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(restaurant)">
+                                Modifier
+                            </button>
+                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                                    @onclick="() => OpenDeleteConfirm(restaurant)">
+                                Supprimer
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucun restaurant trouvé"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.UtensilsCrossed" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ── Edit modal ── *@
+        <AdminFormModal IsVisible="@(_editingRestaurant is not null)" Title="Modifier le restaurant" OnClose="CloseEditModal">
+            <ChildContent>
+                @if (_editingRestaurant is not null)
+                {
+                    <EditForm Model="@_editModel" OnValidSubmit="HandleUpdate">
+                        <DataAnnotationsValidator />
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-name">Nom</label>
+                            <InputText id="edit-name" @bind-Value="_editModel.Name"
+                                       class="adm-form-input" placeholder="Nom du restaurant" />
+                            <ValidationMessage For="@(() => _editModel.Name)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-desc">Description</label>
+                            <InputTextArea id="edit-desc" @bind-Value="_editModel.Description"
+                                           class="adm-form-input" placeholder="Description" />
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-addr1">Adresse</label>
+                            <InputText id="edit-addr1" @bind-Value="_editModel.AdressLine1"
+                                       class="adm-form-input" placeholder="Adresse ligne 1" />
+                            <ValidationMessage For="@(() => _editModel.AdressLine1)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-addr2">Complément d'adresse</label>
+                            <InputText id="edit-addr2" @bind-Value="_editModel.AdressLine2"
+                                       class="adm-form-input" placeholder="Adresse ligne 2 (optionnel)" />
+                        </div>
+                        <div class="adm-form-row">
+                            <div class="adm-form-group">
+                                <label class="adm-form-label" for="edit-city">Ville</label>
+                                <InputText id="edit-city" @bind-Value="_editModel.City"
+                                           class="adm-form-input" placeholder="Ville" />
+                                <ValidationMessage For="@(() => _editModel.City)" class="adm-form-error" />
+                            </div>
+                            <div class="adm-form-group">
+                                <label class="adm-form-label" for="edit-zip">Code postal</label>
+                                <InputText id="edit-zip" @bind-Value="_editModel.ZipCode"
+                                           class="adm-form-input" placeholder="Code postal" />
+                                <ValidationMessage For="@(() => _editModel.ZipCode)" class="adm-form-error" />
+                            </div>
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-country">Pays</label>
+                            <InputText id="edit-country" @bind-Value="_editModel.Country"
+                                       class="adm-form-input" placeholder="Pays" />
+                            <ValidationMessage For="@(() => _editModel.Country)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label">
+                                <InputCheckbox @bind-Value="_editModel.IsActive" />
+                                Actif
+                            </label>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
+                                Annuler
+                            </button>
+                            <button type="submit" class="app-btn app-btn--sm" disabled="@_isSaving">
+                                @(_isSaving ? "Sauvegarde..." : "Sauvegarder")
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Delete confirmation ── *@
+        <AdminConfirmDialog IsVisible="@(_deletingRestaurant is not null)"
+                            Title="Supprimer le restaurant"
+                            Message="@($"Voulez-vous vraiment supprimer « {_deletingRestaurant?.Name} » ? Cette action est irréversible.")"
+                            ConfirmText="Supprimer"
+                            Variant="danger"
+                            IsProcessing="@_isSaving"
+                            OnConfirm="HandleDelete"
+                            OnCancel="CloseDeleteConfirm" />
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminRestaurantResponse>? _restaurants;
+    private bool _isLoading = true;
+    private string? _loadError;
+    private string _searchQuery = "";
+
+    private AdminRestaurantResponse? _editingRestaurant;
+    private AdminUpdateRestaurantRequest _editModel = new();
+
+    private AdminRestaurantResponse? _deletingRestaurant;
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Restaurants", Href = "/admin/restaurants" }
+    ];
+
+    private IEnumerable<AdminRestaurantResponse> FilteredRestaurants =>
+        _restaurants?.Where(r =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || r.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRestaurants();
+    }
+
+    private async Task LoadRestaurants()
+    {
+        _isLoading = true;
+        _loadError = null;
+        StateHasChanged();
+
+        var (restaurants, error) = await RestaurantService.GetAllAsync();
+        _restaurants = restaurants;
+        _loadError = error?.Error;
+        _isLoading = false;
+    }
+
+    // ── Edit ──
+
+    private void OpenEditModal(AdminRestaurantResponse restaurant)
+    {
+        ClearMessages();
+        _deletingRestaurant = null;
+        _editingRestaurant = restaurant;
+        _editModel = new AdminUpdateRestaurantRequest
+        {
+            Name = restaurant.Name,
+            Description = restaurant.Description,
+            AdressLine1 = restaurant.AdressLine1,
+            AdressLine2 = restaurant.AdressLine2,
+            City = restaurant.City,
+            ZipCode = restaurant.ZipCode,
+            Country = restaurant.Country,
+            IsActive = restaurant.IsActive
+        };
+    }
+
+    private void CloseEditModal()
+    {
+        _editingRestaurant = null;
+        _editModel = new AdminUpdateRestaurantRequest();
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (_editingRestaurant is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var (updated, error) = await RestaurantService.UpdateAsync(_editingRestaurant.Id, _editModel);
+        if (updated is not null)
+        {
+            ReplaceRestaurant(updated);
+            _actionSuccess = $"Restaurant « {updated.Name} » mis à jour";
+            CloseEditModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la mise à jour du restaurant";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Delete ──
+
+    private void OpenDeleteConfirm(AdminRestaurantResponse restaurant)
+    {
+        ClearMessages();
+        _editingRestaurant = null;
+        _deletingRestaurant = restaurant;
+    }
+
+    private void CloseDeleteConfirm()
+    {
+        _deletingRestaurant = null;
+    }
+
+    private async Task HandleDelete()
+    {
+        if (_deletingRestaurant is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var restaurantId = _deletingRestaurant.Id;
+        var (success, error) = await RestaurantService.DeleteAsync(restaurantId);
+        if (success)
+        {
+            var removed = _deletingRestaurant;
+            _restaurants?.RemoveAll(r => r.Id == restaurantId);
+            _actionSuccess = $"Restaurant « {removed.Name} » supprimé";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression du restaurant";
+        }
+
+        _deletingRestaurant = null;
+        _isSaving = false;
+    }
+
+    // ── Helpers ──
+
+    private void ReplaceRestaurant(AdminRestaurantResponse updated)
+    {
+        if (_restaurants is null) return;
+        var idx = _restaurants.FindIndex(r => r.Id == updated.Id);
+        if (idx >= 0) _restaurants[idx] = updated;
+    }
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+}
