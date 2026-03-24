@@ -3,15 +3,21 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace DeliverTableServer.Services;
 
 /// <inheritdoc />
-public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig config) : IObjectStorageService
+public sealed class ObjectStorageService(
+    IAmazonS3 s3Client,
+    ObjectStorageConfig config,
+    ILogger<ObjectStorageService> logger
+) : IObjectStorageService
 {
     private static readonly HashSet<string> _allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     private readonly IAmazonS3 _s3Client = s3Client ?? throw new ArgumentNullException(nameof(s3Client));
     private readonly ObjectStorageConfig _config = config ?? throw new ArgumentNullException(nameof(config));
+    private readonly ILogger<ObjectStorageService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private const string _defaultFileExtension = ".png";
 
     /// <inheritdoc />
@@ -84,12 +90,10 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
         }
         catch (AmazonS3Exception ex)
         {
-            // Log the exception details
-            Console.WriteLine($"S3 Upload Error: {ex.Message}");
-            Console.WriteLine($"Error Code: {ex.ErrorCode}");
-            Console.WriteLine($"Status Code: {ex.StatusCode}");
-            Console.WriteLine($"Request ID: {ex.RequestId}");
-            throw; // Re-throw or handle as needed
+            _logger.LogError(ex,
+                "S3 upload failed — ErrorCode: {ErrorCode}, StatusCode: {StatusCode}, RequestId: {RequestId}",
+                ex.ErrorCode, ex.StatusCode, ex.RequestId);
+            throw;
         }
     }
 
@@ -99,7 +103,9 @@ public sealed class ObjectStorageService(IAmazonS3 s3Client, ObjectStorageConfig
         {
             await _s3Client.DeleteObjectAsync(_config.BucketName, key + _defaultFileExtension, cancellationToken);
         }
-        catch (Exception)
-        { }
+        catch (AmazonS3Exception ex) when (ex.StatusCode is not HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning(ex, "Failed to delete S3 object with key: {Key}", key);
+        }
     }
 }

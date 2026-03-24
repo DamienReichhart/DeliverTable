@@ -108,7 +108,7 @@ public sealed class DishService(
         if (dish is null)
             return new ServiceError(ErrorMessages.DishNotFound, 404);
 
-        await _objectStorage.DeleteAsync($"dish/{dish.Id}");
+        await _objectStorage.DeleteAsync($"{DishImageFolder}/{dish.Id}");
         var deleted = await _dishRepository.DeleteAsync(id, ct);
         if (!deleted)
             return new ServiceError(ErrorMessages.DishNotFound, 404);
