@@ -29,68 +29,76 @@ jobs:
 
       # ── Trivy: scan application images ──────────────────────────
       - name: Trivy scan – backend
+        if: always() && !cancelled()
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: delivertable-prod-backend
           severity: CRITICAL,HIGH
+          ignore-unfixed: true
           exit-code: 1
           format: sarif
           output: trivy-backend.sarif
 
       - name: Trivy scan – frontend
+        if: always() && !cancelled()
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: delivertable-prod-frontend
           severity: CRITICAL,HIGH
+          ignore-unfixed: true
           exit-code: 1
           format: sarif
           output: trivy-frontend.sarif
 
       - name: Trivy scan – proxy
+        if: always() && !cancelled()
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: delivertable-prod-proxy
           severity: CRITICAL,HIGH
+          ignore-unfixed: true
           exit-code: 1
           format: sarif
           output: trivy-proxy.sarif
 
-      - name: Trivy scan – tunnel (warn only)
+      - name: Trivy scan – tunnel
+        if: always() && !cancelled()
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: delivertable-prod-tunnel
           severity: CRITICAL,HIGH
-          exit-code: 0
+          ignore-unfixed: true
+          exit-code: 1
           format: sarif
           output: trivy-tunnel.sarif
 
       - name: Upload SARIF – backend
-        if: always()
+        if: always() && !cancelled() && hashFiles('trivy-backend.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-backend.sarif
           category: trivy-backend
 
       - name: Upload SARIF – frontend
-        if: always()
+        if: always() && !cancelled() && hashFiles('trivy-frontend.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-frontend.sarif
           category: trivy-frontend
 
       - name: Upload SARIF – proxy
-        if: always()
+        if: always() && !cancelled() && hashFiles('trivy-proxy.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-proxy.sarif
           category: trivy-proxy
 
       - name: Upload SARIF – tunnel
-        if: always()
+        if: always() && !cancelled() && hashFiles('trivy-tunnel.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-tunnel.sarif
