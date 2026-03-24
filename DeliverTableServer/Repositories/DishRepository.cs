@@ -65,6 +65,12 @@ public class DishRepository(DeliverTableContext dbContext) : IDishRepository
         return true;
     }
 
+    public async Task<List<Dish>> GetAllUnscopedAsync(CancellationToken ct = default)
+        => await _dbContext.Dishes.Include(d => d.Restaurant).OrderBy(d => d.Id).ToListAsync(ct);
+
+    public async Task<Dish?> GetByIdWithRestaurantAsync(int id, CancellationToken ct = default)
+        => await _dbContext.Dishes.Include(d => d.Restaurant).FirstOrDefaultAsync(d => d.Id == id, ct);
+
     private static IQueryable<Dish> ApplyFilters(IQueryable<Dish> query, DishQuery filter)
     {
         if (!string.IsNullOrWhiteSpace(filter.Name))
