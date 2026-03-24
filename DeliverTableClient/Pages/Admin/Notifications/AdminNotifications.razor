@@ -1,0 +1,161 @@
+@page "/admin/notifications"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminNotificationClientService NotificationService
+
+<PageTitle>Notifications — Administration</PageTitle>
+
+<AdminLayout Title="Notifications" Subtitle="@($"{(_notifications?.Count ?? 0)} notifications")">
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="alert alert-success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        <AdminDataTable TItem="AdminNotificationResponse"
+                         Items="FilteredNotifications"
+                         TotalCount="@(FilteredNotifications.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par type ou utilisateur..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Type</th>
+                <th>Utilisateur</th>
+                <th>Contenu</th>
+                <th>Lu</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="notif">
+                <tr>
+                    <td>
+                        <AdminBadge Text="@notif.Type" Variant="info" />
+                    </td>
+                    <td>@notif.UserName</td>
+                    <td>@Truncate(notif.Payload, 80)</td>
+                    <td>
+                        <AdminBadge Text="@(notif.IsRead ? "Lu" : "Non lu")"
+                                    Variant="@(notif.IsRead ? "active" : "warning")" ShowDot />
+                    </td>
+                    <td class="adm-cell-mono">@notif.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                                @onclick="@(() => OpenDeleteConfirm(notif))">
+                            Supprimer
+                        </button>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucune notification trouvée"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.Bell" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ── Delete confirmation ── *@
+        <AdminConfirmDialog IsVisible="@(_deletingNotification is not null)"
+                            Title="Supprimer la notification"
+                            Message="@($"Voulez-vous vraiment supprimer cette notification pour {_deletingNotification?.UserName} ? Cette action est irréversible.")"
+                            ConfirmText="Supprimer"
+                            Variant="danger"
+                            IsProcessing="@_isSaving"
+                            OnConfirm="HandleDelete"
+                            OnCancel="CloseDeleteConfirm" />
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminNotificationResponse>? _notifications;
+    private bool _isLoading = true;
+    private string _searchQuery = "";
+
+    private AdminNotificationResponse? _deletingNotification;
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Notifications", Href = "/admin/notifications" }
+    ];
+
+    private IEnumerable<AdminNotificationResponse> FilteredNotifications =>
+        _notifications?.Where(n =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || n.Type.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || n.UserName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || n.Payload.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var (notifications, error) = await NotificationService.GetAllAsync();
+        _notifications = notifications;
+        _actionError = error?.Error;
+        _isLoading = false;
+    }
+
+    // ── Delete ──
+
+    private void OpenDeleteConfirm(AdminNotificationResponse notif)
+    {
+        ClearMessages();
+        _deletingNotification = notif;
+    }
+
+    private void CloseDeleteConfirm()
+    {
+        _deletingNotification = null;
+    }
+
+    private async Task HandleDelete()
+    {
+        if (_deletingNotification is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var notifId = _deletingNotification.Id;
+        var (success, error) = await NotificationService.DeleteAsync(notifId);
+        if (success)
+        {
+            _notifications?.RemoveAll(n => n.Id == notifId);
+            _actionSuccess = "Notification supprimée avec succès";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression de la notification";
+        }
+
+        _deletingNotification = null;
+        _isSaving = false;
+    }
+
+    // ── Helpers ──
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text)) return "—";
+        return text.Length <= maxLength ? text : text[..maxLength] + "...";
+    }
+}

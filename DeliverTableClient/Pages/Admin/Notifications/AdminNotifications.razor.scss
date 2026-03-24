@@ -1,0 +1,10 @@
+@use "../../../Styles/abstracts/variables" as *;
+
+// Notifications management page — most styling handled by shared admin components.
+// Only page-specific overrides here.
+
+.admin-notifications-page {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
