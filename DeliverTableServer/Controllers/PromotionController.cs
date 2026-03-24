@@ -39,7 +39,7 @@ public class PromotionController(IPromotionService promotionService) : Controlle
         return result.ToOkResult();
     }
 
-    [HttpPut(ApiRoutes.Promotion.Base + "/" + ApiRoutes.Promotion.ByIdRoute)]
+    [HttpPut(ApiRoutes.Promotion.ById)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePromotionRequest request, CancellationToken ct)
     {
         if (!this.TryGetUserId(out int userId)) return Unauthorized();
@@ -47,7 +47,7 @@ public class PromotionController(IPromotionService promotionService) : Controlle
         return result.ToOkResult();
     }
 
-    [HttpDelete(ApiRoutes.Promotion.Base + "/" + ApiRoutes.Promotion.ByIdRoute)]
+    [HttpDelete(ApiRoutes.Promotion.ById)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {
         if (!this.TryGetUserId(out int userId)) return Unauthorized();

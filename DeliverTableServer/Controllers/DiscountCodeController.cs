@@ -33,7 +33,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
         return result.ToOkResult();
     }
 
-    [HttpPut(ApiRoutes.DiscountCodeRoutes.Base + "/" + ApiRoutes.DiscountCodeRoutes.ByIdRoute)]
+    [HttpPut(ApiRoutes.DiscountCodeRoutes.ById)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateDiscountCodeRequest request, CancellationToken ct)
     {
@@ -50,7 +50,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
         return result.ToOkResult();
     }
 
-    [HttpDelete(ApiRoutes.DiscountCodeRoutes.Base + "/" + ApiRoutes.DiscountCodeRoutes.ByIdRoute)]
+    [HttpDelete(ApiRoutes.DiscountCodeRoutes.ById)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {
