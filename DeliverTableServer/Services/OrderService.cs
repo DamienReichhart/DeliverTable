@@ -304,6 +304,40 @@ public sealed class OrderService(
             };
 
             await _transactionRepository.CreateAsync(transaction, ct);
+
+            // Earn loyalty points
+            var loyaltyProgram = await _loyaltyRepository.GetByRestaurantAsync(order.RestaurantId, ct);
+            if (loyaltyProgram is not null && loyaltyProgram.IsActive)
+            {
+                var pointsEarned = (int)Math.Floor(order.OriginalAmount * loyaltyProgram.PointsPerEuro);
+                if (pointsEarned > 0)
+                {
+                    var loyaltyAccount = await _loyaltyRepository.GetAccountAsync(loyaltyProgram.Id, order.CustomerId, ct);
+                    if (loyaltyAccount is null)
+                    {
+                        loyaltyAccount = new LoyaltyAccount
+                        {
+                            LoyaltyProgramId = loyaltyProgram.Id,
+                            CustomerId = order.CustomerId
+                        };
+                        await _loyaltyRepository.CreateAccountAsync(loyaltyAccount, ct);
+                    }
+
+                    loyaltyAccount.PointsBalance += pointsEarned;
+                    await _loyaltyRepository.UpdateAccountAsync(loyaltyAccount, ct);
+
+                    await _loyaltyRepository.CreateTransactionAsync(new LoyaltyTransaction
+                    {
+                        LoyaltyAccountId = loyaltyAccount.Id,
+                        Type = LoyaltyTransactionType.Earn,
+                        Points = pointsEarned,
+                        OrderId = order.Id
+                    }, ct);
+
+                    order.LoyaltyPointsEarned = pointsEarned;
+                    await _orderRepository.UpdateAsync(order, ct);
+                }
+            }
         }
 
         return updated.ToDto();
