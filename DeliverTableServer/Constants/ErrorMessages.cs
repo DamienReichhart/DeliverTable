@@ -81,4 +81,30 @@ public static class ErrorMessages
     // Action Filters
     public const string MissingOrInvalidRestaurantId = "ID de restaurant manquant ou invalide";
     public const string MissingOrInvalidDishId = "ID de plat manquant ou invalide";
+
+    // Events
+    public const string EventNotFound = "Événement introuvable";
+    public const string InvalidEventDates = "La date de fin doit être postérieure à la date de début de l'événement";
+    public const string EventMenuItemNotFound = "Élément du menu événementiel introuvable";
+    public const string EventBookingPolicyNotFound = "Politique de réservation introuvable";
+
+    // Notifications
+    public const string NotificationNotFound = "Notification introuvable";
+
+    // Ratings
+    public const string RatingNotFound = "Avis introuvable";
+
+    // Order Config
+    public const string OrderRuleNotFound = "Règle de commande introuvable";
+    public const string BlockedSlotNotFound = "Créneau bloqué introuvable";
+    public const string InvalidBlockedSlotDates = "La date de fin doit être postérieure à la date de début du créneau";
+
+    // Moderation
+    public const string ModerationActionNotFound = "Action de modération introuvable";
+
+    // Transactions
+    public const string TransactionNotFound = "Transaction introuvable";
+
+    // Restaurant Table
+    public const string RestaurantTableNotFound = "Table de restaurant introuvable";
 }
