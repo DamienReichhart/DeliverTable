@@ -124,6 +124,7 @@ public static class ApiRoutes
     public static class Promotion
     {
         public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/promotions";
+        public const string ActiveRoute = "api/v1/restaurant/{id:int}/promotions/active";
         public const string Base = "api/v1/promotion";
         public const string ByIdRoute = "{id:int}";
     }

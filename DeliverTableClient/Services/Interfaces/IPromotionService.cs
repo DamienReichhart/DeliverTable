@@ -9,4 +9,5 @@ public interface IPromotionService
     Task<(PromotionDto?, ErrorResponse?)> CreateAsync(int restaurantId, CreatePromotionRequest request, CancellationToken ct = default);
     Task<(PromotionDto?, ErrorResponse?)> UpdateAsync(int promotionId, UpdatePromotionRequest request, CancellationToken ct = default);
     Task<(bool, ErrorResponse?)> DeleteAsync(int promotionId, CancellationToken ct = default);
+    Task<(List<PromotionDto>?, ErrorResponse?)> GetActiveByRestaurantAsync(int restaurantId, CancellationToken ct = default);
 }

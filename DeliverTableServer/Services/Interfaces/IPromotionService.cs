@@ -10,4 +10,5 @@ public interface IPromotionService
     Task<ServiceResult<PaginatedResult<PromotionDto>>> GetByRestaurantAsync(int restaurantId, int ownerId, PromotionQuery query, CancellationToken ct = default);
     Task<ServiceResult<PromotionDto>> UpdateAsync(int promotionId, int ownerId, UpdatePromotionRequest request, CancellationToken ct = default);
     Task<ServiceResult> DeleteAsync(int promotionId, int ownerId, CancellationToken ct = default);
+    Task<ServiceResult<List<PromotionDto>>> GetActiveByRestaurantAsync(int restaurantId, CancellationToken ct = default);
 }
