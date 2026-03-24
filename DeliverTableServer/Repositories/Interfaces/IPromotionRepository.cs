@@ -11,4 +11,6 @@ public interface IPromotionRepository
     Task<List<Promotion>> GetActiveByRestaurantAsync(int restaurantId, CancellationToken ct = default);
     Task<Promotion> UpdateAsync(Promotion promotion, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
+    Task<List<Promotion>> GetAllUnscopedAsync(CancellationToken ct = default);
+    Task<Promotion?> GetByIdWithRestaurantAsync(int id, CancellationToken ct = default);
 }
