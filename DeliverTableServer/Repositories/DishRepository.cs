@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DeliverTableServer.Repositories;
 
-public class DishRepository(DeliverTableContext context) : IDishRepository
+public class DishRepository(DeliverTableContext dbContext) : IDishRepository
 {
-    private readonly DeliverTableContext _context = context;
+    private readonly DeliverTableContext _dbContext = dbContext;
 
     public async Task<(List<Dish> Items, int TotalCount)> GetAllAsync(DishQuery query, CancellationToken ct = default)
     {
-        var q = _context.Dishes.AsQueryable();
+        var q = _dbContext.Dishes.AsQueryable();
         q = ApplyFilters(q, query);
         q = q.OrderBy(d => d.Id);
 
@@ -27,7 +27,7 @@ public class DishRepository(DeliverTableContext context) : IDishRepository
     public async Task<(List<Dish> Items, int TotalCount)> GetByRestaurantIdAsync(
         DishQuery query, int restaurantId, CancellationToken ct = default)
     {
-        var q = _context.Dishes.Where(d => d.RestaurantId == restaurantId);
+        var q = _dbContext.Dishes.Where(d => d.RestaurantId == restaurantId);
         q = ApplyFilters(q, query);
         q = q.OrderBy(d => d.Id);
 
@@ -40,29 +40,29 @@ public class DishRepository(DeliverTableContext context) : IDishRepository
     }
 
     public async Task<Dish?> GetByIdAsync(int id, CancellationToken ct = default)
-        => await _context.Dishes.FindAsync([id], ct);
+        => await _dbContext.Dishes.FindAsync([id], ct);
 
     public async Task<Dish> CreateAsync(Dish dish, CancellationToken ct = default)
     {
-        _context.Dishes.Add(dish);
-        await _context.SaveChangesAsync(ct);
+        _dbContext.Dishes.Add(dish);
+        await _dbContext.SaveChangesAsync(ct);
         return dish;
     }
 
     public async Task<Dish> UpdateAsync(Dish dish, CancellationToken ct = default)
     {
-        _context.Dishes.Update(dish);
-        await _context.SaveChangesAsync(ct);
+        _dbContext.Dishes.Update(dish);
+        await _dbContext.SaveChangesAsync(ct);
         return dish;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var dish = await _context.Dishes.FindAsync([id], ct);
+        var dish = await _dbContext.Dishes.FindAsync([id], ct);
         if (dish is null) return false;
 
-        _context.Dishes.Remove(dish);
-        await _context.SaveChangesAsync(ct);
+        _dbContext.Dishes.Remove(dish);
+        await _dbContext.SaveChangesAsync(ct);
         return true;
     }
 
