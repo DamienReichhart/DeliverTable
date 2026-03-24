@@ -21,10 +21,8 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
     {
         var q = _dbContext.Restaurants.Where(r => r.IsActive);
 
-        if (!string.IsNullOrWhiteSpace(query.Name))
-            q = q.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
-        if (!string.IsNullOrWhiteSpace(query.City))
-            q = q.Where(r => r.City.ToLower().Contains(query.City.ToLower()));
+        q = ApplyFilters(q, query);
+
         if (!string.IsNullOrWhiteSpace(query.Type))
             q = q.Where(r => r.Type.ToString().ToLower().Contains(query.Type.ToLower()));
 
@@ -50,9 +48,8 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
                 .ToList();
 
             var totalCount = filtered.Count;
-            int page = query.PageNumber > 0 ? query.PageNumber : 1;
-            int skip = (page - 1) * query.PageSize;
-            var items = filtered.Skip(skip).Take(query.PageSize).ToList();
+            var (offset, size) = GetPaginationOffsets(query);
+            var items = filtered.Skip(offset).Take(size).ToList();
             return (items, totalCount);
         }
 
@@ -60,10 +57,8 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
 
         var total = await q.CountAsync(ct);
 
-        int p = query.PageNumber > 0 ? query.PageNumber : 1;
-        int s = (p - 1) * query.PageSize;
-
-        var result = await q.Skip(s).Take(query.PageSize).ToListAsync(ct);
+        var (skip, take) = GetPaginationOffsets(query);
+        var result = await q.Skip(skip).Take(take).ToListAsync(ct);
         return (result, total);
     }
 
@@ -104,19 +99,31 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
     {
         var q = _dbContext.Restaurants.Where(r => r.OwnerId == ownerId);
 
-        if (!string.IsNullOrWhiteSpace(query.Name))
-            q = q.Where(r => r.Name.ToLower().Contains(query.Name.ToLower()));
-        if (!string.IsNullOrWhiteSpace(query.City))
-            q = q.Where(r => r.City.ToLower().Contains(query.City.ToLower()));
+        q = ApplyFilters(q, query);
 
         q = q.OrderBy(r => r.Id);
 
         var totalCount = await q.CountAsync(ct);
 
+        var (skip, take) = GetPaginationOffsets(query);
+        var items = await q.Skip(skip).Take(take).ToListAsync(ct);
+        return (items, totalCount);
+    }
+
+    private static (int Skip, int Take) GetPaginationOffsets(RestaurantQuery query)
+    {
         int page = query.PageNumber > 0 ? query.PageNumber : 1;
         int skip = (page - 1) * query.PageSize;
+        return (skip, query.PageSize);
+    }
 
-        var items = await q.Skip(skip).Take(query.PageSize).ToListAsync(ct);
-        return (items, totalCount);
+    private static IQueryable<Restaurant> ApplyFilters(IQueryable<Restaurant> query, RestaurantQuery filter)
+    {
+        if (!string.IsNullOrWhiteSpace(filter.Name))
+            query = query.Where(r => r.Name.ToLower().Contains(filter.Name.ToLower()));
+        if (!string.IsNullOrWhiteSpace(filter.City))
+            query = query.Where(r => r.City.ToLower().Contains(filter.City.ToLower()));
+
+        return query;
     }
 }
