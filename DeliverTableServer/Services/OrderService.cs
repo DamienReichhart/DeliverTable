@@ -87,12 +87,12 @@ public sealed class OrderService(
             }
         }
 
-        // Step 3: Apply discount code
-        Models.DiscountCode? discountCode = null;
-        if (!string.IsNullOrWhiteSpace(request.DiscountCode))
+        // Step 3: Apply discount codes
+        var appliedDiscountCodes = new List<Models.DiscountCode>();
+        foreach (var codeStr in request.DiscountCodes.Where(c => !string.IsNullOrWhiteSpace(c)))
         {
-            discountCode = await _discountCodeRepository.GetByCodeAndRestaurantAsync(
-                request.DiscountCode, request.RestaurantId, ct);
+            var discountCode = await _discountCodeRepository.GetByCodeAndRestaurantAsync(
+                codeStr, request.RestaurantId, ct);
 
             var now = DateTime.UtcNow;
             if (discountCode is null || !discountCode.IsActive ||
@@ -119,12 +119,13 @@ public sealed class OrderService(
             {
                 Source = OrderDiscountSource.DiscountCode,
                 SourceId = discountCode.Id,
-                Description = discountCode.Description,
+                Description = $"{discountCode.Code} — {discountCode.Description}",
                 Amount = codeDiscount
             });
 
             discountCode.CurrentRedemptions++;
             await _discountCodeRepository.UpdateAsync(discountCode, ct);
+            appliedDiscountCodes.Add(discountCode);
         }
 
         // Step 4: Apply loyalty points
@@ -192,7 +193,7 @@ public sealed class OrderService(
             DiscountAmount = discountAmount,
             TotalAmount = totalAmount,
             LoyaltyPointsUsed = loyaltyPointsUsed,
-            DiscountCodeId = discountCode?.Id,
+            DiscountCodeId = appliedDiscountCodes.Count > 0 ? appliedDiscountCodes[0].Id : null,
             GuestCount = request.GuestCount,
             DeliveryAddress = orderType == OrderType.Delivery ? request.DeliveryAddress : string.Empty,
             Notes = request.Notes,
@@ -203,12 +204,12 @@ public sealed class OrderService(
 
         var created = await _orderRepository.CreateAsync(order, ct);
 
-        // Create discount code redemption record after order is created
-        if (discountCode is not null)
+        // Create discount code redemption records after order is created
+        foreach (var dc in appliedDiscountCodes)
         {
             await _discountCodeRepository.CreateRedemptionAsync(new DiscountCodeRedemption
             {
-                DiscountCodeId = discountCode.Id,
+                DiscountCodeId = dc.Id,
                 CustomerId = customerId,
                 OrderId = created.Id
             }, ct);

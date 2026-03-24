@@ -66,4 +66,20 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
 
         return (true, null);
     }
+
+    public async Task<(DiscountCodeDto?, ErrorResponse?)> ValidateAsync(int restaurantId, string code, CancellationToken ct = default)
+    {
+        var request = new ValidateDiscountCodeRequest { Code = code };
+        var response = await _httpClient.PostAsJsonAsync(
+            $"api/v1/restaurant/{restaurantId}/discount-codes/validate", request, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            return (null, error);
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<DiscountCodeDto>(cancellationToken: ct);
+        return (result, null);
+    }
 }

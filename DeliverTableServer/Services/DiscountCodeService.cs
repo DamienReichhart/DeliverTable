@@ -120,4 +120,26 @@ public sealed class DiscountCodeService(
         await _discountCodeRepository.DeleteAsync(discountCodeId, ct);
         return ServiceResult.Success();
     }
+
+    public async Task<ServiceResult<DiscountCodeDto>> ValidateAsync(
+        int restaurantId, int customerId, string code, CancellationToken ct = default)
+    {
+        var discountCode = await _discountCodeRepository.GetByCodeAndRestaurantAsync(code, restaurantId, ct);
+
+        var now = DateTime.UtcNow;
+        if (discountCode is null || !discountCode.IsActive ||
+            now < discountCode.ValidFrom || now > discountCode.ValidUntil)
+            return new ServiceError(ErrorMessages.DiscountCodeInvalid);
+
+        if (discountCode.MaxRedemptions.HasValue &&
+            discountCode.CurrentRedemptions >= discountCode.MaxRedemptions.Value)
+            return new ServiceError(ErrorMessages.DiscountCodeMaxRedemptions);
+
+        var userRedemptions = await _discountCodeRepository.GetRedemptionCountByUserAsync(
+            discountCode.Id, customerId, ct);
+        if (userRedemptions >= discountCode.PerUserLimit)
+            return new ServiceError(ErrorMessages.DiscountCodePerUserLimit);
+
+        return discountCode.ToDto();
+    }
 }

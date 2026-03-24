@@ -133,6 +133,7 @@ public static class ApiRoutes
     public static class DiscountCodeRoutes
     {
         public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/discount-codes";
+        public const string ValidateRoute = "api/v1/restaurant/{id:int}/discount-codes/validate";
         public const string Base = "api/v1/discount-code";
         public const string ByIdRoute = "{id:int}";
     }

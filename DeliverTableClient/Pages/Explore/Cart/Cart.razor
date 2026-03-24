@@ -3,6 +3,7 @@
 @inject IOrderService OrderService
 @inject IRestaurantService RestaurantService
 @inject IPromotionService PromotionService
+@inject IDiscountCodeClientService DiscountCodeService
 @inject ILoyaltyClientService LoyaltyService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
@@ -145,13 +146,44 @@
                 </div>
             </div>
 
-            @* ── Discount code ── *@
+            @* ── Discount codes ── *@
             <div class="discount-section">
-                <h3>Code promo</h3>
+                <h3>Codes promo</h3>
+
+                @if (_appliedCodes.Count > 0)
+                {
+                    <div class="applied-codes">
+                        @foreach (var dc in _appliedCodes)
+                        {
+                            <div class="applied-code">
+                                <div class="applied-code-info">
+                                    <strong>@dc.Code</strong>
+                                    <span>@FormatDiscount(dc.DiscountType, dc.DiscountValue)</span>
+                                </div>
+                                <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => RemoveCode(dc)">
+                                    Retirer
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+
                 <div class="discount-code-input">
-                    <input type="text" id="discount-code" @bind="_discountCode" class="filter-input"
-                           placeholder="Entrez votre code promo" />
+                    <input type="text" @bind="_discountCodeInput" class="filter-input"
+                           placeholder="Entrez un code promo" @onkeydown="HandleCodeKeyDown" />
+                    <button type="button" class="app-btn app-btn--primary app-btn--sm" @onclick="ApplyCode"
+                            disabled="@(_applyingCode || string.IsNullOrWhiteSpace(_discountCodeInput))">
+                        @(_applyingCode ? "..." : "Appliquer")
+                    </button>
                 </div>
+                @if (_codeError is not null)
+                {
+                    <p class="code-error">@_codeError</p>
+                }
+                @if (_codeSuccess is not null)
+                {
+                    <p class="code-success">@_codeSuccess</p>
+                }
             </div>
 
             @* ── Loyalty points ── *@
@@ -207,6 +239,18 @@
                                     <span>-@promoDiscount.ToString("C", _frCulture)</span>
                                 </div>
                             }
+                        }
+                    }
+
+                    @foreach (var appliedCode in _appliedCodes)
+                    {
+                        var discount = EstimateCodeDiscount(appliedCode);
+                        if (discount > 0)
+                        {
+                            <div class="breakdown-line breakdown-discount">
+                                <span>Code : @appliedCode.Code</span>
+                                <span>-@(discount.ToString("C", _frCulture))</span>
+                            </div>
                         }
                     }
 
@@ -273,7 +317,11 @@
     private int _guestCount = 1;
     private string _deliveryAddress = string.Empty;
     private string _notes = string.Empty;
-    private string _discountCode = string.Empty;
+    private string _discountCodeInput = string.Empty;
+    private List<DiscountCodeDto> _appliedCodes = [];
+    private bool _applyingCode;
+    private string? _codeError;
+    private string? _codeSuccess;
     private int _loyaltyPointsToRedeem;
     private LoyaltyAccountDto? _loyaltyAccount;
     private List<PromotionDto>? _activePromotions;
@@ -283,13 +331,25 @@
     // ── Estimated totals (client-side preview) ──
     private decimal EstimatedPromotionDiscount => _activePromotions?.Sum(p => EstimatePromotionDiscount(p)) ?? 0;
 
+    private decimal EstimatedCodeDiscount => _appliedCodes.Sum(c => EstimateCodeDiscount(c));
+
     private decimal EstimatedLoyaltyDiscount =>
         _loyaltyPointsToRedeem > 0 && _loyaltyAccount is not null
             ? _loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint
             : 0;
 
-    private decimal EstimatedSavings => Math.Min(EstimatedPromotionDiscount + EstimatedLoyaltyDiscount,
+    private decimal EstimatedSavings => Math.Min(
+        EstimatedPromotionDiscount + EstimatedCodeDiscount + EstimatedLoyaltyDiscount,
         _cart?.TotalAmount ?? 0);
+
+    private decimal EstimateCodeDiscount(DiscountCodeDto code)
+    {
+        var subtotal = _cart?.TotalAmount ?? 0;
+        if (code.MinOrderAmount.HasValue && subtotal < code.MinOrderAmount.Value) return 0;
+        return code.DiscountType == "Percentage"
+            ? Math.Round(subtotal * code.DiscountValue / 100, 2)
+            : Math.Min(code.DiscountValue, subtotal);
+    }
 
     private decimal EstimatedTotal => Math.Max((_cart?.TotalAmount ?? 0) - EstimatedSavings, 0);
 
@@ -422,6 +482,53 @@
         }
     }
 
+    // ── Discount codes ──
+    private async Task ApplyCode()
+    {
+        if (string.IsNullOrWhiteSpace(_discountCodeInput)) return;
+
+        var code = _discountCodeInput.Trim();
+        _codeError = null;
+        _codeSuccess = null;
+
+        if (_appliedCodes.Any(c => c.Code.Equals(code, StringComparison.OrdinalIgnoreCase)))
+        {
+            _codeError = "Ce code est déjà appliqué.";
+            return;
+        }
+
+        _applyingCode = true;
+        StateHasChanged();
+
+        var (result, error) = await DiscountCodeService.ValidateAsync(RestaurantId, code);
+        if (error is not null)
+        {
+            _codeError = error.Error;
+        }
+        else if (result is not null)
+        {
+            _appliedCodes.Add(result);
+            _codeSuccess = $"Code \"{result.Code}\" appliqué — {FormatDiscount(result.DiscountType, result.DiscountValue)}";
+            _discountCodeInput = string.Empty;
+        }
+
+        _applyingCode = false;
+        StateHasChanged();
+    }
+
+    private void RemoveCode(DiscountCodeDto code)
+    {
+        _appliedCodes.Remove(code);
+        _codeError = null;
+        _codeSuccess = null;
+    }
+
+    private async Task HandleCodeKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await ApplyCode();
+    }
+
     // ── Checkout ──
     private async Task Checkout()
     {
@@ -450,7 +557,7 @@
             GuestCount = _guestCount,
             DeliveryAddress = _deliveryAddress,
             Notes = _notes,
-            DiscountCode = string.IsNullOrWhiteSpace(_discountCode) ? null : _discountCode.Trim(),
+            DiscountCodes = _appliedCodes.Select(c => c.Code).ToList(),
             LoyaltyPointsToRedeem = _loyaltyPointsToRedeem
         };
 
