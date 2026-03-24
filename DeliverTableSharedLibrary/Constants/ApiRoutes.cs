@@ -127,6 +127,7 @@ public static class ApiRoutes
         public const string ActiveRoute = "api/v1/restaurant/{id:int}/promotions/active";
         public const string Base = "api/v1/promotion";
         public const string ByIdRoute = "{id:int}";
+        public const string ById = Base + "/" + ByIdRoute;
     }
 
     /// <summary>Discount code routes (RestaurantOwner).</summary>
@@ -136,6 +137,7 @@ public static class ApiRoutes
         public const string ValidateRoute = "api/v1/restaurant/{id:int}/discount-codes/validate";
         public const string Base = "api/v1/discount-code";
         public const string ByIdRoute = "{id:int}";
+        public const string ById = Base + "/" + ByIdRoute;
     }
 
     /// <summary>Loyalty program routes.</summary>
