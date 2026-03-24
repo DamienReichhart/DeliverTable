@@ -39,6 +39,15 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
         return result.ToOkResult();
     }
 
+    [HttpPost(ApiRoutes.DiscountCodeRoutes.ValidateRoute)]
+    [Authorize(Roles = nameof(UserRole.Customer))]
+    public async Task<IActionResult> Validate([FromRoute] int id, [FromBody] ValidateDiscountCodeRequest request, CancellationToken ct)
+    {
+        if (!TryGetUserId(out int userId)) return Unauthorized();
+        var result = await _discountCodeService.ValidateAsync(id, userId, request.Code, ct);
+        return result.ToOkResult();
+    }
+
     [HttpDelete(ApiRoutes.DiscountCodeRoutes.Base + "/" + ApiRoutes.DiscountCodeRoutes.ByIdRoute)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {

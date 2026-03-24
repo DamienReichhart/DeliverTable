@@ -99,7 +99,7 @@ public class OrderServiceTests
         OrderType = nameof(OrderType.Delivery),
         DeliveryAddress = "123 Rue Test",
         GuestCount = 1,
-        DiscountCode = discountCode,
+        DiscountCodes = discountCode is not null ? [discountCode] : [],
         LoyaltyPointsToRedeem = loyaltyPoints
     };
 
