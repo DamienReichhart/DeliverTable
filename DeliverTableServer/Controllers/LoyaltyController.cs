@@ -19,7 +19,7 @@ public class LoyaltyController(ILoyaltyService loyaltyService) : ControllerBase
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> CreateOrUpdate([FromRoute] int id, [FromBody] CreateLoyaltyProgramRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _loyaltyService.CreateOrUpdateProgramAsync(id, userId, request, ct);
         return result.ToOkResult();
     }
@@ -36,13 +36,9 @@ public class LoyaltyController(ILoyaltyService loyaltyService) : ControllerBase
     [Authorize(Roles = nameof(UserRole.Customer))]
     public async Task<IActionResult> GetMyAccount([FromRoute] int id, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _loyaltyService.GetMyAccountAsync(id, userId, ct);
         return result.ToOkResult();
     }
 
-    private bool TryGetUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out userId);
-    }
 }

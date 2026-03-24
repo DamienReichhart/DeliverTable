@@ -19,7 +19,7 @@ public class CartController(ICartService cartService) : ControllerBase
     [HttpGet(ApiRoutes.Cart.ByRestaurantRoute)]
     public async Task<IActionResult> GetCart([FromRoute] int id, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _cartService.GetCartAsync(userId, id, ct);
         return result.ToOkResult();
@@ -28,7 +28,7 @@ public class CartController(ICartService cartService) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllCarts(CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _cartService.GetAllCartsAsync(userId, ct);
         return result.ToOkResult();
@@ -37,7 +37,7 @@ public class CartController(ICartService cartService) : ControllerBase
     [HttpPost(ApiRoutes.Cart.ItemsRoute)]
     public async Task<IActionResult> AddItem([FromBody] AddToCartRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _cartService.AddItemAsync(userId, request, ct);
         return result.ToOkResult();
@@ -46,7 +46,7 @@ public class CartController(ICartService cartService) : ControllerBase
     [HttpPut(ApiRoutes.Cart.ItemByIdRoute)]
     public async Task<IActionResult> UpdateItem([FromRoute] int id, [FromBody] UpdateCartItemRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _cartService.UpdateItemAsync(userId, id, request, ct);
         return result.ToOkResult();
@@ -55,7 +55,7 @@ public class CartController(ICartService cartService) : ControllerBase
     [HttpDelete(ApiRoutes.Cart.ItemByIdRoute)]
     public async Task<IActionResult> RemoveItem([FromRoute] int id, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _cartService.RemoveItemAsync(userId, id, ct);
         return result.ToNoContentResult();
@@ -64,14 +64,10 @@ public class CartController(ICartService cartService) : ControllerBase
     [HttpDelete(ApiRoutes.Cart.ByRestaurantRoute)]
     public async Task<IActionResult> ClearCart([FromRoute] int id, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _cartService.ClearCartAsync(userId, id, ct);
         return result.ToNoContentResult();
     }
 
-    private bool TryGetUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out userId);
-    }
 }

@@ -19,7 +19,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Create([FromRoute] int id, [FromBody] CreateDiscountCodeRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _discountCodeService.CreateAsync(id, userId, request, ct);
         return result.ToOkResult();
     }
@@ -28,7 +28,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> GetByRestaurant([FromRoute] int id, [FromQuery] DiscountCodeQuery query, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _discountCodeService.GetByRestaurantAsync(id, userId, query, ct);
         return result.ToOkResult();
     }
@@ -37,7 +37,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateDiscountCodeRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _discountCodeService.UpdateAsync(id, userId, request, ct);
         return result.ToOkResult();
     }
@@ -45,7 +45,7 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     [HttpPost(ApiRoutes.DiscountCodeRoutes.ValidateRoute)]
     public async Task<IActionResult> Validate([FromRoute] int id, [FromBody] ValidateDiscountCodeRequest request, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _discountCodeService.ValidateAsync(id, userId, request.Code, ct: ct);
         return result.ToOkResult();
     }
@@ -54,13 +54,9 @@ public class DiscountCodeController(IDiscountCodeService discountCodeService) : 
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {
-        if (!TryGetUserId(out int userId)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
         var result = await _discountCodeService.DeleteAsync(id, userId, ct);
         return result.ToNoContentResult();
     }
 
-    private bool TryGetUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out userId);
-    }
 }
