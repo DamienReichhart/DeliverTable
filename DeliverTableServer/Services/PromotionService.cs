@@ -146,4 +146,11 @@ public sealed class PromotionService(
         await _promotionRepository.DeleteAsync(promotionId, ct);
         return ServiceResult.Success();
     }
+
+    public async Task<ServiceResult<List<PromotionDto>>> GetActiveByRestaurantAsync(
+        int restaurantId, CancellationToken ct = default)
+    {
+        var promotions = await _promotionRepository.GetActiveByRestaurantAsync(restaurantId, ct);
+        return promotions.Select(p => p.ToDto()).ToList();
+    }
 }

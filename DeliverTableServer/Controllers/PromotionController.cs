@@ -31,6 +31,14 @@ public class PromotionController(IPromotionService promotionService) : Controlle
         return result.ToOkResult();
     }
 
+    [HttpGet(ApiRoutes.Promotion.ActiveRoute)]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetActiveByRestaurant([FromRoute] int id, CancellationToken ct)
+    {
+        var result = await _promotionService.GetActiveByRestaurantAsync(id, ct);
+        return result.ToOkResult();
+    }
+
     [HttpPut(ApiRoutes.Promotion.Base + "/" + ApiRoutes.Promotion.ByIdRoute)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePromotionRequest request, CancellationToken ct)
     {

@@ -66,4 +66,18 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
 
         return (true, null);
     }
+
+    public async Task<(List<PromotionDto>?, ErrorResponse?)> GetActiveByRestaurantAsync(int restaurantId, CancellationToken ct = default)
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<List<PromotionDto>>(
+                $"api/v1/restaurant/{restaurantId}/promotions/active", ct);
+            return (result, null);
+        }
+        catch (Exception ex)
+        {
+            return (null, new ErrorResponse { Error = ex.Message });
+        }
+    }
 }
