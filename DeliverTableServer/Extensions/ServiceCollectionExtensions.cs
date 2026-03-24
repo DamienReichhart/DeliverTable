@@ -42,6 +42,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAdminRestaurantService, AdminRestaurantService>();
         services.AddScoped<IAdminDishService, AdminDishService>();
+        services.AddScoped<IAdminPromotionService, AdminPromotionService>();
+        services.AddScoped<IAdminOrderService, AdminOrderService>();
         services.AddScoped<IRestaurantService, RestaurantService>();
         services.AddScoped<IDishService, DishService>();
         services.AddScoped<ICartService, CartService>();
