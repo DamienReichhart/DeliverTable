@@ -28,6 +28,23 @@ public class Order
     [Range(0, 999999.99)]
     public decimal TotalAmount { get; set; }
 
+    [Range(0, 999999.99)]
+    public decimal OriginalAmount { get; set; }
+
+    [Range(0, 999999.99)]
+    public decimal DiscountAmount { get; set; }
+
+    public int LoyaltyPointsUsed { get; set; }
+
+    public int LoyaltyPointsEarned { get; set; }
+
+    public int? DiscountCodeId { get; set; }
+
+    [ForeignKey("DiscountCodeId")]
+    public DiscountCode? DiscountCode { get; set; }
+
+    public List<OrderDiscount> Discounts { get; set; } = [];
+
     [Range(1, 50)]
     public int GuestCount { get; set; } = 1;
 

@@ -62,6 +62,29 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
             .ValueGeneratedOnAddOrUpdate();
 
+        builder.Property(o => o.OriginalAmount)
+            .HasColumnType("decimal(9, 2)")
+            .IsRequired()
+            .HasDefaultValue(0m);
+
+        builder.Property(o => o.DiscountAmount)
+            .HasColumnType("decimal(9, 2)")
+            .IsRequired()
+            .HasDefaultValue(0m);
+
+        builder.Property(o => o.LoyaltyPointsUsed)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(o => o.LoyaltyPointsEarned)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.HasOne(o => o.DiscountCode)
+            .WithMany()
+            .HasForeignKey(o => o.DiscountCodeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(o => o.CustomerId);
         builder.HasIndex(o => o.RestaurantId);
         builder.HasIndex(o => o.Status);
