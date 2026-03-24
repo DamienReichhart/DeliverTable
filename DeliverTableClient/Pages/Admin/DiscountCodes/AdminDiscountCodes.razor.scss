@@ -1,0 +1,10 @@
+@use "../../../Styles/abstracts/variables" as *;
+
+// Discount code management page — most styling handled by shared admin components.
+// Only page-specific overrides here.
+
+.admin-discount-codes-page {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
