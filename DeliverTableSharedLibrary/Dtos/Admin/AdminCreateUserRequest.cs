@@ -14,7 +14,7 @@ public class AdminCreateUserRequest
     public string LastName { get; set; } = "";
 
     [Required(ErrorMessage = "L'email est requis")]
-    [EmailAddress(ErrorMessage = "L'adresse email n'est pas valide")]
+    [EmailAddress(ErrorMessage = "L'adresse mail n'est pas valide")]
     [MaxLength(100, ErrorMessage = "L'email ne peut pas dépasser 100 caractères")]
     public string Email { get; set; } = "";
 
