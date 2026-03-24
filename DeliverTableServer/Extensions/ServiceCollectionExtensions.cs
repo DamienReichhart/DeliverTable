@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminEventService, AdminEventService>();
         services.AddScoped<IAdminModerationService, AdminModerationService>();
         services.AddScoped<IAdminOrderConfigService, AdminOrderConfigService>();
+        services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddScoped<IRestaurantService, RestaurantService>();
         services.AddScoped<IDishService, DishService>();
         services.AddScoped<ICartService, CartService>();
