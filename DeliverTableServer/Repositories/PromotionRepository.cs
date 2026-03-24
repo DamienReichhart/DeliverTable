@@ -64,4 +64,20 @@ public class PromotionRepository(DeliverTableContext dbContext) : IPromotionRepo
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task<List<Promotion>> GetAllUnscopedAsync(CancellationToken ct = default)
+    {
+        return await _dbContext.Promotions
+            .Include(p => p.Restaurant)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<Promotion?> GetByIdWithRestaurantAsync(int id, CancellationToken ct = default)
+    {
+        return await _dbContext.Promotions
+            .Include(p => p.Restaurant)
+            .Include(p => p.PromotionDishes)
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
+    }
 }
