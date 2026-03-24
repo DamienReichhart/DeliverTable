@@ -1,0 +1,428 @@
+@page "/admin/dishes"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminDishClientService DishService
+@inject IAdminRestaurantClientService RestaurantService
+
+<PageTitle>Plats — Administration</PageTitle>
+
+<AdminLayout Title="Plats" Subtitle="@($"{(_dishes?.Count ?? 0)} plats enregistrés")">
+    <ActionsContent>
+        <button class="app-btn app-btn--sm" @onclick="OpenCreateModal">
+            <Blazicon Svg="Lucide.Plus" />
+            Créer un plat
+        </button>
+    </ActionsContent>
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="alert alert-success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        <AdminDataTable TItem="AdminDishResponse"
+                         Items="FilteredDishes"
+                         TotalCount="@(FilteredDishes.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par nom..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Nom</th>
+                <th>Restaurant</th>
+                <th>Prix</th>
+                <th>Régimes</th>
+                <th>Statut</th>
+                <th>Créé le</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="dish">
+                <tr class="@(!dish.IsActive ? "adm-table-row--muted" : "")">
+                    <td><strong>@dish.Name</strong></td>
+                    <td>@dish.RestaurantName</td>
+                    <td class="adm-cell-mono">@dish.BasePrice.ToString("N2") €</td>
+                    <td>
+                        <div class="adm-cell-badges">
+                            @if (dish.IsVegetarian)
+                            {
+                                <AdminBadge Text="Végétarien" Variant="success" />
+                            }
+                            @if (dish.IsVegan)
+                            {
+                                <AdminBadge Text="Végan" Variant="success" />
+                            }
+                            @if (dish.IsGlutenFree)
+                            {
+                                <AdminBadge Text="Sans gluten" Variant="info" />
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <AdminBadge Text="@(dish.IsActive ? "Actif" : "Inactif")"
+                                    Variant="@(dish.IsActive ? "active" : "warning")"
+                                    ShowDot />
+                    </td>
+                    <td class="adm-cell-mono">@dish.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <div class="adm-cell-actions">
+                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(dish)">
+                                Modifier
+                            </button>
+                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                                    @onclick="() => OpenDeleteConfirm(dish)">
+                                Supprimer
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucun plat trouvé"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.ChefHat" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ── Create modal ── *@
+        <AdminFormModal IsVisible="@_showCreateModal" Title="Créer un plat" OnClose="CloseCreateModal">
+            <ChildContent>
+                <EditForm Model="@_createModel" OnValidSubmit="HandleCreate">
+                    <DataAnnotationsValidator />
+                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <label class="adm-form-label" for="create-name">Nom</label>
+                        <InputText id="create-name" @bind-Value="_createModel.Name"
+                                   class="adm-form-input" placeholder="Nom du plat" />
+                        <ValidationMessage For="@(() => _createModel.Name)" class="adm-form-error" />
+                    </div>
+                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <label class="adm-form-label" for="create-desc">Description</label>
+                        <InputTextArea id="create-desc" @bind-Value="_createModel.Description"
+                                       class="adm-form-input" placeholder="Description (optionnel)" />
+                    </div>
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create-price">Prix (€)</label>
+                            <InputNumber id="create-price" @bind-Value="_createModel.BasePrice"
+                                         class="adm-form-input" placeholder="0.00" />
+                            <ValidationMessage For="@(() => _createModel.BasePrice)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create-restaurant">Restaurant</label>
+                            <InputSelect id="create-restaurant" @bind-Value="_createModel.RestaurantId" class="adm-form-select">
+                                <option value="0" disabled>— Sélectionner —</option>
+                                @if (_restaurants is not null)
+                                {
+                                    @foreach (var r in _restaurants)
+                                    {
+                                        <option value="@r.Id">@r.Name</option>
+                                    }
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _createModel.RestaurantId)" class="adm-form-error" />
+                        </div>
+                    </div>
+                    <div class="adm-form-group" style="margin-bottom: 0.5rem; margin-top: 1rem;">
+                        <label class="adm-form-label">Options alimentaires</label>
+                    </div>
+                    <div class="adm-form-checks">
+                        <label class="adm-form-check">
+                            <InputCheckbox @bind-Value="_createModel.IsVegetarian" /> Végétarien
+                        </label>
+                        <label class="adm-form-check">
+                            <InputCheckbox @bind-Value="_createModel.IsVegan" /> Végan
+                        </label>
+                        <label class="adm-form-check">
+                            <InputCheckbox @bind-Value="_createModel.IsGlutenFree" /> Sans gluten
+                        </label>
+                        <label class="adm-form-check">
+                            <InputCheckbox @bind-Value="_createModel.IsAllergenHazard" /> Risque allergène
+                        </label>
+                        <label class="adm-form-check">
+                            <InputCheckbox @bind-Value="_createModel.IsDishOfTheDay" /> Plat du jour
+                        </label>
+                        <label class="adm-form-check">
+                            <InputCheckbox @bind-Value="_createModel.IsActive" /> Actif
+                        </label>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button type="submit" class="app-btn app-btn--sm" disabled="@_isSaving">
+                            @(_isSaving ? "Création..." : "Créer")
+                        </button>
+                    </div>
+                </EditForm>
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Edit modal ── *@
+        <AdminFormModal IsVisible="@(_editingDish is not null)" Title="Modifier le plat" OnClose="CloseEditModal">
+            <ChildContent>
+                @if (_editingDish is not null)
+                {
+                    <EditForm Model="@_editModel" OnValidSubmit="HandleUpdate">
+                        <DataAnnotationsValidator />
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-name">Nom</label>
+                            <InputText id="edit-name" @bind-Value="_editModel.Name"
+                                       class="adm-form-input" placeholder="Nom du plat" />
+                            <ValidationMessage For="@(() => _editModel.Name)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-desc">Description</label>
+                            <InputTextArea id="edit-desc" @bind-Value="_editModel.Description"
+                                           class="adm-form-input" placeholder="Description (optionnel)" />
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                            <label class="adm-form-label" for="edit-price">Prix (€)</label>
+                            <InputNumber id="edit-price" @bind-Value="_editModel.BasePrice"
+                                         class="adm-form-input" placeholder="0.00" />
+                            <ValidationMessage For="@(() => _editModel.BasePrice)" class="adm-form-error" />
+                        </div>
+                        <div class="adm-form-group" style="margin-bottom: 0.5rem;">
+                            <label class="adm-form-label">Options alimentaires</label>
+                        </div>
+                        <div class="adm-form-checks">
+                            <label class="adm-form-check">
+                                <InputCheckbox @bind-Value="_editModel.IsVegetarian" /> Végétarien
+                            </label>
+                            <label class="adm-form-check">
+                                <InputCheckbox @bind-Value="_editModel.IsVegan" /> Végan
+                            </label>
+                            <label class="adm-form-check">
+                                <InputCheckbox @bind-Value="_editModel.IsGlutenFree" /> Sans gluten
+                            </label>
+                            <label class="adm-form-check">
+                                <InputCheckbox @bind-Value="_editModel.IsAllergenHazard" /> Risque allergène
+                            </label>
+                            <label class="adm-form-check">
+                                <InputCheckbox @bind-Value="_editModel.IsDishOfTheDay" /> Plat du jour
+                            </label>
+                            <label class="adm-form-check">
+                                <InputCheckbox @bind-Value="_editModel.IsActive" /> Actif
+                            </label>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
+                                Annuler
+                            </button>
+                            <button type="submit" class="app-btn app-btn--sm" disabled="@_isSaving">
+                                @(_isSaving ? "Sauvegarde..." : "Sauvegarder")
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </ChildContent>
+        </AdminFormModal>
+
+        @* ── Delete confirmation ── *@
+        <AdminConfirmDialog IsVisible="@(_deletingDish is not null)"
+                            Title="Supprimer le plat"
+                            Message="@($"Voulez-vous vraiment supprimer « {_deletingDish?.Name} » ? Cette action est irréversible.")"
+                            ConfirmText="Supprimer"
+                            Variant="danger"
+                            IsProcessing="@_isSaving"
+                            OnConfirm="HandleDelete"
+                            OnCancel="CloseDeleteConfirm" />
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminDishResponse>? _dishes;
+    private List<AdminRestaurantResponse>? _restaurants;
+    private bool _isLoading = true;
+    private string? _loadError;
+    private string _searchQuery = "";
+
+    private bool _showCreateModal;
+    private AdminCreateDishRequest _createModel = new();
+
+    private AdminDishResponse? _editingDish;
+    private AdminUpdateDishRequest _editModel = new();
+
+    private AdminDishResponse? _deletingDish;
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Plats", Href = "/admin/dishes" }
+    ];
+
+    private IEnumerable<AdminDishResponse> FilteredDishes =>
+        _dishes?.Where(d =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || d.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+        _loadError = null;
+        StateHasChanged();
+
+        var dishTask = DishService.GetAllAsync();
+        var restaurantTask = RestaurantService.GetAllAsync();
+
+        await Task.WhenAll(dishTask, restaurantTask);
+
+        var (dishes, dishError) = await dishTask;
+        var (restaurants, _) = await restaurantTask;
+
+        _dishes = dishes;
+        _restaurants = restaurants;
+        _loadError = dishError?.Error;
+        _isLoading = false;
+    }
+
+    // ── Create ──
+
+    private void OpenCreateModal()
+    {
+        ClearMessages();
+        _createModel = new AdminCreateDishRequest { IsActive = true };
+        _showCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        _showCreateModal = false;
+        _createModel = new AdminCreateDishRequest();
+    }
+
+    private async Task HandleCreate()
+    {
+        _isSaving = true;
+        ClearMessages();
+
+        var (created, error) = await DishService.CreateAsync(_createModel);
+        if (created is not null)
+        {
+            _dishes?.Add(created);
+            _actionSuccess = $"Plat « {created.Name} » créé avec succès";
+            CloseCreateModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la création du plat";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Edit ──
+
+    private void OpenEditModal(AdminDishResponse dish)
+    {
+        ClearMessages();
+        _deletingDish = null;
+        _editingDish = dish;
+        _editModel = new AdminUpdateDishRequest
+        {
+            Name = dish.Name,
+            Description = dish.Description,
+            BasePrice = dish.BasePrice,
+            IsVegetarian = dish.IsVegetarian,
+            IsVegan = dish.IsVegan,
+            IsGlutenFree = dish.IsGlutenFree,
+            IsAllergenHazard = dish.IsAllergenHazard,
+            IsDishOfTheDay = dish.IsDishOfTheDay,
+            IsActive = dish.IsActive
+        };
+    }
+
+    private void CloseEditModal()
+    {
+        _editingDish = null;
+        _editModel = new AdminUpdateDishRequest();
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (_editingDish is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var (updated, error) = await DishService.UpdateAsync(_editingDish.Id, _editModel);
+        if (updated is not null)
+        {
+            ReplaceDish(updated);
+            _actionSuccess = $"Plat « {updated.Name} » mis à jour";
+            CloseEditModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la mise à jour du plat";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Delete ──
+
+    private void OpenDeleteConfirm(AdminDishResponse dish)
+    {
+        ClearMessages();
+        _editingDish = null;
+        _deletingDish = dish;
+    }
+
+    private void CloseDeleteConfirm()
+    {
+        _deletingDish = null;
+    }
+
+    private async Task HandleDelete()
+    {
+        if (_deletingDish is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var dishId = _deletingDish.Id;
+        var (success, error) = await DishService.DeleteAsync(dishId);
+        if (success)
+        {
+            var removed = _deletingDish;
+            _dishes?.RemoveAll(d => d.Id == dishId);
+            _actionSuccess = $"Plat « {removed.Name} » supprimé";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression du plat";
+        }
+
+        _deletingDish = null;
+        _isSaving = false;
+    }
+
+    // ── Helpers ──
+
+    private void ReplaceDish(AdminDishResponse updated)
+    {
+        if (_dishes is null) return;
+        var idx = _dishes.FindIndex(d => d.Id == updated.Id);
+        if (idx >= 0) _dishes[idx] = updated;
+    }
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+}
