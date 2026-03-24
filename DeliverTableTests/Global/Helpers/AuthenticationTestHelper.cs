@@ -21,4 +21,12 @@ public static class AuthenticationTestHelper
             HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
         };
     }
+
+    public static void SetupUnauthenticatedUser(ControllerBase controller)
+    {
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+    }
 }

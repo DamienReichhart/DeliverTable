@@ -23,13 +23,10 @@ public class DiscountCodeControllerTests
         _sut = new DiscountCodeController(_discountCodeService);
     }
 
-    private void SetupAuthenticatedUser(string userId, string role = nameof(UserRole.RestaurantOwner))
-        => AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId, role);
-
     [Test]
     public async Task Create_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var request = new CreateDiscountCodeRequest();
         var dto = new DiscountCodeDto { Id = 1, RestaurantId = 10, Code = "PROMO10" };
         _discountCodeService.CreateAsync(10, 5, request, Arg.Any<CancellationToken>())
@@ -43,7 +40,7 @@ public class DiscountCodeControllerTests
     [Test]
     public async Task GetByRestaurant_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var query = new DiscountCodeQuery();
         var paginated = new PaginatedResult<DiscountCodeDto>
         {
@@ -63,7 +60,7 @@ public class DiscountCodeControllerTests
     [Test]
     public async Task Update_ReturnsOk()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         var request = new UpdateDiscountCodeRequest();
         var dto = new DiscountCodeDto { Id = 1, Code = "PROMO20" };
         _discountCodeService.UpdateAsync(1, 5, request, Arg.Any<CancellationToken>())
@@ -77,7 +74,7 @@ public class DiscountCodeControllerTests
     [Test]
     public async Task Delete_ReturnsNoContent()
     {
-        SetupAuthenticatedUser("5");
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
         _discountCodeService.DeleteAsync(1, 5, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
