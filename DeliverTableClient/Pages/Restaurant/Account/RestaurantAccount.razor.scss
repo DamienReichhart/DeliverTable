@@ -1,0 +1,179 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-account-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// Balance card
+.balance-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-xl;
+  text-align: center;
+}
+
+.balance-label {
+  @include label-mono;
+  color: $color-text-muted;
+}
+
+.balance-amount {
+  @include heading-display;
+  font-size: $font-size-h1;
+  color: $color-deep-charcoal;
+}
+
+// Withdraw card
+.withdraw-card {
+  @include card;
+  padding: $spacing-lg;
+
+  h3 {
+    @include heading-display;
+    font-size: $font-size-h3;
+    margin: 0 0 $spacing-md;
+  }
+}
+
+.withdraw-form {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  max-width: 400px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    @include label-mono;
+    color: $color-text-muted;
+  }
+}
+
+.form-input {
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  font-family: $font-family-base;
+
+  &:focus {
+    outline: none;
+    border-color: $color-coral-fire;
+  }
+}
+
+.withdraw-actions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.field-error {
+  color: $color-error;
+  font-size: $font-size-sm;
+  margin: 0;
+}
+
+.field-success {
+  color: $color-garden-sage;
+  font-size: $font-size-sm;
+  margin: 0;
+}
+
+// Transactions section
+.transactions-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  h2 {
+    @include heading-display;
+    font-size: $font-size-h3;
+    margin: 0;
+  }
+}
+
+.transactions-table-container {
+  overflow-x: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-white;
+  box-shadow: $shadow-card;
+}
+
+.transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  thead {
+    background: rgba($color-deep-charcoal, 0.03);
+
+    th {
+      @include label-mono;
+      color: $color-text-muted;
+      padding: $spacing-sm $spacing-md;
+      text-align: left;
+      border-bottom: 1px solid $color-border;
+      white-space: nowrap;
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid $color-border;
+    transition: background-color $transition-fast;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: $color-bg-subtle; }
+  }
+
+  tbody td {
+    padding: $spacing-sm $spacing-md;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+}
+
+.tx-row--credit {
+  td:nth-child(6) strong {
+    color: $color-garden-sage;
+  }
+}
+
+.tx-row--withdrawal {
+  td:nth-child(6) strong {
+    color: $color-error;
+  }
+}
+
+.tx-type-badge {
+  display: inline-block;
+  padding: 0.15rem $spacing-sm;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tx-type--credit {
+  background: rgba($color-garden-sage, 0.12);
+  color: $color-garden-sage;
+}
+
+.tx-type--withdrawal {
+  background: rgba($color-error, 0.10);
+  color: $color-error;
+}
