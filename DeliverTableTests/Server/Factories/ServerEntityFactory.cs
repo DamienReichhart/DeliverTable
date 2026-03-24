@@ -52,6 +52,19 @@ public static class ServerEntityFactory
         return user;
     }
 
+    /// <summary>Creates a valid <see cref="Restaurant"/> for service tests.</summary>
+    public static Restaurant CreateRestaurant(int id = 1, int ownerId = 5) => new()
+    {
+        Id = id,
+        Name = "Test",
+        OwnerId = ownerId,
+        IsActive = true,
+        AdressLine1 = "1 Rue Test",
+        City = "Paris",
+        ZipCode = "75001",
+        Country = "FR"
+    };
+
     /// <summary>Creates a <see cref="JwtConfig" /> suitable for test token generation.</summary>
     public static JwtConfig CreateTestJwtConfig() => new()
     {

@@ -1,10 +1,9 @@
-using System.Security.Claims;
 using DeliverTableServer.Common;
 using DeliverTableServer.Controllers;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Auth;
-using Microsoft.AspNetCore.Http;
+using DeliverTableTests.Global.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 
@@ -107,7 +106,7 @@ public class AuthControllerTests
 
         var result = await _sut.GetProfile(CancellationToken.None);
 
-        Assert.That(result, Is.InstanceOf<UnauthorizedObjectResult>());
+        Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }
 
     #endregion
@@ -128,19 +127,7 @@ public class AuthControllerTests
     };
 
     private void SetupAuthenticatedUser(string? userId)
-    {
-        var claims = new List<Claim>();
-        if (userId != null)
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
-
-        var identity = new ClaimsIdentity(claims, "TestScheme");
-        var principal = new ClaimsPrincipal(identity);
-
-        _sut.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext { User = principal }
-        };
-    }
+        => AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId ?? string.Empty);
 
     #endregion
 }
