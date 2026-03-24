@@ -1,0 +1,14 @@
+
+<span class="adm-badge adm-badge--@Variant">
+    @if (ShowDot)
+    {
+        <span class="adm-badge__dot"></span>
+    }
+    @Text
+</span>
+
+@code {
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public string Variant { get; set; } = "info";
+    [Parameter] public bool ShowDot { get; set; }
+}

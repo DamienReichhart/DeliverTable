@@ -1,0 +1,141 @@
+@typeparam TItem
+
+<div class="adm-table-toolbar">
+    <div class="adm-table-search">
+        <Blazicon Svg="Lucide.Search" class="adm-table-search-icon" />
+        <input type="text"
+               class="adm-table-search-input"
+               placeholder="@SearchPlaceholder"
+               @bind="SearchText"
+               @bind:event="oninput"
+               @bind:after="OnSearchChanged" />
+    </div>
+    <div class="adm-table-actions">
+        @ToolbarContent
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="adm-table-wrap">
+        <div class="adm-table-skeleton">
+            @for (var i = 0; i < 6; i++)
+            {
+                <div class="adm-table-skeleton-row"></div>
+            }
+        </div>
+    </div>
+}
+else if (Items is null || !Items.Any())
+{
+    @if (EmptyContent is not null)
+    {
+        @EmptyContent
+    }
+    else
+    {
+        <div class="adm-empty">
+            <div class="adm-empty-icon">
+                <Blazicon Svg="Lucide.Inbox" />
+            </div>
+            <p class="adm-empty-title">Aucun résultat</p>
+            <p class="adm-empty-text">Aucun élément ne correspond à votre recherche.</p>
+        </div>
+    }
+}
+else
+{
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    @HeaderContent
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Items)
+                {
+                    @RowContent(item)
+                }
+            </tbody>
+        </table>
+
+        @if (TotalCount > PageSize)
+        {
+            <div class="adm-table-pagination">
+                <span class="adm-table-pagination-info">
+                    @((Page - 1) * PageSize + 1)–@(Math.Min(Page * PageSize, TotalCount)) sur @TotalCount
+                </span>
+                <div class="adm-table-pagination-controls">
+                    <button class="adm-table-pagination-btn"
+                            disabled="@(Page <= 1)"
+                            @onclick="() => GoToPage(Page - 1)">
+                        &lsaquo;
+                    </button>
+                    @for (var i = 1; i <= TotalPages; i++)
+                    {
+                        var p = i;
+                        <button class="adm-table-pagination-btn @(p == Page ? "adm-table-pagination-btn--active" : "")"
+                                @onclick="() => GoToPage(p)">
+                            @p
+                        </button>
+                    }
+                    <button class="adm-table-pagination-btn"
+                            disabled="@(Page >= TotalPages)"
+                            @onclick="() => GoToPage(Page + 1)">
+                        &rsaquo;
+                    </button>
+                </div>
+                <div class="adm-table-page-size">
+                    <span>Par page</span>
+                    <select @bind="PageSize" @bind:after="OnPageSizeChanged">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int Page { get; set; } = 1;
+    [Parameter] public int PageSize { get; set; } = 25;
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public string SearchPlaceholder { get; set; } = "Rechercher...";
+    [Parameter] public string SearchText { get; set; } = "";
+    [Parameter] public EventCallback<string> SearchTextChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+    [Parameter] public EventCallback<int> OnPageSizeChanged_Callback { get; set; }
+
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+    [Parameter] public RenderFragment<TItem>? RowContent { get; set; }
+    [Parameter] public RenderFragment? ToolbarContent { get; set; }
+    [Parameter] public RenderFragment? EmptyContent { get; set; }
+
+    private int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 1;
+
+    private async Task OnSearchChanged()
+    {
+        if (SearchTextChanged.HasDelegate)
+            await SearchTextChanged.InvokeAsync(SearchText);
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page < 1 || page > TotalPages) return;
+        Page = page;
+        if (OnPageChanged.HasDelegate)
+            await OnPageChanged.InvokeAsync(page);
+    }
+
+    private async Task OnPageSizeChanged()
+    {
+        Page = 1;
+        if (OnPageSizeChanged_Callback.HasDelegate)
+            await OnPageSizeChanged_Callback.InvokeAsync(PageSize);
+    }
+}
