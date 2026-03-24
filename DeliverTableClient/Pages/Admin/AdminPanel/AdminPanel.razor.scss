@@ -1,76 +1,82 @@
 @use "../../../Styles/abstracts/variables" as *;
-@use "../../../Styles/abstracts/mixins" as *;
 
-.admin-panel {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: $spacing-lg $spacing-md;
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-xl;
+.adm-dashboard-section {
+  margin-top: $spacing-xl;
 }
 
-.admin-header {
-  h1 {
-    @include heading-display;
-    font-size: $font-size-h2;
-    margin: 0 0 $spacing-xs;
-  }
-
-  p {
-    color: $color-text-muted;
-    margin: 0;
-    font-size: $font-size-base;
-  }
+.adm-dashboard-section-title {
+  font-family: $font-family-display;
+  font-size: 1.05rem;
+  color: $color-text;
+  margin: 0 0 $spacing-md;
 }
 
-.admin-grid {
+.adm-quick-links {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: $spacing-lg;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $spacing-md;
 }
 
-.admin-card-link {
+.adm-quick-link {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
   text-decoration: none;
   color: inherit;
+  transition: box-shadow $transition-base, border-color $transition-base;
 
   &:hover {
+    box-shadow: $shadow-md;
+    border-color: rgba($color-coral-fire, 0.2);
     text-decoration: none;
   }
 }
 
-.admin-card {
-  @include card;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: $spacing-sm;
-  cursor: pointer;
-
-  h3 {
-    margin: 0;
-    font-family: $font-family-display;
-    font-size: 1.15rem;
-    color: $color-text;
-  }
-
-  p {
-    margin: 0;
-    font-size: $font-size-sm;
-    color: $color-text-muted;
-    line-height: $line-height-base;
-  }
-}
-
-.admin-card-icon {
-  width: 48px;
-  height: 48px;
+.adm-quick-link-icon {
+  width: 40px;
+  height: 40px;
   border-radius: $radius-md;
-  background: rgba($color-coral-fire, 0.1);
-  color: $color-coral-fire;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  margin-bottom: $spacing-xs;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+
+  &--primary {
+    background: rgba($color-coral-fire, 0.1);
+    color: $color-coral-fire;
+  }
+
+  &--success {
+    background: rgba($color-garden-sage, 0.12);
+    color: $color-garden-sage;
+  }
+
+  &--warning {
+    background: rgba($color-amber-gold, 0.12);
+    color: darken($color-amber-gold, 12%);
+  }
+
+  &--danger {
+    background: rgba($color-error, 0.1);
+    color: $color-error;
+  }
+}
+
+.adm-quick-link-title {
+  display: block;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  color: $color-text;
+}
+
+.adm-quick-link-desc {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin-top: 2px;
 }
