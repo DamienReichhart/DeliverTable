@@ -1,0 +1,31 @@
+@use "../../../Styles/abstracts/variables" as *;
+
+// Dish management page — most styling handled by shared admin components.
+// Only page-specific overrides here.
+
+.admin-dishes-page {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.adm-cell-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.adm-form-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm $spacing-lg;
+  margin-bottom: $spacing-md;
+}
+
+.adm-form-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: $font-size-sm;
+  cursor: pointer;
+}
