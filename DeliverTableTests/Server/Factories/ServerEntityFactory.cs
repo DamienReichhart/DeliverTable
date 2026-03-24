@@ -83,57 +83,57 @@ public static class ServerEntityFactory
     public static Promotion CreatePromotion(
         int id = 1, int restaurantId = 1, PromotionType type = PromotionType.Automatic,
         DiscountType discountType = DiscountType.Percentage, decimal discountValue = 10m) => new()
-    {
-        Id = id,
-        RestaurantId = restaurantId,
-        Name = "Promotion Test",
-        PromotionType = type,
-        DiscountType = discountType,
-        DiscountValue = discountValue,
-        IsActive = true,
-        StartsAt = DateTime.UtcNow.AddDays(-1),
-        EndsAt = DateTime.UtcNow.AddDays(30),
-        PromotionDishes = []
-    };
+        {
+            Id = id,
+            RestaurantId = restaurantId,
+            Name = "Promotion Test",
+            PromotionType = type,
+            DiscountType = discountType,
+            DiscountValue = discountValue,
+            IsActive = true,
+            StartsAt = DateTime.UtcNow.AddDays(-1),
+            EndsAt = DateTime.UtcNow.AddDays(30),
+            PromotionDishes = []
+        };
 
     /// <summary>Creates a valid <see cref="DiscountCode"/> for service tests.</summary>
     public static DiscountCode CreateDiscountCode(
         int id = 1, int restaurantId = 1, string code = "SAVE10",
         DiscountType discountType = DiscountType.Percentage, decimal discountValue = 10m) => new()
-    {
-        Id = id,
-        Code = code,
-        RestaurantId = restaurantId,
-        DiscountType = discountType,
-        DiscountValue = discountValue,
-        IsActive = true,
-        ValidFrom = DateTime.UtcNow.AddDays(-1),
-        ValidUntil = DateTime.UtcNow.AddDays(30),
-        MaxRedemptions = 100,
-        CurrentRedemptions = 0,
-        PerUserLimit = 1
-    };
+        {
+            Id = id,
+            Code = code,
+            RestaurantId = restaurantId,
+            DiscountType = discountType,
+            DiscountValue = discountValue,
+            IsActive = true,
+            ValidFrom = DateTime.UtcNow.AddDays(-1),
+            ValidUntil = DateTime.UtcNow.AddDays(30),
+            MaxRedemptions = 100,
+            CurrentRedemptions = 0,
+            PerUserLimit = 1
+        };
 
     /// <summary>Creates a valid <see cref="LoyaltyProgram"/> for service tests.</summary>
     public static LoyaltyProgram CreateLoyaltyProgram(
         int id = 1, int restaurantId = 1, decimal pointsPerEuro = 1.0m, decimal eurosPerPoint = 0.10m) => new()
-    {
-        Id = id,
-        RestaurantId = restaurantId,
-        IsActive = true,
-        PointsPerEuro = pointsPerEuro,
-        EurosPerPoint = eurosPerPoint
-    };
+        {
+            Id = id,
+            RestaurantId = restaurantId,
+            IsActive = true,
+            PointsPerEuro = pointsPerEuro,
+            EurosPerPoint = eurosPerPoint
+        };
 
     /// <summary>Creates a valid <see cref="LoyaltyAccount"/> for service tests.</summary>
     public static LoyaltyAccount CreateLoyaltyAccount(
         int id = 1, int programId = 1, int customerId = 1, int pointsBalance = 0) => new()
-    {
-        Id = id,
-        LoyaltyProgramId = programId,
-        CustomerId = customerId,
-        PointsBalance = pointsBalance
-    };
+        {
+            Id = id,
+            LoyaltyProgramId = programId,
+            CustomerId = customerId,
+            PointsBalance = pointsBalance
+        };
 
     /// <summary>Creates a <see cref="JwtConfig" /> suitable for test token generation.</summary>
     public static JwtConfig CreateTestJwtConfig() => new()
