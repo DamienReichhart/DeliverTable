@@ -1,9 +1,8 @@
-namespace DeliverTableSharedLibrary.Enums
+namespace DeliverTableSharedLibrary.Enums;
+
+public enum AvailableCountries
 {
-    public enum AvailableCountries
-    {
-        France,
-        Belgique,
-        Suisse
-    }
+    France,
+    Belgique,
+    Suisse
 }

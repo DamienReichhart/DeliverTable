@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+namespace DeliverTableSharedLibrary.Dtos;
 
-namespace DeliverTableSharedLibrary.Dtos
+public class ErrorResponse
 {
-    public class ErrorResponse
-    {
-        public string Error { get; set; } = "";
-        public int Status { get; set; } = 500;
-    }
+    public string Error { get; set; } = "";
+    public int Status { get; set; } = 500;
 }
