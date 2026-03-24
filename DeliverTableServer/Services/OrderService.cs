@@ -42,7 +42,7 @@ public sealed class OrderService(
             return new ServiceError(ErrorMessages.InvalidOrderType(validValues));
         }
 
-        if (request.GuestCount < 1 || request.GuestCount > 50)
+        if (orderType == OrderType.DineIn && (request.GuestCount < 1 || request.GuestCount > 50))
             return new ServiceError(ErrorMessages.GuestCountRequired);
 
         if (orderType == OrderType.Delivery && string.IsNullOrWhiteSpace(request.DeliveryAddress))
@@ -100,7 +100,7 @@ public sealed class OrderService(
             TotalAmount = totalAmount,
             LoyaltyPointsUsed = loyaltyPointsUsed,
             DiscountCodeId = appliedDiscountCodes.Count > 0 ? appliedDiscountCodes[0].Id : null,
-            GuestCount = request.GuestCount,
+            GuestCount = orderType == OrderType.Delivery ? 1 : request.GuestCount,
             DeliveryAddress = orderType == OrderType.Delivery ? request.DeliveryAddress : string.Empty,
             Notes = request.Notes,
             Source = BookingSource.CustomerApp,
