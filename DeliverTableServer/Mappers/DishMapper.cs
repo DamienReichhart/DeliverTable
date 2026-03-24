@@ -6,8 +6,6 @@ namespace DeliverTableServer.Mappers;
 
 public static class DishMapper
 {
-    private const string _defaultFileExtension = ".png";
-
     public static DishDto ToDto(this Dish dish)
     {
         return new DishDto
@@ -22,7 +20,7 @@ public static class DishMapper
             IsAllergenHazard = dish.IsAllergenHazard,
             IsDishOfTheDay = dish.IsDishOfTheDay,
             IsActive = dish.IsActive,
-            Image = ApiRoutes.Dish.ImageRoute + dish.Id + _defaultFileExtension
+            Image = ApiRoutes.Dish.ImageRoute + dish.Id + UploadLimits.DefaultImageExtension
         };
     }
 }
