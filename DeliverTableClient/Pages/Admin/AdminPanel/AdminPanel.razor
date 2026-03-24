@@ -2,23 +2,65 @@
 @attribute [Authorize(Roles = nameof(UserRole.Administrator))]
 @using Microsoft.AspNetCore.Authorization
 
-<PageTitle>Panneau d'administration</PageTitle>
+<PageTitle>Tableau de bord — Administration</PageTitle>
 
-<div class="admin-panel">
-    <section class="admin-header">
-        <h1>Panneau d'administration</h1>
-        <p>Gérez les utilisateurs et les paramètres de la plateforme.</p>
-    </section>
+<AdminLayout Title="Tableau de bord" Subtitle="Vue d'ensemble de la plateforme">
+    <ChildContent>
+        <div class="adm-stats-grid">
+            <AdminStatCard Value="—" Label="Utilisateurs" Variant="primary">
+                <IconContent><Blazicon Svg="Lucide.Users" /></IconContent>
+            </AdminStatCard>
+            <AdminStatCard Value="—" Label="Restaurants" Variant="success">
+                <IconContent><Blazicon Svg="Lucide.UtensilsCrossed" /></IconContent>
+            </AdminStatCard>
+            <AdminStatCard Value="—" Label="Commandes" Variant="warning">
+                <IconContent><Blazicon Svg="Lucide.ShoppingBag" /></IconContent>
+            </AdminStatCard>
+            <AdminStatCard Value="—" Label="Revenus" Variant="info">
+                <IconContent><Blazicon Svg="Lucide.Euro" /></IconContent>
+            </AdminStatCard>
+        </div>
 
-    <div class="admin-grid">
-        <NavLink href="/admin/users" class="admin-card-link">
-            <section class="admin-card">
-                <div class="admin-card-icon">
-                    <Blazicon Svg="Lucide.Users" />
-                </div>
-                <h3>Gestion des utilisateurs</h3>
-                <p>Consulter, modifier les rôles et le statut de tous les utilisateurs.</p>
-            </section>
-        </NavLink>
-    </div>
-</div>
+        <section class="adm-dashboard-section">
+            <h2 class="adm-dashboard-section-title">Accès rapide</h2>
+            <div class="adm-quick-links">
+                <a href="/admin/users" class="adm-quick-link">
+                    <div class="adm-quick-link-icon adm-quick-link-icon--primary">
+                        <Blazicon Svg="Lucide.Users" />
+                    </div>
+                    <div>
+                        <span class="adm-quick-link-title">Utilisateurs</span>
+                        <span class="adm-quick-link-desc">Gérer les comptes et les rôles</span>
+                    </div>
+                </a>
+                <a href="/admin/restaurants" class="adm-quick-link">
+                    <div class="adm-quick-link-icon adm-quick-link-icon--success">
+                        <Blazicon Svg="Lucide.UtensilsCrossed" />
+                    </div>
+                    <div>
+                        <span class="adm-quick-link-title">Restaurants</span>
+                        <span class="adm-quick-link-desc">Consulter et modifier les restaurants</span>
+                    </div>
+                </a>
+                <a href="/admin/orders" class="adm-quick-link">
+                    <div class="adm-quick-link-icon adm-quick-link-icon--warning">
+                        <Blazicon Svg="Lucide.ShoppingBag" />
+                    </div>
+                    <div>
+                        <span class="adm-quick-link-title">Commandes</span>
+                        <span class="adm-quick-link-desc">Suivre et gérer les commandes</span>
+                    </div>
+                </a>
+                <a href="/admin/moderation" class="adm-quick-link">
+                    <div class="adm-quick-link-icon adm-quick-link-icon--danger">
+                        <Blazicon Svg="Lucide.ShieldAlert" />
+                    </div>
+                    <div>
+                        <span class="adm-quick-link-title">Modération</span>
+                        <span class="adm-quick-link-desc">Actions de modération récentes</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+    </ChildContent>
+</AdminLayout>

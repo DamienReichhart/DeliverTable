@@ -1,0 +1,41 @@
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using Microsoft.AspNetCore.Authorization
+
+<div class="adm-layout">
+    <AdminSidebar />
+    <main class="adm-content">
+        <div class="adm-page-header">
+            @if (HeaderContent is not null)
+            {
+                @HeaderContent
+            }
+            else
+            {
+                <div>
+                    <h1 class="adm-page-title">@Title</h1>
+                    @if (!string.IsNullOrEmpty(Subtitle))
+                    {
+                        <p class="adm-page-subtitle">@Subtitle</p>
+                    }
+                </div>
+            }
+            @if (ActionsContent is not null)
+            {
+                <div class="adm-page-actions">
+                    @ActionsContent
+                </div>
+            }
+        </div>
+        <div class="adm-page-body">
+            @ChildContent
+        </div>
+    </main>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+    [Parameter] public RenderFragment? ActionsContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

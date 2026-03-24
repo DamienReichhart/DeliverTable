@@ -1,0 +1,50 @@
+@use "../../Styles/abstracts/variables" as *;
+
+.adm-layout {
+  display: flex;
+  min-height: 100vh;
+  background: $color-bg;
+}
+
+.adm-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding: $spacing-lg $spacing-xl $spacing-md;
+  background: $color-bg-white;
+  border-bottom: 1px solid $color-border;
+}
+
+.adm-page-title {
+  font-family: $font-family-display;
+  font-size: 1.375rem;
+  line-height: $line-height-heading;
+  color: $color-text;
+  margin: 0;
+}
+
+.adm-page-subtitle {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: $spacing-xs 0 0;
+}
+
+.adm-page-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.adm-page-body {
+  flex: 1;
+  padding: $spacing-lg $spacing-xl;
+}
