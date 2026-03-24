@@ -2,6 +2,7 @@
 @inject ICartService CartService
 @inject IOrderService OrderService
 @inject IRestaurantService RestaurantService
+@inject ILoyaltyClientService LoyaltyService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
 @using DeliverTableSharedLibrary.Dtos.Cart
@@ -124,6 +125,41 @@
                     <textarea id="notes" @bind="_notes" class="filter-input" rows="2"
                               placeholder="@(_orderType == "DineIn" ? "Préférences de table, allergies..." : "Instructions de livraison, étage, code...")"></textarea>
                 </div>
+
+                <div class="discount-section">
+                    <h3>Réductions</h3>
+
+                    <div class="form-group">
+                        <label for="discount-code">Code promo</label>
+                        <div class="discount-code-input">
+                            <input type="text" id="discount-code" @bind="_discountCode" class="filter-input"
+                                   placeholder="Entrez votre code promo" />
+                        </div>
+                    </div>
+
+                    @if (_loyaltyAccount is not null && _loyaltyAccount.PointsBalance > 0)
+                    {
+                        <div class="form-group loyalty-section">
+                            <label>Points de fidélité</label>
+                            <p class="loyalty-info">
+                                Vous avez <strong>@_loyaltyAccount.PointsBalance points</strong>
+                                (valeur : @_loyaltyAccount.EuroEquivalent.ToString("C", _frCulture))
+                            </p>
+                            <div class="loyalty-redeem">
+                                <label for="loyalty-points">Points à utiliser</label>
+                                <input type="number" id="loyalty-points" @bind="_loyaltyPointsToRedeem"
+                                       min="0" max="@_loyaltyAccount.PointsBalance" class="filter-input"
+                                       style="max-width: 150px;" />
+                                @if (_loyaltyPointsToRedeem > 0)
+                                {
+                                    <span class="loyalty-value">
+                                        = @((_loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint).ToString("C", _frCulture)) de réduction
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(_validationError))
@@ -162,10 +198,16 @@
     private bool _processing;
     private string? _error;
     private string? _validationError;
+    private static readonly System.Globalization.CultureInfo _frCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
     private string _orderType = "Delivery";
     private int _guestCount = 1;
     private string _deliveryAddress = string.Empty;
     private string _notes = string.Empty;
+    private string _discountCode = string.Empty;
+    private int _loyaltyPointsToRedeem;
+    private LoyaltyAccountDto? _loyaltyAccount;
 
     private enum OrderTypeValue { Delivery, DineIn }
 
@@ -190,6 +232,13 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadCart();
+        await LoadLoyaltyAccount();
+    }
+
+    private async Task LoadLoyaltyAccount()
+    {
+        var (account, _) = await LoyaltyService.GetMyAccountAsync(RestaurantId);
+        _loyaltyAccount = account;
     }
 
     private async Task LoadCart()
@@ -289,7 +338,9 @@
             OrderType = _orderType,
             GuestCount = _guestCount,
             DeliveryAddress = _deliveryAddress,
-            Notes = _notes
+            Notes = _notes,
+            DiscountCode = string.IsNullOrWhiteSpace(_discountCode) ? null : _discountCode.Trim(),
+            LoyaltyPointsToRedeem = _loyaltyPointsToRedeem
         };
 
         var (order, error) = await OrderService.CreateOrderAsync(request);
