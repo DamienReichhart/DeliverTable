@@ -1,0 +1,249 @@
+@page "/admin/orders"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Interfaces
+@using DeliverTableSharedLibrary.Dtos.Admin
+@using Microsoft.AspNetCore.Authorization
+@inject IAdminOrderClientService OrderService
+
+<PageTitle>Commandes — Administration</PageTitle>
+
+<AdminLayout Title="Commandes" Subtitle="@($"{(_orders?.Count ?? 0)} commandes")">
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="alert alert-success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="alert alert-danger">@_actionError</div>
+        }
+
+        <AdminDataTable TItem="AdminOrderResponse"
+                         Items="FilteredOrders"
+                         TotalCount="@(FilteredOrders.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par n° de commande ou nom client..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>#</th>
+                <th>Client</th>
+                <th>Restaurant</th>
+                <th>Type</th>
+                <th>Statut</th>
+                <th>Paiement</th>
+                <th>Total</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="order">
+                <tr>
+                    <td class="adm-cell-mono">@order.Id</td>
+                    <td>@order.CustomerName</td>
+                    <td>@order.RestaurantName</td>
+                    <td>
+                        <AdminBadge Text="@TranslateOrderType(order.OrderType)" Variant="info" />
+                    </td>
+                    <td>
+                        <AdminBadge Text="@TranslateOrderStatus(order.Status)" Variant="@OrderStatusBadgeVariant(order.Status)" ShowDot />
+                    </td>
+                    <td>
+                        <AdminBadge Text="@TranslatePaymentStatus(order.PaymentStatus)" Variant="@PaymentStatusBadgeVariant(order.PaymentStatus)" />
+                    </td>
+                    <td class="adm-cell-mono">@order.TotalAmount.ToString("0.00") &euro;</td>
+                    <td class="adm-cell-mono">@order.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <div class="adm-cell-actions">
+                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenStatusModal(order)">
+                                Modifier le statut
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucune commande trouvée"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.ShoppingCart" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        @* ── Update status modal ── *@
+        <AdminFormModal IsVisible="@(_editingOrder is not null)" Title="Modifier le statut de la commande" OnClose="CloseStatusModal">
+            <ChildContent>
+                @if (_editingOrder is not null)
+                {
+                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <label class="adm-form-label">Commande #@_editingOrder.Id — @_editingOrder.CustomerName</label>
+                    </div>
+                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <label class="adm-form-label" for="edit-status">Nouveau statut</label>
+                        <select id="edit-status" class="adm-form-select" @bind="_statusModel.Status">
+                            @foreach (var status in AvailableOrderStatuses)
+                            {
+                                <option value="@status">@TranslateOrderStatus(status)</option>
+                            }
+                        </select>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseStatusModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button class="app-btn app-btn--sm" @onclick="HandleUpdateStatus" disabled="@_isSaving">
+                            @(_isSaving ? "Sauvegarde..." : "Sauvegarder")
+                        </button>
+                    </div>
+                }
+            </ChildContent>
+        </AdminFormModal>
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<AdminOrderResponse>? _orders;
+    private bool _isLoading = true;
+    private string _searchQuery = "";
+
+    private AdminOrderResponse? _editingOrder;
+    private AdminUpdateOrderStatusRequest _statusModel = new();
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private static readonly string[] AvailableOrderStatuses = Enum.GetNames<OrderStatus>();
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Commandes", Href = "/admin/orders" }
+    ];
+
+    private IEnumerable<AdminOrderResponse> FilteredOrders =>
+        _orders?.Where(o =>
+            string.IsNullOrWhiteSpace(_searchQuery)
+            || o.Id.ToString().Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            || o.CustomerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+        ) ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        var (orders, error) = await OrderService.GetAllAsync();
+        _orders = orders;
+        if (error is not null)
+            _actionError = error.Error;
+        _isLoading = false;
+    }
+
+    // ── Status update ──
+
+    private void OpenStatusModal(AdminOrderResponse order)
+    {
+        ClearMessages();
+        _editingOrder = order;
+        _statusModel = new AdminUpdateOrderStatusRequest { Status = order.Status };
+    }
+
+    private void CloseStatusModal()
+    {
+        _editingOrder = null;
+        _statusModel = new AdminUpdateOrderStatusRequest();
+    }
+
+    private async Task HandleUpdateStatus()
+    {
+        if (_editingOrder is null) return;
+        _isSaving = true;
+        ClearMessages();
+
+        var (updated, error) = await OrderService.UpdateStatusAsync(_editingOrder.Id, _statusModel);
+        if (updated is not null)
+        {
+            ReplaceOrder(updated);
+            _actionSuccess = $"Statut de la commande #{updated.Id} mis à jour";
+            CloseStatusModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la mise à jour du statut";
+        }
+
+        _isSaving = false;
+    }
+
+    // ── Helpers ──
+
+    private void ReplaceOrder(AdminOrderResponse updated)
+    {
+        if (_orders is null) return;
+        var idx = _orders.FindIndex(o => o.Id == updated.Id);
+        if (idx >= 0) _orders[idx] = updated;
+    }
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+
+    private static string TranslateOrderStatus(string status) => status switch
+    {
+        nameof(OrderStatus.Pending) => "En attente",
+        nameof(OrderStatus.Confirmed) => "Confirmée",
+        nameof(OrderStatus.Refused) => "Refusée",
+        nameof(OrderStatus.Preparing) => "En préparation",
+        nameof(OrderStatus.Ready) => "Prête",
+        nameof(OrderStatus.Delivering) => "En livraison",
+        nameof(OrderStatus.Delivered) => "Livrée",
+        nameof(OrderStatus.Cancelled) => "Annulée",
+        _ => status
+    };
+
+    private static string OrderStatusBadgeVariant(string status) => status switch
+    {
+        nameof(OrderStatus.Pending) => "warning",
+        nameof(OrderStatus.Confirmed) => "info",
+        nameof(OrderStatus.Preparing) => "info",
+        nameof(OrderStatus.Ready) => "success",
+        nameof(OrderStatus.Delivering) => "info",
+        nameof(OrderStatus.Delivered) => "success",
+        nameof(OrderStatus.Cancelled) => "danger",
+        nameof(OrderStatus.Refused) => "danger",
+        _ => "info"
+    };
+
+    private static string TranslatePaymentStatus(string status) => status switch
+    {
+        nameof(PaymentStatus.Pending) => "En attente",
+        nameof(PaymentStatus.Completed) => "Payé",
+        nameof(PaymentStatus.Failed) => "Échoué",
+        nameof(PaymentStatus.Refunded) => "Remboursé",
+        _ => status
+    };
+
+    private static string PaymentStatusBadgeVariant(string status) => status switch
+    {
+        nameof(PaymentStatus.Pending) => "warning",
+        nameof(PaymentStatus.Completed) => "success",
+        nameof(PaymentStatus.Failed) => "danger",
+        nameof(PaymentStatus.Refunded) => "info",
+        _ => "info"
+    };
+
+    private static string TranslateOrderType(string orderType) => orderType switch
+    {
+        nameof(OrderType.Delivery) => "Livraison",
+        nameof(OrderType.DineIn) => "Sur place",
+        _ => orderType
+    };
+}
