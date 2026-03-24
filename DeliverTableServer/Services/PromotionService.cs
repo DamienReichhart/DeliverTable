@@ -58,8 +58,8 @@ public sealed class PromotionService(
             DiscountType = discountType,
             DiscountValue = request.DiscountValue,
             MinOrderAmount = request.MinOrderAmount,
-            StartsAt = request.StartsAt,
-            EndsAt = request.EndsAt,
+            StartsAt = DateTime.SpecifyKind(request.StartsAt, DateTimeKind.Utc),
+            EndsAt = DateTime.SpecifyKind(request.EndsAt, DateTimeKind.Utc),
             PromotionDishes = request.DishIds.Select(id => new PromotionDish { DishId = id }).ToList()
         };
 
@@ -124,8 +124,8 @@ public sealed class PromotionService(
         promotion.DiscountType = discountType;
         promotion.DiscountValue = request.DiscountValue;
         promotion.MinOrderAmount = request.MinOrderAmount;
-        promotion.StartsAt = request.StartsAt;
-        promotion.EndsAt = request.EndsAt;
+        promotion.StartsAt = DateTime.SpecifyKind(request.StartsAt, DateTimeKind.Utc);
+        promotion.EndsAt = DateTime.SpecifyKind(request.EndsAt, DateTimeKind.Utc);
         promotion.IsActive = request.IsActive;
         promotion.PromotionDishes = request.DishIds.Select(id => new PromotionDish { DishId = id }).ToList();
 

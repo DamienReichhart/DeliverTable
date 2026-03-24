@@ -45,8 +45,8 @@ public sealed class DiscountCodeService(
             DiscountType = discountType,
             DiscountValue = request.DiscountValue,
             MinOrderAmount = request.MinOrderAmount,
-            ValidFrom = request.ValidFrom,
-            ValidUntil = request.ValidUntil,
+            ValidFrom = DateTime.SpecifyKind(request.ValidFrom, DateTimeKind.Utc),
+            ValidUntil = DateTime.SpecifyKind(request.ValidUntil, DateTimeKind.Utc),
             MaxRedemptions = request.MaxRedemptions,
             PerUserLimit = request.PerUserLimit
         };
@@ -97,8 +97,8 @@ public sealed class DiscountCodeService(
         code.DiscountType = discountType;
         code.DiscountValue = request.DiscountValue;
         code.MinOrderAmount = request.MinOrderAmount;
-        code.ValidFrom = request.ValidFrom;
-        code.ValidUntil = request.ValidUntil;
+        code.ValidFrom = DateTime.SpecifyKind(request.ValidFrom, DateTimeKind.Utc);
+        code.ValidUntil = DateTime.SpecifyKind(request.ValidUntil, DateTimeKind.Utc);
         code.MaxRedemptions = request.MaxRedemptions;
         code.PerUserLimit = request.PerUserLimit;
         code.IsActive = request.IsActive;
