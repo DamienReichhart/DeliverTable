@@ -1,0 +1,38 @@
+using System.Net.Http.Json;
+using DeliverTableClient.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Dtos;
+using DeliverTableSharedLibrary.Dtos.Admin;
+
+namespace DeliverTableClient.Services;
+
+public sealed class AdminDashboardClientService(HttpClient httpClient) : IAdminDashboardClientService
+{
+    private readonly HttpClient _httpClient = httpClient;
+
+    public async Task<(AdminDashboardStatsResponse? Stats, ErrorResponse? Error)> GetStatsAsync(
+        CancellationToken ct = default)
+    {
+        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.Dashboard, ct);
+        if (!response.IsSuccessStatusCode)
+            return (null, await ReadError(response, ct));
+
+        var stats = await response.Content.ReadFromJsonAsync<AdminDashboardStatsResponse>(cancellationToken: ct);
+        return stats is not null
+            ? (stats, null)
+            : (null, new ErrorResponse { Error = "Impossible de lire les statistiques du tableau de bord", Status = (int)response.StatusCode });
+    }
+
+    private static async Task<ErrorResponse> ReadError(HttpResponseMessage response, CancellationToken ct)
+    {
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
+        }
+        catch
+        {
+            return new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
+        }
+    }
+}
