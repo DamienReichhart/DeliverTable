@@ -64,9 +64,22 @@ erDiagram
         string  country
         float   latitude
         float   longitude
+        float   balance             "credited on delivery, minus commission"
         boolean is_active
         datetime created_at
         datetime updated_at
+    }
+
+    RESTAURANT_TRANSACTION {
+        int     id PK
+        int     restaurant_id FK
+        int     order_id FK          "nullable – null for withdrawals"
+        string  type                 "CREDIT | WITHDRAWAL"
+        float   gross_amount
+        float   commission_amount
+        float   net_amount
+        float   balance_after
+        datetime created_at
     }
 
     RESTAURANT_TABLE {
@@ -365,6 +378,10 @@ erDiagram
     RESTAURANT ||--o{ ORDER : "receives orders"
     ORDER ||--o{ ORDER_ITEM : "contains"
     MENU_ITEM ||--o{ ORDER_ITEM : "is ordered in"
+
+    %% Relationships – Restaurant Account
+    RESTAURANT ||--o{ RESTAURANT_TRANSACTION : "has transactions"
+    ORDER ||--o{ RESTAURANT_TRANSACTION : "generates credit"
 
     %% Relationships – Core
     USER ||--o{ CUSTOMER_PROFILE : "extends (customer only)"
