@@ -8,7 +8,8 @@ public class UpdateDiscountCodeRequest
     public string Description { get; set; } = string.Empty;
     [Required]
     public string DiscountType { get; set; } = string.Empty;
-    [Required] [Range(0.01, 999999.99)]
+    [Required]
+    [Range(0.01, 999999.99)]
     public decimal DiscountValue { get; set; }
     [Range(0.01, 999999.99)]
     public decimal? MinOrderAmount { get; set; }
