@@ -70,13 +70,21 @@ public class OrderServiceTests
 
     private static Restaurant CreateRestaurant() => new()
     {
-        Id = RestaurantId, Name = "Test", OwnerId = 5, IsActive = true,
-        AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+        Id = RestaurantId,
+        Name = "Test",
+        OwnerId = 5,
+        IsActive = true,
+        AdressLine1 = "1 Rue Test",
+        City = "Paris",
+        ZipCode = "75001",
+        Country = "FR"
     };
 
     private static Cart CreateCartWithItems(decimal price1 = 20m, decimal price2 = 30m) => new()
     {
-        Id = 1, CustomerId = CustomerId, RestaurantId = RestaurantId,
+        Id = 1,
+        CustomerId = CustomerId,
+        RestaurantId = RestaurantId,
         Items =
         [
             new CartItem { DishId = 100, Dish = new Dish { Id = 100, Name = "Plat A" }, Quantity = 2, UnitPrice = price1 },
@@ -202,23 +210,39 @@ public class OrderServiceTests
     {
         var restaurant = new Restaurant
         {
-            Id = 1, Name = "Test", Balance = 0m,
-            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
         };
         var order = new Order
         {
-            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
-            Restaurant = restaurant, TotalAmount = 100m, OriginalAmount = 100m,
-            Status = OrderStatus.Ready, Items = []
+            Id = 10,
+            RestaurantId = 1,
+            CustomerId = CustomerId,
+            Restaurant = restaurant,
+            TotalAmount = 100m,
+            OriginalAmount = 100m,
+            Status = OrderStatus.Ready,
+            Items = []
         };
         var program = new LoyaltyProgram
         {
-            Id = 1, RestaurantId = 1, IsActive = true,
-            PointsPerEuro = 1.0m, EurosPerPoint = 0.10m
+            Id = 1,
+            RestaurantId = 1,
+            IsActive = true,
+            PointsPerEuro = 1.0m,
+            EurosPerPoint = 0.10m
         };
         var account = new LoyaltyAccount
         {
-            Id = 1, LoyaltyProgramId = 1, CustomerId = CustomerId, PointsBalance = 0
+            Id = 1,
+            LoyaltyProgramId = 1,
+            CustomerId = CustomerId,
+            PointsBalance = 0
         };
 
         _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
@@ -245,14 +269,24 @@ public class OrderServiceTests
     {
         var restaurant = new Restaurant
         {
-            Id = 1, Name = "Test", Balance = 0m,
-            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
         };
         var order = new Order
         {
-            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
-            Restaurant = restaurant, TotalAmount = 100m, OriginalAmount = 100m,
-            Status = OrderStatus.Ready, Items = []
+            Id = 10,
+            RestaurantId = 1,
+            CustomerId = CustomerId,
+            Restaurant = restaurant,
+            TotalAmount = 100m,
+            OriginalAmount = 100m,
+            Status = OrderStatus.Ready,
+            Items = []
         };
 
         _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
@@ -272,19 +306,32 @@ public class OrderServiceTests
     {
         var restaurant = new Restaurant
         {
-            Id = 1, Name = "Test", Balance = 0m,
-            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
         };
         var order = new Order
         {
-            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
-            Restaurant = restaurant, TotalAmount = 100m, OriginalAmount = 100m,
-            Status = OrderStatus.Ready, Items = []
+            Id = 10,
+            RestaurantId = 1,
+            CustomerId = CustomerId,
+            Restaurant = restaurant,
+            TotalAmount = 100m,
+            OriginalAmount = 100m,
+            Status = OrderStatus.Ready,
+            Items = []
         };
         var program = new LoyaltyProgram
         {
-            Id = 1, RestaurantId = 1, IsActive = false,
-            PointsPerEuro = 1.0m, EurosPerPoint = 0.10m
+            Id = 1,
+            RestaurantId = 1,
+            IsActive = false,
+            PointsPerEuro = 1.0m,
+            EurosPerPoint = 0.10m
         };
 
         _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
@@ -304,23 +351,39 @@ public class OrderServiceTests
     {
         var restaurant = new Restaurant
         {
-            Id = 1, Name = "Test", Balance = 0m,
-            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
         };
         var order = new Order
         {
-            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
-            Restaurant = restaurant, OriginalAmount = 200m, TotalAmount = 150m,
-            Status = OrderStatus.Ready, Items = []
+            Id = 10,
+            RestaurantId = 1,
+            CustomerId = CustomerId,
+            Restaurant = restaurant,
+            OriginalAmount = 200m,
+            TotalAmount = 150m,
+            Status = OrderStatus.Ready,
+            Items = []
         };
         var program = new LoyaltyProgram
         {
-            Id = 1, RestaurantId = 1, IsActive = true,
-            PointsPerEuro = 2.0m, EurosPerPoint = 0.10m
+            Id = 1,
+            RestaurantId = 1,
+            IsActive = true,
+            PointsPerEuro = 2.0m,
+            EurosPerPoint = 0.10m
         };
         var account = new LoyaltyAccount
         {
-            Id = 1, LoyaltyProgramId = 1, CustomerId = CustomerId, PointsBalance = 0
+            Id = 1,
+            LoyaltyProgramId = 1,
+            CustomerId = CustomerId,
+            PointsBalance = 0
         };
 
         _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
@@ -508,11 +571,17 @@ public class OrderServiceTests
 
         var code = new DiscountCode
         {
-            Id = 1, Code = "SAVE10", RestaurantId = RestaurantId,
-            DiscountType = DiscountType.Percentage, DiscountValue = 10m,
-            IsActive = true, ValidFrom = DateTime.UtcNow.AddDays(-1),
+            Id = 1,
+            Code = "SAVE10",
+            RestaurantId = RestaurantId,
+            DiscountType = DiscountType.Percentage,
+            DiscountValue = 10m,
+            IsActive = true,
+            ValidFrom = DateTime.UtcNow.AddDays(-1),
             ValidUntil = DateTime.UtcNow.AddDays(1),
-            MaxRedemptions = 100, CurrentRedemptions = 0, PerUserLimit = 1
+            MaxRedemptions = 100,
+            CurrentRedemptions = 0,
+            PerUserLimit = 1
         };
         _discountCodeRepository.GetByCodeAndRestaurantAsync("SAVE10", RestaurantId, Arg.Any<CancellationToken>())
             .Returns(code);
@@ -548,9 +617,13 @@ public class OrderServiceTests
 
         var code = new DiscountCode
         {
-            Id = 1, Code = "EXPIRED", RestaurantId = RestaurantId,
-            DiscountType = DiscountType.Percentage, DiscountValue = 10m,
-            IsActive = true, ValidFrom = DateTime.UtcNow.AddDays(-10),
+            Id = 1,
+            Code = "EXPIRED",
+            RestaurantId = RestaurantId,
+            DiscountType = DiscountType.Percentage,
+            DiscountValue = 10m,
+            IsActive = true,
+            ValidFrom = DateTime.UtcNow.AddDays(-10),
             ValidUntil = DateTime.UtcNow.AddDays(-1), // expired
             PerUserLimit = 1
         };
@@ -570,11 +643,17 @@ public class OrderServiceTests
 
         var code = new DiscountCode
         {
-            Id = 1, Code = "MAXED", RestaurantId = RestaurantId,
-            DiscountType = DiscountType.Percentage, DiscountValue = 10m,
-            IsActive = true, ValidFrom = DateTime.UtcNow.AddDays(-1),
+            Id = 1,
+            Code = "MAXED",
+            RestaurantId = RestaurantId,
+            DiscountType = DiscountType.Percentage,
+            DiscountValue = 10m,
+            IsActive = true,
+            ValidFrom = DateTime.UtcNow.AddDays(-1),
             ValidUntil = DateTime.UtcNow.AddDays(1),
-            MaxRedemptions = 5, CurrentRedemptions = 5, PerUserLimit = 10
+            MaxRedemptions = 5,
+            CurrentRedemptions = 5,
+            PerUserLimit = 10
         };
         _discountCodeRepository.GetByCodeAndRestaurantAsync("MAXED", RestaurantId, Arg.Any<CancellationToken>())
             .Returns(code);
@@ -592,12 +671,18 @@ public class OrderServiceTests
 
         var program = new LoyaltyProgram
         {
-            Id = 1, RestaurantId = RestaurantId, IsActive = true,
-            EurosPerPoint = 0.10m, PointsPerEuro = 1m
+            Id = 1,
+            RestaurantId = RestaurantId,
+            IsActive = true,
+            EurosPerPoint = 0.10m,
+            PointsPerEuro = 1m
         };
         var account = new LoyaltyAccount
         {
-            Id = 1, LoyaltyProgramId = 1, CustomerId = CustomerId, PointsBalance = 100
+            Id = 1,
+            LoyaltyProgramId = 1,
+            CustomerId = CustomerId,
+            PointsBalance = 100
         };
         _loyaltyRepository.GetByRestaurantAsync(RestaurantId, Arg.Any<CancellationToken>())
             .Returns(program);
@@ -648,11 +733,17 @@ public class OrderServiceTests
         // Discount code: fixed 5
         var code = new DiscountCode
         {
-            Id = 1, Code = "SAVE5", RestaurantId = RestaurantId,
-            DiscountType = DiscountType.FixedAmount, DiscountValue = 5m,
-            IsActive = true, ValidFrom = DateTime.UtcNow.AddDays(-1),
+            Id = 1,
+            Code = "SAVE5",
+            RestaurantId = RestaurantId,
+            DiscountType = DiscountType.FixedAmount,
+            DiscountValue = 5m,
+            IsActive = true,
+            ValidFrom = DateTime.UtcNow.AddDays(-1),
             ValidUntil = DateTime.UtcNow.AddDays(1),
-            MaxRedemptions = 100, CurrentRedemptions = 0, PerUserLimit = 1
+            MaxRedemptions = 100,
+            CurrentRedemptions = 0,
+            PerUserLimit = 1
         };
         _discountCodeRepository.GetByCodeAndRestaurantAsync("SAVE5", RestaurantId, Arg.Any<CancellationToken>())
             .Returns(code);
@@ -664,12 +755,18 @@ public class OrderServiceTests
         // Loyalty: 30 points * 0.10 = 3
         var program = new LoyaltyProgram
         {
-            Id = 1, RestaurantId = RestaurantId, IsActive = true,
-            EurosPerPoint = 0.10m, PointsPerEuro = 1m
+            Id = 1,
+            RestaurantId = RestaurantId,
+            IsActive = true,
+            EurosPerPoint = 0.10m,
+            PointsPerEuro = 1m
         };
         var account = new LoyaltyAccount
         {
-            Id = 1, LoyaltyProgramId = 1, CustomerId = CustomerId, PointsBalance = 100
+            Id = 1,
+            LoyaltyProgramId = 1,
+            CustomerId = CustomerId,
+            PointsBalance = 100
         };
         _loyaltyRepository.GetByRestaurantAsync(RestaurantId, Arg.Any<CancellationToken>())
             .Returns(program);
