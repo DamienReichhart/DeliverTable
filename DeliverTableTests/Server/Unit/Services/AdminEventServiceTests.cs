@@ -70,9 +70,14 @@ public class AdminEventServiceTests
         var restaurant = CreateRestaurant(id: 1, ownerId: 5);
         var evt = new Event
         {
-            Id = 1, Name = "Événement A", RestaurantId = 1, Restaurant = restaurant,
-            CreatedByUserId = 5, CreatedByUser = user,
-            StartsAt = DateTime.UtcNow, EndsAt = DateTime.UtcNow.AddHours(2)
+            Id = 1,
+            Name = "Événement A",
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            CreatedByUserId = 5,
+            CreatedByUser = user,
+            StartsAt = DateTime.UtcNow,
+            EndsAt = DateTime.UtcNow.AddHours(2)
         };
 
         _eventRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(evt);
@@ -247,9 +252,14 @@ public class AdminEventServiceTests
         var restaurant = CreateRestaurant(id: 1, ownerId: 5);
         var evt = new Event
         {
-            Id = 1, Name = "Ancien", RestaurantId = 1, Restaurant = restaurant,
-            CreatedByUserId = 5, CreatedByUser = user,
-            StartsAt = DateTime.UtcNow, EndsAt = DateTime.UtcNow.AddHours(1)
+            Id = 1,
+            Name = "Ancien",
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            CreatedByUserId = 5,
+            CreatedByUser = user,
+            StartsAt = DateTime.UtcNow,
+            EndsAt = DateTime.UtcNow.AddHours(1)
         };
 
         _eventRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(evt);
@@ -303,9 +313,12 @@ public class AdminEventServiceTests
         user.Id = 5;
         var evt = new Event
         {
-            Id = 1, Name = "Événement",
-            CreatedByUserId = 5, CreatedByUser = user,
-            StartsAt = DateTime.UtcNow, EndsAt = DateTime.UtcNow.AddHours(1)
+            Id = 1,
+            Name = "Événement",
+            CreatedByUserId = 5,
+            CreatedByUser = user,
+            StartsAt = DateTime.UtcNow,
+            EndsAt = DateTime.UtcNow.AddHours(1)
         };
 
         _eventRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(evt);

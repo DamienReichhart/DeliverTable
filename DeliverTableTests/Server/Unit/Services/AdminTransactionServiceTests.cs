@@ -91,9 +91,14 @@ public class AdminTransactionServiceTests
         var restaurant = CreateRestaurant(id: 1, ownerId: 5);
         var transaction = new RestaurantTransaction
         {
-            Id = 1, RestaurantId = 1, Restaurant = restaurant,
-            Type = TransactionType.Credit, GrossAmount = 100m,
-            CommissionAmount = 10m, NetAmount = 90m, BalanceAfter = 90m
+            Id = 1,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            Type = TransactionType.Credit,
+            GrossAmount = 100m,
+            CommissionAmount = 10m,
+            NetAmount = 90m,
+            BalanceAfter = 90m
         };
 
         _transactionRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(transaction);
