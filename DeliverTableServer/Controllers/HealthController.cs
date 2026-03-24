@@ -12,18 +12,18 @@ namespace DeliverTableServer.Controllers;
 [Route(ApiRoutes.Health)]
 public class HealthController(IHealthService healthService) : ControllerBase
 {
-    private readonly IHealthService _healthService = healthService ?? throw new ArgumentNullException(nameof(healthService));
+    private readonly IHealthService _healthService = healthService;
 
     /// <summary>
     ///     Returns service health status for liveness/readiness probes and monitoring.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>200 OK with current status and UTC timestamp.</returns>
     [HttpGet(Name = "GetHealth")]
     [ProducesResponseType(typeof(HealthResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(CancellationToken ct)
     {
-        var health = await _healthService.GetHealthAsync(cancellationToken);
+        var health = await _healthService.GetHealthAsync(ct);
         return Ok(health);
     }
 }

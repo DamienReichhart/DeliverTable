@@ -39,7 +39,7 @@ public class DishController(IDishService dishService) : ControllerBase
     [HttpPost(ApiRoutes.Dish.DishesByRestaurantIdRoute)]
     [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
     [EnsureOwner]
-    public async Task<IActionResult> CreateDish([FromForm] CreateDishDto createDishDto, [FromRoute] int id, IFormFile? image, CancellationToken ct)
+    public async Task<IActionResult> CreateDish([FromRoute] int id, [FromForm] CreateDishDto createDishDto, IFormFile? image, CancellationToken ct)
     {
         var result = await _dishService.CreateAsync(createDishDto, id, image, ct);
         return result.ToOkResult();
