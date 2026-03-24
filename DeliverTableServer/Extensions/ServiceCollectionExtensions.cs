@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IModerationRepository, ModerationRepository>();
+        services.AddScoped<IOrderConfigRepository, OrderConfigRepository>();
     }
 
     private static void RegisterServices(IServiceCollection services)
@@ -56,6 +57,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminNotificationService, AdminNotificationService>();
         services.AddScoped<IAdminEventService, AdminEventService>();
         services.AddScoped<IAdminModerationService, AdminModerationService>();
+        services.AddScoped<IAdminOrderConfigService, AdminOrderConfigService>();
         services.AddScoped<IRestaurantService, RestaurantService>();
         services.AddScoped<IDishService, DishService>();
         services.AddScoped<ICartService, CartService>();
