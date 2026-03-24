@@ -130,6 +130,7 @@ public static class ApiRoutes
 
         // ── Transactions ──
         public const string TransactionsRoute = "transactions";
+        public const string TransactionByIdRoute = "transactions/{id:int}";
         public const string Transactions = Base + "/" + TransactionsRoute;
 
         // ── Ratings ──
