@@ -79,8 +79,9 @@ Roles, statuses, and health states use enums with `nameof()` for compile-time sa
 
 - `UserRole`, `HealthStatus` — in `DeliverTableSharedLibrary/Constants/Enums/`
 - `UserStatus`, `RestaurantType`, `AvailableCountries` — in `DeliverTableSharedLibrary/Enums/`
-- `OrderStatus`, `OrderType`, `PaymentStatus`, `BookingStatus`, `BookingSource` — in `DeliverTableSharedLibrary/Enums/`
+- `OrderStatus`, `OrderType`, `PaymentStatus`, `BookingSource` — in `DeliverTableSharedLibrary/Enums/`
 - `TransactionType`, `PromotionType`, `DiscountType`, `LoyaltyTransactionType`, `OrderDiscountSource` — in `DeliverTableSharedLibrary/Enums/`
+- `NotificationType`, `ModerationTargetType`, `ModerationActionType`, `EventVisibility`, `PaymentGatewayStatus` — in `DeliverTableSharedLibrary/Enums/`
 
 ### Client (Blazor WASM)
 

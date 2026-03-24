@@ -59,6 +59,13 @@
                     <span class="meta-label">Paiement :</span>
                     <span class="status-badge status--@_order.PaymentStatus.ToLower()">@TranslatePaymentStatus(_order.PaymentStatus)</span>
                 </div>
+                @if (_order.ScheduledAt.HasValue)
+                {
+                    <div class="order-meta-item">
+                        <span class="meta-label">Date planifiée :</span>
+                        <span>@_order.ScheduledAt.Value.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
+                    </div>
+                }
                 <div class="order-meta-item">
                     <span class="meta-label">Date :</span>
                     <span>@_order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
