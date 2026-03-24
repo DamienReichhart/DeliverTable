@@ -1,0 +1,42 @@
+@if (IsVisible)
+{
+    <div class="adm-modal-overlay" @onclick="HandleOverlayClick">
+        <div class="adm-modal @(Wide ? "adm-modal--wide" : "")" @onclick:stopPropagation="true">
+            <div class="adm-modal-header">
+                <h3 class="adm-modal-title">@Title</h3>
+                <button type="button" class="adm-modal-close" @onclick="Close" aria-label="Fermer">
+                    <Blazicon Svg="Lucide.X" />
+                </button>
+            </div>
+            <div class="adm-modal-body">
+                @ChildContent
+            </div>
+            @if (FooterContent is not null)
+            {
+                <div class="adm-modal-footer">
+                    @FooterContent
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public bool Wide { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? FooterContent { get; set; }
+
+    private async Task Close()
+    {
+        if (OnClose.HasDelegate)
+            await OnClose.InvokeAsync();
+    }
+
+    private async Task HandleOverlayClick()
+    {
+        await Close();
+    }
+}

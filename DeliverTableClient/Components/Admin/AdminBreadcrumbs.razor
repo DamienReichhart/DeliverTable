@@ -1,0 +1,30 @@
+
+<nav class="adm-breadcrumbs" aria-label="Fil d'Ariane">
+    @for (var i = 0; i < Items.Count; i++)
+    {
+        var item = Items[i];
+        var isLast = i == Items.Count - 1;
+
+        if (isLast)
+        {
+            <span class="adm-breadcrumb-item adm-breadcrumb-item--active" aria-current="page">
+                @item.Label
+            </span>
+        }
+        else
+        {
+            <a href="@item.Href" class="adm-breadcrumb-item">@item.Label</a>
+            <span class="adm-breadcrumb-sep" aria-hidden="true">/</span>
+        }
+    }
+</nav>
+
+@code {
+    [Parameter] public List<BreadcrumbItem> Items { get; set; } = [];
+
+    public sealed class BreadcrumbItem
+    {
+        public string Label { get; set; } = "";
+        public string Href { get; set; } = "";
+    }
+}
