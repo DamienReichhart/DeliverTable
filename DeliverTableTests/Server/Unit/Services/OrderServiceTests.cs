@@ -197,6 +197,150 @@ public class OrderServiceTests
         await _transactionRepository.DidNotReceive().CreateAsync(Arg.Any<RestaurantTransaction>(), Arg.Any<CancellationToken>());
     }
 
+    [Test]
+    public async Task UpdateStatusAsync_WhenDelivered_WithActiveLoyaltyProgram_EarnsPoints()
+    {
+        var restaurant = new Restaurant
+        {
+            Id = 1, Name = "Test", Balance = 0m,
+            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+        };
+        var order = new Order
+        {
+            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
+            Restaurant = restaurant, TotalAmount = 100m, OriginalAmount = 100m,
+            Status = OrderStatus.Ready, Items = []
+        };
+        var program = new LoyaltyProgram
+        {
+            Id = 1, RestaurantId = 1, IsActive = true,
+            PointsPerEuro = 1.0m, EurosPerPoint = 0.10m
+        };
+        var account = new LoyaltyAccount
+        {
+            Id = 1, LoyaltyProgramId = 1, CustomerId = CustomerId, PointsBalance = 0
+        };
+
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(program);
+        _loyaltyRepository.GetAccountAsync(1, CustomerId, Arg.Any<CancellationToken>()).Returns(account);
+
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Delivered) });
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(account.PointsBalance, Is.EqualTo(100));
+        Assert.That(order.LoyaltyPointsEarned, Is.EqualTo(100));
+        await _loyaltyRepository.Received(1).UpdateAccountAsync(account, Arg.Any<CancellationToken>());
+        await _loyaltyRepository.Received(1).CreateTransactionAsync(
+            Arg.Is<LoyaltyTransaction>(t =>
+                t.Type == LoyaltyTransactionType.Earn &&
+                t.Points == 100 &&
+                t.OrderId == 10),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateStatusAsync_WhenDelivered_WithNoLoyaltyProgram_NoPointsEarned()
+    {
+        var restaurant = new Restaurant
+        {
+            Id = 1, Name = "Test", Balance = 0m,
+            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+        };
+        var order = new Order
+        {
+            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
+            Restaurant = restaurant, TotalAmount = 100m, OriginalAmount = 100m,
+            Status = OrderStatus.Ready, Items = []
+        };
+
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns((LoyaltyProgram?)null);
+
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Delivered) });
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _loyaltyRepository.DidNotReceive().GetAccountAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await _loyaltyRepository.DidNotReceive().UpdateAccountAsync(Arg.Any<LoyaltyAccount>(), Arg.Any<CancellationToken>());
+        await _loyaltyRepository.DidNotReceive().CreateTransactionAsync(Arg.Any<LoyaltyTransaction>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateStatusAsync_WhenDelivered_WithInactiveLoyaltyProgram_NoPointsEarned()
+    {
+        var restaurant = new Restaurant
+        {
+            Id = 1, Name = "Test", Balance = 0m,
+            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+        };
+        var order = new Order
+        {
+            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
+            Restaurant = restaurant, TotalAmount = 100m, OriginalAmount = 100m,
+            Status = OrderStatus.Ready, Items = []
+        };
+        var program = new LoyaltyProgram
+        {
+            Id = 1, RestaurantId = 1, IsActive = false,
+            PointsPerEuro = 1.0m, EurosPerPoint = 0.10m
+        };
+
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(program);
+
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Delivered) });
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _loyaltyRepository.DidNotReceive().GetAccountAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await _loyaltyRepository.DidNotReceive().UpdateAccountAsync(Arg.Any<LoyaltyAccount>(), Arg.Any<CancellationToken>());
+        await _loyaltyRepository.DidNotReceive().CreateTransactionAsync(Arg.Any<LoyaltyTransaction>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateStatusAsync_WhenDelivered_PointsBasedOnOriginalAmount()
+    {
+        var restaurant = new Restaurant
+        {
+            Id = 1, Name = "Test", Balance = 0m,
+            AdressLine1 = "1 Rue Test", City = "Paris", ZipCode = "75001", Country = "FR"
+        };
+        var order = new Order
+        {
+            Id = 10, RestaurantId = 1, CustomerId = CustomerId,
+            Restaurant = restaurant, OriginalAmount = 200m, TotalAmount = 150m,
+            Status = OrderStatus.Ready, Items = []
+        };
+        var program = new LoyaltyProgram
+        {
+            Id = 1, RestaurantId = 1, IsActive = true,
+            PointsPerEuro = 2.0m, EurosPerPoint = 0.10m
+        };
+        var account = new LoyaltyAccount
+        {
+            Id = 1, LoyaltyProgramId = 1, CustomerId = CustomerId, PointsBalance = 0
+        };
+
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(program);
+        _loyaltyRepository.GetAccountAsync(1, CustomerId, Arg.Any<CancellationToken>()).Returns(account);
+
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Delivered) });
+
+        Assert.That(result.IsSuccess, Is.True);
+        // Points = floor(200 * 2.0) = 400 (based on OriginalAmount, not TotalAmount)
+        Assert.That(account.PointsBalance, Is.EqualTo(400));
+        Assert.That(order.LoyaltyPointsEarned, Is.EqualTo(400));
+        await _loyaltyRepository.Received(1).CreateTransactionAsync(
+            Arg.Is<LoyaltyTransaction>(t =>
+                t.Type == LoyaltyTransactionType.Earn &&
+                t.Points == 400),
+            Arg.Any<CancellationToken>());
+    }
+
     // ─── CreateFromCartAsync discount tests ────────────────────────────────
 
     [Test]
