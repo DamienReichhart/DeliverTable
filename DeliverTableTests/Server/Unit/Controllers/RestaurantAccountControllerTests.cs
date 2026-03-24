@@ -48,7 +48,10 @@ public class RestaurantAccountControllerTests
             Balance = 360m,
             Transactions = new PaginatedResult<RestaurantTransactionDto>
             {
-                Items = [], TotalCount = 0, Page = 1, PageSize = 20
+                Items = [],
+                TotalCount = 0,
+                Page = 1,
+                PageSize = 20
             }
         };
         _accountService.GetAccountAsync(1, 5, Arg.Any<TransactionQuery>(), Arg.Any<CancellationToken>())
@@ -81,7 +84,10 @@ public class RestaurantAccountControllerTests
             Balance = 300m,
             Transactions = new PaginatedResult<RestaurantTransactionDto>
             {
-                Items = [], TotalCount = 0, Page = 1, PageSize = 20
+                Items = [],
+                TotalCount = 0,
+                Page = 1,
+                PageSize = 20
             }
         };
         _accountService.WithdrawAsync(1, 5, Arg.Any<WithdrawRequest>(), Arg.Any<CancellationToken>())
