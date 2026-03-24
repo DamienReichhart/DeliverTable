@@ -33,5 +33,8 @@ namespace DeliverTableServer.Models
         [ForeignKey("OwnerId")]
         public User Owner { get; set; } = null!;
         public List<Dish> Dishes { get; set; } = [];
+        [Column(TypeName = "decimal(9, 2)")]
+        public decimal Balance { get; set; }
+        public List<RestaurantTransaction> Transactions { get; set; } = [];
     }
 }
