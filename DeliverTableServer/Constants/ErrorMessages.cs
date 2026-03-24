@@ -49,4 +49,8 @@ public static class ErrorMessages
 
     public static string InvalidOrderType(string validValues) =>
         $"Type de commande invalide. Valeurs possibles : {validValues}";
+
+    // Restaurant Account
+    public const string InsufficientBalance = "Solde insuffisant pour effectuer ce retrait";
+    public const string InvalidWithdrawalAmount = "Le montant du retrait doit être supérieur à 0";
 }
