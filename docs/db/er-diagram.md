@@ -244,6 +244,10 @@ erDiagram
         string  delivery_address    "required for DELIVERY only"
         string  notes
         string  source              "CUSTOMER_APP | RESTAURANT_PORTAL | ADMIN"
+        datetime scheduled_at       "nullable – date/time of reservation/delivery"
+        int     restaurant_table_id FK "nullable – for dine-in table assignment"
+        boolean is_event_booking    "default false"
+        int     event_id FK         "nullable – link to EVENT"
         datetime created_at
         datetime updated_at
     }
@@ -258,23 +262,8 @@ erDiagram
         string  special_instructions
     }
 
-    %% Bookings, pre‑orders, payments (Stripe‑ready)
-    BOOKING {
-        string  id PK
-        string  restaurant_id FK
-        string  customer_user_id FK
-        string  restaurant_table_id FK "nullable for generic bookings"
-        datetime scheduled_at
-        int     party_size
-        string  status              "PENDING | CONFIRMED | CANCELLED | REJECTED | COMPLETED"
-        string  special_requests    "seating, dietary requirements"
-        string  source              "CUSTOMER_APP | RESTAURANT_PORTAL | ADMIN"
-        boolean is_event_booking
-        datetime created_at
-        datetime updated_at
-    }
-
-    BOOKING_RULE {
+    %% Scheduling, payments & events (Stripe‑ready)
+    ORDER_RULE {
         string  id PK
         string  restaurant_id FK
         float   min_confirm_amount
@@ -288,7 +277,7 @@ erDiagram
         datetime updated_at
     }
 
-    BOOKING_BLOCKED_SLOT {
+    ORDER_BLOCKED_SLOT {
         string  id PK
         string  restaurant_id FK
         string  restaurant_table_id FK "optional; null = whole restaurant"
@@ -298,18 +287,9 @@ erDiagram
         datetime created_at
     }
 
-    BOOKING_ITEM {
-        string  id PK
-        string  booking_id FK
-        string  menu_item_id FK
-        int     quantity
-        float   unit_price
-        float   total_price
-    }
-
     PAYMENT {
         string  id PK
-        string  booking_id FK
+        int     order_id FK
         string  provider          "STRIPE"
         string  stripe_payment_intent_id
         string  stripe_charge_id  "optional, depending on Stripe mode"
@@ -321,12 +301,6 @@ erDiagram
         datetime canceled_at
         datetime created_at
         datetime updated_at
-    }
-
-    BOOKING_DISCOUNT_CODE {
-        string  booking_id FK
-        string  discount_code_id FK
-        float   applied_amount
     }
 
     %% Events, ratings, notifications & moderation
@@ -361,7 +335,7 @@ erDiagram
 
     RESTAURANT_RATING {
         string  id PK
-        string  booking_id FK
+        int     order_id FK
         string  restaurant_id FK
         string  customer_user_id FK
         int     rating              "e.g. 1‑5"
@@ -371,7 +345,7 @@ erDiagram
 
     CUSTOMER_RATING {
         string  id PK
-        string  booking_id FK
+        int     order_id FK
         string  restaurant_id FK
         string  rated_customer_user_id FK
         string  restaurant_user_id FK "who rated"
@@ -383,7 +357,7 @@ erDiagram
     NOTIFICATION {
         string  id PK
         string  user_id FK
-        string  type               "BOOKING_STATUS | PAYMENT_STATUS | EVENT_UPDATE | SYSTEM"
+        string  type               "ORDER_STATUS | PAYMENT_STATUS | EVENT_UPDATE | SYSTEM"
         string  payload            "JSON with contextual data"
         boolean is_read
         datetime created_at
@@ -407,8 +381,12 @@ erDiagram
 
     USER ||--o{ ORDER : "places orders"
     RESTAURANT ||--o{ ORDER : "receives orders"
+    RESTAURANT_TABLE ||--o{ ORDER : "can host"
     ORDER ||--o{ ORDER_ITEM : "contains"
     MENU_ITEM ||--o{ ORDER_ITEM : "is ordered in"
+    ORDER ||--o{ PAYMENT : "has payments"
+    ORDER ||--o{ RESTAURANT_RATING : "yields rating"
+    ORDER ||--o{ CUSTOMER_RATING : "yields customer rating"
 
     %% Relationships – Restaurant Account
     RESTAURANT ||--o{ RESTAURANT_TRANSACTION : "has transactions"
@@ -444,27 +422,14 @@ erDiagram
     ORDER ||--o{ ORDER_DISCOUNT : "has discounts"
     DISCOUNT_CODE ||--o{ ORDER : "applied to"
 
-    RESTAURANT ||--o{ BOOKING_RULE : "configures rules"
-    RESTAURANT ||--o{ BOOKING_BLOCKED_SLOT : "blocks slots"
+    RESTAURANT ||--o{ ORDER_RULE : "configures rules"
+    RESTAURANT ||--o{ ORDER_BLOCKED_SLOT : "blocks slots"
+    RESTAURANT_TABLE ||--o{ ORDER_BLOCKED_SLOT : "can block"
 
-    RESTAURANT ||--o{ BOOKING : "receives bookings"
-    USER ||--o{ BOOKING : "makes bookings"
-    RESTAURANT_TABLE ||--o{ BOOKING : "can host"
-
-    BOOKING ||--o{ BOOKING_ITEM : "includes items"
-    MENU_ITEM ||--o{ BOOKING_ITEM : "is pre‑ordered in"
-
-    BOOKING ||--o{ PAYMENT : "has payments"
-
-    BOOKING ||--o{ BOOKING_DISCOUNT_CODE : "applies"
-    DISCOUNT_CODE ||--o{ BOOKING_DISCOUNT_CODE : "is used in"
-
-    EVENT ||--o{ BOOKING : "uses booking flow"
+    %% Relationships – Events
+    EVENT ||--o{ ORDER : "uses order flow"
     EVENT ||--o{ EVENT_MENU_ITEM : "defines dedicated menu"
     EVENT ||--o{ EVENT_BOOKING_POLICY : "custom rules"
-
-    BOOKING ||--o{ RESTAURANT_RATING : "yields rating"
-    BOOKING ||--o{ CUSTOMER_RATING : "yields customer rating"
 
     USER ||--o{ NOTIFICATION : "receives"
     USER ||--o{ MODERATION_ACTION : "performs (admin)"
@@ -474,22 +439,21 @@ erDiagram
 
 ### Design notes & alternatives considered
 
-- **Single vs multiple user tables**  
+- **Single vs multiple user tables**
   A split `CUSTOMER` / `RESTAURANT_USER` / `ADMIN` table architecture was considered but rejected in favour of a unified `USER` with role‑based extensions to simplify authentication, Stripe customer mapping, and future role changes.
 
-- **Embedding vs normalizing allergies and dietary preferences**  
+- **Embedding vs normalizing allergies and dietary preferences**
   A fully normalized `ALLERGEN`, `CUSTOMER_ALLERGEN`, `MENU_ITEM_ALLERGEN` model was considered. The chosen design keeps room for structured JSON schemas while avoiding premature complexity; it can be evolved into a fully normalized model without breaking the high‑level ER structure.
 
-- **Bookings vs events**  
-  Modeling events with a separate `EVENT_BOOKING` table was considered. Instead, `BOOKING` is reused with an `is_event_booking` flag and per‑event booking policies, which keeps payment and Stripe integration unified while still supporting event‑specific rules.
+- **Orders vs events**
+  Modeling events with a separate table was considered. Instead, `ORDER` is reused with an `is_event_booking` flag and per‑event booking policies, which keeps payment and Stripe integration unified while still supporting event‑specific rules.
 
-- **Payments and Stripe integration**  
+- **Payments and Stripe integration**
   An alternative was to make `PAYMENT` Stripe‑agnostic with a link table to provider‑specific details. The current model inlines Stripe identifiers but isolates all payment gateway fields inside `PAYMENT`, making it straightforward to:
   - map `PAYMENT` records to Stripe `PaymentIntent`/`Charge` objects;
-  - add another provider later by adding new columns or a secondary detail table without touching bookings.
+  - add another provider later by adding new columns or a secondary detail table without touching orders.
 
-- **Moderation & audit**  
+- **Moderation & audit**
   Per‑entity moderation tables (e.g. `RESTAURANT_MODERATION`, `EVENT_MODERATION`) were considered. A single `MODERATION_ACTION` table is more flexible and easier to extend as new content types appear.
- 
-This ER model is intentionally **extensible** and aligned with upcoming **Stripe integration**.
 
+This ER model is intentionally **extensible** and aligned with upcoming **Stripe integration**.

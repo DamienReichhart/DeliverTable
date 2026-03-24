@@ -54,9 +54,25 @@ public class Order
     [MaxLength(500)]
     public string Notes { get; set; } = string.Empty;
 
+    public DateTime? ScheduledAt { get; set; }
+
+    public int? RestaurantTableId { get; set; }
+
+    [ForeignKey("RestaurantTableId")]
+    public RestaurantTable? RestaurantTable { get; set; }
+
+    public bool IsEventBooking { get; set; }
+
+    public int? EventId { get; set; }
+
+    [ForeignKey("EventId")]
+    public Event? Event { get; set; }
+
     public BookingSource Source { get; set; } = BookingSource.CustomerApp;
 
     public List<OrderItem> Items { get; set; } = [];
+
+    public List<Payment> Payments { get; set; } = [];
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
