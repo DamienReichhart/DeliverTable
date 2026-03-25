@@ -150,6 +150,8 @@ Commit early, commit often. Each commit should be a **logical, buildable unit**.
 **Rules:**
 
 - Never mix unrelated changes in a single commit
+- Never put Co-Authored-By in any commit mesage or description
+- If you do not know the azure board task or pbi, ask me or do not put a random or 0 in the commit message
 - Tests live with the code they test (same commit)
 - Build must pass after every commit — verify with `dotnet build` before committing
 - Run `make format-check` before the final commit; fix with `make format-fix` if needed
