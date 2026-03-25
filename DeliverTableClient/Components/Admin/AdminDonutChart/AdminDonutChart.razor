@@ -1,3 +1,4 @@
+@using System.Globalization
 @using DeliverTableSharedLibrary.Dtos.Admin
 
 <div class="adm-chart-card">
@@ -19,8 +20,8 @@
                     var color = GetColor(idx);
                     <circle cx="60" cy="60" r="45" fill="none"
                             stroke="@color" stroke-width="18"
-                            stroke-dasharray="@($"{dashLength:F2} {dashGap:F2}")"
-                            stroke-dashoffset="@($"{-offset:F2}")"
+                            stroke-dasharray="@(dashLength.ToString("F2", CultureInfo.InvariantCulture)) @(dashGap.ToString("F2", CultureInfo.InvariantCulture))"
+                            stroke-dashoffset="@((-offset).ToString("F2", CultureInfo.InvariantCulture))"
                             class="adm-donut-segment" />
                     offset += dashLength;
                 }
