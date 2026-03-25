@@ -1,0 +1,115 @@
+@using DeliverTableSharedLibrary.Dtos.Admin
+
+<div class="adm-chart-card">
+    <div class="adm-chart-header">
+        <h3 class="adm-chart-title">@Title</h3>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <span class="adm-chart-subtitle">@Subtitle</span>
+        }
+    </div>
+    @if (_hasData)
+    {
+        <svg viewBox="0 0 @ViewBoxWidth @ViewBoxHeight" preserveAspectRatio="none" class="adm-area-svg">
+            <defs>
+                <linearGradient id="@_gradientId" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="@Color" stop-opacity="0.25" />
+                    <stop offset="100%" stop-color="@Color" stop-opacity="0.02" />
+                </linearGradient>
+            </defs>
+
+            @for (var i = 0; i < 5; i++)
+            {
+                var y = i * (ViewBoxHeight / 4.0);
+                <line x1="0" y1="@y.ToString("F1")" x2="@ViewBoxWidth" y2="@y.ToString("F1")"
+                      stroke="#E8E4DF" stroke-width="0.5" stroke-dasharray="4 2" />
+            }
+
+            <path d="@_areaPath" fill="url(#@_gradientId)" />
+            <polyline points="@_linePath" fill="none" stroke="@Color"
+                      stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+
+            @foreach (var pt in _points)
+            {
+                <circle cx="@pt.X.ToString("F1")" cy="@pt.Y.ToString("F1")"
+                        r="3" fill="@Color" class="adm-area-dot" />
+            }
+        </svg>
+        <div class="adm-area-labels">
+            @foreach (var label in _xLabels)
+            {
+                <span>@label</span>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="adm-chart-empty">Aucune donnée</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string Color { get; set; } = "#E85D34";
+    [Parameter] public List<DailyRevenuePoint>? RevenueData { get; set; }
+    [Parameter] public List<DailyCountPoint>? CountData { get; set; }
+
+    private const int ViewBoxWidth = 600;
+    private const int ViewBoxHeight = 200;
+    private string _linePath = "";
+    private string _areaPath = "";
+    private string _gradientId = "";
+    private List<(double X, double Y)> _points = [];
+    private List<string> _xLabels = [];
+    private bool _hasData;
+
+    protected override void OnParametersSet()
+    {
+        _gradientId = $"grad-{Title.GetHashCode():X}";
+        BuildChart();
+    }
+
+    private void BuildChart()
+    {
+        var values = new List<(DateOnly Date, double Value)>();
+
+        if (RevenueData is { Count: > 0 })
+            values = RevenueData.Select(r => (r.Date, (double)r.Amount)).ToList();
+        else if (CountData is { Count: > 0 })
+            values = CountData.Select(c => (c.Date, (double)c.Count)).ToList();
+
+        _hasData = values.Count > 0;
+        if (!_hasData) return;
+
+        var maxVal = values.Max(v => v.Value);
+        if (maxVal == 0) maxVal = 1;
+
+        var padX = 10.0;
+        var padY = 10.0;
+        var chartW = ViewBoxWidth - 2 * padX;
+        var chartH = ViewBoxHeight - 2 * padY;
+
+        _points = [];
+        for (var i = 0; i < values.Count; i++)
+        {
+            var x = padX + (values.Count > 1 ? i * chartW / (values.Count - 1) : chartW / 2);
+            var y = padY + chartH - values[i].Value / maxVal * chartH;
+            _points.Add((x, y));
+        }
+
+        _linePath = string.Join(" ", _points.Select(p => $"{p.X:F1},{p.Y:F1}"));
+
+        var bottomY = padY + chartH;
+        _areaPath = $"M {_points[0].X:F1},{bottomY:F1} " +
+                    string.Join(" ", _points.Select(p => $"L {p.X:F1},{p.Y:F1}")) +
+                    $" L {_points[^1].X:F1},{bottomY:F1} Z";
+
+        var step = Math.Max(1, values.Count / 6);
+        _xLabels = [];
+        for (var i = 0; i < values.Count; i += step)
+            _xLabels.Add(values[i].Date.ToString("dd/MM"));
+        if ((values.Count - 1) % step != 0)
+            _xLabels.Add(values[^1].Date.ToString("dd/MM"));
+    }
+}

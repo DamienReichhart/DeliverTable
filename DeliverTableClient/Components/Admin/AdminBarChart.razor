@@ -1,0 +1,42 @@
+@using DeliverTableSharedLibrary.Dtos.Admin
+
+<div class="adm-chart-card">
+    <div class="adm-chart-header">
+        <h3 class="adm-chart-title">@Title</h3>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <span class="adm-chart-subtitle">@Subtitle</span>
+        }
+    </div>
+    @if (Data is { Count: > 0 })
+    {
+        <div class="adm-bar-chart">
+            @{
+                var maxVal = Data.Max(d => d.Count);
+                if (maxVal == 0) maxVal = 1;
+            }
+            @foreach (var point in Data)
+            {
+                var pct = (double)point.Count / maxVal * 100;
+                <div class="adm-bar-column">
+                    <span class="adm-bar-value">@point.Count</span>
+                    <div class="adm-bar-track">
+                        <div class="adm-bar-fill" style="height:@($"{pct:F1}")%;background:@Color"></div>
+                    </div>
+                    <span class="adm-bar-label">@point.Date.ToString("dd/MM")</span>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="adm-chart-empty">Aucune donnée</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string Color { get; set; } = "#F2A541";
+    [Parameter] public List<DailyCountPoint>? Data { get; set; }
+}
