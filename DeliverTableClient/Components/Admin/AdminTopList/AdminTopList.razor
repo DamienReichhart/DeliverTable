@@ -1,3 +1,4 @@
+@using System.Globalization
 @using DeliverTableSharedLibrary.Dtos.Admin
 
 <div class="adm-chart-card">
@@ -20,7 +21,7 @@
                             <span class="adm-top-revenue">@($"{item.Revenue:N2}") €</span>
                         </div>
                         <div class="adm-top-bar-track">
-                            <div class="adm-top-bar-fill" style="width:@($"{widthPct:F1}")%"></div>
+                            <div class="adm-top-bar-fill" style="width:@(widthPct.ToString("F1", CultureInfo.InvariantCulture))%"></div>
                         </div>
                         <span class="adm-top-orders">@item.OrderCount commandes</span>
                     </div>

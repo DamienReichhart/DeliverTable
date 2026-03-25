@@ -1,3 +1,4 @@
+@using System.Globalization
 @using DeliverTableSharedLibrary.Dtos.Admin
 
 <div class="adm-chart-card">
@@ -21,7 +22,7 @@
             @for (var i = 0; i < 5; i++)
             {
                 var y = i * (ViewBoxHeight / 4.0);
-                <line x1="0" y1="@y.ToString("F1")" x2="@ViewBoxWidth" y2="@y.ToString("F1")"
+                <line x1="0" y1="@Inv(y)" x2="@ViewBoxWidth" y2="@Inv(y)"
                       stroke="#E8E4DF" stroke-width="0.5" stroke-dasharray="4 2" />
             }
 
@@ -31,7 +32,7 @@
 
             @foreach (var pt in _points)
             {
-                <circle cx="@pt.X.ToString("F1")" cy="@pt.Y.ToString("F1")"
+                <circle cx="@Inv(pt.X)" cy="@Inv(pt.Y)"
                         r="3" fill="@Color" class="adm-area-dot" />
             }
         </svg>
@@ -57,12 +58,15 @@
 
     private const int ViewBoxWidth = 600;
     private const int ViewBoxHeight = 200;
+    private static readonly CultureInfo Ic = CultureInfo.InvariantCulture;
     private string _linePath = "";
     private string _areaPath = "";
     private string _gradientId = "";
     private List<(double X, double Y)> _points = [];
     private List<string> _xLabels = [];
     private bool _hasData;
+
+    private static string Inv(double v) => v.ToString("F1", Ic);
 
     protected override void OnParametersSet()
     {
@@ -84,7 +88,6 @@
 
         var maxVal = values.Max(v => v.Value);
         if (maxVal == 0) maxVal = 1;
-        // Add 20% headroom so the line never sits at the very top edge
         var chartMax = maxVal * 1.2;
 
         var padX = 10.0;
@@ -100,12 +103,13 @@
             _points.Add((x, y));
         }
 
-        _linePath = string.Join(" ", _points.Select(p => $"{p.X:F1},{p.Y:F1}"));
+        _linePath = string.Join(" ", _points.Select(p => $"{Inv(p.X)},{Inv(p.Y)}"));
 
         var bottomY = padY + chartH;
-        _areaPath = $"M {_points[0].X:F1},{bottomY:F1} " +
-                    string.Join(" ", _points.Select(p => $"L {p.X:F1},{p.Y:F1}")) +
-                    $" L {_points[^1].X:F1},{bottomY:F1} Z";
+        _areaPath = string.Create(Ic,
+            $"M {Inv(_points[0].X)},{Inv(bottomY)} ") +
+            string.Join(" ", _points.Select(p => $"L {Inv(p.X)},{Inv(p.Y)}")) +
+            string.Create(Ic, $" L {Inv(_points[^1].X)},{Inv(bottomY)} Z");
 
         var step = Math.Max(1, values.Count / 6);
         _xLabels = [];
