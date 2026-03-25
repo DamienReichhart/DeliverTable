@@ -20,4 +20,11 @@ public class AdminDashboardController(IAdminDashboardService adminDashboardServi
         var result = await _adminDashboardService.GetStatsAsync(ct);
         return result.ToOkResult();
     }
+
+    [HttpGet(ApiRoutes.Admin.DashboardAnalyticsRoute)]
+    public async Task<IActionResult> GetAnalytics(CancellationToken ct)
+    {
+        var result = await _adminDashboardService.GetAnalyticsAsync(ct);
+        return result.ToOkResult();
+    }
 }

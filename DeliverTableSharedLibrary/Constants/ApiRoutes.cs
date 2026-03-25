@@ -161,6 +161,9 @@ public static class ApiRoutes
         // ── Dashboard ──
         public const string DashboardRoute = "dashboard";
         public const string Dashboard = Base + "/" + DashboardRoute;
+
+        public const string DashboardAnalyticsRoute = "dashboard/analytics";
+        public const string DashboardAnalytics = Base + "/" + DashboardAnalyticsRoute;
     }
 
     /// <summary>Cart routes (Customer role required).</summary>
