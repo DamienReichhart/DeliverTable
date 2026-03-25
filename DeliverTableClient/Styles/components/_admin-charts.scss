@@ -195,7 +195,7 @@
 
 .adm-bar-chart {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 3px;
   height: 160px;
   padding-top: $spacing-md;
@@ -226,8 +226,7 @@
   width: 100%;
   max-width: 28px;
   flex: 1;
-  display: flex;
-  align-items: flex-end;
+  position: relative;
   background: rgba($color-border, 0.3);
   border-radius: $radius-sm $radius-sm 0 0;
 }
@@ -236,6 +235,9 @@
   width: 100%;
   border-radius: $radius-sm $radius-sm 0 0;
   min-height: 2px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
   transition: height 0.5s ease;
 }
 
