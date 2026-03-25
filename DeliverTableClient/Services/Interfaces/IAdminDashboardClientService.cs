@@ -7,4 +7,7 @@ public interface IAdminDashboardClientService
 {
     Task<(AdminDashboardStatsResponse? Stats, ErrorResponse? Error)> GetStatsAsync(
         CancellationToken ct = default);
+
+    Task<(AdminDashboardAnalyticsResponse? Analytics, ErrorResponse? Error)> GetAnalyticsAsync(
+        CancellationToken ct = default);
 }
