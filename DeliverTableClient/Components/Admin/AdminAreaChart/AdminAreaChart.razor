@@ -84,9 +84,11 @@
 
         var maxVal = values.Max(v => v.Value);
         if (maxVal == 0) maxVal = 1;
+        // Add 20% headroom so the line never sits at the very top edge
+        var chartMax = maxVal * 1.2;
 
         var padX = 10.0;
-        var padY = 10.0;
+        var padY = 15.0;
         var chartW = ViewBoxWidth - 2 * padX;
         var chartH = ViewBoxHeight - 2 * padY;
 
@@ -94,7 +96,7 @@
         for (var i = 0; i < values.Count; i++)
         {
             var x = padX + (values.Count > 1 ? i * chartW / (values.Count - 1) : chartW / 2);
-            var y = padY + chartH - values[i].Value / maxVal * chartH;
+            var y = padY + chartH - values[i].Value / chartMax * chartH;
             _points.Add((x, y));
         }
 
