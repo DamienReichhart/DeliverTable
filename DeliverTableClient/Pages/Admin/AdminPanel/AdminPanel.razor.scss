@@ -1,7 +1,7 @@
 @use "../../../Styles/abstracts/variables" as *;
 
 .adm-dashboard-section {
-  margin-top: $spacing-xl;
+  margin-top: $spacing-2xl;
 }
 
 .adm-dashboard-section-title {
@@ -9,11 +9,13 @@
   font-size: 1.05rem;
   color: $color-text;
   margin: 0 0 $spacing-md;
+  padding-bottom: $spacing-xs;
+  border-bottom: 1px solid rgba($color-border, 0.5);
 }
 
 .adm-quick-links {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: $spacing-md;
 }
 
@@ -27,12 +29,19 @@
   border-radius: $radius-lg;
   text-decoration: none;
   color: inherit;
-  transition: box-shadow $transition-base, border-color $transition-base;
+  transition: box-shadow $transition-base,
+              border-color $transition-base,
+              transform $transition-base;
 
   &:hover {
     box-shadow: $shadow-md;
-    border-color: rgba($color-coral-fire, 0.2);
+    border-color: rgba($color-coral-fire, 0.15);
+    transform: translateY(-1px);
     text-decoration: none;
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
@@ -47,22 +56,22 @@
   flex-shrink: 0;
 
   &--primary {
-    background: rgba($color-coral-fire, 0.1);
+    background: rgba($color-coral-fire, 0.08);
     color: $color-coral-fire;
   }
 
   &--success {
-    background: rgba($color-garden-sage, 0.12);
+    background: rgba($color-garden-sage, 0.1);
     color: $color-garden-sage;
   }
 
   &--warning {
-    background: rgba($color-amber-gold, 0.12);
+    background: rgba($color-amber-gold, 0.1);
     color: darken($color-amber-gold, 12%);
   }
 
   &--danger {
-    background: rgba($color-error, 0.1);
+    background: rgba($color-error, 0.08);
     color: $color-error;
   }
 }
@@ -79,4 +88,5 @@
   font-size: $font-size-xs;
   color: $color-text-muted;
   margin-top: 2px;
+  line-height: 1.4;
 }
