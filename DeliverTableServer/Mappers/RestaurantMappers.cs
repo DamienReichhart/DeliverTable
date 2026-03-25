@@ -18,6 +18,17 @@ public static class RestaurantMappers
         };
     }
 
+    public static RestaurantMapDto ToMapDto(this Restaurant restaurantModel)
+    {
+        return new RestaurantMapDto(
+            restaurantModel.Id,
+            restaurantModel.Name,
+            restaurantModel.Type.ToString(),
+            restaurantModel.Latitude,
+            restaurantModel.Longitude
+        );
+    }
+
     public static DetailedRestaurantDto ToDetailedDto(this Restaurant restaurantModel)
     {
         return new DetailedRestaurantDto
