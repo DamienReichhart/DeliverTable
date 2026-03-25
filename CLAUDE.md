@@ -91,6 +91,22 @@ Roles, statuses, and health states use enums with `nameof()` for compile-time sa
 - SCSS with variables/mixins in `Styles/abstracts/`
 - Role-based UI via `<AuthorizeView Roles="@nameof(UserRole.X)">`
 
+### Client File Architecture
+
+Each Blazor page or component lives in its **own subdirectory** containing the `.razor` and `.razor.scss` files. Never place multiple components flat in the same folder. Example:
+
+```
+Pages/Explore/Restaurants/
+    RestaurantMap/
+        RestaurantMap.razor
+        RestaurantMap.razor.scss
+    Restaurants/
+        Restaurants.razor
+        Restaurants.razor.scss
+```
+
+When a component in a sibling subdirectory needs to reference another, use a `@using` directive with the full namespace to resolve the folder-namespace conflict.
+
 ### API Routes
 
 Single source of truth: `DeliverTableSharedLibrary/Constants/ApiRoutes.cs`. Used by both server `[Route]` attributes and client HTTP calls.
