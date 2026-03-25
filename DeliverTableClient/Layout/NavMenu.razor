@@ -69,11 +69,148 @@
 
                 <AuthorizeView Roles="@nameof(UserRole.Administrator)" Context="adminCtx">
                     <span class="nav-section-label">Administration</span>
-                    <div class="nav-item">
-                        <NavLink href="/admin" class="nav-link">
+                    <div class="nav-group" @onmouseenter="() => OpenAdminSection(AdminSection.General)"
+                         @onmouseleave="() => CloseAdminSection(AdminSection.General)">
+                        <button type="button" class="nav-section-toggle"
+                                @onclick="() => ToggleAdminSection(AdminSection.General)">
                             <Blazicon Svg="Lucide.Shield" class="nav-icon" />
-                            <span>Panneau Admin</span>
-                        </NavLink>
+                            <span>Général</span>
+                            <Blazicon Svg="Lucide.ChevronDown"
+                                       class="@($"nav-section-chevron {(IsAdminSectionOpen(AdminSection.General) ? "nav-section-chevron--open" : "")}")" />
+                        </button>
+                        <div class="nav-group-items @(IsAdminSectionOpen(AdminSection.General) ? "nav-group-items--open" : "")">
+                            <div class="nav-group-inner">
+                                <div class="nav-item">
+                                    <NavLink href="/admin" Match="NavLinkMatch.All" class="nav-link">
+                                        <Blazicon Svg="Lucide.LayoutDashboard" class="nav-icon" />
+                                        <span>Tableau de bord</span>
+                                    </NavLink>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nav-group" @onmouseenter="() => OpenAdminSection(AdminSection.Gestion)"
+                         @onmouseleave="() => CloseAdminSection(AdminSection.Gestion)">
+                        <button type="button" class="nav-section-toggle"
+                                @onclick="() => ToggleAdminSection(AdminSection.Gestion)">
+                            <Blazicon Svg="Lucide.Settings" class="nav-icon" />
+                            <span>Gestion</span>
+                            <Blazicon Svg="Lucide.ChevronDown"
+                                       class="@($"nav-section-chevron {(IsAdminSectionOpen(AdminSection.Gestion) ? "nav-section-chevron--open" : "")}")" />
+                        </button>
+                        <div class="nav-group-items @(IsAdminSectionOpen(AdminSection.Gestion) ? "nav-group-items--open" : "")">
+                            <div class="nav-group-inner">
+                                <div class="nav-item">
+                                    <NavLink href="/admin/users" class="nav-link">
+                                        <Blazicon Svg="Lucide.Users" class="nav-icon" />
+                                        <span>Utilisateurs</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/restaurants" class="nav-link">
+                                        <Blazicon Svg="Lucide.UtensilsCrossed" class="nav-icon" />
+                                        <span>Restaurants</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/dishes" class="nav-link">
+                                        <Blazicon Svg="Lucide.ChefHat" class="nav-icon" />
+                                        <span>Plats</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/orders" class="nav-link">
+                                        <Blazicon Svg="Lucide.ShoppingBag" class="nav-icon" />
+                                        <span>Commandes</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/promotions" class="nav-link">
+                                        <Blazicon Svg="Lucide.Tag" class="nav-icon" />
+                                        <span>Promotions</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/discount-codes" class="nav-link">
+                                        <Blazicon Svg="Lucide.Ticket" class="nav-icon" />
+                                        <span>Codes promo</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/loyalty" class="nav-link">
+                                        <Blazicon Svg="Lucide.Heart" class="nav-icon" />
+                                        <span>Fidélité</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/events" class="nav-link">
+                                        <Blazicon Svg="Lucide.CalendarDays" class="nav-icon" />
+                                        <span>Événements</span>
+                                    </NavLink>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nav-group" @onmouseenter="() => OpenAdminSection(AdminSection.Finances)"
+                         @onmouseleave="() => CloseAdminSection(AdminSection.Finances)">
+                        <button type="button" class="nav-section-toggle"
+                                @onclick="() => ToggleAdminSection(AdminSection.Finances)">
+                            <Blazicon Svg="Lucide.Wallet" class="nav-icon" />
+                            <span>Finances</span>
+                            <Blazicon Svg="Lucide.ChevronDown"
+                                       class="@($"nav-section-chevron {(IsAdminSectionOpen(AdminSection.Finances) ? "nav-section-chevron--open" : "")}")" />
+                        </button>
+                        <div class="nav-group-items @(IsAdminSectionOpen(AdminSection.Finances) ? "nav-group-items--open" : "")">
+                            <div class="nav-group-inner">
+                                <div class="nav-item">
+                                    <NavLink href="/admin/transactions" class="nav-link">
+                                        <Blazicon Svg="Lucide.ArrowLeftRight" class="nav-icon" />
+                                        <span>Transactions</span>
+                                    </NavLink>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nav-group" @onmouseenter="() => OpenAdminSection(AdminSection.Supervision)"
+                         @onmouseleave="() => CloseAdminSection(AdminSection.Supervision)">
+                        <button type="button" class="nav-section-toggle"
+                                @onclick="() => ToggleAdminSection(AdminSection.Supervision)">
+                            <Blazicon Svg="Lucide.Eye" class="nav-icon" />
+                            <span>Supervision</span>
+                            <Blazicon Svg="Lucide.ChevronDown"
+                                       class="@($"nav-section-chevron {(IsAdminSectionOpen(AdminSection.Supervision) ? "nav-section-chevron--open" : "")}")" />
+                        </button>
+                        <div class="nav-group-items @(IsAdminSectionOpen(AdminSection.Supervision) ? "nav-group-items--open" : "")">
+                            <div class="nav-group-inner">
+                                <div class="nav-item">
+                                    <NavLink href="/admin/ratings" class="nav-link">
+                                        <Blazicon Svg="Lucide.Star" class="nav-icon" />
+                                        <span>Avis</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/notifications" class="nav-link">
+                                        <Blazicon Svg="Lucide.Bell" class="nav-icon" />
+                                        <span>Notifications</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/moderation" class="nav-link">
+                                        <Blazicon Svg="Lucide.ShieldAlert" class="nav-icon" />
+                                        <span>Modération</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/order-config" class="nav-link">
+                                        <Blazicon Svg="Lucide.Settings" class="nav-icon" />
+                                        <span>Configuration</span>
+                                    </NavLink>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </AuthorizeView>
 
@@ -109,6 +246,22 @@
 @code {
     private bool _collapseNavMenu = true;
     private string? NavMenuCssClass => _collapseNavMenu ? "sidebar-collapse" : null;
+
+    private enum AdminSection { General, Gestion, Finances, Supervision }
+
+    private readonly HashSet<AdminSection> _openSections = new();
+
+    private bool IsAdminSectionOpen(AdminSection section) => _openSections.Contains(section);
+
+    private void ToggleAdminSection(AdminSection section)
+    {
+        if (!_openSections.Remove(section))
+            _openSections.Add(section);
+    }
+
+    private void OpenAdminSection(AdminSection section) => _openSections.Add(section);
+
+    private void CloseAdminSection(AdminSection section) => _openSections.Remove(section);
 
     private void ToggleNavMenu()
     {
