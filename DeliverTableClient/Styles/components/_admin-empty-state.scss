@@ -14,15 +14,15 @@
 }
 
 .adm-empty-icon {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: $radius-lg;
-  background: rgba($color-deep-charcoal, 0.04);
-  color: $color-text-muted;
+  background: rgba($color-deep-charcoal, 0.03);
+  color: rgba($color-text-muted, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   margin-bottom: $spacing-md;
 }
 
@@ -38,4 +38,5 @@
   color: $color-text-muted;
   margin: 0 0 $spacing-md;
   max-width: 320px;
+  line-height: 1.5;
 }

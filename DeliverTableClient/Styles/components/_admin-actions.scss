@@ -1,0 +1,84 @@
+@use "../abstracts/variables" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Action Buttons – compact controls for tables, toolbars, cards
+// ---------------------------------------------------------------------------
+
+// Icon-only button (edit, delete, view)
+.adm-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all $transition-fast;
+  padding: 0;
+
+  &:hover {
+    background: rgba($color-deep-charcoal, 0.04);
+    color: $color-text;
+    border-color: $color-border;
+  }
+
+  &:active {
+    background: rgba($color-deep-charcoal, 0.07);
+  }
+
+  &--danger:hover {
+    background: rgba($color-error, 0.06);
+    color: $color-error;
+    border-color: rgba($color-error, 0.15);
+  }
+
+  &--primary:hover {
+    background: rgba($color-coral-fire, 0.06);
+    color: $color-coral-fire;
+    border-color: rgba($color-coral-fire, 0.15);
+  }
+}
+
+// Ghost text button (used in table action cells)
+.adm-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px $spacing-sm;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  font-size: $font-size-xs;
+  font-family: $font-family-base;
+  font-weight: $font-weight-medium;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba($color-deep-charcoal, 0.04);
+    color: $color-text;
+  }
+
+  &--primary {
+    color: $color-coral-fire;
+
+    &:hover {
+      background: rgba($color-coral-fire, 0.06);
+      color: darken($color-coral-fire, 5%);
+    }
+  }
+
+  &--danger {
+    color: $color-text-muted;
+
+    &:hover {
+      background: rgba($color-error, 0.06);
+      color: $color-error;
+    }
+  }
+}
