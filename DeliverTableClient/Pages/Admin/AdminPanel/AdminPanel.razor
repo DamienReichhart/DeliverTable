@@ -9,6 +9,7 @@
 
 <AdminLayout Title="Tableau de bord" Subtitle="Vue d'ensemble de la plateforme">
     <ChildContent>
+        @* ── KPI Overview Row ── *@
         @if (_isLoading)
         {
             <div class="adm-stats-grid">
@@ -34,7 +35,7 @@
                 <AdminStatCard Value="@(_stats?.TotalOrders.ToString("N0") ?? "0")" Label="Commandes" Variant="warning">
                     <IconContent><Blazicon Svg="Lucide.ShoppingBag" /></IconContent>
                 </AdminStatCard>
-                <AdminStatCard Value="@FormatCurrency(_stats?.TotalRevenue ?? 0)" Label="Revenus" Variant="info">
+                <AdminStatCard Value="@FormatCurrency(_stats?.TotalRevenue ?? 0)" Label="Revenus totaux" Variant="info">
                     <IconContent><Blazicon Svg="Lucide.Euro" /></IconContent>
                 </AdminStatCard>
                 <AdminStatCard Value="@(_stats?.ActivePromotions.ToString("N0") ?? "0")" Label="Promotions actives" Variant="success">
@@ -46,6 +47,97 @@
             </div>
         }
 
+        @* ── Today's Pulse (mini KPIs) ── *@
+        @if (_analytics is not null)
+        {
+            <section class="adm-dashboard-section">
+                <h2 class="adm-dashboard-section-title">Aujourd'hui en bref</h2>
+                <div class="adm-kpi-highlight">
+                    <div class="adm-kpi-mini">
+                        <span class="adm-kpi-mini-value">@FormatCurrency(_analytics.TodayRevenue)</span>
+                        <span class="adm-kpi-mini-label">Revenus du jour</span>
+                    </div>
+                    <div class="adm-kpi-mini">
+                        <span class="adm-kpi-mini-value">@_analytics.TodayOrders.ToString("N0")</span>
+                        <span class="adm-kpi-mini-label">Commandes du jour</span>
+                    </div>
+                    <div class="adm-kpi-mini">
+                        <span class="adm-kpi-mini-value">@FormatCurrency(_analytics.AverageOrderValue)</span>
+                        <span class="adm-kpi-mini-label">Panier moyen</span>
+                    </div>
+                    <div class="adm-kpi-mini">
+                        <span class="adm-kpi-mini-value">+@_analytics.NewUsersThisWeek</span>
+                        <span class="adm-kpi-mini-label">Nouveaux utilisateurs (7j)</span>
+                    </div>
+                </div>
+            </section>
+        }
+
+        @* ── Charts Grid ── *@
+        @if (_isLoadingAnalytics)
+        {
+            <div class="adm-analytics-skeleton">
+                <div class="adm-skeleton-card adm-skeleton-card--wide"></div>
+                <div class="adm-skeleton-card"></div>
+                <div class="adm-skeleton-card"></div>
+                <div class="adm-skeleton-card"></div>
+                <div class="adm-skeleton-card"></div>
+            </div>
+        }
+        else if (_analytics is not null)
+        {
+            <section class="adm-dashboard-section">
+                <h2 class="adm-dashboard-section-title">Analyse des 30 derniers jours</h2>
+                <div class="adm-dashboard-grid">
+                    @* Revenue trend — full width *@
+                    <div class="adm-dashboard-grid--wide">
+                        <AdminAreaChart Title="Évolution du chiffre d'affaires"
+                                        Subtitle="30 derniers jours"
+                                        Color="#E85D34"
+                                        RevenueData="_analytics.RevenueByDay" />
+                    </div>
+
+                    @* Orders volume *@
+                    <AdminBarChart Title="Volume de commandes"
+                                   Subtitle="Par jour"
+                                   Color="#F2A541"
+                                   Data="_analytics.OrdersByDay" />
+
+                    @* User registrations *@
+                    <AdminAreaChart Title="Inscriptions utilisateurs"
+                                    Subtitle="Nouveaux comptes"
+                                    Color="#7BAE7A"
+                                    CountData="_analytics.UserRegistrationsByDay" />
+
+                    @* Order status breakdown *@
+                    <AdminDonutChart Title="Répartition par statut"
+                                     Items="_analytics.OrdersByStatus"
+                                     Colors="@_statusColors" />
+
+                    @* Order type breakdown *@
+                    <AdminDonutChart Title="Types de commande"
+                                     Items="_analytics.OrdersByType"
+                                     Colors="@_typeColors" />
+
+                    @* Payment status *@
+                    <AdminDonutChart Title="Statut des paiements"
+                                     Items="_analytics.PaymentsByStatus"
+                                     Colors="@_paymentColors" />
+
+                    @* Top restaurants *@
+                    <AdminTopList Title="Top 5 restaurants — Revenus"
+                                  Items="_analytics.TopRestaurantsByRevenue" />
+
+                    @* Recent orders — full width *@
+                    <div class="adm-dashboard-grid--wide">
+                        <AdminRecentOrders Title="Commandes récentes"
+                                           Orders="_analytics.RecentOrders" />
+                    </div>
+                </div>
+            </section>
+        }
+
+        @* ── Quick Links ── *@
         <section class="adm-dashboard-section">
             <h2 class="adm-dashboard-section-title">Accès rapide</h2>
             <div class="adm-quick-links">
@@ -85,6 +177,24 @@
                         <span class="adm-quick-link-desc">Actions de modération récentes</span>
                     </div>
                 </a>
+                <a href="/admin/promotions" class="adm-quick-link">
+                    <div class="adm-quick-link-icon adm-quick-link-icon--success">
+                        <Blazicon Svg="Lucide.Tag" />
+                    </div>
+                    <div>
+                        <span class="adm-quick-link-title">Promotions</span>
+                        <span class="adm-quick-link-desc">Gérer les promotions et réductions</span>
+                    </div>
+                </a>
+                <a href="/admin/transactions" class="adm-quick-link">
+                    <div class="adm-quick-link-icon adm-quick-link-icon--primary">
+                        <Blazicon Svg="Lucide.ArrowLeftRight" />
+                    </div>
+                    <div>
+                        <span class="adm-quick-link-title">Transactions</span>
+                        <span class="adm-quick-link-desc">Historique des mouvements financiers</span>
+                    </div>
+                </a>
             </div>
         </section>
     </ChildContent>
@@ -92,16 +202,46 @@
 
 @code {
     private AdminDashboardStatsResponse? _stats;
+    private AdminDashboardAnalyticsResponse? _analytics;
     private bool _isLoading = true;
+    private bool _isLoadingAnalytics = true;
     private string? _loadError;
 
+    private readonly List<string> _statusColors =
+    [
+        "#F2A541", "#7BAE7A", "#C0392B", "#E85D34",
+        "#1A1A2E", "#FF7F50", "#6B6B80", "#FFF8F0"
+    ];
+
+    private readonly List<string> _typeColors = ["#E85D34", "#7BAE7A"];
+
+    private readonly List<string> _paymentColors =
+    [
+        "#F2A541", "#7BAE7A", "#C0392B", "#1A1A2E"
+    ];
+
     protected override async Task OnInitializedAsync()
+    {
+        var statsTask = LoadStatsAsync();
+        var analyticsTask = LoadAnalyticsAsync();
+        await Task.WhenAll(statsTask, analyticsTask);
+    }
+
+    private async Task LoadStatsAsync()
     {
         _isLoading = true;
         var (stats, error) = await DashboardService.GetStatsAsync();
         _stats = stats;
         _loadError = error?.Error;
         _isLoading = false;
+    }
+
+    private async Task LoadAnalyticsAsync()
+    {
+        _isLoadingAnalytics = true;
+        var (analytics, _) = await DashboardService.GetAnalyticsAsync();
+        _analytics = analytics;
+        _isLoadingAnalytics = false;
     }
 
     private static string FormatCurrency(decimal amount) =>
