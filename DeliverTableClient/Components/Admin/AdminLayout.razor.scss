@@ -19,23 +19,36 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: $spacing-md;
-  padding: $spacing-lg $spacing-xl $spacing-md;
+  padding: $spacing-lg $spacing-xl $spacing-lg;
   background: $color-bg-white;
   border-bottom: 1px solid $color-border;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: $spacing-xl;
+    width: 48px;
+    height: 2px;
+    background: $color-coral-fire;
+    border-radius: 1px;
+  }
 }
 
 .adm-page-title {
   font-family: $font-family-display;
-  font-size: 1.375rem;
+  font-size: 1.4rem;
   line-height: $line-height-heading;
   color: $color-text;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .adm-page-subtitle {
   font-size: $font-size-sm;
   color: $color-text-muted;
-  margin: $spacing-xs 0 0;
+  margin: 4px 0 0;
 }
 
 .adm-page-actions {
@@ -46,5 +59,5 @@
 
 .adm-page-body {
   flex: 1;
-  padding: $spacing-lg $spacing-xl;
+  padding: $spacing-xl $spacing-xl $spacing-2xl;
 }

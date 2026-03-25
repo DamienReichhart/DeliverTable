@@ -7,24 +7,57 @@
 
 .adm-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: $spacing-md;
 }
 
 .adm-stat-card {
   background: $color-bg-white;
   border: 1px solid $color-border;
+  border-left: 3px solid $color-border;
   border-radius: $radius-lg;
   padding: $spacing-lg;
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
-  transition: box-shadow $transition-base, border-color $transition-base;
+  transition: box-shadow $transition-base,
+              border-left-color $transition-base,
+              transform $transition-base;
 
   &:hover {
     box-shadow: $shadow-md;
-    border-color: rgba($color-coral-fire, 0.2);
+    transform: translateY(-1px);
   }
+
+  &--skeleton {
+    min-height: 120px;
+    background: linear-gradient(
+      90deg,
+      $color-bg-subtle 25%,
+      rgba($color-border, 0.3) 50%,
+      $color-bg-subtle 75%
+    );
+    background-size: 200% 100%;
+    animation: adm-shimmer 1.5s ease-in-out infinite;
+    border-left-color: $color-border;
+  }
+}
+
+// Accent border per variant
+.adm-stat-card:has(.adm-stat-icon--primary) {
+  border-left-color: $color-coral-fire;
+}
+
+.adm-stat-card:has(.adm-stat-icon--success) {
+  border-left-color: $color-garden-sage;
+}
+
+.adm-stat-card:has(.adm-stat-icon--warning) {
+  border-left-color: $color-amber-gold;
+}
+
+.adm-stat-card:has(.adm-stat-icon--info) {
+  border-left-color: $color-deep-charcoal;
 }
 
 .adm-stat-header {
@@ -34,31 +67,31 @@
 }
 
 .adm-stat-icon {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: $radius-md;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
 
   &--primary {
-    background: rgba($color-coral-fire, 0.1);
+    background: rgba($color-coral-fire, 0.08);
     color: $color-coral-fire;
   }
 
   &--success {
-    background: rgba($color-garden-sage, 0.12);
+    background: rgba($color-garden-sage, 0.1);
     color: $color-garden-sage;
   }
 
   &--warning {
-    background: rgba($color-amber-gold, 0.12);
+    background: rgba($color-amber-gold, 0.1);
     color: darken($color-amber-gold, 12%);
   }
 
   &--info {
-    background: rgba($color-deep-charcoal, 0.06);
+    background: rgba($color-deep-charcoal, 0.05);
     color: $color-deep-charcoal;
   }
 }
@@ -85,7 +118,7 @@
 
   &--flat {
     color: $color-text-muted;
-    background: rgba($color-deep-charcoal, 0.05);
+    background: rgba($color-deep-charcoal, 0.04);
   }
 }
 
@@ -96,6 +129,7 @@
   line-height: 1;
   color: $color-text;
   letter-spacing: -0.02em;
+  margin-top: $spacing-xs;
 }
 
 .adm-stat-label {
@@ -104,4 +138,9 @@
   font-weight: $font-weight-medium;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+@keyframes adm-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
