@@ -37,7 +37,8 @@ public sealed class AdminDashboardClientService(HttpClient httpClient) : IAdminD
             : (null,
                 new ErrorResponse
                 {
-                    Error = "Impossible de lire les données analytiques", Status = (int)response.StatusCode
+                    Error = "Impossible de lire les données analytiques",
+                    Status = (int)response.StatusCode
                 });
     }
 
