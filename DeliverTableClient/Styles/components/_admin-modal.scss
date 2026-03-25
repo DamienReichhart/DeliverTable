@@ -18,7 +18,7 @@
 .adm-modal {
   background: $color-bg-white;
   border-radius: $radius-xl;
-  box-shadow: $shadow-lg;
+  box-shadow: 0 12px 40px rgba($color-deep-charcoal, 0.18);
   width: 90%;
   max-width: 560px;
   max-height: 85vh;
@@ -61,7 +61,7 @@
   transition: background-color $transition-fast, color $transition-fast;
 
   &:hover {
-    background: rgba($color-deep-charcoal, 0.06);
+    background: rgba($color-deep-charcoal, 0.05);
     color: $color-text;
   }
 }
@@ -98,6 +98,12 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin-bottom: $spacing-md;
+
+  // When inside a form-row, the row handles spacing
+  .adm-form-row > & {
+    margin-bottom: 0;
+  }
 }
 
 .adm-form-label {
@@ -119,12 +125,12 @@
   transition: border-color $transition-fast, box-shadow $transition-fast;
 
   &::placeholder {
-    color: $color-text-muted;
+    color: rgba($color-text-muted, 0.7);
   }
 
   &:focus {
     border-color: $color-border-focus;
-    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.08);
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.06);
     outline: none;
   }
 
@@ -163,6 +169,18 @@
   font-size: $font-size-xs;
   color: $color-text-muted;
   margin-top: 2px;
+}
+
+// ── Form actions bar ──
+
+.adm-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-top: $spacing-lg;
+  padding-top: $spacing-md;
+  border-top: 1px solid rgba($color-border, 0.5);
 }
 
 // ── Animations ──
