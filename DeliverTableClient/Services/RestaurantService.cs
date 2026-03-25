@@ -107,5 +107,26 @@ namespace DeliverTableClient.Services
                 return (null, new ErrorResponse { Error = ex.Message });
             }
         }
+
+        public async Task<(List<RestaurantMapDto>?, ErrorResponse?)> GetRestaurantsForMap(RestaurantQuery query, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = new List<string>();
+                if (!string.IsNullOrWhiteSpace(query.Name)) queryParams.Add($"Name={Uri.EscapeDataString(query.Name)}");
+                if (!string.IsNullOrWhiteSpace(query.Type)) queryParams.Add($"Type={Uri.EscapeDataString(query.Type)}");
+                if (query.Latitude.HasValue) queryParams.Add($"Latitude={query.Latitude.Value.ToString(CultureInfo.InvariantCulture)}");
+                if (query.Longitude.HasValue) queryParams.Add($"Longitude={query.Longitude.Value.ToString(CultureInfo.InvariantCulture)}");
+                if (query.RadiusKm.HasValue) queryParams.Add($"RadiusKm={query.RadiusKm.Value.ToString(CultureInfo.InvariantCulture)}");
+
+                var url = $"{ApiRoutes.Restaurant.Map}?{string.Join("&", queryParams)}";
+                var result = await _httpClient.GetFromJsonAsync<List<RestaurantMapDto>>(url, cancellationToken);
+                return (result, null);
+            }
+            catch (Exception ex)
+            {
+                return (null, new ErrorResponse { Error = ex.Message });
+            }
+        }
     }
 }
