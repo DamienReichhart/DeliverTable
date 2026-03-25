@@ -47,9 +47,11 @@ public static class ApiRoutes
         public const string ByIdRoute = "{id:int}";
         public const string UserByIdRoute = "user/{id:int}";
         public const string UserMeRoute = "user/me";
+        public const string MapRoute = "map";
 
         /// <summary>Full paths for client HTTP calls.</summary>
         public const string UserMe = Base + "/" + UserMeRoute;
+        public const string Map = Base + "/" + MapRoute;
     }
 
     /// <summary>
