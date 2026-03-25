@@ -13,8 +13,6 @@
         <div class="filter-row">
             <input type="text" placeholder="Rechercher un restaurant..." @bind="_query.Name" @bind:event="oninput"
                    @onkeydown="HandleKeyDown" class="filter-input" />
-            <input type="text" placeholder="Ville" @bind="_query.City" @bind:event="oninput"
-                   @onkeydown="HandleKeyDown" class="filter-input" />
             <select @bind="_query.Type" class="filter-select">
                 <option value="">Tous les types</option>
                 @foreach (var type in Enum.GetValues<RestaurantType>())
@@ -22,81 +20,83 @@
                     <option value="@type.ToString()">@type</option>
                 }
             </select>
-            <button type="button" class="app-btn app-btn--primary" @onclick="SearchRestaurants">
-                Rechercher
-            </button>
-        </div>
-
-        <div class="filter-row">
-            <label class="filter-checkbox">
-                <input type="checkbox" @bind="_useLocation" />
-                <span>Autour de moi</span>
-            </label>
-            @if (_useLocation)
+            @if (!_showMap)
             {
-                <div class="radius-input">
-                    <label>Rayon (km) :</label>
-                    <input type="number" min="1" max="100" @bind="_radiusKm" class="filter-input filter-input--small" />
-                    <button type="button" class="app-btn app-btn--secondary" @onclick="GetLocationAndSearch">
-                        Localiser
-                    </button>
-                </div>
+                <button type="button" class="app-btn app-btn--primary" @onclick="SearchRestaurants">
+                    Rechercher
+                </button>
             }
+            else
+            {
+                <button type="button" class="app-btn app-btn--primary" @onclick="OnFiltersSearchClicked">
+                    Rechercher
+                </button>
+            }
+            <button type="button" class="app-btn app-btn--secondary map-toggle-btn" @onclick="ToggleMapView">
+                @(_showMap ? "Liste" : "Carte")
+            </button>
         </div>
     </div>
 
-    @if (_loading)
+    @if (_showMap)
     {
-        <div class="loading-container">
-            <p>Chargement des restaurants...</p>
-        </div>
-    }
-    else if (_error is not null)
-    {
-        <div class="error-message">
-            <p>@_error</p>
-        </div>
-    }
-    else if (_restaurants is null || _restaurants.Items.Count == 0)
-    {
-        <div class="empty-state">
-            <p>Aucun restaurant trouvé.</p>
-        </div>
+        <RestaurantMap @ref="_mapRef" NameFilter="@_query.Name" TypeFilter="@_query.Type" />
     }
     else
     {
-        <div class="restaurants-grid">
-            @foreach (var restaurant in _restaurants.Items)
-            {
-                <div class="restaurant-card" @onclick="() => NavigateToRestaurant(restaurant.Id)">
-                    <div class="restaurant-card-header">
-                        <h3>@restaurant.Name</h3>
-                        <span class="restaurant-type-badge">@restaurant.Type</span>
-                    </div>
-                    <div class="restaurant-card-body">
-                        <p class="restaurant-location">@restaurant.City, @restaurant.ZipCode</p>
-                    </div>
-                </div>
-            }
-        </div>
-
-        @if (_restaurants.HasNextPage)
+        @if (_loading)
         {
-            <div class="pagination">
-                @if (_query.PageNumber > 1)
-                {
-                    <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
-                }
-                <span class="page-info">Page @_query.PageNumber</span>
-                <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+            <div class="loading-container">
+                <p>Chargement des restaurants...</p>
             </div>
         }
-        else if (_query.PageNumber > 1)
+        else if (_error is not null)
         {
-            <div class="pagination">
-                <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
-                <span class="page-info">Page @_query.PageNumber</span>
+            <div class="error-message">
+                <p>@_error</p>
             </div>
+        }
+        else if (_restaurants is null || _restaurants.Items.Count == 0)
+        {
+            <div class="empty-state">
+                <p>Aucun restaurant trouvé.</p>
+            </div>
+        }
+        else
+        {
+            <div class="restaurants-grid">
+                @foreach (var restaurant in _restaurants.Items)
+                {
+                    <div class="restaurant-card" @onclick="() => NavigateToRestaurant(restaurant.Id)">
+                        <div class="restaurant-card-header">
+                            <h3>@restaurant.Name</h3>
+                            <span class="restaurant-type-badge">@restaurant.Type</span>
+                        </div>
+                        <div class="restaurant-card-body">
+                            <p class="restaurant-location">@restaurant.City, @restaurant.ZipCode</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (_restaurants.HasNextPage)
+            {
+                <div class="pagination">
+                    @if (_query.PageNumber > 1)
+                    {
+                        <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                    }
+                    <span class="page-info">Page @_query.PageNumber</span>
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="NextPage">Suivant</button>
+                </div>
+            }
+            else if (_query.PageNumber > 1)
+            {
+                <div class="pagination">
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="PreviousPage">Précédent</button>
+                    <span class="page-info">Page @_query.PageNumber</span>
+                </div>
+            }
         }
     }
 </div>
@@ -106,12 +106,22 @@
     private RestaurantQuery _query = new() { PageSize = 12 };
     private bool _loading = true;
     private string? _error;
-    private bool _useLocation;
-    private double _radiusKm = 10;
+    private bool _showMap;
+    private RestaurantMap? _mapRef;
 
     protected override async Task OnInitializedAsync()
     {
         await SearchRestaurants();
+    }
+
+    private void ToggleMapView()
+    {
+        _showMap = !_showMap;
+    }
+
+    private void OnFiltersSearchClicked()
+    {
+        _mapRef?.OnFiltersChanged();
     }
 
     private async Task SearchRestaurants()
@@ -122,13 +132,6 @@
 
         try
         {
-            if (!_useLocation)
-            {
-                _query.Latitude = null;
-                _query.Longitude = null;
-                _query.RadiusKm = null;
-            }
-
             var (result, err) = await RestaurantService.GetAllRestaurants(_query);
             if (err is not null)
             {
@@ -146,34 +149,15 @@
         }
     }
 
-    private async Task GetLocationAndSearch()
-    {
-        _loading = true;
-        _error = null;
-        StateHasChanged();
-
-        try
-        {
-            var coords = await Js.InvokeAsync<double[]>("getGeolocation");
-            _query.Latitude = coords[0];
-            _query.Longitude = coords[1];
-            _query.RadiusKm = _radiusKm;
-            await SearchRestaurants();
-        }
-        catch
-        {
-            _error = "Impossible d'obtenir votre position. Veuillez autoriser la géolocalisation dans votre navigateur.";
-            _loading = false;
-            StateHasChanged();
-        }
-    }
-
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
             _query.PageNumber = 1;
-            await SearchRestaurants();
+            if (_showMap)
+                _mapRef?.OnFiltersChanged();
+            else
+                await SearchRestaurants();
         }
     }
 
