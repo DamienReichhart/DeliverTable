@@ -30,16 +30,8 @@
   gap: $spacing-sm;
 }
 
-.radius-input {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  font-size: $font-size-sm;
-
-  label {
-    white-space: nowrap;
-    color: $color-text-muted;
-  }
+.map-toggle-btn {
+  margin-left: auto;
 }
 
 .restaurants-grid {
