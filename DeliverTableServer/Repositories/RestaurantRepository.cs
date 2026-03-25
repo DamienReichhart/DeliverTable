@@ -75,6 +75,36 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
         return R * c;
     }
 
+    public async Task<List<Restaurant>> GetForMapAsync(RestaurantQuery query, CancellationToken ct = default)
+    {
+        var q = _dbContext.Restaurants.Where(r => r.IsActive);
+
+        q = ApplyFilters(q, query);
+
+        if (!string.IsNullOrWhiteSpace(query.Type))
+            q = q.Where(r => r.Type.ToString().ToLower().Contains(query.Type.ToLower()));
+
+        if (query is not { Latitude: not null, Longitude: not null, RadiusKm: not null })
+            return [];
+
+        var lat = query.Latitude.Value;
+        var lon = query.Longitude.Value;
+        var radiusKm = query.RadiusKm.Value;
+
+        var latDelta = radiusKm / 111.0;
+        var lonDelta = radiusKm / (111.0 * Math.Cos(lat * Math.PI / 180.0));
+
+        q = q.Where(r =>
+            r.Latitude >= lat - latDelta && r.Latitude <= lat + latDelta &&
+            r.Longitude >= lon - lonDelta && r.Longitude <= lon + lonDelta);
+
+        var candidates = await q.ToListAsync(ct);
+        return candidates
+            .Where(r => HaversineDistanceKm(lat, lon, r.Latitude, r.Longitude) <= radiusKm)
+            .OrderBy(r => HaversineDistanceKm(lat, lon, r.Latitude, r.Longitude))
+            .ToList();
+    }
+
     public async Task<Restaurant?> GetByIdAsync(int id, CancellationToken ct = default)
         => await _dbContext.Restaurants.FirstOrDefaultAsync(r => r.Id == id, ct);
 
