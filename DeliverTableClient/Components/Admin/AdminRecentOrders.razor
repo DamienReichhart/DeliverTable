@@ -1,0 +1,94 @@
+@using DeliverTableSharedLibrary.Dtos.Admin
+
+<div class="adm-chart-card">
+    <div class="adm-chart-header">
+        <h3 class="adm-chart-title">@Title</h3>
+        <a href="/admin/orders" class="adm-chart-link">Voir tout →</a>
+    </div>
+    @if (Orders is { Count: > 0 })
+    {
+        <div class="adm-recent-list">
+            @foreach (var order in Orders)
+            {
+                <div class="adm-recent-item">
+                    <div class="adm-recent-icon adm-recent-icon--@GetStatusVariant(order.Status)">
+                        <Blazicon Svg="@GetStatusIcon(order.Status)" />
+                    </div>
+                    <div class="adm-recent-body">
+                        <div class="adm-recent-row">
+                            <span class="adm-recent-title">#@order.OrderId — @order.RestaurantName</span>
+                            <span class="adm-recent-amount">@($"{order.TotalAmount:N2}") €</span>
+                        </div>
+                        <div class="adm-recent-row">
+                            <span class="adm-recent-sub">@order.CustomerName · @FormatType(order.OrderType)</span>
+                            <span class="adm-recent-time">@FormatTime(order.CreatedAt)</span>
+                        </div>
+                    </div>
+                    <span class="adm-badge adm-badge--@GetStatusVariant(order.Status) adm-badge--sm">
+                        @FormatStatus(order.Status)
+                    </span>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="adm-chart-empty">Aucune commande récente</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Commandes récentes";
+    [Parameter] public List<RecentOrderItem>? Orders { get; set; }
+
+    private static string GetStatusVariant(string status) => status switch
+    {
+        "Pending" => "warning",
+        "Confirmed" or "Preparing" or "Ready" => "info",
+        "Delivering" => "info",
+        "Delivered" => "success",
+        "Cancelled" or "Refused" => "danger",
+        _ => "info"
+    };
+
+    private static SvgIcon GetStatusIcon(string status) => status switch
+    {
+        "Pending" => Lucide.Clock,
+        "Confirmed" => Lucide.Check,
+        "Preparing" => Lucide.ChefHat,
+        "Ready" => Lucide.Package,
+        "Delivering" => Lucide.Truck,
+        "Delivered" => Lucide.Check,
+        "Cancelled" or "Refused" => Lucide.X,
+        _ => Lucide.ShoppingBag
+    };
+
+    private static string FormatStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Confirmed" => "Confirmée",
+        "Refused" => "Refusée",
+        "Preparing" => "Préparation",
+        "Ready" => "Prête",
+        "Delivering" => "Livraison",
+        "Delivered" => "Livrée",
+        "Cancelled" => "Annulée",
+        _ => status
+    };
+
+    private static string FormatType(string type) => type switch
+    {
+        "Delivery" => "Livraison",
+        "DineIn" => "Sur place",
+        _ => type
+    };
+
+    private static string FormatTime(DateTime dt)
+    {
+        var diff = DateTime.UtcNow - dt;
+        if (diff.TotalMinutes < 1) return "À l'instant";
+        if (diff.TotalMinutes < 60) return $"Il y a {(int)diff.TotalMinutes} min";
+        if (diff.TotalHours < 24) return $"Il y a {(int)diff.TotalHours}h";
+        return dt.ToString("dd/MM HH:mm");
+    }
+}

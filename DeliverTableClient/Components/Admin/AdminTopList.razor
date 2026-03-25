@@ -1,0 +1,40 @@
+@using DeliverTableSharedLibrary.Dtos.Admin
+
+<div class="adm-chart-card">
+    <h3 class="adm-chart-title">@Title</h3>
+    @if (Items is { Count: > 0 })
+    {
+        <div class="adm-top-list">
+            @{
+                var maxRevenue = Items.Max(i => i.Revenue);
+                if (maxRevenue == 0) maxRevenue = 1;
+            }
+            @foreach (var (item, idx) in Items.Select((item, idx) => (item, idx)))
+            {
+                var widthPct = (double)item.Revenue / (double)maxRevenue * 100;
+                <div class="adm-top-item">
+                    <div class="adm-top-rank">@(idx + 1)</div>
+                    <div class="adm-top-info">
+                        <div class="adm-top-name-row">
+                            <span class="adm-top-name">@item.Name</span>
+                            <span class="adm-top-revenue">@($"{item.Revenue:N2}") €</span>
+                        </div>
+                        <div class="adm-top-bar-track">
+                            <div class="adm-top-bar-fill" style="width:@($"{widthPct:F1}")%"></div>
+                        </div>
+                        <span class="adm-top-orders">@item.OrderCount commandes</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="adm-chart-empty">Aucune donnée</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public List<TopRestaurantItem>? Items { get; set; }
+}

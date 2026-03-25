@@ -1,0 +1,84 @@
+@using DeliverTableSharedLibrary.Dtos.Admin
+
+<div class="adm-chart-card">
+    <h3 class="adm-chart-title">@Title</h3>
+    @if (Items is { Count: > 0 })
+    {
+        <div class="adm-donut-wrapper">
+            <svg viewBox="0 0 120 120" class="adm-donut-svg">
+                @{
+                    double offset = 0;
+                    var total = Items.Sum(i => i.Count);
+                    var circumference = 2 * Math.PI * 45;
+                }
+                @foreach (var (item, idx) in Items.Select((item, idx) => (item, idx)))
+                {
+                    var pct = total > 0 ? (double)item.Count / total : 0;
+                    var dashLength = pct * circumference;
+                    var dashGap = circumference - dashLength;
+                    var color = GetColor(idx);
+                    <circle cx="60" cy="60" r="45" fill="none"
+                            stroke="@color" stroke-width="18"
+                            stroke-dasharray="@($"{dashLength:F2} {dashGap:F2}")"
+                            stroke-dashoffset="@($"{-offset:F2}")"
+                            class="adm-donut-segment" />
+                    offset += dashLength;
+                }
+                <text x="60" y="56" text-anchor="middle" class="adm-donut-center-value">@total</text>
+                <text x="60" y="70" text-anchor="middle" class="adm-donut-center-label">Total</text>
+            </svg>
+            <ul class="adm-donut-legend">
+                @foreach (var (item, idx) in Items.Select((item, idx) => (item, idx)))
+                {
+                    <li class="adm-donut-legend-item">
+                        <span class="adm-donut-legend-dot" style="background:@GetColor(idx)"></span>
+                        <span class="adm-donut-legend-label">@FormatLabel(item.Label)</span>
+                        <span class="adm-donut-legend-value">@item.Count</span>
+                        <span class="adm-donut-legend-pct">@item.Percentage%</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+    else
+    {
+        <div class="adm-chart-empty">Aucune donnée</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public List<StatusBreakdownItem>? Items { get; set; }
+    [Parameter] public List<string>? Colors { get; set; }
+
+    private static readonly string[] DefaultColors =
+    [
+        "#E85D34", "#7BAE7A", "#F2A541", "#1A1A2E",
+        "#FF7F50", "#C0392B", "#6B6B80", "#FFF8F0"
+    ];
+
+    private string GetColor(int index)
+    {
+        if (Colors is { Count: > 0 } && index < Colors.Count)
+            return Colors[index];
+        return DefaultColors[index % DefaultColors.Length];
+    }
+
+    private static string FormatLabel(string label) => label switch
+    {
+        "Pending" => "En attente",
+        "Confirmed" => "Confirmée",
+        "Refused" => "Refusée",
+        "Preparing" => "En préparation",
+        "Ready" => "Prête",
+        "Delivering" => "En livraison",
+        "Delivered" => "Livrée",
+        "Cancelled" => "Annulée",
+        "Completed" => "Complété",
+        "Failed" => "Échoué",
+        "Refunded" => "Remboursé",
+        "Delivery" => "Livraison",
+        "DineIn" => "Sur place",
+        _ => label
+    };
+}
