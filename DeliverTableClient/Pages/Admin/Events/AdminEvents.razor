@@ -20,11 +20,11 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminEventResponse"
@@ -60,10 +60,10 @@
                     </td>
                     <td>
                         <div class="adm-cell-actions">
-                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(evt)">
+                            <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="() => OpenEditModal(evt)">
                                 Modifier
                             </button>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="() => OpenDeleteConfirm(evt)">
                                 Supprimer
                             </button>
@@ -84,13 +84,13 @@
             <ChildContent>
                 <EditForm Model="@_createModel" OnValidSubmit="HandleCreate">
                     <DataAnnotationsValidator />
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-name">Nom</label>
                         <InputText id="create-name" @bind-Value="_createModel.Name"
                                    class="adm-form-input" placeholder="Nom de l'événement" />
                         <ValidationMessage For="@(() => _createModel.Name)" class="adm-form-error" />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-desc">Description</label>
                         <InputTextArea id="create-desc" @bind-Value="_createModel.Description"
                                        class="adm-form-input" placeholder="Description" rows="3" />
@@ -109,7 +109,7 @@
                             <ValidationMessage For="@(() => _createModel.EndsAt)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-row" style="margin-top: 1rem;">
+                    <div class="adm-form-row">
                         <div class="adm-form-group">
                             <label class="adm-form-label" for="create-guests">Max. invités</label>
                             <InputNumber id="create-guests" @bind-Value="_createModel.MaxGuests"
@@ -123,7 +123,7 @@
                             </InputSelect>
                         </div>
                     </div>
-                    <div class="adm-form-row" style="margin-top: 1rem;">
+                    <div class="adm-form-row">
                         <div class="adm-form-group">
                             <label class="adm-form-label" for="create-restaurant">Restaurant (ID)</label>
                             <InputNumber id="create-restaurant" @bind-Value="_createModel.RestaurantId"
@@ -136,13 +136,13 @@
                             <ValidationMessage For="@(() => _createModel.CreatedByUserId)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">
                             <InputCheckbox @bind-Value="_createModel.IsActive" />
                             Actif
                         </label>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
                             Annuler
                         </button>
@@ -159,11 +159,11 @@
             <ChildContent>
                 @if (_editingEvent is not null)
                 {
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Nom</label>
                         <input class="adm-form-input" @bind="_editModel.Name" placeholder="Nom" />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Description</label>
                         <textarea class="adm-form-input" @bind="_editModel.Description" rows="3"></textarea>
                     </div>
@@ -177,7 +177,7 @@
                             <input type="datetime-local" class="adm-form-input" @bind="_editModel.EndsAt" />
                         </div>
                     </div>
-                    <div class="adm-form-row" style="margin-top: 1rem;">
+                    <div class="adm-form-row">
                         <div class="adm-form-group">
                             <label class="adm-form-label">Max. invités</label>
                             <input type="number" class="adm-form-input" @bind="_editModel.MaxGuests" />
@@ -190,17 +190,17 @@
                             </select>
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Restaurant (ID)</label>
                         <input type="number" class="adm-form-input" @bind="_editModel.RestaurantId" />
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">
                             <input type="checkbox" @bind="_editModel.IsActive" />
                             Actif
                         </label>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
                             Annuler
                         </button>

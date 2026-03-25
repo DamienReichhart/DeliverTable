@@ -19,11 +19,11 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminPromotionResponse"
@@ -59,10 +59,10 @@
                     <td class="adm-cell-mono">@promo.CreatedAt.ToString("dd/MM/yyyy")</td>
                     <td>
                         <div class="adm-cell-actions">
-                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(promo)">
+                            <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="() => OpenEditModal(promo)">
                                 Modifier
                             </button>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="() => OpenDeleteConfirm(promo)">
                                 Supprimer
                             </button>
@@ -83,13 +83,13 @@
             <ChildContent>
                 <EditForm Model="@_createModel" OnValidSubmit="HandleCreate">
                     <DataAnnotationsValidator />
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-name">Nom</label>
                         <InputText id="create-name" @bind-Value="_createModel.Name"
                                    class="adm-form-input" placeholder="Nom de la promotion" />
                         <ValidationMessage For="@(() => _createModel.Name)" class="adm-form-error" />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-desc">Description</label>
                         <InputText id="create-desc" @bind-Value="_createModel.Description"
                                    class="adm-form-input" placeholder="Description (optionnelle)" />
@@ -148,13 +148,13 @@
                         </div>
                         <div class="adm-form-group">
                             <label class="adm-form-label">Active</label>
-                            <div style="padding-top: 0.5rem;">
+                            <div>
                                 <InputCheckbox @bind-Value="_createModel.IsActive" />
                                 <span>@(_createModel.IsActive ? "Oui" : "Non")</span>
                             </div>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
                             Annuler
                         </button>
@@ -171,11 +171,11 @@
             <ChildContent>
                 @if (_editingPromo is not null)
                 {
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="edit-name">Nom</label>
                         <input id="edit-name" class="adm-form-input" @bind="_editModel.Name" placeholder="Nom" />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="edit-desc">Description</label>
                         <input id="edit-desc" class="adm-form-input" @bind="_editModel.Description" placeholder="Description" />
                     </div>
@@ -219,14 +219,14 @@
                             <input id="edit-ends" type="date" class="adm-form-input" @bind="_editModel.EndsAt" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Active</label>
-                        <div style="padding-top: 0.5rem;">
+                        <div>
                             <input type="checkbox" @bind="_editModel.IsActive" />
                             <span>@(_editModel.IsActive ? "Oui" : "Non")</span>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
                             Annuler
                         </button>

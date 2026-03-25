@@ -183,6 +183,50 @@
   border-top: 1px solid rgba($color-border, 0.5);
 }
 
+// ── Section heading (used in multi-section pages) ──
+
+.adm-section-title {
+  font-family: $font-family-display;
+  font-size: 1.05rem;
+  color: $color-text;
+  margin: $spacing-xl 0 $spacing-md;
+  padding-bottom: $spacing-xs;
+  border-bottom: 1px solid rgba($color-border, 0.5);
+
+  &:first-child {
+    margin-top: $spacing-md;
+  }
+}
+
+.adm-section-actions {
+  margin-bottom: $spacing-md;
+}
+
+// ── Tab navigation ──
+
+.adm-tab-nav {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+// ── Checkbox styling ──
+
+.adm-form-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: $font-size-sm;
+  cursor: pointer;
+}
+
+.adm-form-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
 // ── Animations ──
 
 @keyframes adm-fade-in {

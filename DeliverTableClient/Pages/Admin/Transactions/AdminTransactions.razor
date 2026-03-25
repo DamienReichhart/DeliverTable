@@ -13,7 +13,7 @@
 
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminTransactionResponse"

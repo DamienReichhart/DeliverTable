@@ -13,11 +13,11 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminNotificationResponse"
@@ -48,7 +48,7 @@
                     </td>
                     <td class="adm-cell-mono">@notif.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                     <td>
-                        <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                        <button class="adm-ghost-btn adm-ghost-btn--danger"
                                 @onclick="@(() => OpenDeleteConfirm(notif))">
                             Supprimer
                         </button>
