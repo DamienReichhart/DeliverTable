@@ -20,11 +20,11 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminDishResponse"
@@ -72,10 +72,10 @@
                     <td class="adm-cell-mono">@dish.CreatedAt.ToString("dd/MM/yyyy")</td>
                     <td>
                         <div class="adm-cell-actions">
-                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(dish)">
+                            <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="() => OpenEditModal(dish)">
                                 Modifier
                             </button>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="() => OpenDeleteConfirm(dish)">
                                 Supprimer
                             </button>
@@ -96,13 +96,13 @@
             <ChildContent>
                 <EditForm Model="@_createModel" OnValidSubmit="HandleCreate">
                     <DataAnnotationsValidator />
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-name">Nom</label>
                         <InputText id="create-name" @bind-Value="_createModel.Name"
                                    class="adm-form-input" placeholder="Nom du plat" />
                         <ValidationMessage For="@(() => _createModel.Name)" class="adm-form-error" />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-desc">Description</label>
                         <InputTextArea id="create-desc" @bind-Value="_createModel.Description"
                                        class="adm-form-input" placeholder="Description (optionnel)" />
@@ -129,7 +129,7 @@
                             <ValidationMessage For="@(() => _createModel.RestaurantId)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 0.5rem; margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Options alimentaires</label>
                     </div>
                     <div class="adm-form-checks">
@@ -152,7 +152,7 @@
                             <InputCheckbox @bind-Value="_createModel.IsActive" /> Actif
                         </label>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
                             Annuler
                         </button>
@@ -171,24 +171,24 @@
                 {
                     <EditForm Model="@_editModel" OnValidSubmit="HandleUpdate">
                         <DataAnnotationsValidator />
-                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <div class="adm-form-group">
                             <label class="adm-form-label" for="edit-name">Nom</label>
                             <InputText id="edit-name" @bind-Value="_editModel.Name"
                                        class="adm-form-input" placeholder="Nom du plat" />
                             <ValidationMessage For="@(() => _editModel.Name)" class="adm-form-error" />
                         </div>
-                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <div class="adm-form-group">
                             <label class="adm-form-label" for="edit-desc">Description</label>
                             <InputTextArea id="edit-desc" @bind-Value="_editModel.Description"
                                            class="adm-form-input" placeholder="Description (optionnel)" />
                         </div>
-                        <div class="adm-form-group" style="margin-bottom: 1rem;">
+                        <div class="adm-form-group">
                             <label class="adm-form-label" for="edit-price">Prix (€)</label>
                             <InputNumber id="edit-price" @bind-Value="_editModel.BasePrice"
                                          class="adm-form-input" placeholder="0.00" />
                             <ValidationMessage For="@(() => _editModel.BasePrice)" class="adm-form-error" />
                         </div>
-                        <div class="adm-form-group" style="margin-bottom: 0.5rem;">
+                        <div class="adm-form-group">
                             <label class="adm-form-label">Options alimentaires</label>
                         </div>
                         <div class="adm-form-checks">
@@ -211,7 +211,7 @@
                                 <InputCheckbox @bind-Value="_editModel.IsActive" /> Actif
                             </label>
                         </div>
-                        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                        <div class="adm-form-actions">
                             <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
                                 Annuler
                             </button>

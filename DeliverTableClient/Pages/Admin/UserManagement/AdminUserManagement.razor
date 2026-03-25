@@ -19,11 +19,11 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminUserResponse"
@@ -59,10 +59,10 @@
                     <td class="adm-cell-mono">@user.CreatedAt.ToString("dd/MM/yyyy")</td>
                     <td>
                         <div class="adm-cell-actions">
-                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(user)">
+                            <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="() => OpenEditModal(user)">
                                 Modifier
                             </button>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="() => OpenDeleteConfirm(user)">
                                 Supprimer
                             </button>
@@ -97,19 +97,19 @@
                             <ValidationMessage For="@(() => _createModel.LastName)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-email">Email</label>
                         <InputText id="create-email" @bind-Value="_createModel.Email"
                                    class="adm-form-input" placeholder="email@exemple.com" />
                         <ValidationMessage For="@(() => _createModel.Email)" class="adm-form-error" />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-pw">Mot de passe (12 caractères min.)</label>
                         <InputText id="create-pw" @bind-Value="_createModel.Password" type="password"
                                    class="adm-form-input" placeholder="••••••••••••" />
                         <ValidationMessage For="@(() => _createModel.Password)" class="adm-form-error" />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-role">Rôle</label>
                         <InputSelect id="create-role" @bind-Value="_createModel.Role" class="adm-form-select">
                             @foreach (var role in AvailableRoles)
@@ -118,7 +118,7 @@
                             }
                         </InputSelect>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
                             Annuler
                         </button>
@@ -145,7 +145,7 @@
                             <input class="adm-form-input" @bind="_editModel.LastName" placeholder="Nom" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Email</label>
                         <input class="adm-form-input" @bind="_editModel.Email" placeholder="Email" />
                     </div>
@@ -169,7 +169,7 @@
                             </select>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
                             Annuler
                         </button>

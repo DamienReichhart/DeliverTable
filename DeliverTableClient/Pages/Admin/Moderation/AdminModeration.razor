@@ -20,11 +20,11 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminModerationActionResponse"
@@ -87,7 +87,7 @@
                             <ValidationMessage For="@(() => _createModel.TargetId)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-action-type">Type d'action</label>
                         <InputSelect id="create-action-type" @bind-Value="_createModel.ActionType" class="adm-form-select">
                             @foreach (var actionType in Enum.GetValues<ModerationActionType>())
@@ -97,12 +97,12 @@
                         </InputSelect>
                         <ValidationMessage For="@(() => _createModel.ActionType)" class="adm-form-error" />
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-reason">Raison</label>
                         <InputTextArea id="create-reason" @bind-Value="_createModel.Reason"
                                        class="adm-form-input" placeholder="Raison de l'action" rows="3" />
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
                             Annuler
                         </button>

@@ -13,19 +13,19 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         @* ══════════════════════════════════════════════════
            Section 1: Order Rules
            ══════════════════════════════════════════════════ *@
-        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Règles de commande</h3>
+        <h3 class="adm-section-title">Règles de commande</h3>
 
-        <div style="margin-bottom: 1rem;">
+        <div class="adm-section-actions">
             <button class="app-btn app-btn--sm" @onclick="OpenCreateRuleModal">
                 <Blazicon Svg="Lucide.Plus" />
                 Créer une règle
@@ -64,10 +64,10 @@
                     </td>
                     <td>
                         <div class="adm-cell-actions">
-                            <button class="app-btn app-btn--link app-btn--sm" @onclick="@(() => OpenEditRuleModal(rule))">
+                            <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="@(() => OpenEditRuleModal(rule))">
                                 Modifier
                             </button>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="@(() => OpenDeleteRuleConfirm(rule))">
                                 Supprimer
                             </button>
@@ -86,9 +86,9 @@
         @* ══════════════════════════════════════════════════
            Section 2: Blocked Slots
            ══════════════════════════════════════════════════ *@
-        <h3 style="margin-top: 2.5rem; margin-bottom: 1rem;">Créneaux bloqués</h3>
+        <h3 class="adm-section-title">Créneaux bloqués</h3>
 
-        <div style="margin-bottom: 1rem;">
+        <div class="adm-section-actions">
             <button class="app-btn app-btn--sm" @onclick="OpenCreateSlotModal">
                 <Blazicon Svg="Lucide.Plus" />
                 Bloquer un créneau
@@ -116,7 +116,7 @@
                     <td class="adm-cell-mono">@slot.EndsAt.ToString("dd/MM/yyyy HH:mm")</td>
                     <td>@Truncate(slot.Reason, 60)</td>
                     <td>
-                        <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                        <button class="adm-ghost-btn adm-ghost-btn--danger"
                                 @onclick="@(() => OpenDeleteSlotConfirm(slot))">
                             Supprimer
                         </button>
@@ -136,7 +136,7 @@
             <ChildContent>
                 <EditForm Model="@_createRuleModel" OnValidSubmit="HandleCreateRule">
                     <DataAnnotationsValidator />
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="rule-restaurant">Restaurant (ID)</label>
                         <InputNumber id="rule-restaurant" @bind-Value="_createRuleModel.RestaurantId"
                                      class="adm-form-input" />
@@ -154,7 +154,7 @@
                                          class="adm-form-input" />
                         </div>
                     </div>
-                    <div class="adm-form-row" style="margin-top: 1rem;">
+                    <div class="adm-form-row">
                         <div class="adm-form-group">
                             <label class="adm-form-label" for="rule-advance">Jours d'avance max.</label>
                             <InputNumber id="rule-advance" @bind-Value="_createRuleModel.MaxAdvanceDays"
@@ -166,19 +166,19 @@
                                          class="adm-form-input" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">
                             <InputCheckbox @bind-Value="_createRuleModel.AllowPreorder" />
                             Autoriser la précommande
                         </label>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 0.5rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">
                             <InputCheckbox @bind-Value="_createRuleModel.AllowDelivery" />
                             Autoriser la livraison
                         </label>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateRuleModal" disabled="@_isSaving">
                             Annuler
                         </button>
@@ -205,7 +205,7 @@
                             <input type="number" class="adm-form-input" @bind="_editRuleModel.MinLeadTimeHours" />
                         </div>
                     </div>
-                    <div class="adm-form-row" style="margin-top: 1rem;">
+                    <div class="adm-form-row">
                         <div class="adm-form-group">
                             <label class="adm-form-label">Jours d'avance max.</label>
                             <input type="number" class="adm-form-input" @bind="_editRuleModel.MaxAdvanceDays" />
@@ -215,19 +215,19 @@
                             <input type="number" class="adm-form-input" @bind="_editRuleModel.SlotDurationMinutes" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">
                             <input type="checkbox" @bind="_editRuleModel.AllowPreorder" />
                             Autoriser la précommande
                         </label>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 0.5rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">
                             <input type="checkbox" @bind="_editRuleModel.AllowDelivery" />
                             Autoriser la livraison
                         </label>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditRuleModal" disabled="@_isSaving">
                             Annuler
                         </button>
@@ -244,7 +244,7 @@
             <ChildContent>
                 <EditForm Model="@_createSlotModel" OnValidSubmit="HandleCreateSlot">
                     <DataAnnotationsValidator />
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="slot-restaurant">Restaurant (ID)</label>
                         <InputNumber id="slot-restaurant" @bind-Value="_createSlotModel.RestaurantId"
                                      class="adm-form-input" />
@@ -264,12 +264,12 @@
                             <ValidationMessage For="@(() => _createSlotModel.EndsAt)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-top: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="slot-reason">Raison</label>
                         <InputTextArea id="slot-reason" @bind-Value="_createSlotModel.Reason"
                                        class="adm-form-input" placeholder="Raison du blocage" rows="2" />
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateSlotModal" disabled="@_isSaving">
                             Annuler
                         </button>

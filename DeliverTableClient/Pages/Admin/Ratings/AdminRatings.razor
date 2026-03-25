@@ -13,15 +13,15 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         @* ── Tab navigation ── *@
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+        <div class="adm-tab-nav">
             <button class="app-btn app-btn--sm @(_activeTab == Tab.Restaurant ? "" : "app-btn--secondary")"
                     @onclick="() => _activeTab = Tab.Restaurant">
                 Avis restaurants
@@ -57,7 +57,7 @@
                         <td>@rating.CustomerName</td>
                         <td class="adm-cell-mono">@rating.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="@(() => OpenDeleteConfirm(rating.Id, "l\u0027avis de " + rating.CustomerName))">
                                 Supprimer
                             </button>
@@ -99,7 +99,7 @@
                         <td>@rating.RaterName</td>
                         <td class="adm-cell-mono">@rating.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="@(() => OpenDeleteConfirm(rating.Id, "l\u0027avis sur " + rating.RatedCustomerName))">
                                 Supprimer
                             </button>

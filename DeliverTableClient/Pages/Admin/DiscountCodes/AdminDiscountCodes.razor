@@ -19,11 +19,11 @@
 
         @if (!string.IsNullOrEmpty(_actionSuccess))
         {
-            <div class="alert alert-success">@_actionSuccess</div>
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
         }
         @if (!string.IsNullOrEmpty(_actionError))
         {
-            <div class="alert alert-danger">@_actionError</div>
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
         <AdminDataTable TItem="AdminDiscountCodeResponse"
@@ -61,10 +61,10 @@
                     <td class="adm-cell-mono">@dc.ValidFrom.ToString("dd/MM/yyyy") — @dc.ValidUntil.ToString("dd/MM/yyyy")</td>
                     <td>
                         <div class="adm-cell-actions">
-                            <button class="app-btn app-btn--link app-btn--sm" @onclick="() => OpenEditModal(dc)">
+                            <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="() => OpenEditModal(dc)">
                                 Modifier
                             </button>
-                            <button class="app-btn app-btn--link app-btn--sm" style="color: var(--color-error, #C0392B);"
+                            <button class="adm-ghost-btn adm-ghost-btn--danger"
                                     @onclick="() => OpenDeleteConfirm(dc)">
                                 Supprimer
                             </button>
@@ -99,7 +99,7 @@
                             <ValidationMessage For="@(() => _createModel.RestaurantId)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-desc">Description</label>
                         <InputText id="create-desc" @bind-Value="_createModel.Description"
                                    class="adm-form-input" placeholder="Description (optionnelle)" />
@@ -121,7 +121,7 @@
                             <ValidationMessage For="@(() => _createModel.DiscountValue)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="create-min-order">Montant minimum de commande (optionnel)</label>
                         <InputNumber id="create-min-order" @bind-Value="_createModel.MinOrderAmount"
                                      class="adm-form-input" />
@@ -151,14 +151,14 @@
                             <ValidationMessage For="@(() => _createModel.PerUserLimit)" class="adm-form-error" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Actif</label>
-                        <div style="padding-top: 0.5rem;">
+                        <div>
                             <InputCheckbox @bind-Value="_createModel.IsActive" />
                             <span>@(_createModel.IsActive ? "Oui" : "Non")</span>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateModal" disabled="@_isSaving">
                             Annuler
                         </button>
@@ -175,11 +175,11 @@
             <ChildContent>
                 @if (_editingCode is not null)
                 {
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Code</label>
                         <input class="adm-form-input" value="@_editingCode.Code" disabled />
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="edit-desc">Description</label>
                         <input id="edit-desc" class="adm-form-input" @bind="_editModel.Description" placeholder="Description" />
                     </div>
@@ -198,7 +198,7 @@
                             <input id="edit-discount-value" type="number" class="adm-form-input" @bind="_editModel.DiscountValue" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label" for="edit-min-order">Montant minimum de commande</label>
                         <input id="edit-min-order" type="number" class="adm-form-input" @bind="_editModel.MinOrderAmount" />
                     </div>
@@ -222,14 +222,14 @@
                             <input id="edit-per-user-limit" type="number" class="adm-form-input" @bind="_editModel.PerUserLimit" />
                         </div>
                     </div>
-                    <div class="adm-form-group" style="margin-bottom: 1rem;">
+                    <div class="adm-form-group">
                         <label class="adm-form-label">Actif</label>
-                        <div style="padding-top: 0.5rem;">
+                        <div>
                             <input type="checkbox" @bind="_editModel.IsActive" />
                             <span>@(_editModel.IsActive ? "Oui" : "Non")</span>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                    <div class="adm-form-actions">
                         <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
                             Annuler
                         </button>
