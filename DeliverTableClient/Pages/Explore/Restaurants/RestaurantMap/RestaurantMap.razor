@@ -56,6 +56,23 @@
         {
             _dotNetRef = DotNetObjectReference.Create(this);
             await Js.InvokeVoidAsync("restaurantMap.init", "restaurant-map", _dotNetRef);
+            await TryCenterOnUserLocation();
+        }
+    }
+
+    private async Task TryCenterOnUserLocation()
+    {
+        try
+        {
+            var coords = await Js.InvokeAsync<double[]>("getGeolocation");
+            if (coords is { Length: >= 2 })
+            {
+                OnMapClicked(coords[0], coords[1]);
+            }
+        }
+        catch
+        {
+            // Geolocation denied or unavailable — map stays on default France view
         }
     }
 
