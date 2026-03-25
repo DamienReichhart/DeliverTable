@@ -1,0 +1,49 @@
+@use "../abstracts/variables" as *;
+
+// ---------------------------------------------------------------------------
+// Admin Alerts – contextual feedback messages within admin pages
+// ---------------------------------------------------------------------------
+
+.adm-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  padding: 0.625rem $spacing-md;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  line-height: 1.5;
+  margin-bottom: $spacing-md;
+  border: 1px solid transparent;
+  animation: adm-fade-in 200ms ease;
+}
+
+.adm-alert-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.adm-alert--success {
+  background: rgba($color-garden-sage, 0.08);
+  border-color: rgba($color-garden-sage, 0.2);
+  color: darken($color-garden-sage, 15%);
+}
+
+.adm-alert--danger {
+  background: rgba($color-error, 0.06);
+  border-color: rgba($color-error, 0.15);
+  color: $color-error;
+}
+
+.adm-alert--warning {
+  background: rgba($color-amber-gold, 0.08);
+  border-color: rgba($color-amber-gold, 0.2);
+  color: darken($color-amber-gold, 22%);
+}
+
+.adm-alert--info {
+  background: rgba($color-deep-charcoal, 0.03);
+  border-color: rgba($color-deep-charcoal, 0.08);
+  color: $color-text;
+}

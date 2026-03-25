@@ -20,6 +20,8 @@
 @use 'components/admin-breadcrumbs';
 @use 'components/admin-empty-state';
 @use 'components/admin-confirm';
+@use 'components/admin-alerts';
+@use 'components/admin-actions';
 @use 'pages/health';
 @use 'pages/auth';
 @use 'utilities/blazor';

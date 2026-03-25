@@ -18,16 +18,16 @@
 .adm-confirm {
   background: $color-bg-white;
   border-radius: $radius-xl;
-  box-shadow: $shadow-lg;
+  box-shadow: 0 12px 40px rgba($color-deep-charcoal, 0.18);
   width: 90%;
   max-width: 400px;
-  padding: $spacing-lg;
+  padding: $spacing-xl $spacing-lg $spacing-lg;
   animation: adm-slide-up 200ms ease;
 }
 
 .adm-confirm-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: $radius-full;
   margin: 0 auto $spacing-md;
   display: flex;
@@ -36,12 +36,12 @@
   font-size: 1.25rem;
 
   &--danger {
-    background: rgba($color-error, 0.1);
+    background: rgba($color-error, 0.08);
     color: $color-error;
   }
 
   &--warning {
-    background: rgba($color-amber-gold, 0.12);
+    background: rgba($color-amber-gold, 0.1);
     color: darken($color-amber-gold, 12%);
   }
 }
@@ -59,7 +59,7 @@
   color: $color-text-muted;
   text-align: center;
   margin: 0 0 $spacing-lg;
-  line-height: $line-height-base;
+  line-height: 1.5;
 }
 
 .adm-confirm-actions {

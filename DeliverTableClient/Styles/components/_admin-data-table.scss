@@ -11,29 +11,29 @@
   justify-content: space-between;
   gap: $spacing-md;
   flex-wrap: wrap;
-  margin-bottom: $spacing-md;
+  margin-bottom: $spacing-lg;
 }
 
 .adm-table-search {
   position: relative;
   flex: 1 1 240px;
-  max-width: 360px;
+  max-width: 380px;
 }
 
 .adm-table-search-icon {
   position: absolute;
-  left: $spacing-sm;
+  left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   color: $color-text-muted;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   pointer-events: none;
 }
 
 .adm-table-search-input {
   width: 100%;
-  padding: 0.5rem 0.75rem 0.5rem 2rem;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
   font-size: $font-size-sm;
   font-family: $font-family-base;
   border: 1px solid $color-border;
@@ -43,12 +43,12 @@
   transition: border-color $transition-fast, box-shadow $transition-fast;
 
   &::placeholder {
-    color: $color-text-muted;
+    color: rgba($color-text-muted, 0.7);
   }
 
   &:focus {
     border-color: $color-border-focus;
-    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.08);
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.06);
     outline: none;
   }
 }
@@ -65,7 +65,7 @@
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   background: $color-bg-white;
-  box-shadow: $shadow-card;
+  box-shadow: $shadow-sm;
   overflow-x: auto;
 }
 
@@ -90,9 +90,11 @@
   th {
     @include label-mono;
     color: $color-text-muted;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 2px solid $color-border;
     font-size: 0.6875rem;
     user-select: none;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
   }
 }
 
@@ -122,7 +124,7 @@
 // ── Body rows ──
 
 .adm-table tbody tr {
-  border-bottom: 1px solid $color-border;
+  border-bottom: 1px solid rgba($color-border, 0.7);
   transition: background-color $transition-fast;
 
   &:last-child {
@@ -135,11 +137,15 @@
 }
 
 .adm-table-row--muted {
-  opacity: 0.55;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 0.7;
+  }
 }
 
 .adm-table-row--highlight {
-  background-color: rgba($color-coral-fire, 0.04);
+  background-color: rgba($color-coral-fire, 0.03);
 }
 
 // ── Cell helpers ──
@@ -160,7 +166,7 @@
 
 .adm-cell-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
 }
 
@@ -189,7 +195,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: $spacing-sm $spacing-md;
+  padding: 0.625rem $spacing-md;
   border-top: 1px solid $color-border;
   background: $color-bg-subtle;
   border-radius: 0 0 $radius-lg $radius-lg;
@@ -204,7 +210,7 @@
 .adm-table-pagination-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .adm-table-pagination-btn {
@@ -213,33 +219,34 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px solid $color-border;
+  border: 1px solid transparent;
   border-radius: $radius-sm;
-  background: $color-bg-white;
-  color: $color-text;
+  background: transparent;
+  color: $color-text-muted;
   font-size: $font-size-xs;
   font-family: $font-family-mono;
   cursor: pointer;
   transition: all $transition-fast;
 
   &:hover:not(:disabled) {
-    border-color: $color-border-focus;
-    background: rgba($color-coral-fire, 0.04);
+    background: rgba($color-coral-fire, 0.06);
+    color: $color-coral-fire;
   }
 
   &:disabled {
-    opacity: 0.35;
+    opacity: 0.3;
     cursor: not-allowed;
   }
 
   &--active {
     background: $color-coral-fire;
     color: $color-text-inverse;
-    border-color: $color-coral-fire;
     font-weight: $font-weight-semibold;
+    border-color: $color-coral-fire;
 
     &:hover:not(:disabled) {
       background: $color-primary-hover;
+      color: $color-text-inverse;
       border-color: $color-primary-hover;
     }
   }
@@ -282,7 +289,7 @@
   background: linear-gradient(
     90deg,
     $color-bg-subtle 25%,
-    rgba($color-border, 0.4) 50%,
+    rgba($color-border, 0.3) 50%,
     $color-bg-subtle 75%
   );
   background-size: 200% 100%;
