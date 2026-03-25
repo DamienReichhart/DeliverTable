@@ -1,3 +1,4 @@
+@using System.Globalization
 @using DeliverTableSharedLibrary.Dtos.Admin
 
 <div class="adm-chart-card">
@@ -21,7 +22,7 @@
                 <div class="adm-bar-column">
                     <span class="adm-bar-value">@point.Count</span>
                     <div class="adm-bar-track">
-                        <div class="adm-bar-fill" style="height:@($"{pct:F1}")%;background:@Color"></div>
+                        <div class="adm-bar-fill" style="height:@(pct.ToString("F1", CultureInfo.InvariantCulture))%;background:@Color"></div>
                     </div>
                     <span class="adm-bar-label">@point.Date.ToString("dd/MM")</span>
                 </div>
