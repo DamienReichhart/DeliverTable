@@ -4,12 +4,13 @@ namespace DeliverTableServer.Models;
 
 public class ReclamationItem
 {
-    [ForeignKey("OrderId")]
-    public int OrderId { get; set; }
+    [ForeignKey("OrderItemId")]
+    public int OrderItemId { get; set; }
     [ForeignKey("ReclamationId")]
     public int ReclamationId { get; set; }
-    // Ajouter l'item qui pose problème
+
+    public bool HasAttachedImage { get; set; } = false;
 
     public Reclamation Reclamation { get; set; } = null!;
-    public Order Order { get; set; } = null!;
+    public OrderItem OrderItem { get; set; } = null!;
 }
