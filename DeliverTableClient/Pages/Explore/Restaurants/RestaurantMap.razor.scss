@@ -1,0 +1,108 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-map-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.map-element {
+  width: 100%;
+  height: 65vh;
+  min-height: 400px;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  z-index: 0;
+}
+
+.map-controls {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.radius-control {
+  @include card;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    white-space: nowrap;
+    min-width: 120px;
+  }
+
+  input[type="range"] {
+    width: 200px;
+    accent-color: $color-primary;
+    cursor: pointer;
+  }
+
+  &--disabled {
+    opacity: 0.7;
+  }
+}
+
+.radius-hint {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  font-style: italic;
+}
+
+.map-no-results {
+  @include card;
+  text-align: center;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  padding: $spacing-sm $spacing-md;
+}
+
+.map-error {
+  @include card;
+  text-align: center;
+  color: $color-error;
+  font-size: $font-size-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-error, 0.08);
+  border-color: rgba($color-error, 0.2);
+}
+
+// Leaflet popup overrides
+::deep .map-popup {
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  line-height: 1.5;
+
+  strong {
+    font-size: $font-size-base;
+    color: $color-text;
+  }
+
+  .map-popup-type {
+    display: inline-block;
+    padding: 0.1em 0.4em;
+    border-radius: $radius-sm;
+    font-family: $font-family-mono;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    background: rgba($color-amber-gold, 0.12);
+    color: darken($color-amber-gold, 18%);
+    margin: $spacing-xs 0;
+  }
+
+  a {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
