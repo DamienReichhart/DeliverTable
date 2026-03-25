@@ -76,15 +76,29 @@
 
     private void BuildChart()
     {
-        var values = new List<(DateOnly Date, double Value)>();
+        var rawValues = new List<(DateOnly Date, double Value)>();
 
         if (RevenueData is { Count: > 0 })
-            values = RevenueData.Select(r => (r.Date, (double)r.Amount)).ToList();
+            rawValues = RevenueData.Select(r => (r.Date, (double)r.Amount)).ToList();
         else if (CountData is { Count: > 0 })
-            values = CountData.Select(c => (c.Date, (double)c.Count)).ToList();
+            rawValues = CountData.Select(c => (c.Date, (double)c.Count)).ToList();
 
-        _hasData = values.Count > 0;
+        _hasData = rawValues.Count > 0;
         if (!_hasData) return;
+
+        // Fill gaps with zeros so chart has a continuous series
+        var lookup = rawValues.ToDictionary(v => v.Date, v => v.Value);
+        var minDate = rawValues.Min(v => v.Date);
+        var maxDate = rawValues.Max(v => v.Date);
+        var values = new List<(DateOnly Date, double Value)>();
+        for (var d = minDate; d <= maxDate; d = d.AddDays(1))
+            values.Add((d, lookup.GetValueOrDefault(d, 0)));
+
+        if (values.Count < 2)
+        {
+            // Single point — add a zero-value neighbor so we can still draw a line
+            values.Insert(0, (values[0].Date.AddDays(-1), 0));
+        }
 
         var maxVal = values.Max(v => v.Value);
         if (maxVal == 0) maxVal = 1;
