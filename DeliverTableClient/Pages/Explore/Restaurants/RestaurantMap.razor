@@ -1,0 +1,147 @@
+@inject IRestaurantService RestaurantService
+@inject IJSRuntime Js
+@implements IAsyncDisposable
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+
+<div class="restaurant-map-container">
+    <div class="map-controls">
+        <div class="radius-control @(_hasCenter ? "" : "radius-control--disabled")">
+            @if (_hasCenter)
+            {
+                <label for="radius-slider">Rayon : @_radiusKm km</label>
+                <input id="radius-slider" type="range" min="1" max="50" step="1"
+                       @bind="_radiusKm" @bind:event="oninput" @bind:after="OnRadiusChanged" />
+            }
+            else
+            {
+                <span class="radius-hint">Cliquez sur la carte pour rechercher</span>
+            }
+        </div>
+    </div>
+
+    <div id="restaurant-map" class="map-element"></div>
+
+    @if (_noResults && _hasCenter)
+    {
+        <div class="map-no-results">
+            Aucun restaurant trouvé dans cette zone.
+        </div>
+    }
+
+    @if (_error is not null)
+    {
+        <div class="map-error">
+            @_error
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? NameFilter { get; set; }
+    [Parameter] public string? TypeFilter { get; set; }
+
+    private DotNetObjectReference<RestaurantMap>? _dotNetRef;
+    private double _centerLat;
+    private double _centerLng;
+    private double _radiusKm = 10;
+    private bool _hasCenter;
+    private bool _noResults;
+    private string? _error;
+    private int _requestId;
+    private Timer? _debounceTimer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await Js.InvokeVoidAsync("restaurantMap.init", "restaurant-map", _dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public void OnMapClicked(double lat, double lng)
+    {
+        _centerLat = lat;
+        _centerLng = lng;
+        _hasCenter = true;
+        StateHasChanged();
+
+        _ = Js.InvokeVoidAsync("restaurantMap.updateCenter", lat, lng, _radiusKm);
+        DebounceFetchRestaurants();
+    }
+
+    private async Task OnRadiusChanged()
+    {
+        if (!_hasCenter) return;
+        await Js.InvokeVoidAsync("restaurantMap.updateRadius", _centerLat, _centerLng, _radiusKm);
+        DebounceFetchRestaurants();
+    }
+
+    public void OnFiltersChanged()
+    {
+        if (!_hasCenter) return;
+        DebounceFetchRestaurants();
+    }
+
+    private void DebounceFetchRestaurants()
+    {
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(async _ =>
+        {
+            await InvokeAsync(FetchRestaurants);
+        }, null, 300, Timeout.Infinite);
+    }
+
+    private async Task FetchRestaurants()
+    {
+        var currentRequest = Interlocked.Increment(ref _requestId);
+        _error = null;
+
+        try
+        {
+            var query = new RestaurantQuery
+            {
+                Latitude = _centerLat,
+                Longitude = _centerLng,
+                RadiusKm = _radiusKm,
+                Name = NameFilter,
+                Type = TypeFilter
+            };
+
+            var (result, err) = await RestaurantService.GetRestaurantsForMap(query);
+
+            if (currentRequest != _requestId) return;
+
+            if (err is not null)
+            {
+                _error = err.Error;
+                _noResults = false;
+            }
+            else
+            {
+                _noResults = result is null || result.Count == 0;
+                await Js.InvokeVoidAsync("restaurantMap.updateMarkers", result ?? []);
+            }
+        }
+        catch
+        {
+            if (currentRequest != _requestId) return;
+            _error = "Une erreur est survenue lors du chargement des restaurants.";
+            _noResults = false;
+        }
+
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _debounceTimer?.Dispose();
+        try
+        {
+            await Js.InvokeVoidAsync("restaurantMap.dispose");
+        }
+        catch (JSDisconnectedException) { }
+        _dotNetRef?.Dispose();
+    }
+}
