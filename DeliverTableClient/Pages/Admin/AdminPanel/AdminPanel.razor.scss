@@ -1,5 +1,11 @@
 @use "../../../Styles/abstracts/variables" as *;
 
+// ---------------------------------------------------------------------------
+// Admin Dashboard – Command Center layout
+// ---------------------------------------------------------------------------
+
+// ── Section Headings ──
+
 .adm-dashboard-section {
   margin-top: $spacing-2xl;
 }
@@ -12,6 +18,60 @@
   padding-bottom: $spacing-xs;
   border-bottom: 1px solid rgba($color-border, 0.5);
 }
+
+// ── KPI Highlight Row (today's pulse) ──
+
+.adm-kpi-highlight {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.adm-kpi-mini {
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-kpi-mini-value {
+  font-family: $font-family-display;
+  font-size: 1.35rem;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.adm-kpi-mini-label {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+// ── Chart Grid ──
+
+.adm-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adm-dashboard-grid--wide {
+  grid-column: 1 / -1;
+}
+
+// ── Quick Links ──
 
 .adm-quick-links {
   display: grid;
@@ -89,4 +149,38 @@
   color: $color-text-muted;
   margin-top: 2px;
   line-height: 1.4;
+}
+
+// ── Analytics Skeleton ──
+
+.adm-analytics-skeleton {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adm-skeleton-card {
+  background: linear-gradient(
+    90deg,
+    $color-bg-subtle 25%,
+    rgba($color-border, 0.3) 50%,
+    $color-bg-subtle 75%
+  );
+  background-size: 200% 100%;
+  animation: adm-shimmer 1.5s ease-in-out infinite;
+  border-radius: $radius-lg;
+  min-height: 200px;
+
+  &--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@keyframes adm-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
