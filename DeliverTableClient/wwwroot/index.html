@@ -14,6 +14,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
     <link href="css/app.css" rel="stylesheet"/>
     <link href="favicon.svg" rel="icon" type="image/svg+xml"/>
     <link href="DeliverTableClient.styles.css" rel="stylesheet"/>
@@ -35,6 +39,10 @@
     <a class="reload" href=".">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="js/restaurant-map.js"></script>
 <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 <script>navigator.serviceWorker.register('service-worker.js', {updateViaCache: 'none'});</script>
 <script>
