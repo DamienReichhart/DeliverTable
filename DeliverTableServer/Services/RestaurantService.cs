@@ -26,6 +26,13 @@ public sealed class RestaurantService(
         return data.ToPaginatedResult(r => r.ToDto(), query.PageNumber, query.PageSize);
     }
 
+    public async Task<ServiceResult<List<RestaurantMapDto>>> GetForMapAsync(
+        RestaurantQuery query, CancellationToken ct = default)
+    {
+        var restaurants = await _restaurantRepository.GetForMapAsync(query, ct);
+        return restaurants.Select(r => r.ToMapDto()).ToList();
+    }
+
     public async Task<ServiceResult<PaginatedResult<RestaurantDto>>> GetByOwnerAsync(
         int ownerId, RestaurantQuery query, CancellationToken ct = default)
     {
