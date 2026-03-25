@@ -22,6 +22,13 @@ public class RestaurantController(IRestaurantService restaurantService) : Contro
         return result.ToOkResult();
     }
 
+    [HttpGet(ApiRoutes.Restaurant.MapRoute)]
+    public async Task<IActionResult> GetForMap([FromQuery] RestaurantQuery query, CancellationToken ct)
+    {
+        var result = await _restaurantService.GetForMapAsync(query, ct);
+        return result.ToOkResult();
+    }
+
     [HttpGet(ApiRoutes.Restaurant.UserByIdRoute)]
     [HttpGet(ApiRoutes.Restaurant.UserMeRoute)]
     [Authorize]
