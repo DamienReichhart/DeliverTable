@@ -23,6 +23,24 @@ public sealed class AdminDashboardClientService(HttpClient httpClient) : IAdminD
             : (null, new ErrorResponse { Error = "Impossible de lire les statistiques du tableau de bord", Status = (int)response.StatusCode });
     }
 
+    public async Task<(AdminDashboardAnalyticsResponse? Analytics, ErrorResponse? Error)> GetAnalyticsAsync(
+        CancellationToken ct = default)
+    {
+        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.DashboardAnalytics, ct);
+        if (!response.IsSuccessStatusCode)
+            return (null, await ReadError(response, ct));
+
+        var analytics =
+            await response.Content.ReadFromJsonAsync<AdminDashboardAnalyticsResponse>(cancellationToken: ct);
+        return analytics is not null
+            ? (analytics, null)
+            : (null,
+                new ErrorResponse
+                {
+                    Error = "Impossible de lire les données analytiques", Status = (int)response.StatusCode
+                });
+    }
+
     private static async Task<ErrorResponse> ReadError(HttpResponseMessage response, CancellationToken ct)
     {
         try
