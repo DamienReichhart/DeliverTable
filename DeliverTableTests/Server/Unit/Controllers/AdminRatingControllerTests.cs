@@ -53,38 +53,6 @@ public class AdminRatingControllerTests
 
     #endregion
 
-    #region GetCustomerRatings
-
-    [Test]
-    public async Task GetCustomerRatings_ReturnsOk()
-    {
-        var ratings = new List<AdminCustomerRatingResponse>
-        {
-            new() { Id = 1, Rating = 4, Comment = "Bon client" }
-        };
-        _adminRatingService.GetCustomerRatingsAsync(Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<List<AdminCustomerRatingResponse>>.Success(ratings));
-
-        var result = await _sut.GetCustomerRatings(CancellationToken.None);
-
-        Assert.That(result, Is.InstanceOf<OkObjectResult>());
-    }
-
-    [Test]
-    public async Task GetCustomerRatings_WhenError_ReturnsError()
-    {
-        _adminRatingService.GetCustomerRatingsAsync(Arg.Any<CancellationToken>())
-            .Returns(ServiceResult<List<AdminCustomerRatingResponse>>.Failure(new ServiceError("Erreur", 500)));
-
-        var result = await _sut.GetCustomerRatings(CancellationToken.None);
-
-        Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
-        Assert.That(obj.StatusCode, Is.EqualTo(500));
-    }
-
-    #endregion
-
     #region Delete
 
     [Test]

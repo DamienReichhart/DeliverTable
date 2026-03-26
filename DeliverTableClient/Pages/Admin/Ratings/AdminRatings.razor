@@ -20,100 +20,43 @@
             <div class="adm-alert adm-alert--danger">@_actionError</div>
         }
 
-        @* ── Tab navigation ── *@
-        <div class="adm-tab-nav">
-            <button class="app-btn app-btn--sm @(_activeTab == Tab.Restaurant ? "" : "app-btn--secondary")"
-                    @onclick="() => _activeTab = Tab.Restaurant">
-                Avis restaurants
-            </button>
-            <button class="app-btn app-btn--sm @(_activeTab == Tab.Customer ? "" : "app-btn--secondary")"
-                    @onclick="() => _activeTab = Tab.Customer">
-                Avis clients
-            </button>
-        </div>
-
-        @if (_activeTab == Tab.Restaurant)
-        {
-            <AdminDataTable TItem="AdminRestaurantRatingResponse"
-                             Items="FilteredRestaurantRatings"
-                             TotalCount="@(FilteredRestaurantRatings.Count())"
-                             IsLoading="@_isLoading"
-                             SearchPlaceholder="Rechercher par restaurant ou client..."
-                             SearchText="@_searchQuery"
-                             SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
-                <HeaderContent>
-                    <th>Note</th>
-                    <th>Commentaire</th>
-                    <th>Restaurant</th>
-                    <th>Client</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                </HeaderContent>
-                <RowContent Context="rating">
-                    <tr>
-                        <td class="adm-cell-mono">@RenderStars(rating.Rating)</td>
-                        <td>@Truncate(rating.Comment, 60)</td>
-                        <td>@rating.RestaurantName</td>
-                        <td>@rating.CustomerName</td>
-                        <td class="adm-cell-mono">@rating.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            <button class="adm-ghost-btn adm-ghost-btn--danger"
-                                    @onclick="@(() => OpenDeleteConfirm(rating.Id, "l\u0027avis de " + rating.CustomerName))">
-                                Supprimer
-                            </button>
-                        </td>
-                    </tr>
-                </RowContent>
-                <EmptyContent>
-                    <AdminEmptyState Title="Aucun avis restaurant trouvé"
-                                     Message="@($"Aucun résultat pour « {_searchQuery} »")">
-                        <IconContent><Blazicon Svg="Lucide.Star" /></IconContent>
-                    </AdminEmptyState>
-                </EmptyContent>
-            </AdminDataTable>
-        }
-        else
-        {
-            <AdminDataTable TItem="AdminCustomerRatingResponse"
-                             Items="FilteredCustomerRatings"
-                             TotalCount="@(FilteredCustomerRatings.Count())"
-                             IsLoading="@_isLoading"
-                             SearchPlaceholder="Rechercher par restaurant, client ou évaluateur..."
-                             SearchText="@_searchQuery"
-                             SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
-                <HeaderContent>
-                    <th>Note</th>
-                    <th>Commentaire</th>
-                    <th>Restaurant</th>
-                    <th>Client évalué</th>
-                    <th>Évaluateur</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                </HeaderContent>
-                <RowContent Context="rating">
-                    <tr>
-                        <td class="adm-cell-mono">@RenderStars(rating.Rating)</td>
-                        <td>@Truncate(rating.Comment, 60)</td>
-                        <td>@rating.RestaurantName</td>
-                        <td>@rating.RatedCustomerName</td>
-                        <td>@rating.RaterName</td>
-                        <td class="adm-cell-mono">@rating.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            <button class="adm-ghost-btn adm-ghost-btn--danger"
-                                    @onclick="@(() => OpenDeleteConfirm(rating.Id, "l\u0027avis sur " + rating.RatedCustomerName))">
-                                Supprimer
-                            </button>
-                        </td>
-                    </tr>
-                </RowContent>
-                <EmptyContent>
-                    <AdminEmptyState Title="Aucun avis client trouvé"
-                                     Message="@($"Aucun résultat pour « {_searchQuery} »")">
-                        <IconContent><Blazicon Svg="Lucide.Star" /></IconContent>
-                    </AdminEmptyState>
-                </EmptyContent>
-            </AdminDataTable>
-        }
+        <AdminDataTable TItem="AdminRestaurantRatingResponse"
+                         Items="FilteredRestaurantRatings"
+                         TotalCount="@(FilteredRestaurantRatings.Count())"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par restaurant ou client..."
+                         SearchText="@_searchQuery"
+                         SearchTextChanged="@(q => { _searchQuery = q; StateHasChanged(); })">
+            <HeaderContent>
+                <th>Note</th>
+                <th>Commentaire</th>
+                <th>Restaurant</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="rating">
+                <tr>
+                    <td class="adm-cell-mono">@RenderStars(rating.Rating)</td>
+                    <td>@Truncate(rating.Comment, 60)</td>
+                    <td>@rating.RestaurantName</td>
+                    <td>@rating.CustomerName</td>
+                    <td class="adm-cell-mono">@rating.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <button class="adm-ghost-btn adm-ghost-btn--danger"
+                                @onclick="@(() => OpenDeleteConfirm(rating.Id, "l\u0027avis de " + rating.CustomerName))">
+                            Supprimer
+                        </button>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucun avis restaurant trouvé"
+                                 Message="@($"Aucun résultat pour « {_searchQuery} »")">
+                    <IconContent><Blazicon Svg="Lucide.Star" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
 
         @* ── Delete confirmation ── *@
         <AdminConfirmDialog IsVisible="@(_deletingId is not null)"
@@ -128,13 +71,9 @@
 </AdminLayout>
 
 @code {
-    private enum Tab { Restaurant, Customer }
-
     private List<AdminRestaurantRatingResponse>? _restaurantRatings;
-    private List<AdminCustomerRatingResponse>? _customerRatings;
     private bool _isLoading = true;
     private string _searchQuery = "";
-    private Tab _activeTab = Tab.Restaurant;
 
     private int? _deletingId;
     private string _deletingLabel = "";
@@ -156,37 +95,22 @@
             || r.Comment.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
         ) ?? [];
 
-    private IEnumerable<AdminCustomerRatingResponse> FilteredCustomerRatings =>
-        _customerRatings?.Where(r =>
-            string.IsNullOrWhiteSpace(_searchQuery)
-            || r.RestaurantName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
-            || r.RatedCustomerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
-            || r.RaterName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
-            || r.Comment.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
-        ) ?? [];
-
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
         StateHasChanged();
 
-        var restaurantTask = RatingService.GetRestaurantRatingsAsync();
-        var customerTask = RatingService.GetCustomerRatingsAsync();
-
-        var (restaurantRatings, restaurantError) = await restaurantTask;
-        var (customerRatings, customerError) = await customerTask;
+        var (restaurantRatings, restaurantError) = await RatingService.GetRestaurantRatingsAsync();
 
         _restaurantRatings = restaurantRatings;
-        _customerRatings = customerRatings;
-        _actionError = restaurantError?.Error ?? customerError?.Error;
+        _actionError = restaurantError?.Error;
         _isLoading = false;
     }
 
     private string GetSubtitle()
     {
         var restaurantCount = _restaurantRatings?.Count ?? 0;
-        var customerCount = _customerRatings?.Count ?? 0;
-        return $"{restaurantCount} avis restaurants, {customerCount} avis clients";
+        return $"{restaurantCount} avis restaurants";
     }
 
     // ── Delete ──
@@ -215,7 +139,6 @@
         if (success)
         {
             _restaurantRatings?.RemoveAll(r => r.Id == id);
-            _customerRatings?.RemoveAll(r => r.Id == id);
             _actionSuccess = "Avis supprimé avec succès";
         }
         else
