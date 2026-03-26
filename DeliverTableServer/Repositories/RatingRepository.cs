@@ -26,4 +26,31 @@ public class RatingRepository(DeliverTableContext dbContext) : IRatingRepository
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task<RestaurantRating?> GetByOrderAndCustomerAsync(int orderId, int customerId, CancellationToken ct = default)
+    {
+        return await _dbContext.RestaurantRatings
+            .Include(r => r.Restaurant)
+            .FirstOrDefaultAsync(r => r.OrderId == orderId && r.CustomerUserId == customerId, ct);
+    }
+
+    public async Task<RestaurantRating> CreateAsync(RestaurantRating rating, CancellationToken ct = default)
+    {
+        _dbContext.RestaurantRatings.Add(rating);
+        await _dbContext.SaveChangesAsync(ct);
+        return rating;
+    }
+
+    public async Task<RestaurantRating> UpdateAsync(RestaurantRating rating, CancellationToken ct = default)
+    {
+        _dbContext.RestaurantRatings.Update(rating);
+        await _dbContext.SaveChangesAsync(ct);
+        return rating;
+    }
+
+    public async Task DeleteAsync(RestaurantRating rating, CancellationToken ct = default)
+    {
+        _dbContext.RestaurantRatings.Remove(rating);
+        await _dbContext.SaveChangesAsync(ct);
+    }
 }
