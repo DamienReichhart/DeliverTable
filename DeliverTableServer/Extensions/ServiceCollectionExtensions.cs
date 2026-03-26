@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPromotionService, PromotionService>();
         services.AddScoped<IDiscountCodeService, DiscountCodeService>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
+        services.AddScoped<IRatingService, RatingService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
