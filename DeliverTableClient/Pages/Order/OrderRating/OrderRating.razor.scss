@@ -1,0 +1,134 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.order-rating-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+}
+
+.rating-header {
+  text-align: center;
+
+  h1 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0 0 $spacing-sm;
+  }
+}
+
+.rating-subtitle {
+  color: $color-text-muted;
+  font-size: $font-size-base;
+  margin: 0;
+}
+
+.rating-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// ── Star Selector ──
+
+.star-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.star-label {
+  @include label-mono;
+  color: $color-text-muted;
+}
+
+.stars {
+  display: flex;
+  gap: $spacing-xs;
+  cursor: pointer;
+}
+
+.star {
+  font-size: 2.5rem;
+  color: $color-border;
+  transition: color $transition-fast, transform $transition-fast;
+  line-height: 1;
+  user-select: none;
+
+  &:hover,
+  &.star--filled {
+    color: $color-amber-gold;
+  }
+
+  &:hover {
+    transform: scale(1.15);
+  }
+}
+
+.star-value {
+  font-family: $font-family-mono;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+// ── Comment ──
+
+.comment-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.comment-label {
+  @include label-mono;
+  color: $color-text-muted;
+}
+
+.comment-input {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $color-text;
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $spacing-sm $spacing-md;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-border-focus;
+    box-shadow: $focus-ring;
+  }
+
+  &::placeholder {
+    color: $color-text-muted;
+    opacity: 0.6;
+  }
+}
+
+.comment-count {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  text-align: right;
+}
+
+// ── Actions ──
+
+.rating-form-actions {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.rating-actions {
+  display: flex;
+  justify-content: center;
+}
