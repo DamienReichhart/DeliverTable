@@ -1,0 +1,258 @@
+@page "/commande/{Id:int}/avis"
+@inject IRatingClientService RatingService
+@inject IOrderService OrderService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.Customer))]
+
+<PageTitle>Noter la commande — DeliverTable</PageTitle>
+
+<div class="order-rating-page">
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+        <div class="rating-actions">
+            <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+                Retour à la commande
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="rating-header">
+            <h1>Noter votre commande</h1>
+            <p class="rating-subtitle">Commande #@Id — @_order!.RestaurantName</p>
+        </div>
+
+        <div class="rating-card">
+            <div class="star-selector">
+                <span class="star-label">Votre note</span>
+                <div class="stars" @onmouseout="ResetHover">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        var star = i;
+                        <span class="star @(IsStarFilled(star) ? "star--filled" : "")"
+                              @onclick="() => SelectStar(star)"
+                              @onmouseover="() => HoverStar(star)">
+                            &#9733;
+                        </span>
+                    }
+                </div>
+                @if (_selectedRating > 0)
+                {
+                    <span class="star-value">@_selectedRating / 5</span>
+                }
+            </div>
+
+            <div class="comment-section">
+                <label class="comment-label" for="comment">Commentaire (optionnel)</label>
+                <textarea id="comment"
+                          class="comment-input"
+                          rows="4"
+                          maxlength="2000"
+                          placeholder="Partagez votre expérience..."
+                          @bind="_comment"></textarea>
+                <span class="comment-count">@(_comment?.Length ?? 0) / 2000</span>
+            </div>
+
+            @if (_submitError is not null)
+            {
+                <div class="error-message">
+                    <p>@_submitError</p>
+                </div>
+            }
+
+            <div class="rating-form-actions">
+                @if (_existingRating is not null)
+                {
+                    <button type="button"
+                            class="app-btn app-btn--primary"
+                            disabled="@(_selectedRating == 0 || _submitting)"
+                            @onclick="UpdateRating">
+                        @(_submitting ? "Envoi..." : "Modifier")
+                    </button>
+                    @if (_confirmingDelete)
+                    {
+                        <button type="button"
+                                class="app-btn app-btn--danger"
+                                disabled="@_submitting"
+                                @onclick="ConfirmDelete">
+                            Confirmer la suppression
+                        </button>
+                        <button type="button"
+                                class="app-btn app-btn--secondary"
+                                @onclick="CancelDelete">
+                            Annuler
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="app-btn app-btn--danger app-btn--outline"
+                                disabled="@_submitting"
+                                @onclick="RequestDelete">
+                            Supprimer
+                        </button>
+                    }
+                }
+                else
+                {
+                    <button type="button"
+                            class="app-btn app-btn--primary"
+                            disabled="@(_selectedRating == 0 || _submitting)"
+                            @onclick="SubmitRating">
+                        @(_submitting ? "Envoi..." : "Envoyer")
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="rating-actions">
+            <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+                Retour à la commande
+            </button>
+        </div>
+    }
+</div>
+
+@if (_toast is not null)
+{
+    <div class="toast-message toast--success">@_toast</div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private OrderDto? _order;
+    private RatingDto? _existingRating;
+    private int _selectedRating;
+    private int _hoveredRating;
+    private string? _comment;
+    private bool _loading = true;
+    private bool _submitting;
+    private bool _confirmingDelete;
+    private string? _error;
+    private string? _submitError;
+    private string? _toast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (order, orderError) = await OrderService.GetOrderByIdAsync(Id);
+        if (orderError is not null || order is null)
+        {
+            _error = orderError?.Error ?? "Commande introuvable";
+            _loading = false;
+            return;
+        }
+
+        if (order.Status != nameof(OrderStatus.Delivered))
+        {
+            _error = "Vous ne pouvez noter qu'une commande livrée";
+            _loading = false;
+            return;
+        }
+
+        _order = order;
+
+        var (rating, _) = await RatingService.GetByOrderAsync(Id);
+        if (rating is not null)
+        {
+            _existingRating = rating;
+            _selectedRating = rating.Rating;
+            _comment = rating.Comment;
+        }
+
+        _loading = false;
+    }
+
+    private bool IsStarFilled(int star) =>
+        star <= (_hoveredRating > 0 ? _hoveredRating : _selectedRating);
+
+    private void SelectStar(int star) => _selectedRating = star;
+    private void HoverStar(int star) => _hoveredRating = star;
+    private void ResetHover() => _hoveredRating = 0;
+
+    private async Task SubmitRating()
+    {
+        _submitting = true;
+        _submitError = null;
+
+        var request = new CreateRatingRequest
+        {
+            Rating = _selectedRating,
+            Comment = string.IsNullOrWhiteSpace(_comment) ? null : _comment.Trim(),
+        };
+
+        var (_, error) = await RatingService.CreateAsync(Id, request);
+        if (error is not null)
+        {
+            _submitError = error.Error;
+            _submitting = false;
+            return;
+        }
+
+        Nav.NavigateTo($"/commande/{Id}/confirmation?rated=true");
+    }
+
+    private async Task UpdateRating()
+    {
+        _submitting = true;
+        _submitError = null;
+
+        var request = new UpdateRatingRequest
+        {
+            Rating = _selectedRating,
+            Comment = string.IsNullOrWhiteSpace(_comment) ? null : _comment.Trim(),
+        };
+
+        var (_, error) = await RatingService.UpdateAsync(Id, request);
+        if (error is not null)
+        {
+            _submitError = error.Error;
+            _submitting = false;
+            return;
+        }
+
+        Nav.NavigateTo($"/commande/{Id}/confirmation?rated=true");
+    }
+
+    private void RequestDelete() => _confirmingDelete = true;
+    private void CancelDelete() => _confirmingDelete = false;
+
+    private async Task ConfirmDelete()
+    {
+        _submitting = true;
+        _submitError = null;
+
+        var (success, error) = await RatingService.DeleteAsync(Id);
+        if (!success)
+        {
+            _submitError = error?.Error ?? "Erreur lors de la suppression";
+            _submitting = false;
+            _confirmingDelete = false;
+            return;
+        }
+
+        _existingRating = null;
+        _selectedRating = 0;
+        _comment = null;
+        _submitting = false;
+        _confirmingDelete = false;
+
+        _toast = "Votre avis a été supprimé";
+        StateHasChanged();
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            _toast = null;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void GoBack() => Nav.NavigateTo($"/commande/{Id}/confirmation");
+}
