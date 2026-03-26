@@ -188,6 +188,7 @@ public static class ApiRoutes
         public const string ByIdRoute = "{id:int}";
         public const string StatusRoute = "{id:int}/status";
         public const string RestaurantOrdersRoute = "restaurant/{id:int}";
+        public const string RatingRoute = "{orderId:int}/rating";
     }
 
     /// <summary>Restaurant account and transaction routes.</summary>
