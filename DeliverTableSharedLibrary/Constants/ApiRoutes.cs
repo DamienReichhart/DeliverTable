@@ -138,7 +138,6 @@ public static class ApiRoutes
         // ── Ratings ──
         public const string RatingsRoute = "ratings";
         public const string RestaurantRatingsRoute = "ratings/restaurants";
-        public const string CustomerRatingsRoute = "ratings/customers";
         public const string RatingByIdRoute = "ratings/{id:int}";
         public const string Ratings = Base + "/" + RatingsRoute;
 

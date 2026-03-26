@@ -23,19 +23,6 @@ public sealed class AdminRatingClientService(HttpClient httpClient) : IAdminRati
             : (null, new ErrorResponse { Error = "Impossible de lire les avis restaurants", Status = (int)response.StatusCode });
     }
 
-    public async Task<(List<AdminCustomerRatingResponse>? Ratings, ErrorResponse? Error)> GetCustomerRatingsAsync(
-        CancellationToken ct = default)
-    {
-        using var response = await _httpClient.GetAsync($"{ApiRoutes.Admin.Ratings}/customers", ct);
-        if (!response.IsSuccessStatusCode)
-            return (null, await ReadError(response, ct));
-
-        var items = await response.Content.ReadFromJsonAsync<List<AdminCustomerRatingResponse>>(cancellationToken: ct);
-        return items is not null
-            ? (items, null)
-            : (null, new ErrorResponse { Error = "Impossible de lire les avis clients", Status = (int)response.StatusCode });
-    }
-
     public async Task<(bool Success, ErrorResponse? Error)> DeleteAsync(int id, CancellationToken ct = default)
     {
         using var response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.Ratings}/{id}", ct);

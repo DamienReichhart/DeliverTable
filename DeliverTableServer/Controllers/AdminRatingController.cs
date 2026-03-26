@@ -21,13 +21,6 @@ public class AdminRatingController(IAdminRatingService adminRatingService) : Con
         return result.ToOkResult();
     }
 
-    [HttpGet(ApiRoutes.Admin.CustomerRatingsRoute)]
-    public async Task<IActionResult> GetCustomerRatings(CancellationToken ct)
-    {
-        var result = await _adminRatingService.GetCustomerRatingsAsync(ct);
-        return result.ToOkResult();
-    }
-
     [HttpDelete(ApiRoutes.Admin.RatingByIdRoute)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {

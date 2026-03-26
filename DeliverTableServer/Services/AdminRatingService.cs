@@ -19,22 +19,10 @@ public sealed class AdminRatingService(IRatingRepository ratingRepository) : IAd
         return result;
     }
 
-    public async Task<ServiceResult<List<AdminCustomerRatingResponse>>> GetCustomerRatingsAsync(
-        CancellationToken ct = default)
-    {
-        var ratings = await _ratingRepository.GetAllCustomerRatingsAsync(ct);
-        var result = ratings.Select(r => r.ToAdminDto()).ToList();
-        return result;
-    }
-
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deletedRestaurant = await _ratingRepository.DeleteRestaurantRatingAsync(id, ct);
-        if (deletedRestaurant)
-            return ServiceResult.Success();
-
-        var deletedCustomer = await _ratingRepository.DeleteCustomerRatingAsync(id, ct);
-        if (deletedCustomer)
+        var deleted = await _ratingRepository.DeleteRestaurantRatingAsync(id, ct);
+        if (deleted)
             return ServiceResult.Success();
 
         return new ServiceError(ErrorMessages.RatingNotFound, 404);
