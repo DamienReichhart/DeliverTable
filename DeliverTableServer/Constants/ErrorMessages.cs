@@ -94,6 +94,9 @@ public static class ErrorMessages
 
     // Ratings
     public const string RatingNotFound = "Avis introuvable";
+    public const string OrderNotDelivered = "Vous ne pouvez noter qu'une commande livrée";
+    public const string RatingAlreadyExists = "Vous avez déjà noté cette commande";
+    public const string RatingOutOfRange = "La note doit être comprise entre 1 et 5";
 
     // Order Config
     public const string OrderRuleNotFound = "Règle de commande introuvable";
