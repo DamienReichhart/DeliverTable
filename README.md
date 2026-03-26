@@ -22,6 +22,7 @@ A full-stack food delivery and restaurant management platform built with .NET 10
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
+- [Commercial Licensing](#commercial-licensing)
 
 ---
 
@@ -954,4 +955,17 @@ Git hooks (installed via `make hooks-install`) enforce:
 
 ## License
 
-[MIT](LICENSE) — Copyright 2026 DeliverTable Team
+This project is dual-licensed:
+
+- **Open source**: [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE)
+- **Commercial**: Available for proprietary use
+
+Copyright 2026 DeliverTable Team. See [LICENSING.md](LICENSING.md) for full details.
+
+### Contributing
+
+By contributing to DeliverTable, you agree to our [Contributor License Agreement](CLA.md) and the [Developer Certificate of Origin](DCO.md). All commits must include a `Signed-off-by` line (`git commit -s`).
+
+## Commercial Licensing
+
+If you want to use DeliverTable in proprietary software, deploy it as a SaaS without sharing source code, or embed it in a closed-source product, a commercial license is available. Please contact us for details.
