@@ -45,6 +45,7 @@ public static class ApiClientServiceCollectionExtensions
         RegisterPromotionService(services);
         RegisterDiscountCodeClientService(services);
         RegisterLoyaltyClientService(services);
+        RegisterRatingClientService(services);
         RegisterAdminDomainServices(services);
 
         return services;
@@ -106,6 +107,11 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterLoyaltyClientService(IServiceCollection services)
     {
         services.AddScoped<ILoyaltyClientService, LoyaltyClientService>();
+    }
+
+    private static void RegisterRatingClientService(IServiceCollection services)
+    {
+        services.AddScoped<IRatingClientService, RatingClientService>();
     }
 
     private static void RegisterAdminDomainServices(IServiceCollection services)
