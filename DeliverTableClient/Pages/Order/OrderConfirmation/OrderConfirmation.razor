@@ -136,6 +136,12 @@
         </div>
 
         <div class="confirmation-actions">
+            @if (_order.Status == "Delivered")
+            {
+                <button type="button" class="app-btn app-btn--secondary" @onclick="GoToRating">
+                    &#9733; Noter cette commande
+                </button>
+            }
             <button type="button" class="app-btn app-btn--primary" @onclick="GoToOrders">
                 Voir mes commandes
             </button>
@@ -146,9 +152,20 @@
     }
 </div>
 
+@if (_toast is not null)
+{
+    <div class="toast-message toast--success">@_toast</div>
+}
+
 @code {
     [Parameter]
     public int Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "rated")]
+    public bool? Rated { get; set; }
+
+    [SupplyParameterFromQuery(Name = "deleted")]
+    public bool? Deleted { get; set; }
 
     private static readonly System.Globalization.CultureInfo _frCulture =
         System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
@@ -156,6 +173,7 @@
     private OrderDto? _order;
     private bool _loading = true;
     private string? _error;
+    private string? _toast;
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,8 +187,19 @@
             _order = order;
         }
         _loading = false;
+
+        if (Rated == true)
+        {
+            _toast = "Votre avis a été enregistré";
+            _ = Task.Delay(3000).ContinueWith(_ =>
+            {
+                _toast = null;
+                InvokeAsync(StateHasChanged);
+            });
+        }
     }
 
+    private void GoToRating() => Nav.NavigateTo($"/commande/{Id}/avis");
     private void GoToOrders() => Nav.NavigateTo("/mes-commandes");
     private void GoToRestaurants() => Nav.NavigateTo("/restaurants");
 
