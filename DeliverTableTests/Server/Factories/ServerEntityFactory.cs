@@ -135,6 +135,32 @@ public static class ServerEntityFactory
             PointsBalance = pointsBalance
         };
 
+    /// <summary>Creates a valid <see cref="Order"/> for service tests.</summary>
+    public static Order CreateOrder(int id = 1, int customerId = 1, int restaurantId = 1, OrderStatus status = OrderStatus.Delivered) => new()
+    {
+        Id = id,
+        CustomerId = customerId,
+        RestaurantId = restaurantId,
+        Status = status,
+        Restaurant = CreateRestaurant(id: restaurantId, ownerId: 5),
+        TotalAmount = 30m,
+        OriginalAmount = 30m,
+        Items = [],
+        Discounts = []
+    };
+
+    /// <summary>Creates a valid <see cref="RestaurantRating"/> for service tests.</summary>
+    public static RestaurantRating CreateRestaurantRating(int id = 1, int orderId = 1, int restaurantId = 1, int customerId = 1, int rating = 4) => new()
+    {
+        Id = id,
+        OrderId = orderId,
+        RestaurantId = restaurantId,
+        CustomerUserId = customerId,
+        Rating = rating,
+        Comment = "Très bon restaurant",
+        Restaurant = CreateRestaurant(id: restaurantId, ownerId: 5)
+    };
+
     /// <summary>Creates a <see cref="JwtConfig" /> suitable for test token generation.</summary>
     public static JwtConfig CreateTestJwtConfig() => new()
     {
