@@ -1,9 +1,10 @@
-﻿using DeliverTableSharedLibrary.Constants;
+﻿using DeliverTableServer.Extensions;
+using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Reclamation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DeliverTableServer.Services.Interfaces;
-using DeliverTableServer.Mappers;
-using Microsoft.AspNetCore.Authorization;
 
 namespace DeliverTableServer.Controllers;
 
@@ -14,54 +15,111 @@ public class ReclamationController(
     IReclamationService reclamationService
     ) : ControllerBase
 {
+    private readonly IReclamationService _reclamationService = reclamationService;
+
     [HttpGet]
+    [Authorize(Roles = nameof(UserRole.Administrator))]
     public async Task<IActionResult> Index([FromQuery] ReclamationQuery query)
     {
-        return Ok(await reclamationService.GetAllReclamations(query));
+        var result = await _reclamationService.GetAllReclamations(query);
+        return result.ToOkResult();
     }
 
     [HttpGet(ApiRoutes.Reclamation.ByIdRoute)]
-    public async Task<IActionResult> GetById(int id)
+    [Authorize(Roles = nameof(UserRole.Administrator))]
+    public async Task<IActionResult> GetById([FromRoute] int id)
     {
-        return Ok(await reclamationService.GetReclamationById(id));
+        var result = await _reclamationService.GetReclamationById(id);
+        return result.ToOkResult();
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateReclamationDto reclamation)
     {
-        IFormFileCollection images = Request.Form.Files;
-        Reclamation created = await reclamationService.CreateReclamation(reclamation, images);
-        return Ok(created.ToDto());
+        var result = await _reclamationService.CreateReclamation(reclamation, Request.Form.Files);
+        return result.ToOkResult();
     }
 
     [HttpPut(ApiRoutes.Reclamation.ByIdRoute)]
-    public async Task<IActionResult> Update(int id, Reclamation reclamation)
+    [Authorize(Roles = nameof(UserRole.Administrator))]
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateReclamationDto reclamation)
     {
-        return Ok(await reclamationService.UpdateReclamation(id, reclamation));
+        var result = await _reclamationService.UpdateReclamation(id, reclamation);
+        return result.ToOkResult();
     }
 
     [HttpDelete(ApiRoutes.Reclamation.ByIdRoute)]
-    public async Task<IActionResult> Delete(int id)
+    [Authorize(Roles = nameof(UserRole.Administrator))]
+    public async Task<IActionResult> Delete([FromRoute] int id)
     {
-        await reclamationService.DeleteReclamation(id);
-        return NoContent();
+        var result = await _reclamationService.DeleteReclamation(id);
+        return result.ToNoContentResult();
     }
 
     [HttpGet(ApiRoutes.Reclamation.ByUserRoute)]
-    public async Task<IActionResult> GetByUserId(int userId)
+    [Authorize(Roles = nameof(UserRole.Administrator))]
+    public async Task<IActionResult> GetByUserId([FromRoute] int userId)
     {
-        return Ok(await reclamationService.GetReclamationsByUser(userId));
+        var result = await _reclamationService.GetReclamationsByUser(userId);
+        return result.ToOkResult();
     }
 
     [HttpGet(ApiRoutes.Reclamation.ByOrderRoute)]
-    public async Task<IActionResult> GetByOrderId(int orderId)
+    public async Task<IActionResult> GetByOrderId([FromRoute] int orderId)
     {
-        return Ok(await reclamationService.GetReclamationsByOrderId(orderId));
+        var result = await _reclamationService.GetReclamationsByOrderId(orderId);
+        return result.ToOkResult();
     }
 
     [HttpGet(ApiRoutes.Reclamation.ByRestaurantRoute)]
-    public async Task<IActionResult> GetByRestaurantId(int restaurantId)
+    [Authorize(Roles = nameof(UserRole.Administrator))]
+    public async Task<IActionResult> GetByRestaurantId([FromRoute] int restaurantId)
     {
-        return Ok(await reclamationService.GetReclamationsByRestaurant(restaurantId));
+        var result = await _reclamationService.GetReclamationsByRestaurant(restaurantId);
+        return result.ToOkResult();
+    }
+
+    [HttpGet(ApiRoutes.Reclamation.MyRestaurantRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+    public async Task<IActionResult> GetMyRestaurantReclamations()
+    {
+        if (!this.TryGetUserId(out int ownerId)) return Unauthorized();
+        var result = await _reclamationService.GetReclamationsByRestaurantOwner(ownerId);
+        return result.ToOkResult();
+    }
+
+    [HttpPost(ApiRoutes.Reclamation.RefundRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+    public async Task<IActionResult> Refund([FromRoute] int id, [FromBody] RefundReclamationDto dto)
+    {
+        if (!this.TryGetUserId(out int ownerId)) return Unauthorized();
+        var result = await _reclamationService.RefundReclamation(id, ownerId, dto);
+        return result.ToOkResult();
+    }
+
+    [HttpPatch(ApiRoutes.Reclamation.ResolveRoute)]
+    [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+    public async Task<IActionResult> Resolve([FromRoute] int id)
+    {
+        if (!this.TryGetUserId(out int ownerId)) return Unauthorized();
+        var result = await _reclamationService.ResolveReclamation(id, ownerId);
+        return result.ToOkResult();
+    }
+
+    [HttpPatch(ApiRoutes.Reclamation.ContestRoute)]
+    [Authorize(Roles = nameof(UserRole.Customer))]
+    public async Task<IActionResult> Contest([FromRoute] int id)
+    {
+        if (!this.TryGetUserId(out int customerId)) return Unauthorized();
+        var result = await _reclamationService.ContestReclamation(id, customerId);
+        return result.ToOkResult();
+    }
+
+    [HttpPatch(ApiRoutes.Reclamation.CompleteRoute)]
+    [Authorize(Roles = nameof(UserRole.Administrator))]
+    public async Task<IActionResult> Complete([FromRoute] int id)
+    {
+        var result = await _reclamationService.CompleteReclamation(id);
+        return result.ToOkResult();
     }
 }

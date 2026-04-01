@@ -6,4 +6,5 @@ public enum ReclamationStatus
     InProgress = 1,
     Resolved = 2,
     Completed = 3,
+    Contested = 4,
 }

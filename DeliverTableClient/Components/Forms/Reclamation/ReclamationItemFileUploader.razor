@@ -1,2 +1,22 @@
-<h3>@OrderItem.DishName</h3>
-<InputFile class="form-control" OnChange="HandleImageSelected" accept="image/*" />
+<div class="reclamation-item-uploader">
+    <div class="reclamation-item-uploader__header">
+        <div>
+            <h3>@OrderItem.DishName</h3>
+            <p>Quantité : @OrderItem.Quantity</p>
+        </div>
+
+        @if (_selectedFileName is not null)
+        {
+            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="ClearSelection">
+                Retirer la photo
+            </button>
+        }
+    </div>
+
+    <InputFile class="form-control" OnChange="HandleImageSelected" accept="image/*" />
+
+    @if (_selectedFileName is not null)
+    {
+        <p class="reclamation-item-uploader__file">Fichier sélectionné : @_selectedFileName</p>
+    }
+</div>

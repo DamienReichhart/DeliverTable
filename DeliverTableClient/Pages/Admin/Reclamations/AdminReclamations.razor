@@ -1,0 +1,429 @@
+@page "/admin/reclamations"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableSharedLibrary.Dtos.Reclamation
+@using Microsoft.AspNetCore.Authorization
+@inject IReclamationService ReclamationService
+@inject NavigationManager Nav
+
+<PageTitle>Réclamations — Administration</PageTitle>
+
+<AdminLayout Title="Réclamations" Subtitle="@($"{(_reclamations?.Count ?? 0)} réclamations")">
+    <ChildContent>
+        <AdminBreadcrumbs Items="@_breadcrumbs" />
+
+        @if (!string.IsNullOrEmpty(_actionSuccess))
+        {
+            <div class="adm-alert adm-alert--success">@_actionSuccess</div>
+        }
+        @if (!string.IsNullOrEmpty(_actionError))
+        {
+            <div class="adm-alert adm-alert--danger">@_actionError</div>
+        }
+
+        <div class="admin-reclamations-filters">
+            <div class="adm-form-group">
+                <label class="adm-form-label" for="reclamation-status-filter">Statut</label>
+                <select id="reclamation-status-filter" class="adm-form-select" @bind="_query.ReclamationStatus" @bind:after="LoadReclamations">
+                    <option value="">Tous</option>
+                    @foreach (var status in Enum.GetValues<ReclamationStatus>())
+                    {
+                        <option value="@status">@TranslateStatus(status)</option>
+                    }
+                </select>
+            </div>
+
+            <div class="adm-form-group">
+                <label class="adm-form-label" for="reclamation-type-filter">Type</label>
+                <select id="reclamation-type-filter" class="adm-form-select" @bind="_query.ReclamationType" @bind:after="LoadReclamations">
+                    <option value="">Tous</option>
+                    @foreach (var type in Enum.GetValues<ReclamationType>())
+                    {
+                        <option value="@type">@TranslateType(type)</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <AdminDataTable TItem="ReclamationDto"
+                         Items="_reclamations ?? []"
+                         TotalCount="@(_reclamations?.Count ?? 0)"
+                         IsLoading="@_isLoading"
+                         SearchPlaceholder="Rechercher par n° de commande ou contenu..."
+                         SearchText="@(_query.Content ?? string.Empty)"
+                         SearchTextChanged="HandleSearchChanged">
+            <HeaderContent>
+                <th>#</th>
+                <th>Commande</th>
+                <th>Type</th>
+                <th>Statut</th>
+                <th>Articles</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </HeaderContent>
+            <RowContent Context="reclamation">
+                <tr>
+                    <td class="adm-cell-mono">@reclamation.ReclamationId</td>
+                    <td class="adm-cell-mono">#@reclamation.OrderId</td>
+                    <td>
+                        <AdminBadge Text="@TranslateType(reclamation.Type)" Variant="info" />
+                    </td>
+                    <td>
+                        <AdminBadge Text="@TranslateStatus(reclamation.Status)"
+                                    Variant="@StatusBadgeVariant(reclamation.Status)" ShowDot />
+                    </td>
+                    <td>@reclamation.Items.Count</td>
+                    <td class="adm-cell-mono">@reclamation.Created.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <div class="adm-cell-actions">
+                            <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="() => OpenEditModal(reclamation)">
+                                Traiter
+                            </button>
+                            @if (reclamation.Status == ReclamationStatus.Contested)
+                            {
+                                <button class="adm-ghost-btn adm-ghost-btn--primary"
+                                        disabled="@(_completingId == reclamation.ReclamationId)"
+                                        @onclick="() => HandleComplete(reclamation)">
+                                    @(_completingId == reclamation.ReclamationId ? "..." : "Clôturer")
+                                </button>
+                            }
+                            <button class="adm-ghost-btn" @onclick="() => OpenDetailsModal(reclamation)">
+                                Détails
+                            </button>
+                            <button class="adm-ghost-btn adm-ghost-btn--danger" @onclick="() => OpenDeleteConfirm(reclamation)">
+                                Supprimer
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </RowContent>
+            <EmptyContent>
+                <AdminEmptyState Title="Aucune réclamation trouvée"
+                                 Message="Aucune réclamation ne correspond aux filtres appliqués.">
+                    <IconContent><Blazicon Svg="Lucide.TriangleAlert" /></IconContent>
+                </AdminEmptyState>
+            </EmptyContent>
+        </AdminDataTable>
+
+        <AdminFormModal IsVisible="@(_editingReclamation is not null)"
+                        Title="Mettre à jour la réclamation"
+                        OnClose="CloseEditModal">
+            <ChildContent>
+                @if (_editingReclamation is not null)
+                {
+                    <div class="adm-form-group">
+                        <label class="adm-form-label">Réclamation #@_editingReclamation.ReclamationId</label>
+                        <div class="admin-reclamations-order-link">
+                            Commande #@_editingReclamation.OrderId
+                        </div>
+                    </div>
+
+                    <div class="adm-form-row">
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit-reclamation-status">Statut</label>
+                            <InputSelect id="edit-reclamation-status" class="adm-form-select" @bind-Value="_editModel.Status">
+                                @foreach (var status in Enum.GetValues<ReclamationStatus>())
+                                {
+                                    <option value="@status">@TranslateStatus(status)</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit-reclamation-type">Type</label>
+                            <InputSelect id="edit-reclamation-type" class="adm-form-select" @bind-Value="_editModel.Type">
+                                @foreach (var type in Enum.GetValues<ReclamationType>())
+                                {
+                                    <option value="@type">@TranslateType(type)</option>
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+
+                    <div class="adm-form-group">
+                        <label class="adm-form-label" for="edit-reclamation-description">Description</label>
+                        <InputTextArea id="edit-reclamation-description"
+                                       class="adm-form-textarea"
+                                       rows="6"
+                                       @bind-Value="_editModel.Description" />
+                    </div>
+
+                    <div class="adm-form-actions">
+                        <button class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseEditModal" disabled="@_isSaving">
+                            Annuler
+                        </button>
+                        <button class="app-btn app-btn--sm" @onclick="HandleUpdate" disabled="@_isSaving">
+                            @(_isSaving ? "Sauvegarde..." : "Sauvegarder")
+                        </button>
+                    </div>
+                }
+            </ChildContent>
+        </AdminFormModal>
+
+        <AdminFormModal IsVisible="@(_detailsReclamation is not null)"
+                        Wide="true"
+                        Title="Détails de la réclamation"
+                        OnClose="CloseDetailsModal">
+            <ChildContent>
+                @if (_detailsReclamation is not null)
+                {
+                    <div class="admin-reclamation-details">
+                        <div class="admin-reclamation-details__meta">
+                            <div>
+                                <span class="adm-form-label">Commande</span>
+                                <strong>#@_detailsReclamation.OrderId</strong>
+                            </div>
+                            <div>
+                                <span class="adm-form-label">Statut</span>
+                                <strong>@TranslateStatus(_detailsReclamation.Status)</strong>
+                            </div>
+                            <div>
+                                <span class="adm-form-label">Type</span>
+                                <strong>@TranslateType(_detailsReclamation.Type)</strong>
+                            </div>
+                        </div>
+
+                        <div class="admin-reclamation-details__description">
+                            @_detailsReclamation.Description
+                        </div>
+
+                        <div class="admin-reclamation-details__items">
+                            @foreach (var item in _detailsReclamation.Items)
+                            {
+                                <div class="admin-reclamation-item">
+                                    <div class="admin-reclamation-item__header">
+                                        <strong>@item.Item.DishName</strong>
+                                        <span>Qté : @item.Item.Quantity</span>
+                                    </div>
+
+                                    @if (item.HasAttachedImage && !string.IsNullOrWhiteSpace(item.ImagePath))
+                                    {
+                                        <a class="adm-ghost-btn adm-ghost-btn--primary"
+                                           href="@ToAbsoluteImagePath(item.ImagePath)"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            Voir la pièce jointe
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="admin-reclamation-item__empty">Aucune image jointe</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </ChildContent>
+        </AdminFormModal>
+
+        <AdminConfirmDialog IsVisible="@(_deletingReclamation is not null)"
+                            Title="Supprimer la réclamation"
+                            Message="@($"Voulez-vous vraiment supprimer la réclamation #{_deletingReclamation?.ReclamationId} ? Cette action est irréversible.")"
+                            ConfirmText="Supprimer"
+                            Variant="danger"
+                            IsProcessing="@_isSaving"
+                            OnConfirm="HandleDelete"
+                            OnCancel="CloseDeleteConfirm" />
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private List<ReclamationDto>? _reclamations;
+    private ReclamationQuery _query = new();
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private string? _actionSuccess;
+    private string? _actionError;
+
+    private ReclamationDto? _editingReclamation;
+    private ReclamationDto? _detailsReclamation;
+    private ReclamationDto? _deletingReclamation;
+    private UpdateReclamationDto _editModel = new();
+    private int? _completingId;
+
+    private readonly List<AdminBreadcrumbs.BreadcrumbItem> _breadcrumbs =
+    [
+        new() { Label = "Administration", Href = "/admin" },
+        new() { Label = "Réclamations", Href = "/admin/reclamations" }
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReclamations();
+    }
+
+    private async Task LoadReclamations()
+    {
+        _isLoading = true;
+        ClearMessages();
+        StateHasChanged();
+
+        var (items, error) = await ReclamationService.GetAllAsync(_query);
+        _reclamations = items;
+        _actionError = error?.Error;
+        _isLoading = false;
+    }
+
+    private async Task HandleSearchChanged(string value)
+    {
+        _query.Content = string.IsNullOrWhiteSpace(value) ? null : value;
+        await LoadReclamations();
+    }
+
+    private void OpenEditModal(ReclamationDto reclamation)
+    {
+        ClearMessages();
+        _editingReclamation = reclamation;
+        _editModel = new UpdateReclamationDto
+        {
+            Status = reclamation.Status,
+            Type = reclamation.Type,
+            Description = reclamation.Description
+        };
+    }
+
+    private void CloseEditModal()
+    {
+        _editingReclamation = null;
+        _editModel = new UpdateReclamationDto();
+    }
+
+    private void OpenDetailsModal(ReclamationDto reclamation)
+    {
+        _detailsReclamation = reclamation;
+    }
+
+    private void CloseDetailsModal()
+    {
+        _detailsReclamation = null;
+    }
+
+    private void OpenDeleteConfirm(ReclamationDto reclamation)
+    {
+        ClearMessages();
+        _deletingReclamation = reclamation;
+    }
+
+    private void CloseDeleteConfirm()
+    {
+        _deletingReclamation = null;
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (_editingReclamation is null)
+            return;
+
+        _isSaving = true;
+        ClearMessages();
+
+        var (updated, error) = await ReclamationService.UpdateAsync(_editingReclamation.ReclamationId, _editModel);
+        if (updated is not null)
+        {
+            ReplaceReclamation(updated);
+            _actionSuccess = $"Réclamation #{updated.ReclamationId} mise à jour";
+            CloseEditModal();
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la mise à jour de la réclamation";
+        }
+
+        _isSaving = false;
+    }
+
+    private async Task HandleDelete()
+    {
+        if (_deletingReclamation is null)
+            return;
+
+        _isSaving = true;
+        ClearMessages();
+
+        var reclamationId = _deletingReclamation.ReclamationId;
+        var (success, error) = await ReclamationService.DeleteAsync(reclamationId);
+        if (success)
+        {
+            _reclamations?.RemoveAll(r => r.ReclamationId == reclamationId);
+            if (_detailsReclamation?.ReclamationId == reclamationId)
+                _detailsReclamation = null;
+            _actionSuccess = $"Réclamation #{reclamationId} supprimée";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Échec de la suppression de la réclamation";
+        }
+
+        _deletingReclamation = null;
+        _isSaving = false;
+    }
+
+    private void ReplaceReclamation(ReclamationDto updated)
+    {
+        if (_reclamations is null)
+            return;
+
+        var index = _reclamations.FindIndex(r => r.ReclamationId == updated.ReclamationId);
+        if (index >= 0)
+            _reclamations[index] = updated;
+
+        if (_detailsReclamation?.ReclamationId == updated.ReclamationId)
+            _detailsReclamation = updated;
+    }
+
+    private async Task HandleComplete(ReclamationDto reclamation)
+    {
+        _completingId = reclamation.ReclamationId;
+        ClearMessages();
+
+        var (updated, error) = await ReclamationService.CompleteAsync(reclamation.ReclamationId);
+        if (updated is not null)
+        {
+            ReplaceReclamation(updated);
+            _actionSuccess = $"Réclamation #{updated.ReclamationId} clôturée";
+        }
+        else
+        {
+            _actionError = error?.Error ?? "Impossible de clôturer la réclamation";
+        }
+
+        _completingId = null;
+    }
+
+    private void ClearMessages()
+    {
+        _actionSuccess = null;
+        _actionError = null;
+    }
+
+    private static string TranslateStatus(ReclamationStatus status) => status switch
+    {
+        ReclamationStatus.Pending => "En attente",
+        ReclamationStatus.InProgress => "En cours",
+        ReclamationStatus.Resolved => "Résolue",
+        ReclamationStatus.Contested => "Contestée",
+        ReclamationStatus.Completed => "Terminée",
+        _ => status.ToString()
+    };
+
+    private static string TranslateType(ReclamationType type) => type switch
+    {
+        ReclamationType.FoodQuality => "Qualité du repas",
+        ReclamationType.ServiceIssue => "Problème de service",
+        ReclamationType.WrongOrder => "Mauvaise commande",
+        _ => "Autre"
+    };
+
+    private static string StatusBadgeVariant(ReclamationStatus status) => status switch
+    {
+        ReclamationStatus.Pending => "warning",
+        ReclamationStatus.InProgress => "info",
+        ReclamationStatus.Resolved => "success",
+        ReclamationStatus.Contested => "danger",
+        ReclamationStatus.Completed => "active",
+        _ => "info"
+    };
+
+    private static string ToAbsoluteImagePath(string? path) =>
+        string.IsNullOrWhiteSpace(path) ? "#" : $"/{path.TrimStart('/')}";
+}

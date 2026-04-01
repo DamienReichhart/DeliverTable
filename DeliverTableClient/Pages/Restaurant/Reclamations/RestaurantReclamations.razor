@@ -1,0 +1,246 @@
+@page "/mes-reclamations"
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@inject IReclamationService ReclamationService
+
+<RefundModal Reclamation="_refundTarget"
+             IsVisible="_showRefundModal"
+             OnClose="CloseRefundModal"
+             OnRefunded="HandleRefunded" />
+
+<PageTitle>Réclamations — DeliverTable</PageTitle>
+
+<div class="restaurant-reclamations-page">
+    <div class="page-header">
+        <div>
+            <h1>Réclamations</h1>
+            <p class="page-subtitle">Réclamations concernant vos restaurants</p>
+        </div>
+        <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="LoadReclamations">
+            Actualiser
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_successMessage))
+    {
+        <div class="alert alert--success">@_successMessage</div>
+    }
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert--danger">@_errorMessage</div>
+    }
+
+    @if (_isLoading)
+    {
+        <div class="loading-container">
+            <p>Chargement des réclamations...</p>
+        </div>
+    }
+    else if (_reclamations is null || _reclamations.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Aucune réclamation en cours pour vos restaurants.</p>
+        </div>
+    }
+    else
+    {
+        <div class="reclamations-filter">
+            <select class="filter-select" @bind="_statusFilter" @bind:after="ApplyFilter">
+                <option value="">Tous les statuts</option>
+                @foreach (var status in Enum.GetValues<ReclamationStatus>())
+                {
+                    <option value="@status">@TranslateStatus(status)</option>
+                }
+            </select>
+        </div>
+
+        <div class="reclamations-list">
+            @foreach (var reclamation in _filtered)
+            {
+                <div class="reclamation-card">
+                    <div class="reclamation-card__header">
+                        <span class="reclamation-card__id">Réclamation #@reclamation.ReclamationId</span>
+                        <span class="status-badge status--@TranslateStatusClass(reclamation.Status)">
+                            @TranslateStatus(reclamation.Status)
+                        </span>
+                    </div>
+
+                    <div class="reclamation-card__meta">
+                        <span>Commande #@reclamation.OrderId</span>
+                        <span>@TranslateType(reclamation.Type)</span>
+                        <span>@reclamation.Created.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
+                    </div>
+
+                    <div class="reclamation-card__description">
+                        @reclamation.Description
+                    </div>
+
+                    @if (reclamation.Items.Count > 0)
+                    {
+                        <div class="reclamation-card__items">
+                            <p class="reclamation-card__items-label">Articles signalés</p>
+                            @foreach (var item in reclamation.Items)
+                            {
+                                <div class="reclamation-item-row">
+                                    <span class="reclamation-item-row__name">@item.Item.DishName</span>
+                                    <span class="reclamation-item-row__meta">x@(item.Item.Quantity)</span>
+                                    <span class="reclamation-item-row__price">
+                                        @item.Item.Subtotal.ToString("C", new System.Globalization.CultureInfo("fr-FR"))
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (reclamation.OrderTotalAmount > 0)
+                    {
+                        <div class="reclamation-card__amount">
+                            <span>Total commande</span>
+                            <strong>@reclamation.OrderTotalAmount.ToString("C", new System.Globalization.CultureInfo("fr-FR"))</strong>
+                        </div>
+                    }
+
+                    @if (reclamation.Status == ReclamationStatus.Pending)
+                    {
+                        <div class="reclamation-card__actions">
+                            <button class="app-btn app-btn--secondary app-btn--sm"
+                                    disabled="@(_resolvingId == reclamation.ReclamationId)"
+                                    @onclick="() => Resolve(reclamation)">
+                                @(_resolvingId == reclamation.ReclamationId ? "En cours..." : "Marquer comme résolue")
+                            </button>
+                            <button class="app-btn app-btn--danger app-btn--sm"
+                                    @onclick="() => OpenRefundModal(reclamation)">
+                                Rembourser
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<ReclamationDto>? _reclamations;
+    private List<ReclamationDto> _filtered = [];
+    private bool _isLoading = true;
+    private string? _successMessage;
+    private string? _errorMessage;
+    private string _statusFilter = string.Empty;
+    private int? _resolvingId;
+
+    private bool _showRefundModal;
+    private ReclamationDto? _refundTarget;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReclamations();
+    }
+
+    private async Task LoadReclamations()
+    {
+        _isLoading = true;
+        ClearMessages();
+        StateHasChanged();
+
+        var (items, error) = await ReclamationService.GetByRestaurantOwnerAsync();
+        _reclamations = items;
+        _errorMessage = error?.Error;
+        _isLoading = false;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (_reclamations is null)
+        {
+            _filtered = [];
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_statusFilter) ||
+            !Enum.TryParse<ReclamationStatus>(_statusFilter, out var status))
+        {
+            _filtered = _reclamations;
+            return;
+        }
+
+        _filtered = _reclamations.Where(r => r.Status == status).ToList();
+    }
+
+    private async Task Resolve(ReclamationDto reclamation)
+    {
+        _resolvingId = reclamation.ReclamationId;
+        ClearMessages();
+
+        var (updated, error) = await ReclamationService.ResolveAsync(reclamation.ReclamationId);
+        if (updated is not null)
+        {
+            var index = _reclamations?.FindIndex(r => r.ReclamationId == updated.ReclamationId) ?? -1;
+            if (index >= 0)
+                _reclamations![index] = updated;
+            ApplyFilter();
+            _successMessage = $"Réclamation #{updated.ReclamationId} marquée comme résolue.";
+        }
+        else
+        {
+            _errorMessage = error?.Error ?? "Impossible de résoudre la réclamation.";
+        }
+
+        _resolvingId = null;
+    }
+
+    private void OpenRefundModal(ReclamationDto reclamation)
+    {
+        _refundTarget = reclamation;
+        _showRefundModal = true;
+    }
+
+    private void CloseRefundModal()
+    {
+        _showRefundModal = false;
+        _refundTarget = null;
+    }
+
+    private void HandleRefunded(ReclamationDto updated)
+    {
+        var index = _reclamations?.FindIndex(r => r.ReclamationId == updated.ReclamationId) ?? -1;
+        if (index >= 0)
+            _reclamations![index] = updated;
+        ApplyFilter();
+        _successMessage = $"Réclamation #{updated.ReclamationId} remboursée avec succès.";
+    }
+
+    private void ClearMessages()
+    {
+        _successMessage = null;
+        _errorMessage = null;
+    }
+
+    private static string TranslateStatus(ReclamationStatus status) => status switch
+    {
+        ReclamationStatus.Pending => "En attente",
+        ReclamationStatus.InProgress => "En cours",
+        ReclamationStatus.Resolved => "Résolue",
+        ReclamationStatus.Contested => "Contestée",
+        ReclamationStatus.Completed => "Terminée",
+        _ => status.ToString()
+    };
+
+    private static string TranslateStatusClass(ReclamationStatus status) => status switch
+    {
+        ReclamationStatus.Pending => "pending",
+        ReclamationStatus.InProgress => "preparing",
+        ReclamationStatus.Resolved => "confirmed",
+        ReclamationStatus.Contested => "cancelled",
+        ReclamationStatus.Completed => "delivered",
+        _ => "pending"
+    };
+
+    private static string TranslateType(ReclamationType type) => type switch
+    {
+        ReclamationType.FoodQuality => "Qualité du repas",
+        ReclamationType.ServiceIssue => "Problème de service",
+        ReclamationType.WrongOrder => "Mauvaise commande",
+        _ => "Autre motif"
+    };
+}

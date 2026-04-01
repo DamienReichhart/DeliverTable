@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 using DeliverTableServer.Data;
+=======
+﻿using DeliverTableServer.Data;
+>>>>>>> 5902b14 (feat(client/server): Implement Admin + Restaurant Reclamation management)
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Models;
 using DeliverTableServer.Repositories.Interfaces;
@@ -11,6 +15,7 @@ namespace DeliverTableServer.Repositories;
 public class ReclamationRepository(DeliverTableContext dbContext) : IReclamationRepository
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
     public async Task<List<ReclamationDto>> GetAllReclamations(ReclamationQuery query)
     {
         IQueryable<Reclamation> queryable = dbContext.Reclamations.AsQueryable();
@@ -19,10 +24,14 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
         return await queryable.Select(r => r.ToDto()).ToListAsync();
 =======
     public async Task<List<Reclamation>> GetAllReclamations(ReclamationQuery query)
+=======
+    public async Task<List<ReclamationDto>> GetAllReclamations(ReclamationQuery query)
+>>>>>>> 5902b14 (feat(client/server): Implement Admin + Restaurant Reclamation management)
     {
         IQueryable<Reclamation> queryable = dbContext.Reclamations.AsQueryable();
         queryable = ApplyQueryFilters(queryable, query);
-        return await queryable.ToListAsync();
+        queryable = queryable.Include(r => r.Items).ThenInclude(i => i.OrderItem);
+        return await queryable.Select(r => r.ToDto()).ToListAsync();
     }
 
     public async Task<Reclamation?> GetReclamationById(int reclamationId)
@@ -30,12 +39,14 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
         return await dbContext.Reclamations
             .Include(r => r.Items)
             .ThenInclude(i => i.OrderItem)
+            .Include(r => r.Order)
+            .ThenInclude(o => o.Restaurant)
             .FirstOrDefaultAsync(r => r.ReclamationId == reclamationId);
     }
 
     public async Task<Reclamation> CreateReclamation(CreateReclamationDto reclamation)
     {
-        dbContext.Reclamations.Add(new Reclamation
+        var entity = new Reclamation
         {
             OrderId = reclamation.OrderId,
             Description = reclamation.Description,
@@ -46,44 +57,98 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
                 OrderItemId = i.OrderItemId,
                 HasAttachedImage = i.HasImage
             })]
-        });
+        };
+
+        dbContext.Reclamations.Add(entity);
         await dbContext.SaveChangesAsync();
-        return await GetReclamationById(dbContext.Reclamations.Max(r => r.ReclamationId)) ?? new Reclamation();
+        return await GetReclamationById(entity.ReclamationId) ?? new Reclamation();
     }
 
     public async Task<Reclamation?> GetReclamationsByOrderId(int orderId)
     {
-        return await dbContext.Reclamations.FirstOrDefaultAsync(r => r.OrderId == orderId);
+        return await dbContext.Reclamations
+                .Include(r => r.Items)
+                .ThenInclude(i => i.OrderItem)
+                .FirstOrDefaultAsync(r => r.OrderId == orderId);
     }
 
     public async Task<List<Reclamation>> GetReclamationsByUser(int userId)
     {
-        List<Order> orders = await dbContext.Orders.Where(o => o.CustomerId == userId).ToListAsync();
-        return await dbContext.Reclamations.Where(r => orders.Any(o => o.Id == r.OrderId)).ToListAsync();
+        var orderIds = await dbContext.Orders
+            .Where(o => o.CustomerId == userId)
+            .Select(o => o.Id)
+            .ToListAsync();
+
+        return await dbContext.Reclamations
+            .Include(r => r.Items)
+            .ThenInclude(i => i.OrderItem)
+            .Where(r => orderIds.Contains(r.OrderId))
+            .ToListAsync();
     }
 
     public async Task<List<Reclamation>> GetReclamationsByRestaurant(int restaurantId)
     {
-        List<Order> orders = await dbContext.Orders.Where(o => o.RestaurantId == restaurantId).ToListAsync();
-        return await dbContext.Reclamations.Where(r => orders.Any(o => o.Id == r.OrderId)).ToListAsync();
+        var orderIds = await dbContext.Orders
+            .Where(o => o.RestaurantId == restaurantId)
+            .Select(o => o.Id)
+            .ToListAsync();
+
+        return await dbContext.Reclamations
+            .Include(r => r.Items)
+            .ThenInclude(i => i.OrderItem)
+            .Where(r => orderIds.Contains(r.OrderId))
+            .ToListAsync();
     }
 
-    public async Task<Reclamation> UpdateReclamation(int reclamationId, Reclamation reclamation)
+    public async Task<List<Reclamation>> GetReclamationsByRestaurantOwner(int ownerId)
     {
-        Reclamation existingReclamation = await dbContext.Reclamations.FindAsync(reclamationId) ?? throw new KeyNotFoundException($"Reclamation introuvable.");
+        var orderIds = await dbContext.Orders
+            .Where(o => o.Restaurant.OwnerId == ownerId)
+            .Select(o => o.Id)
+            .ToListAsync();
+
+        return await dbContext.Reclamations
+            .Include(r => r.Items)
+            .ThenInclude(i => i.OrderItem)
+            .Include(r => r.Order)
+            .ThenInclude(o => o.Restaurant)
+            .Where(r => orderIds.Contains(r.OrderId))
+            .OrderByDescending(r => r.Created)
+            .ToListAsync();
+    }
+
+    public async Task<Reclamation?> UpdateReclamationStatus(int reclamationId, ReclamationStatus status)
+    {
+        Reclamation? existing = await dbContext.Reclamations.FindAsync(reclamationId);
+        if (existing == null) return null;
+
+        existing.Status = status;
+        existing.Updated = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync();
+        return await GetReclamationById(reclamationId);
+    }
+
+    public async Task<Reclamation?> UpdateReclamation(int reclamationId, UpdateReclamationDto reclamation)
+    {
+        Reclamation? existingReclamation = await dbContext.Reclamations.FindAsync(reclamationId);
+        if (existingReclamation == null) return null;
+
         existingReclamation.Type = reclamation.Type;
         existingReclamation.Status = reclamation.Status;
         existingReclamation.Description = reclamation.Description;
         existingReclamation.Updated = DateTime.UtcNow;
         await dbContext.SaveChangesAsync();
-        return existingReclamation;
+        return await GetReclamationById(reclamationId);
     }
 
-    public async Task DeleteReclamation(int reclamationId)
+    public async Task<bool> DeleteReclamation(int reclamationId)
     {
-        Reclamation reclamation = await dbContext.Reclamations.FindAsync(reclamationId);
+        Reclamation? reclamation = await dbContext.Reclamations.FindAsync(reclamationId);
+        if (reclamation == null) return false;
+
         dbContext.Reclamations.Remove(reclamation);
         await dbContext.SaveChangesAsync();
+        return true;
     }
 
     private static IQueryable<Reclamation> ApplyQueryFilters(
@@ -114,6 +179,7 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
         return queryable;
 >>>>>>> 8e99819 (feat(client/server): Adding Reclamation creation)
     }
+<<<<<<< HEAD
 
     public async Task<Reclamation?> GetReclamationById(int reclamationId)
     {
@@ -260,4 +326,6 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
 
         return queryable;
     }
+=======
+>>>>>>> 5902b14 (feat(client/server): Implement Admin + Restaurant Reclamation management)
 }

@@ -1,15 +1,67 @@
 @page "/"
 @using DeliverTableClient.Components.Test
+@using DeliverTableSharedLibrary.Constants
+@inject DeliverTableClient.Services.Interfaces.IHealthApiClient HealthApiClient
 
 <PageTitle>Accueil — DeliverTable</PageTitle>
 
 <div class="health-page">
-    <AuthorizeView Roles="Customer">
-        <Authorized>
-            <TestComponent />
-        </Authorized>
-    </AuthorizeView>
+    @if (_isLoading)
+    {
+        <div>
+            "Waiting";
+        </div>
+    }
+    else if (_health != null)
+    {
+        <div class="alert @DetermineColor()">
+            @_health.Status
+        </div>
+    }
+    else
+    {
+        <div>
+            Une erreur est survenue
+        </div>
+    }
+    @* <AuthorizeView Roles="Customer"> *@
+    @*     <Authorized> *@
+    @*     </Authorized> *@
+    @* </AuthorizeView> *@
 </div>
 
 @code {
+    private HealthResponse? _health = null;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            HealthResponse? response = await HealthApiClient.GetHealthAsync();
+            _health = response;
+        }
+        catch (Exception e)
+        {
+            throw;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string DetermineColor()
+    {
+        Enum.TryParse<HealthStatus>(_health.Status, true, out HealthStatus status);
+        return status switch
+        {
+            HealthStatus.Healthy => "alert-success text-success",
+            HealthStatus.Degraded => "alert-warning  text-warning",
+            HealthStatus.Unhealthy => "alert-danger  text-danger",
+            _ => "alert-secondary"
+        };
+    }
+
 }

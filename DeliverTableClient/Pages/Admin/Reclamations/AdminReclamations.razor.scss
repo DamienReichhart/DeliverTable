@@ -1,0 +1,73 @@
+@use '../../../Styles/abstracts/variables' as *;
+
+.admin-reclamations-filters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  @media (min-width: $breakpoint-tablet) {
+    grid-template-columns: repeat(2, minmax(0, 240px));
+  }
+}
+
+.admin-reclamations-order-link {
+  font-family: $font-family-mono;
+  color: $color-text;
+}
+
+.admin-reclamation-details {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.admin-reclamation-details__meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-md;
+
+  @media (min-width: $breakpoint-tablet) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  strong {
+    display: block;
+    margin-top: $spacing-xs;
+  }
+}
+
+.admin-reclamation-details__description {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  padding: $spacing-md;
+  border-radius: $radius-lg;
+  background: $color-bg-subtle;
+}
+
+.admin-reclamation-details__items {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.admin-reclamation-item {
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.admin-reclamation-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.admin-reclamation-item__empty {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+}

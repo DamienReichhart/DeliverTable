@@ -154,6 +154,12 @@
             <button type="button" class="app-btn app-btn--primary" @onclick="GoToOrders">
                 Voir mes commandes
             </button>
+            @if (CanOpenReclamation(_order.Status))
+            {
+                <button type="button" class="app-btn app-btn--secondary" @onclick="GoToReclamation">
+                    Faire une réclamation
+                </button>
+            }
             <button type="button" class="app-btn app-btn--secondary" @onclick="GoToRestaurants">
                 Continuer à explorer
             </button>
@@ -224,6 +230,10 @@
     private void GoToRating() => Nav.NavigateTo($"/commande/{Id}/avis");
     private void GoToOrders() => Nav.NavigateTo("/mes-commandes");
     private void GoToRestaurants() => Nav.NavigateTo("/restaurants");
+    private void GoToReclamation() => Nav.NavigateTo($"/commande/{Id}/reclamation");
+
+    private static bool CanOpenReclamation(string status) =>
+        status is "Refused" or "Ready" or "Delivering" or "Delivered";
 
     private Task DownloadInvoice() => _invoice is null ? Task.CompletedTask : InvoiceApi.DownloadPdfAsync(_invoice.Id);
 }
