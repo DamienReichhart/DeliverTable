@@ -6,4 +6,5 @@ public enum TransactionType
     Withdrawal,
     DisputeReversal = 100,
     DisputeRestored = 101,
+    Refund
 }

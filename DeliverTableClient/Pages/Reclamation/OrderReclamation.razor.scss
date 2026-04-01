@@ -1,0 +1,37 @@
+@use '../../Styles/abstracts/variables' as *;
+@use '../../Styles/abstracts/mixins' as *;
+
+.order-reclamation-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.order-reclamation-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.order-reclamation-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $color-border;
+
+  span:first-child {
+    color: $color-text-muted;
+  }
+}
+
+.order-reclamation-card__description {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: $color-text;
+}

@@ -12,7 +12,7 @@ public class ReclamationConfiguration : IEntityTypeConfiguration<Reclamation>
 
         builder.Property(e => e.ReclamationId).HasColumnName("ReclamationId");
 
-        builder.HasOne(r => r.Order).WithMany().HasForeignKey(r => r.OrderId);
+        builder.HasOne(r => r.Order).WithMany(o => o.Reclamations).HasForeignKey(r => r.OrderId).OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(r => r.Items).WithOne().HasForeignKey(i => i.ReclamationId);
 

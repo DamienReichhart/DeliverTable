@@ -65,6 +65,12 @@
                             <span>Mes Restaurants</span>
                         </NavLink>
                     </div>
+                    <div class="nav-item">
+                        <NavLink href="/mes-reclamations" class="nav-link">
+                            <Blazicon Svg="Lucide.TriangleAlert" class="nav-icon" />
+                            <span>Réclamations</span>
+                        </NavLink>
+                    </div>
                 </AuthorizeView>
 
                 <AuthorizeView Roles="@nameof(UserRole.Administrator)" Context="adminCtx">
@@ -189,6 +195,12 @@
                                     <NavLink href="/admin/ratings" class="nav-link">
                                         <Blazicon Svg="Lucide.Star" class="nav-icon" />
                                         <span>Avis</span>
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item">
+                                    <NavLink href="/admin/reclamations" class="nav-link">
+                                        <Blazicon Svg="Lucide.TriangleAlert" class="nav-icon" />
+                                        <span>Réclamations</span>
                                     </NavLink>
                                 </div>
                                 <div class="nav-item">

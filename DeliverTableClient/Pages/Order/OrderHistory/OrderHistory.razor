@@ -74,6 +74,24 @@
                                     @onclick="() => CancelOrder(order.Id)">
                                 Annuler
                             </button>
+                            @if (CanOpenReclamation(order.Status))
+                            {
+                                <button type="button" class="app-btn app-btn--secondary app-btn--sm"
+                                        @onclick:stopPropagation="true"
+                                        @onclick="() => GoToReclamation(order.Id)">
+                                    Réclamation
+                                </button>
+                            }
+                        </div>
+                    }
+                    else if (CanOpenReclamation(order.Status))
+                    {
+                        <div class="order-card-actions">
+                            <button type="button" class="app-btn app-btn--secondary app-btn--sm"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => GoToReclamation(order.Id)">
+                                Réclamation
+                            </button>
                         </div>
                     }
                 </div>
@@ -106,6 +124,7 @@
 
     private void GoToRestaurants() => Nav.NavigateTo("/restaurants");
     private void GoToOrder(int orderId) => Nav.NavigateTo($"/commande/{orderId}/confirmation");
+    private void GoToReclamation(int orderId) => Nav.NavigateTo($"/commande/{orderId}/reclamation");
 
     protected override async Task OnInitializedAsync()
     {
@@ -172,4 +191,26 @@
     private static bool CanCancel(string status) =>
         status is "Pending" or "Confirmed";
 
+    private static bool CanOpenReclamation(string status) =>
+        status is "Refused" or "Ready" or "Delivering" or "Delivered";
+
+    private static string TranslateOrderType(string orderType) => orderType switch
+    {
+        "Delivery" => "Livraison",
+        "DineIn" => "Sur place",
+        _ => orderType
+    };
+
+    private static string TranslateStatus(string status) => status switch
+    {
+        "Pending" => "En attente",
+        "Confirmed" => "Confirmée",
+        "Refused" => "Refusée",
+        "Preparing" => "En préparation",
+        "Ready" => "Prête",
+        "Delivering" => "En livraison",
+        "Delivered" => "Livrée",
+        "Cancelled" => "Annulée",
+        _ => status
+    };
 }

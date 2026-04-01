@@ -1,0 +1,150 @@
+@inject IReclamationService ReclamationService
+
+@if (IsVisible && Reclamation is not null)
+{
+    <div class="refund-modal-overlay" @onclick="HandleOverlayClick">
+        <div class="refund-modal" @onclick:stopPropagation="true">
+            <div class="refund-modal__header">
+                <h2 class="refund-modal__title">Remboursement — Réclamation #@Reclamation.ReclamationId</h2>
+                <button type="button" class="refund-modal__close" @onclick="Close" aria-label="Fermer">&#x2715;</button>
+            </div>
+
+            <div class="refund-modal__body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert--danger">@_errorMessage</div>
+                }
+
+                <div class="refund-modal__mode-toggle">
+                    <button type="button"
+                            class="refund-modal__mode-btn @(_isFullRefund ? "refund-modal__mode-btn--active" : "")"
+                            @onclick="() => SetMode(true)">
+                        Remboursement total
+                    </button>
+                    <button type="button"
+                            class="refund-modal__mode-btn @(!_isFullRefund ? "refund-modal__mode-btn--active" : "")"
+                            @onclick="() => SetMode(false)">
+                        Remboursement partiel
+                    </button>
+                </div>
+
+                @if (_isFullRefund)
+                {
+                    <div class="refund-modal__summary">
+                        <p class="refund-modal__summary-label">Montant total de la commande</p>
+                        <p class="refund-modal__summary-amount">@Reclamation.OrderTotalAmount.ToString("C", new System.Globalization.CultureInfo("fr-FR"))</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="refund-modal__items">
+                        <p class="refund-modal__items-hint">Sélectionnez les articles à rembourser :</p>
+                        @foreach (var item in Reclamation.Items)
+                        {
+                            var itemId = item.Id;
+                            <label class="refund-modal__item">
+                                <input type="checkbox"
+                                       class="refund-modal__checkbox"
+                                       checked="@_selectedItemIds.Contains(itemId)"
+                                       @onchange="e => ToggleItem(itemId, (bool)e.Value!)" />
+                                <span class="refund-modal__item-name">@item.Item.DishName</span>
+                                <span class="refund-modal__item-meta">x@(item.Item.Quantity)</span>
+                                <span class="refund-modal__item-price">
+                                    @item.Item.Subtotal.ToString("C", new System.Globalization.CultureInfo("fr-FR"))
+                                </span>
+                            </label>
+                        }
+                    </div>
+
+                    <div class="refund-modal__summary">
+                        <p class="refund-modal__summary-label">Montant à rembourser</p>
+                        <p class="refund-modal__summary-amount">@PartialAmount.ToString("C", new System.Globalization.CultureInfo("fr-FR"))</p>
+                    </div>
+                }
+            </div>
+
+            <div class="refund-modal__footer">
+                <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="Close" disabled="@_isLoading">
+                    Annuler
+                </button>
+                <button type="button"
+                        class="app-btn app-btn--danger app-btn--sm"
+                        disabled="@(_isLoading || (!_isFullRefund && _selectedItemIds.Count == 0))"
+                        @onclick="Confirm">
+                    @(_isLoading ? "Traitement..." : "Confirmer le remboursement")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public ReclamationDto? Reclamation { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<ReclamationDto> OnRefunded { get; set; }
+
+    private bool _isFullRefund = true;
+    private HashSet<int> _selectedItemIds = [];
+    private bool _isLoading;
+    private string? _errorMessage;
+
+    private decimal PartialAmount =>
+        Reclamation?.Items
+            .Where(i => _selectedItemIds.Contains(i.Id))
+            .Sum(i => i.Item.Subtotal) ?? 0;
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            _isFullRefund = true;
+            _selectedItemIds = [];
+            _errorMessage = null;
+        }
+    }
+
+    private void SetMode(bool fullRefund)
+    {
+        _isFullRefund = fullRefund;
+        _errorMessage = null;
+    }
+
+    private void ToggleItem(int itemId, bool selected)
+    {
+        if (selected) _selectedItemIds.Add(itemId);
+        else _selectedItemIds.Remove(itemId);
+    }
+
+    private async Task Confirm()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        var dto = new RefundReclamationDto
+        {
+            ItemIds = _isFullRefund ? [] : [.. _selectedItemIds]
+        };
+
+        var (updated, error) = await ReclamationService.RefundAsync(Reclamation!.ReclamationId, dto);
+
+        _isLoading = false;
+
+        if (error is not null)
+        {
+            _errorMessage = error.Error;
+            return;
+        }
+
+        await OnRefunded.InvokeAsync(updated!);
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task Close()
+    {
+        if (!_isLoading)
+            await OnClose.InvokeAsync();
+    }
+
+    private async Task HandleOverlayClick() => await Close();
+}

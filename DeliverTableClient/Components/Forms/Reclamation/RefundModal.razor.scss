@@ -1,0 +1,177 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.refund-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: $color-overlay;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $spacing-md;
+}
+
+.refund-modal {
+  background: $color-bg-white;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-lg;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+.refund-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-lg;
+  border-bottom: 1px solid $color-border;
+}
+
+.refund-modal__title {
+  font-family: $font-family-display;
+  font-size: $font-size-h4;
+  color: $color-text;
+  margin: 0;
+}
+
+.refund-modal__close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: $color-text-muted;
+  cursor: pointer;
+  padding: $spacing-xs;
+  line-height: 1;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.refund-modal__body {
+  padding: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.refund-modal__mode-toggle {
+  display: flex;
+  gap: $spacing-xs;
+  background: rgba($color-deep-charcoal, 0.05);
+  border-radius: $radius-md;
+  padding: $spacing-xs;
+}
+
+.refund-modal__mode-btn {
+  flex: 1;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background $transition-fast, color $transition-fast;
+
+  &--active {
+    background: $color-bg-white;
+    color: $color-text;
+    box-shadow: $shadow-sm;
+  }
+}
+
+.refund-modal__items {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.refund-modal__items-hint {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.refund-modal__item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: $color-bg-subtle;
+    border-color: $color-primary;
+  }
+}
+
+.refund-modal__checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: $color-primary;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.refund-modal__item-name {
+  flex: 1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.refund-modal__item-meta {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.refund-modal__item-price {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  font-family: $font-family-mono;
+}
+
+.refund-modal__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  background: $color-bg-subtle;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+}
+
+.refund-modal__summary-label {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
+.refund-modal__summary-amount {
+  margin: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  font-family: $font-family-mono;
+}
+
+.refund-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $color-border;
+}

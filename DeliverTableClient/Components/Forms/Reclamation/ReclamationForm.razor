@@ -1,33 +1,60 @@
-<main>
-    <h1>@Order.RestaurantName</h1>
-    <h2>Commande N°@Order.Id</h2>
-    <EditForm Model="@Reclamation" OnSubmit="HandleSubmit">
-        <DataAnnotationsValidator/>
-        <label for="reclamation_description">Nous sommes désolé d'apprendre que quelque chose s'est mal passé lors de votre commande pouvez vous nous
-            préciser de quoi il est question ?</label>
-        <label for="reclamation_type">
-            <InputSelect @bind-Value="Reclamation.Type">
-                <option value="">-- Select --</option>
-                @foreach ((string Name, string Value) type in _reclamationTypes)
-                {
-                    <option value="@(type.Value)">@type.Name</option>
-                }
-            </InputSelect>            
-        </label>
-        <InputTextArea id="reclamation_description" @bind-Value="Reclamation.Description"/>
-        
-        <div>
-            <p>
-                N'hésitez pas à joindre une photo du/des produit(s) qui ont posé(s) problème
-            </p>
-            @foreach (OrderItemDto orderItemDto in Order.Items)
-            {
-                <ReclamationItemFileUploader OrderItem="orderItemDto" OnItemChanged="HandleItemChanges"/>
-            }
+<div class="reclamation-form">
+    @if (_isReclamationSend)
+    {
+        <div class="empty-state">
+            <p>Votre réclamation a bien été envoyée. Notre équipe va l'examiner rapidement.</p>
+            <button type="button" class="app-btn app-btn--primary" @onclick="GoToOrders">
+                Retour à mes commandes
+            </button>
         </div>
-        
-        <button type="submit" class="app-btn bg-secondary" disabled="@_isSubmitting">
-            Envoyer
-        </button>
-    </EditForm>
-</main>
+    }
+    else
+    {
+        <EditForm Model="@Reclamation" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <div class="error-message">
+                    <p>@_errorMessage</p>
+                </div>
+            }
+
+            <div class="form-group">
+                <label class="form-label" for="reclamation_type">Type de réclamation</label>
+                <InputSelect id="reclamation_type" class="form-control" @bind-Value="Reclamation.Type">
+                    @foreach ((string Name, string Value) type in _reclamationTypes)
+                    {
+                        <option value="@type.Value">@type.Name</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reclamation_description">Décrivez le problème rencontré</label>
+                <InputTextArea
+                    id="reclamation_description"
+                    class="form-control"
+                    rows="6"
+                    @bind-Value="Reclamation.Description" />
+                <ValidationMessage For="() => Reclamation.Description" />
+            </div>
+
+            <div class="reclamation-form__items">
+                <p class="reclamation-form__hint">
+                    Vous pouvez joindre une photo pour les articles concernés.
+                </p>
+
+                @foreach (OrderItemDto orderItemDto in Order.Items)
+                {
+                    <ReclamationItemFileUploader OrderItem="orderItemDto" OnItemChanged="HandleItemChanges" />
+                }
+            </div>
+
+            <button type="submit" class="app-btn app-btn--primary" disabled="@_isSubmitting">
+                @(_isSubmitting ? "Envoi en cours..." : "Envoyer la réclamation")
+            </button>
+        </EditForm>
+    }
+</div>

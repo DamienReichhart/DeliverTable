@@ -1,0 +1,170 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-reclamations-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+// ── Filter bar ───────────────────────────────────────────────────────────────
+
+.reclamations-filter {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+// ── Cards list ───────────────────────────────────────────────────────────────
+
+.reclamations-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.reclamation-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+}
+
+// ── Card header ──────────────────────────────────────────────────────────────
+
+.reclamation-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+}
+
+.reclamation-card__id {
+  font-family: $font-family-mono;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+// ── Card meta ────────────────────────────────────────────────────────────────
+
+.reclamation-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs $spacing-md;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 3px;
+      border-radius: $radius-full;
+      background: $color-border;
+    }
+
+    &:first-child::before {
+      display: none;
+    }
+  }
+}
+
+// ── Description ──────────────────────────────────────────────────────────────
+
+.reclamation-card__description {
+  font-size: $font-size-sm;
+  color: $color-text;
+  line-height: $line-height-base;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-subtle;
+  border-left: 3px solid $color-border;
+  border-radius: 0 $radius-sm $radius-sm 0;
+}
+
+// ── Items ────────────────────────────────────────────────────────────────────
+
+.reclamation-card__items {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.reclamation-card__items-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.reclamation-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-xs $spacing-sm;
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  gap: $spacing-sm;
+}
+
+.reclamation-item-row__name {
+  flex: 1;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.reclamation-item-row__meta {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-family: $font-family-mono;
+}
+
+.reclamation-item-row__price {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  font-family: $font-family-mono;
+  color: $color-text;
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+
+.reclamation-card__actions {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $color-border;
+}
+
+// ── Amount summary ────────────────────────────────────────────────────────────
+
+.reclamation-card__amount {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+
+  span:first-child {
+    color: $color-text-muted;
+  }
+
+  strong {
+    font-family: $font-family-mono;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
+}
