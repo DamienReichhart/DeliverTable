@@ -143,4 +143,10 @@ public static class ErrorMessages
     public const string OrderPaymentAlreadyProcessed = "Le paiement de cette commande est déjà traité";
     public const string StripeCustomerCreationFailed = "Impossible de créer le client Stripe";
     public const string WebhookSignatureInvalid = "Signature Stripe invalide";
+    // Reclamation
+    public const string ReclamationNotFound = "Réclamation introuvable";
+    public const string ReclamationInvalidTransition = "Cette transition de statut n'est pas autorisée pour cette réclamation";
+    public const string ReclamationAccessDenied = "Vous n'êtes pas autorisé à modifier cette réclamation";
+    public const string ReclamationRefundInsufficientBalance = "Le solde du restaurant est insuffisant pour effectuer ce remboursement";
+    public const string ReclamationRefundNoItems = "Aucun article valide sélectionné pour le remboursement partiel";
 }

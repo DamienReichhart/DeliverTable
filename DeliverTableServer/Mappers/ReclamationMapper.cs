@@ -14,7 +14,8 @@ public static class ReclamationMapper
             Created = reclamation.Created,
             Updated = reclamation.Updated,
             Items = reclamation.Items?.Select(item => item.ToDto()).ToList() ?? [],
-            OrderId = reclamation.OrderId
+            OrderId = reclamation.OrderId,
+            OrderTotalAmount = reclamation.Order?.TotalAmount ?? 0
         };
     }
 }

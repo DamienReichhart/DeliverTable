@@ -1,15 +1,21 @@
 ﻿
+using DeliverTableServer.Common;
 using DeliverTableSharedLibrary.Dtos.Reclamation;
 namespace DeliverTableServer.Services.Interfaces;
 
 public interface IReclamationService
 {
-    Task<List<Reclamation>> GetAllReclamations(ReclamationQuery query);
-    Task<Reclamation?> GetReclamationById(int reclamationId);
-    Task<Reclamation> UpdateReclamation(int reclamationId, Reclamation reclamation);
-    Task<Reclamation> CreateReclamation(CreateReclamationDto reclamation, IFormFileCollection images);
-    Task DeleteReclamation(int reclamationId);
-    Task<Reclamation?> GetReclamationsByOrderId(int orderId);
-    Task<List<Reclamation>> GetReclamationsByUser(int userId);
-    Task<List<Reclamation>> GetReclamationsByRestaurant(int restaurantId);
+    Task<ServiceResult<List<ReclamationDto>>> GetAllReclamations(ReclamationQuery query);
+    Task<ServiceResult<ReclamationDto>> GetReclamationById(int reclamationId);
+    Task<ServiceResult<ReclamationDto>> UpdateReclamation(int reclamationId, UpdateReclamationDto reclamation);
+    Task<ServiceResult<ReclamationDto>> CreateReclamation(CreateReclamationDto reclamation, IFormFileCollection images);
+    Task<ServiceResult> DeleteReclamation(int reclamationId);
+    Task<ServiceResult<ReclamationDto>> GetReclamationsByOrderId(int orderId);
+    Task<ServiceResult<List<ReclamationDto>>> GetReclamationsByUser(int userId);
+    Task<ServiceResult<List<ReclamationDto>>> GetReclamationsByRestaurant(int restaurantId);
+    Task<ServiceResult<List<ReclamationDto>>> GetReclamationsByRestaurantOwner(int ownerId);
+    Task<ServiceResult<ReclamationDto>> ResolveReclamation(int reclamationId, int ownerId);
+    Task<ServiceResult<ReclamationDto>> RefundReclamation(int reclamationId, int ownerId, RefundReclamationDto dto);
+    Task<ServiceResult<ReclamationDto>> ContestReclamation(int reclamationId, int customerId);
+    Task<ServiceResult<ReclamationDto>> CompleteReclamation(int reclamationId);
 }

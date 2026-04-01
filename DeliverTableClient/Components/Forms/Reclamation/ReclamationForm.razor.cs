@@ -48,48 +48,57 @@ public partial class ReclamationForm(IReclamationService reclamationService, Nav
         };
     }
 
-    private async Task HandleItemChanges((CreateReclamationItemDto ItemDto, IBrowserFile? file) data)
+    private async Task HandleItemChanges((CreateReclamationItemDto? ItemDto, IBrowserFile? file) data)
     {
         var (itemDto, file) = data;
-        var fileExtension = Path.GetExtension((string)file.Name);
-        var entryName = $"Item_{itemDto.OrderItemId}_image" + fileExtension;
-        Console.WriteLine($"ReclamationForm.HandleItemChanges({entryName})");
+        if (itemDto is null)
+            return;
+
+        var entryPrefix = $"Item_{itemDto.OrderItemId}_image";
         if (file != null)
         {
+            var fileExtension = Path.GetExtension(file.Name);
+            var entryName = $"{entryPrefix}{fileExtension}";
+
             using var stream = new MemoryStream();
             await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(stream);
             var buffer = stream.ToArray();
 
             ByteArrayContent byteArrayContent = new(buffer);
+            _images.RemoveAll(i => i.Name.StartsWith(entryPrefix, StringComparison.Ordinal));
             _images.Add(new Image
             {
                 Content = byteArrayContent,
                 Name = entryName
             });
 
-            if (Reclamation.Items.Where(i => i.OrderItemId == itemDto.OrderItemId).Count() == 0)
+            if (Reclamation.Items.All(i => i.OrderItemId != itemDto.OrderItemId))
                 Reclamation.Items.Add(itemDto);
         }
         else
         {
             Reclamation.Items.RemoveAll(i => i.OrderItemId == itemDto.OrderItemId);
-            _images.RemoveAll(i => i.Name == entryName);
+            _images.RemoveAll(i => i.Name.StartsWith(entryPrefix, StringComparison.Ordinal));
         }
     }
 
     private async Task HandleSubmit()
     {
         _isSubmitting = true;
+        _errorMessage = null;
         try
         {
-            if (await reclamationService.CreateReclamation(Reclamation, _images))
+            var (_, error) = await reclamationService.CreateReclamationAsync(Reclamation, _images);
+            if (error is null)
                 _isReclamationSend = true;
             else
-                _errorMessage = "Une erreur est survenue veuillez réessayer plsu tard";
+                _errorMessage = error.Error;
         }
         finally
         {
             _isSubmitting = false;
         }
     }
+
+    private void GoToOrders() => navigationManager.NavigateTo("/mes-commandes");
 }

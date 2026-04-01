@@ -11,7 +11,6 @@ public class Reclamation : ITrackable
     [Key]
     public int ReclamationId { get; set; }
 
-    [ForeignKey("OrderId")]
     public int OrderId { get; set; }
 
     public ReclamationType Type { get; set; } = ReclamationType.Other;

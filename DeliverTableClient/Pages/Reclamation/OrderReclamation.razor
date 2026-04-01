@@ -1,0 +1,96 @@
+@page "/order/{OrderId:int}/reclamation"
+@page "/commande/{OrderId:int}/reclamation"
+@attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableClient.Components.Forms.Reclamation
+
+<PageTitle>Réclamation commande #@OrderId — DeliverTable</PageTitle>
+
+<div class="order-reclamation-page">
+    @if (isLoading)
+    {
+        <div class="loading-container">
+            <p>Chargement de la commande...</p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="error-message">
+            <p>@_errorMessage</p>
+        </div>
+    }
+    else if (_existingReclamation is not null)
+    {
+        <div class="order-reclamation-summary">
+            <div class="page-header">
+                <div>
+                    <h1>Réclamation déjà envoyée</h1>
+                    <p class="page-subtitle">
+                        Commande #@OrderId chez @_orderDto?.RestaurantName
+                    </p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_contestSuccess))
+            {
+                <div class="alert alert--success">@_contestSuccess</div>
+            }
+            @if (!string.IsNullOrEmpty(_contestError))
+            {
+                <div class="alert alert--danger">@_contestError</div>
+            }
+
+            <div class="order-reclamation-card">
+                <div class="order-reclamation-card__row">
+                    <span>Statut</span>
+                    <span class="status-badge status--@TranslateStatusClass(_existingReclamation.Status)">
+                        @TranslateStatus(_existingReclamation.Status)
+                    </span>
+                </div>
+                <div class="order-reclamation-card__row">
+                    <span>Motif</span>
+                    <strong>@TranslateType(_existingReclamation.Type)</strong>
+                </div>
+                <div class="order-reclamation-card__row">
+                    <span>Créée le</span>
+                    <strong>@_existingReclamation.Created.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</strong>
+                </div>
+                <div class="order-reclamation-card__description">
+                    @_existingReclamation.Description
+                </div>
+
+                @if (_existingReclamation.Status == ReclamationStatus.Resolved)
+                {
+                    <div class="order-reclamation-card__actions">
+                        <p class="order-reclamation-card__contest-info">
+                            La réclamation a été marquée comme résolue par le restaurateur. Si vous n'êtes pas satisfait(e), vous pouvez la contester.
+                        </p>
+                        <button class="app-btn app-btn--secondary app-btn--sm"
+                                disabled="@_isContesting"
+                                @onclick="HandleContest">
+                            @(_isContesting ? "En cours..." : "Contester la résolution")
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (_orderDto is not null)
+    {
+        <div class="page-header">
+            <div>
+                <h1>Faire une réclamation</h1>
+                <p class="page-subtitle">
+                    Commande #@_orderDto.Id chez @_orderDto.RestaurantName
+                </p>
+            </div>
+        </div>
+
+        <ReclamationForm Order="_orderDto" />
+    }
+    else
+    {
+        <div class="empty-state">
+            <p>Cette commande est introuvable.</p>
+        </div>
+    }
+</div>

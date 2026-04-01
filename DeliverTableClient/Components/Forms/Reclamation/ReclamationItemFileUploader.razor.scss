@@ -1,0 +1,41 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.reclamation-item-uploader {
+  padding: $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-white;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.reclamation-item-uploader__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-lg;
+  }
+
+  p {
+    margin-top: $spacing-xs;
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+  }
+}
+
+.reclamation-item-uploader__file {
+  margin: 0;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+}
