@@ -26,6 +26,6 @@ public class Reclamation : ITrackable
     public Order Order { get; set; } = null!;
 
     public List<ReclamationItem> Items { get; set; } = [];
-    
+
     public decimal? RefundAmount { get; set; } = null;
 }

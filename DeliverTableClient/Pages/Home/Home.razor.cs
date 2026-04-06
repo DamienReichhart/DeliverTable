@@ -9,10 +9,11 @@ namespace DeliverTableClient.Pages.Home
         IHealthApiClient healthApiClient
     )
     {
-        
+
         private HealthResponse? _health = null;
         private bool _isLoading = false;
-    
+        private string _error = string.Empty;
+
         protected override async Task OnInitializedAsync()
         {
             _isLoading = true;
@@ -23,14 +24,14 @@ namespace DeliverTableClient.Pages.Home
             }
             catch (Exception e)
             {
-                throw;
+                _error = e.Message;
             }
             finally
             {
                 _isLoading = false;
             }
         }
-    
+
         private string DetermineColor()
         {
             Enum.TryParse<HealthStatus>(_health?.Status ?? HealthStatus.Unhealthy.ToString(), true, out HealthStatus status);
