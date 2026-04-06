@@ -1,4 +1,4 @@
-﻿namespace DeliverTableSharedLibrary.Dtos.Auth;
+namespace DeliverTableSharedLibrary.Dtos.Auth;
 
 public class AuthResponse
 {

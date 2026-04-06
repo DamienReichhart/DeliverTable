@@ -1,15 +1,15 @@
-﻿using DeliverTableServer.Repositories.Interfaces;
-using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
-using Microsoft.AspNetCore.Authorization;
+using DeliverTableSharedLibrary.Dtos.Reclamation;
 using Microsoft.AspNetCore.Mvc;
+using DeliverTableServer.Services.Interfaces;
+using DeliverTableServer.Mappers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DeliverTableServer.Controllers;
 
-
-// [Authorize]
 [ApiController]
-[Route(ApiRoutes.Order.Base)]
+[Route(ApiRoutes.Reclamation.Base)]
+[Authorize]
 public class ReclamationController(
     IReclamationService reclamationService
     ) : ControllerBase
