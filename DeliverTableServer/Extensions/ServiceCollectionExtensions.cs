@@ -80,6 +80,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IReclamationService, ReclamationService>();
+        services.AddScoped<IRatingService, RatingService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
