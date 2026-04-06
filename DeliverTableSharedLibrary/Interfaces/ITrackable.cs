@@ -1,4 +1,4 @@
-namespace DeliverTableSharedLibrary.Interfaces;
+﻿namespace DeliverTableSharedLibrary.Interfaces;
 
 public interface ITrackable
 {
