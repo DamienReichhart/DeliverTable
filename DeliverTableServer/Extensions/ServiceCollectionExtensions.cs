@@ -81,6 +81,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IReclamationService, ReclamationService>();
         services.AddScoped<IRatingService, RatingService>();
+        services.AddScoped<IReclamationService, ReclamationService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
