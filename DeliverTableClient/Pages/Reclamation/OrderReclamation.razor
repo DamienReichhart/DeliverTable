@@ -57,7 +57,15 @@
                 <div class="order-reclamation-card__description">
                     @_existingReclamation.Description
                 </div>
-
+                
+                @if (_existingReclamation.RefundAmount.HasValue)
+                {
+                    <div class="order-reclamation-card__amount">
+                        <span>Le restaurateur vous a remboursé: </span>
+                        <strong>@_existingReclamation.RefundAmount.Value.ToString("C", new System.Globalization.CultureInfo("fr-FR"))</strong>
+                    </div>
+                }
+                
                 @if (_existingReclamation.Status == ReclamationStatus.Resolved)
                 {
                     <div class="order-reclamation-card__actions">

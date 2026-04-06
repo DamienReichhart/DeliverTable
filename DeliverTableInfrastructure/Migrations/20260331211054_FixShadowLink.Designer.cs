@@ -181,54 +181,6 @@ namespace DeliverTableServer.Migrations
                     b.ToTable("CustomerHiddenRestaurants");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerRating", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasDefaultValue("");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RatedCustomerUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RestaurantId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RestaurantUserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("RatedCustomerUserId");
-
-                    b.HasIndex("RestaurantId");
-
-                    b.HasIndex("RestaurantUserId");
-
-                    b.ToTable("CustomerRatings");
-                });
-
             modelBuilder.Entity("DeliverTableServer.Models.DiscountCode", b =>
                 {
                     b.Property<int>("Id")

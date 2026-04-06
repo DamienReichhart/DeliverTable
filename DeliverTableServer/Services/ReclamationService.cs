@@ -155,7 +155,7 @@ public class ReclamationService(
         restaurant.Balance -= refundAmount;
         await restaurantRepository.UpdateAsync(restaurant);
 
-        var transaction = new RestaurantTransaction
+        RestaurantTransaction transaction = new ()
         {
             RestaurantId = restaurant.Id,
             OrderId = reclamation.OrderId,
@@ -166,8 +166,16 @@ public class ReclamationService(
             BalanceAfter = restaurant.Balance
         };
         await transactionRepository.CreateAsync(transaction);
+        
+        UpdateReclamationDto reclamationDatas = new()
+        {
+            Status = ReclamationStatus.Resolved,
+            Type = reclamation.Type,
+            Description = reclamation.Description,
+            RefundAmount = refundAmount,
+        };
 
-        Reclamation? updated = await reclamationRepository.UpdateReclamationStatus(reclamationId, ReclamationStatus.Resolved);
+        Reclamation? updated = await reclamationRepository.UpdateReclamation(reclamationId, reclamationDatas);
         return updated!.ToDto();
     }
 

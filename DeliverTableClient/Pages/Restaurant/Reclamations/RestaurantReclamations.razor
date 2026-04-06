@@ -98,6 +98,14 @@
                             <strong>@reclamation.OrderTotalAmount.ToString("C", new System.Globalization.CultureInfo("fr-FR"))</strong>
                         </div>
                     }
+                    
+                    @if (reclamation.RefundAmount.HasValue)
+                    {
+                        <div class="reclamation-card__amount">
+                            <span>Montant remboursé: </span>
+                            <strong>@reclamation.RefundAmount.Value.ToString("C", new System.Globalization.CultureInfo("fr-FR"))</strong>
+                        </div>
+                    }
 
                     @if (reclamation.Status == ReclamationStatus.Pending)
                     {
