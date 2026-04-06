@@ -1,4 +1,4 @@
-namespace DeliverTableSharedLibrary.Enums;
+﻿namespace DeliverTableSharedLibrary.Enums;
 
 public enum ReclamationType
 {
