@@ -136,6 +136,7 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
         existingReclamation.Type = reclamation.Type;
         existingReclamation.Status = reclamation.Status;
         existingReclamation.Description = reclamation.Description;
+        existingReclamation.RefundAmount = reclamation.RefundAmount;
         existingReclamation.Updated = DateTime.UtcNow;
         await dbContext.SaveChangesAsync();
         return await GetReclamationById(reclamationId);
