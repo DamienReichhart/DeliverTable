@@ -1,4 +1,4 @@
-﻿using DeliverTableServer.Models;
+using DeliverTableServer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,6 +13,8 @@ public class ReclamationConfiguration : IEntityTypeConfiguration<Reclamation>
         builder.Property(e => e.ReclamationId).HasColumnName("ReclamationId");
 
         builder.HasOne(r => r.Order).WithMany(o => o.Reclamations).HasForeignKey(r => r.OrderId).OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(r => r.Items).WithOne().HasForeignKey(i => i.ReclamationId);
 
         builder.HasMany(r => r.Items).WithOne().HasForeignKey(i => i.ReclamationId);
 
