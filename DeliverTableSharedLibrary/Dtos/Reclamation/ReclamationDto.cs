@@ -14,4 +14,5 @@ public class ReclamationDto
     public DateTime Updated { get; set; } = DateTime.UtcNow;
     public int OrderId { get; set; }
     public decimal OrderTotalAmount { get; set; }
+    public decimal? RefundAmount { get; set; } = null;
 }

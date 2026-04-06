@@ -1,7 +1,5 @@
 @page "/"
-@using DeliverTableClient.Components.Test
-@using DeliverTableSharedLibrary.Constants
-@inject DeliverTableClient.Services.Interfaces.IHealthApiClient HealthApiClient
+@using DeliverTableClient.Components.Test;
 
 <PageTitle>Accueil — DeliverTable</PageTitle>
 
@@ -29,39 +27,3 @@
     @*     </Authorized> *@
     @* </AuthorizeView> *@
 </div>
-
-@code {
-    private HealthResponse? _health = null;
-    private bool _isLoading = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _isLoading = true;
-        try
-        {
-            HealthResponse? response = await HealthApiClient.GetHealthAsync();
-            _health = response;
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private string DetermineColor()
-    {
-        Enum.TryParse<HealthStatus>(_health.Status, true, out HealthStatus status);
-        return status switch
-        {
-            HealthStatus.Healthy => "alert-success text-success",
-            HealthStatus.Degraded => "alert-warning  text-warning",
-            HealthStatus.Unhealthy => "alert-danger  text-danger",
-            _ => "alert-secondary"
-        };
-    }
-
-}
