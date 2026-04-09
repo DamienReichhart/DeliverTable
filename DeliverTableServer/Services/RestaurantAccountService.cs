@@ -1,10 +1,12 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.RestaurantAccount;
@@ -55,7 +57,7 @@ public sealed class RestaurantAccountService(
         restaurant.Balance -= request.Amount;
         await _restaurantRepository.UpdateAsync(restaurant, ct);
 
-        var transaction = new Models.RestaurantTransaction
+        var transaction = new RestaurantTransaction
         {
             RestaurantId = restaurantId,
             OrderId = null,

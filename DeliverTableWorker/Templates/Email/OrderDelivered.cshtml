@@ -1,0 +1,13 @@
+@model DeliverTableInfrastructure.TemplateData.OrderDeliveredData
+
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #4CAF50;">Commande livrée</h2>
+    <p>Votre commande <strong>#@Model.OrderId</strong> chez <strong>@Model.RestaurantName</strong> a été livrée avec succès.</p>
+    <p style="font-size: 18px; font-weight: bold;">Total : @Model.TotalPrice.ToString("0.00") €</p>
+    <p>Nous espérons que vous avez apprécié votre repas. N'hésitez pas à laisser un avis !</p>
+    <p style="color: #666; font-size: 12px;">Merci d'avoir commandé sur DeliverTable.</p>
+</body>
+</html>

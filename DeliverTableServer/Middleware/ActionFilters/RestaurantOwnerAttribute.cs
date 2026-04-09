@@ -1,5 +1,5 @@
 using DeliverTableServer.Constants;
-using DeliverTableServer.Data;
+using DeliverTableInfrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;

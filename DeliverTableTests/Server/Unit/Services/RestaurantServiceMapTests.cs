@@ -1,5 +1,5 @@
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Restaurant;

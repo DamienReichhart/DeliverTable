@@ -1,7 +1,7 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 

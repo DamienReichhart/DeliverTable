@@ -1,8 +1,8 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.Order;
 using DeliverTableSharedLibrary.Enums;
@@ -22,6 +22,8 @@ public class OrderServiceTests
     private IPromotionRepository _promotionRepository = null!;
     private IDiscountCodeRepository _discountCodeRepository = null!;
     private ILoyaltyRepository _loyaltyRepository = null!;
+    private IUserRepository _userRepository = null!;
+    private DeliverTableServer.Services.Interfaces.IEmailJobService _emailJobService = null!;
     private AppEnvironment _appEnvironment = null!;
     private OrderService _sut = null!;
 
@@ -38,13 +40,15 @@ public class OrderServiceTests
         _promotionRepository = Substitute.For<IPromotionRepository>();
         _discountCodeRepository = Substitute.For<IDiscountCodeRepository>();
         _loyaltyRepository = Substitute.For<ILoyaltyRepository>();
+        _userRepository = Substitute.For<IUserRepository>();
+        _emailJobService = Substitute.For<DeliverTableServer.Services.Interfaces.IEmailJobService>();
 
         _appEnvironment = AppEnvironmentTestHelper.SetupEnvironment();
 
         _sut = new OrderService(
             _orderRepository, _cartRepository, _restaurantRepository,
             _transactionRepository, _promotionRepository, _discountCodeRepository,
-            _loyaltyRepository, _appEnvironment);
+            _loyaltyRepository, _userRepository, _emailJobService, _appEnvironment);
     }
 
     [TearDown]

@@ -1,4 +1,4 @@
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 using Microsoft.AspNetCore.Identity;
 using NSubstitute;
 

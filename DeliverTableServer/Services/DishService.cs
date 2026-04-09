@@ -1,10 +1,11 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;

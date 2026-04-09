@@ -1,13 +1,13 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.DiscountCode;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
-using DiscountCodeEntity = DeliverTableServer.Models.DiscountCode;
+using DiscountCodeEntity = DeliverTableInfrastructure.Models.DiscountCode;
 
 namespace DeliverTableTests.Server.Unit.Services;
 

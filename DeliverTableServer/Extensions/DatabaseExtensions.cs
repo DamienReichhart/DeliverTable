@@ -1,4 +1,4 @@
-using DeliverTableServer.Data;
+using DeliverTableInfrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DeliverTableServer.Extensions;
