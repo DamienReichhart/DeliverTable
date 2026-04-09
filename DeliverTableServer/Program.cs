@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Messaging;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Middleware;
@@ -13,6 +14,18 @@ var maxUploadBytes = UploadLimits.ToBytes(env.UploadMaxSizeMb);
 builder.Services.AddSingleton(env);
 builder.Services.AddSingleton(env.Jwt);
 builder.Services.AddSingleton(env.ObjectStorage);
+
+// RabbitMQ
+var rabbitMqConfig = new RabbitMqConfig
+{
+    Host = env.RabbitMqHost,
+    Port = env.RabbitMqPort,
+    User = env.RabbitMqUser,
+    Password = env.RabbitMqPassword
+};
+builder.Services.AddSingleton(rabbitMqConfig);
+builder.Services.AddSingleton<IMessagePublisher>(sp =>
+    RabbitMqPublisher.CreateAsync(sp.GetRequiredService<RabbitMqConfig>()).GetAwaiter().GetResult());
 
 builder.WebHost.ConfigureKestrel(options =>
     options.Limits.MaxRequestBodySize = maxUploadBytes);

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DotNetEnv" Version="3.1.1" />
+        <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
+        <PackageReference Include="MailKit" Version="4.15.1" />
+        <PackageReference Include="RazorLight" Version="2.3.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\DeliverTableInfrastructure\DeliverTableInfrastructure.csproj" />
+        <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Templates\**\*.cshtml">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+</Project>

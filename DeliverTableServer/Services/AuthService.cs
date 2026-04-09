@@ -1,8 +1,8 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Enums;
@@ -12,11 +12,13 @@ namespace DeliverTableServer.Services;
 
 public sealed class AuthService(
     IUserRepository userRepository,
-    ITokenService tokenService
+    ITokenService tokenService,
+    IEmailJobService emailJobService
 ) : IAuthService
 {
     private readonly IUserRepository _userRepository = userRepository;
     private readonly ITokenService _tokenService = tokenService;
+    private readonly IEmailJobService _emailJobService = emailJobService;
     private readonly string _defaultRole = nameof(UserRole.Customer);
 
     public async Task<ServiceResult<ConnectionResponse>> LoginAsync(LoginRequest request, CancellationToken ct = default)
@@ -54,6 +56,9 @@ public sealed class AuthService(
         if (!roleOk)
             return new ServiceError(ErrorMessages.InternalError, 500);
 
+        var userName = $"{user.FirstName} {user.LastName}".Trim();
+        await _emailJobService.QueueWelcomeEmailAsync(user.Email!, userName);
+
         return await BuildConnectionResponse(user);
     }
 
@@ -85,6 +90,9 @@ public sealed class AuthService(
         var (roleOk, _) = await _userRepository.AddToRoleAsync(user, nameof(UserRole.RestaurantOwner));
         if (!roleOk)
             return new ServiceError(ErrorMessages.InternalError, 500);
+
+        var ownerName = $"{user.FirstName} {user.LastName}".Trim();
+        await _emailJobService.QueueWelcomeEmailAsync(user.Email!, ownerName);
 
         return await BuildConnectionResponse(user);
     }
@@ -141,6 +149,10 @@ public sealed class AuthService(
 
         user.UpdatedAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync(ct);
+
+        var userName = $"{user.FirstName} {user.LastName}".Trim();
+        await _emailJobService.QueuePasswordChangedAsync(user.Email!, userName);
+
         return ServiceResult.Success();
     }
 

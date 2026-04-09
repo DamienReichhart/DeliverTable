@@ -1,4 +1,4 @@
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Promotion;
 
 namespace DeliverTableServer.Mappers;

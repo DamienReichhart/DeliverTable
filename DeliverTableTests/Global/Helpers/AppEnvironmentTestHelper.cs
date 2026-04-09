@@ -14,7 +14,10 @@ public static class AppEnvironmentTestHelper
         ["OBJECT_STORAGE_ACCESS_KEY"] = "key",
         ["OBJECT_STORAGE_SECRET_KEY"] = "secret",
         ["OBJECT_STORAGE_BUCKET_NAME"] = "bucket",
-        ["PLATFORM_COMMISSION_RATE"] = "0.10"
+        ["PLATFORM_COMMISSION_RATE"] = "0.10",
+        ["RABBITMQ_HOST"] = "localhost",
+        ["RABBITMQ_USER"] = "guest",
+        ["RABBITMQ_PASSWORD"] = "guest"
     };
 
     public static AppEnvironment SetupEnvironment()

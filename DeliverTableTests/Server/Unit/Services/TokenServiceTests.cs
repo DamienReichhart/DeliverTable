@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using DeliverTableServer.Configuration;
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 using DeliverTableServer.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;

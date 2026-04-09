@@ -40,6 +40,17 @@ jobs:
           -o Markdown
           -fo license-report-client.md
 
+      - name: Check worker licenses
+        continue-on-error: true
+        run: >-
+          nuget-license
+          -i DeliverTableWorker/DeliverTableWorker.csproj
+          -t
+          -a allowed-licenses.json
+          -mapping license-url-mappings.json
+          -o Markdown
+          -fo license-report-worker.md
+
       - name: Post license summary
         if: always()
         run: |
@@ -51,4 +62,8 @@ jobs:
           echo "### Client" >> "$GITHUB_STEP_SUMMARY"
           if [ -f license-report-client.md ]; then
             cat license-report-client.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "### Worker" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f license-report-worker.md ]; then
+            cat license-report-worker.md >> "$GITHUB_STEP_SUMMARY"
           fi

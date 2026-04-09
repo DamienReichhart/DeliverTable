@@ -1,8 +1,8 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Rating;
 using DeliverTableSharedLibrary.Enums;

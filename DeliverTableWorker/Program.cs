@@ -1,0 +1,47 @@
+using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Messaging;
+using DeliverTableInfrastructure.Repositories;
+using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableWorker.Configuration;
+using DeliverTableWorker.Consumers;
+using DeliverTableWorker.Services;
+using Microsoft.EntityFrameworkCore;
+
+DotNetEnv.Env.Load();
+var env = WorkerEnvironment.Load();
+
+var builder = Host.CreateApplicationBuilder(args);
+
+builder.Services.AddSingleton(env);
+
+// Database
+builder.Services.AddDbContext<DeliverTableContext>(options =>
+    options.UseNpgsql(env.ConnectionStringDatabase)
+);
+
+// RabbitMQ
+var rabbitMqConfig = new RabbitMqConfig
+{
+    Host = env.RabbitMqHost,
+    Port = env.RabbitMqPort,
+    User = env.RabbitMqUser,
+    Password = env.RabbitMqPassword,
+};
+builder.Services.AddSingleton(rabbitMqConfig);
+builder.Services.AddSingleton<IMessagePublisher>(sp =>
+    RabbitMqPublisher.CreateAsync(sp.GetRequiredService<RabbitMqConfig>()).GetAwaiter().GetResult()
+);
+
+// Repositories
+builder.Services.AddScoped<IEmailJobRepository, EmailJobRepository>();
+
+// Worker services
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddSingleton<IEmailTemplateRenderer, RazorEmailTemplateRenderer>();
+
+// Background services
+builder.Services.AddHostedService<EmailJobConsumer>();
+builder.Services.AddHostedService<JobSweepService>();
+
+var host = builder.Build();
+host.Run();

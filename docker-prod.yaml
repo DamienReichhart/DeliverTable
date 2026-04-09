@@ -108,12 +108,18 @@ services:
       OBJECT_STORAGE_BUCKET_NAME: ${OBJECT_STORAGE_BUCKET_NAME}
       OBJECT_STORAGE_FORCE_PATH_STYLE: ${OBJECT_STORAGE_FORCE_PATH_STYLE}
       OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
     depends_on:
       database:
         condition: service_healthy
       garage:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       dt-frontend-net:
@@ -216,6 +222,71 @@ services:
     logging: *default-logging
     restart: always
 
+  rabbitmq:
+    container_name: dt-rabbitmq-prod
+    build:
+      context: .
+      dockerfile: docker/images/rabbitmq.prod.dockerfile
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    networks:
+      dt-backend-net:
+        ipv4_address: 172.32.0.50
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    logging: *default-logging
+    restart: always
+
+  worker:
+    container_name: dt-worker-prod
+    build:
+      context: .
+      dockerfile: docker/images/worker.prod.dockerfile
+    environment:
+      CONNECTION_STRING_DATABASE: ${CONNECTION_STRING_DATABASE}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-DeliverTable}
+      SMTP_MAX_SENDS_PER_MINUTE: ${SMTP_MAX_SENDS_PER_MINUTE:-5}
+      NEUTRALIZE_EMAIL: ${NEUTRALIZE_EMAIL:-false}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    networks:
+      dt-backend-net:
+        ipv4_address: 172.32.0.60
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    restart: always
+    read_only: true
+    tmpfs:
+      - /tmp:size=50m
+
 networks:
   dt-public-net:
     name: dt-public-prod
@@ -248,3 +319,5 @@ volumes:
     name: dt-postgres-data-prod
   garage-data:
     name: dt-garage-data-prod
+  rabbitmq-data:
+    name: dt-rabbitmq-data-prod

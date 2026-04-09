@@ -191,7 +191,7 @@ Task: AB#<id>
 ```
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
-Scopes: `client`, `server`, `shared`, `tests`, `api`, `auth`, `db`, `docker`
+Scopes: `client`, `server`, `shared`, `tests`, `api`, `auth`, `db`, `docker`, `worker`
 
 ## Testing
 
