@@ -10,7 +10,8 @@ public class AppEnvironmentTests
         "CONNECTION_STRING_DATABASE",
         "JWT_KEY", "JWT_ISSUER", "JWT_AUDIENCE",
         "OBJECT_STORAGE_SERVICE_URL", "OBJECT_STORAGE_ACCESS_KEY",
-        "OBJECT_STORAGE_SECRET_KEY", "OBJECT_STORAGE_BUCKET_NAME"
+        "OBJECT_STORAGE_SECRET_KEY", "OBJECT_STORAGE_BUCKET_NAME",
+        "RABBITMQ_HOST", "RABBITMQ_USER", "RABBITMQ_PASSWORD"
     ];
 
     private static readonly string[] AllOptionalVars =
@@ -20,7 +21,8 @@ public class AppEnvironmentTests
         "OBJECT_STORAGE_FORCE_PATH_STYLE",
         "OPENAPI_ENABLE_DOCUMENTATION",
         "CORS_ALLOWED_ORIGINS",
-        "UPLOAD_MAX_SIZE_MB"
+        "UPLOAD_MAX_SIZE_MB",
+        "RABBITMQ_PORT"
     ];
 
     [TearDown]
@@ -49,6 +51,9 @@ public class AppEnvironmentTests
             Assert.That(env.ObjectStorage.AccessKey, Is.EqualTo("ak"));
             Assert.That(env.ObjectStorage.SecretKey, Is.EqualTo("sk"));
             Assert.That(env.ObjectStorage.BucketName, Is.EqualTo("bucket"));
+            Assert.That(env.RabbitMqHost, Is.EqualTo("localhost"));
+            Assert.That(env.RabbitMqUser, Is.EqualTo("guest"));
+            Assert.That(env.RabbitMqPassword, Is.EqualTo("guest"));
         });
     }
 
@@ -67,6 +72,7 @@ public class AppEnvironmentTests
             Assert.That(env.OpenApiEnableDocumentation, Is.False);
             Assert.That(env.CorsAllowedOrigins, Is.Empty);
             Assert.That(env.UploadMaxSizeMb, Is.EqualTo(5));
+            Assert.That(env.RabbitMqPort, Is.EqualTo(5672));
         });
     }
 
@@ -112,6 +118,9 @@ public class AppEnvironmentTests
     [TestCase("OBJECT_STORAGE_ACCESS_KEY")]
     [TestCase("OBJECT_STORAGE_SECRET_KEY")]
     [TestCase("OBJECT_STORAGE_BUCKET_NAME")]
+    [TestCase("RABBITMQ_HOST")]
+    [TestCase("RABBITMQ_USER")]
+    [TestCase("RABBITMQ_PASSWORD")]
     public void Load_Throws_WhenSingleRequiredVarIsMissing(string missingVar)
     {
         SetAllRequired();
@@ -157,5 +166,8 @@ public class AppEnvironmentTests
         Environment.SetEnvironmentVariable("OBJECT_STORAGE_ACCESS_KEY", "ak");
         Environment.SetEnvironmentVariable("OBJECT_STORAGE_SECRET_KEY", "sk");
         Environment.SetEnvironmentVariable("OBJECT_STORAGE_BUCKET_NAME", "bucket");
+        Environment.SetEnvironmentVariable("RABBITMQ_HOST", "localhost");
+        Environment.SetEnvironmentVariable("RABBITMQ_USER", "guest");
+        Environment.SetEnvironmentVariable("RABBITMQ_PASSWORD", "guest");
     }
 }

@@ -1,11 +1,12 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Models;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Order;
@@ -21,6 +22,8 @@ public sealed class OrderService(
     IPromotionRepository promotionRepository,
     IDiscountCodeRepository discountCodeRepository,
     ILoyaltyRepository loyaltyRepository,
+    IUserRepository userRepository,
+    IEmailJobService emailJobService,
     AppEnvironment appEnvironment
 ) : IOrderService
 {
@@ -31,6 +34,8 @@ public sealed class OrderService(
     private readonly IPromotionRepository _promotionRepository = promotionRepository;
     private readonly IDiscountCodeRepository _discountCodeRepository = discountCodeRepository;
     private readonly ILoyaltyRepository _loyaltyRepository = loyaltyRepository;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IEmailJobService _emailJobService = emailJobService;
     private readonly decimal _commissionRate = appEnvironment.PlatformCommissionRate;
 
     public async Task<ServiceResult<OrderDto>> CreateFromCartAsync(
@@ -130,6 +135,18 @@ public sealed class OrderService(
         await _cartRepository.DeleteAsync(cart.Id, ct);
 
         var fullOrder = await _orderRepository.GetByIdAsync(created.Id, ct);
+
+        var customer = await _userRepository.GetByIdAsync(customerId, ct);
+        if (customer is not null && !string.IsNullOrWhiteSpace(customer.Email))
+        {
+            var customerName = $"{customer.FirstName} {customer.LastName}".Trim();
+            await _emailJobService.QueueOrderConfirmationAsync(fullOrder!, customer.Email, customerName);
+        }
+
+        var owner = await _userRepository.GetByIdAsync(restaurant.OwnerId, ct);
+        if (owner is not null && !string.IsNullOrWhiteSpace(owner.Email))
+            await _emailJobService.QueueNewOrderForRestaurantAsync(fullOrder!, owner.Email, restaurant.Name);
+
         return fullOrder!.ToDto();
     }
 
@@ -183,6 +200,8 @@ public sealed class OrderService(
         if (newStatus == OrderStatus.Delivered)
             await ProcessDeliveryAsync(order, ct);
 
+        await SendStatusEmailAsync(order, newStatus, ct);
+
         return updated.ToDto();
     }
 
@@ -200,7 +219,32 @@ public sealed class OrderService(
 
         order.Status = OrderStatus.Cancelled;
         var updated = await _orderRepository.UpdateAsync(order, ct);
+
+        await SendStatusEmailAsync(order, OrderStatus.Cancelled, ct);
+
         return updated.ToDto();
+    }
+
+    private async Task SendStatusEmailAsync(Order order, OrderStatus status, CancellationToken ct)
+    {
+        var customer = await _userRepository.GetByIdAsync(order.CustomerId, ct);
+        if (customer is null || string.IsNullOrWhiteSpace(customer.Email))
+            return;
+
+        var customerName = $"{customer.FirstName} {customer.LastName}".Trim();
+
+        switch (status)
+        {
+            case OrderStatus.Delivered:
+                await _emailJobService.QueueOrderDeliveredAsync(order, customer.Email, customerName);
+                break;
+            case OrderStatus.Ready:
+                await _emailJobService.QueueOrderReadyAsync(order, customer.Email, customerName);
+                break;
+            case OrderStatus.Cancelled:
+                await _emailJobService.QueueOrderCancelledAsync(order, customer.Email, customerName);
+                break;
+        }
     }
 
     private async Task ApplyPromotionsAsync(
@@ -224,11 +268,11 @@ public sealed class OrderService(
         }
     }
 
-    private async Task<ServiceResult<List<Models.DiscountCode>>> ApplyDiscountCodesAsync(
+    private async Task<ServiceResult<List<DiscountCode>>> ApplyDiscountCodesAsync(
         List<string> codes, int restaurantId, int customerId, decimal originalAmount,
         List<OrderDiscount> orderDiscounts, CancellationToken ct)
     {
-        var appliedCodes = new List<Models.DiscountCode>();
+        var appliedCodes = new List<DiscountCode>();
         foreach (var codeStr in codes.Where(c => !string.IsNullOrWhiteSpace(c)))
         {
             var discountCode = await _discountCodeRepository.GetByCodeAndRestaurantAsync(
@@ -320,7 +364,7 @@ public sealed class OrderService(
     }
 
     private async Task TrackDiscountCodeRedemptionsAsync(
-        List<Models.DiscountCode> appliedCodes, int customerId, int orderId, CancellationToken ct)
+        List<DiscountCode> appliedCodes, int customerId, int orderId, CancellationToken ct)
     {
         foreach (var dc in appliedCodes)
         {

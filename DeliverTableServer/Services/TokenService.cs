@@ -6,7 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using DeliverTableServer.Configuration;
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using Microsoft.AspNetCore.Identity;

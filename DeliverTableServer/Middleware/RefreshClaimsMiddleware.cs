@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using DeliverTableServer.Constants;
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Enums;
 using Microsoft.AspNetCore.Identity;
 

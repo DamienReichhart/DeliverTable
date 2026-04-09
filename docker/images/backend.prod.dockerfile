@@ -16,12 +16,14 @@ WORKDIR /src
 
 COPY DeliverTableServer/DeliverTableServer.csproj               DeliverTableServer/
 COPY DeliverTableSharedLibrary/DeliverTableSharedLibrary.csproj DeliverTableSharedLibrary/
+COPY DeliverTableInfrastructure/DeliverTableInfrastructure.csproj DeliverTableInfrastructure/
 
 RUN dotnet restore DeliverTableServer/DeliverTableServer.csproj \
     -r linux-musl-x64
 
 COPY DeliverTableServer/       DeliverTableServer/
 COPY DeliverTableSharedLibrary/ DeliverTableSharedLibrary/
+COPY DeliverTableInfrastructure/ DeliverTableInfrastructure/
 
 RUN dotnet publish DeliverTableServer/DeliverTableServer.csproj \
     -c Release \

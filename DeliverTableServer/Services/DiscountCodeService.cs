@@ -1,9 +1,11 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.DiscountCode;
@@ -38,7 +40,7 @@ public sealed class DiscountCodeService(
         if (existing is not null)
             return new ServiceError(ErrorMessages.DiscountCodeAlreadyExists);
 
-        var entity = new Models.DiscountCode
+        var entity = new DeliverTableInfrastructure.Models.DiscountCode
         {
             RestaurantId = restaurantId,
             Code = request.Code,

@@ -1,5 +1,5 @@
-using DeliverTableServer.Data;
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Models;
 using Microsoft.AspNetCore.Identity;
 
 namespace DeliverTableServer.Extensions;

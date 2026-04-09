@@ -1,11 +1,11 @@
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.DiscountCode;
 
 namespace DeliverTableServer.Mappers;
 
 public static class DiscountCodeMapper
 {
-    public static DiscountCodeDto ToDto(this Models.DiscountCode code)
+    public static DiscountCodeDto ToDto(this DiscountCode code)
     {
         return new DiscountCodeDto
         {

@@ -44,7 +44,7 @@ hint()   { printf '%b    %s%b\n' "$DIM" "$1" "$RESET"; }
 # ── Allowed values ──────────────────────────────────────────────
 
 readonly TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore"
-readonly SCOPES="client|server|shared|tests|api|auth|db|docker"
+readonly SCOPES="client|server|shared|tests|api|auth|db|docker|worker"
 
 # ── Strip comment lines ────────────────────────────────────────
 

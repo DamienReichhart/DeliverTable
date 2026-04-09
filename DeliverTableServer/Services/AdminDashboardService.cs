@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Data;
+using DeliverTableInfrastructure.Data;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;

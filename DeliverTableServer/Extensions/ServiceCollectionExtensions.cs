@@ -1,5 +1,5 @@
-using DeliverTableServer.Repositories;
-using DeliverTableServer.Repositories.Interfaces;
+using DeliverTableInfrastructure.Repositories;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 
@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IModerationRepository, ModerationRepository>();
         services.AddScoped<IOrderConfigRepository, OrderConfigRepository>();
+        services.AddScoped<IEmailJobRepository, EmailJobRepository>();
     }
 
     private static void RegisterServices(IServiceCollection services)
@@ -67,6 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPromotionService, PromotionService>();
         services.AddScoped<IDiscountCodeService, DiscountCodeService>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
+        services.AddScoped<IEmailJobService, EmailJobService>();
         services.AddScoped<IRatingService, RatingService>();
     }
 

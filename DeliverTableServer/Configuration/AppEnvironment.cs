@@ -15,6 +15,10 @@ public sealed class AppEnvironment
     public string[] CorsAllowedOrigins { get; }
     public int UploadMaxSizeMb { get; }
     public decimal PlatformCommissionRate { get; }
+    public string RabbitMqHost { get; }
+    public int RabbitMqPort { get; }
+    public string RabbitMqUser { get; }
+    public string RabbitMqPassword { get; }
 
     private AppEnvironment(
         string databaseConnectionString,
@@ -24,7 +28,11 @@ public sealed class AppEnvironment
         bool openApiEnableDocumentation,
         string[] corsAllowedOrigins,
         int uploadMaxSizeMb,
-        decimal platformCommissionRate)
+        decimal platformCommissionRate,
+        string rabbitMqHost,
+        int rabbitMqPort,
+        string rabbitMqUser,
+        string rabbitMqPassword)
     {
         DatabaseConnectionString = databaseConnectionString;
         RedisConnectionString = redisConnectionString;
@@ -34,6 +42,10 @@ public sealed class AppEnvironment
         CorsAllowedOrigins = corsAllowedOrigins;
         UploadMaxSizeMb = uploadMaxSizeMb;
         PlatformCommissionRate = platformCommissionRate;
+        RabbitMqHost = rabbitMqHost;
+        RabbitMqPort = rabbitMqPort;
+        RabbitMqUser = rabbitMqUser;
+        RabbitMqPassword = rabbitMqPassword;
     }
 
     /// <summary>
@@ -70,6 +82,11 @@ public sealed class AppEnvironment
 
         var platformCommissionRate = ParseDecimal("PLATFORM_COMMISSION_RATE", 0.10m, errors);
 
+        var rmqHost = RequireVar("RABBITMQ_HOST", errors);
+        var rmqPort = ParseInt("RABBITMQ_PORT", 5672, errors);
+        var rmqUser = RequireVar("RABBITMQ_USER", errors);
+        var rmqPass = RequireVar("RABBITMQ_PASSWORD", errors);
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
@@ -90,7 +107,11 @@ public sealed class AppEnvironment
             openApiEnable,
             corsOrigins,
             uploadMaxSizeMb,
-            platformCommissionRate);
+            platformCommissionRate,
+            rmqHost!,
+            rmqPort,
+            rmqUser!,
+            rmqPass!);
     }
 
     private static string? GetVar(string name)
