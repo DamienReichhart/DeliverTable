@@ -3,6 +3,7 @@ using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Admin;
+using DeliverTableSharedLibrary.Dtos.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,9 +12,10 @@ namespace DeliverTableServer.Controllers;
 [ApiController]
 [Route(ApiRoutes.Admin.Base)]
 [Authorize(Roles = nameof(UserRole.Administrator))]
-public class AdminOrderController(IAdminOrderService adminOrderService) : ControllerBase
+public class AdminOrderController(IAdminOrderService adminOrderService, IPaymentService paymentService) : ControllerBase
 {
     private readonly IAdminOrderService _adminOrderService = adminOrderService;
+    private readonly IPaymentService _paymentService = paymentService;
 
     [HttpGet(ApiRoutes.Admin.OrdersRoute)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
@@ -34,5 +36,14 @@ public class AdminOrderController(IAdminOrderService adminOrderService) : Contro
     {
         var result = await _adminOrderService.UpdateStatusAsync(id, request, ct);
         return result.ToOkResult();
+    }
+
+    [HttpPost(ApiRoutes.Admin.OrderRefundRoute)]
+    [Authorize(Roles = nameof(UserRole.Administrator))]
+    public async Task<IActionResult> RefundOrder(int id, [FromBody] AdminRefundRequest request, CancellationToken ct)
+    {
+        if (!this.TryGetUserId(out int adminId)) return Unauthorized();
+        var result = await _paymentService.RefundAsync(id, request.Amount, request.Reason, adminId, ct);
+        return result.IsSuccess ? Ok(result.Value) : result.Error!.ToErrorResult();
     }
 }

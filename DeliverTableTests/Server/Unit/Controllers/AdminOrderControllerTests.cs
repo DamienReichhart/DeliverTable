@@ -1,8 +1,13 @@
+using System.Reflection;
 using DeliverTableServer.Common;
 using DeliverTableServer.Controllers;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Admin;
+using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
+using DeliverTableTests.Global.Helpers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 
@@ -12,13 +17,15 @@ namespace DeliverTableTests.Server.Unit.Controllers;
 public class AdminOrderControllerTests
 {
     private IAdminOrderService _adminOrderService = null!;
+    private IPaymentService _paymentService = null!;
     private AdminOrderController _sut = null!;
 
     [SetUp]
     public void SetUp()
     {
         _adminOrderService = Substitute.For<IAdminOrderService>();
-        _sut = new AdminOrderController(_adminOrderService);
+        _paymentService = Substitute.For<IPaymentService>();
+        _sut = new AdminOrderController(_adminOrderService, _paymentService);
     }
 
     #region GetAll
@@ -124,6 +131,61 @@ public class AdminOrderControllerTests
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         var obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
+    }
+
+    #endregion
+
+    #region RefundOrder
+
+    [Test]
+    public async Task RefundOrder_HappyPath_ReturnsOkWithRefundDto()
+    {
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "99", nameof(UserRole.Administrator));
+        var refundDto = new RefundDto(1, 20m, "EUR", "mistake", DateTime.UtcNow);
+        _paymentService
+            .RefundAsync(42, 20m, "mistake", 99, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<RefundDto>.Success(refundDto));
+
+        var result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
+
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task RefundOrder_WhenUnauthenticated_ReturnsUnauthorized()
+    {
+        AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
+
+        var result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
+
+        Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
+    }
+
+    [Test]
+    public async Task RefundOrder_WhenServiceFails_ReturnsError()
+    {
+        AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "99", nameof(UserRole.Administrator));
+        _paymentService
+            .RefundAsync(42, 20m, "mistake", 99, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<RefundDto>.Failure(new ServiceError("Remboursement impossible", 400)));
+
+        var result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
+
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var obj = (ObjectResult)result;
+        Assert.That(obj.StatusCode, Is.EqualTo(400));
+    }
+
+    [Test]
+    public void RefundOrder_HasAdministratorAuthorizeAttribute()
+    {
+        var method = typeof(AdminOrderController).GetMethod(nameof(AdminOrderController.RefundOrder))!;
+        var attrs = method
+            .GetCustomAttributes(typeof(AuthorizeAttribute), true)
+            .Cast<AuthorizeAttribute>()
+            .ToList();
+
+        Assert.That(attrs.Any(a => a.Roles?.Contains(nameof(UserRole.Administrator)) == true), Is.True);
     }
 
     #endregion
