@@ -7,6 +7,8 @@ using DeliverTableWorker.Consumers;
 using DeliverTableWorker.Services;
 using Microsoft.EntityFrameworkCore;
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 DotNetEnv.Env.Load();
 var env = WorkerEnvironment.Load();
 
