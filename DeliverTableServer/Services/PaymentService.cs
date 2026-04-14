@@ -8,6 +8,7 @@ using DeliverTableServer.Constants;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace DeliverTableServer.Services;
 
@@ -21,13 +22,17 @@ public class PaymentService(
     ICartRepository cartRepository,
     IEmailJobService emailJobService,
     DeliverTableContext dbContext,
-    AppEnvironment env) : IPaymentService
+    AppEnvironment env,
+    ILogger<PaymentService> logger) : IPaymentService
 {
     private readonly AppEnvironment _env = env;
     private readonly DeliverTableContext _dbContext = dbContext;
+    private readonly ILogger<PaymentService> _logger = logger;
 
     public async Task<ServiceResult<CreateIntentResult>> CreateIntentAsync(int orderId, CancellationToken ct)
     {
+        _logger.LogInformation("Creating PaymentIntent for order {OrderId}", orderId);
+
         var order = await orderRepository.GetByIdAsync(orderId, ct);
         if (order is null) return new ServiceError(ErrorMessages.OrderNotFound);
         if (order.Status != OrderStatus.AwaitingPayment)
@@ -65,6 +70,9 @@ public class PaymentService(
             idempotencyKey: $"order:{order.Id}:create-intent",
             ct);
 
+        _logger.LogInformation("PaymentIntent {PaymentIntentId} created for order {OrderId}, amount {Amount}",
+            intent.PaymentIntentId, order.Id, order.TotalAmount);
+
         var payment = new Payment
         {
             OrderId = order.Id,
@@ -87,6 +95,9 @@ public class PaymentService(
         if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
         try
         {
+            _logger.LogInformation("Capturing payment intent {PaymentIntentId} for order {OrderId}",
+                payment.StripePaymentIntentId, orderId);
+
             var capture = await stripe.CapturePaymentIntentAsync(
                 payment.StripePaymentIntentId,
                 idempotencyKey: $"order:{orderId}:capture",
@@ -111,6 +122,7 @@ public class PaymentService(
         }
         catch (Stripe.StripeException ex)
         {
+            _logger.LogError(ex, "Stripe capture failed for order {OrderId}", orderId);
             return new ServiceError(ErrorMessages.PaymentCaptureFailed + " " + ex.Message);
         }
     }
@@ -129,6 +141,9 @@ public class PaymentService(
         if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
         try
         {
+            _logger.LogInformation("Canceling payment intent {PaymentIntentId} for order {OrderId}",
+                payment.StripePaymentIntentId, orderId);
+
             await stripe.CancelPaymentIntentAsync(
                 payment.StripePaymentIntentId,
                 idempotencyKey: $"order:{orderId}:cancel-auth",
@@ -140,6 +155,7 @@ public class PaymentService(
         }
         catch (Stripe.StripeException ex)
         {
+            _logger.LogError(ex, "Stripe cancel authorization failed for order {OrderId}", orderId);
             return new ServiceError(ErrorMessages.PaymentCancelFailed + " " + ex.Message);
         }
     }
@@ -159,6 +175,9 @@ public class PaymentService(
         long amountMinor = (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero);
         var idempotencyKey = $"order:{orderId}:refund:{DateTime.UtcNow.Ticks}";
 
+        _logger.LogInformation("Issuing refund of {Amount} for order {OrderId} via intent {PaymentIntentId}",
+            amount, orderId, payment.StripePaymentIntentId);
+
         StripeRefundResult stripeRefund;
         try
         {
@@ -167,6 +186,7 @@ public class PaymentService(
         }
         catch (Stripe.StripeException ex)
         {
+            _logger.LogError(ex, "Stripe refund failed for order {OrderId}", orderId);
             return new ServiceError(ErrorMessages.PaymentRefundFailed + " " + ex.Message);
         }
 
@@ -199,6 +219,8 @@ public class PaymentService(
 
     public async Task<ServiceResult> HandleStripeEventAsync(Stripe.Event evt, CancellationToken ct)
     {
+        _logger.LogInformation("Dispatching Stripe event {EventId} of type {EventType}", evt.Id, evt.Type);
+
         using var tx = await _dbContext.Database.BeginTransactionAsync(ct);
 
         var registered = await paymentRepository.TryRegisterProcessedEventAsync(evt.Id, evt.Type, ct);
@@ -227,6 +249,7 @@ public class PaymentService(
                 await HandleChargeRefundedAsync((Stripe.Charge)evt.Data.Object, ct);
                 break;
             default:
+                _logger.LogInformation("Stripe event {EventId} of type {EventType} not handled", evt.Id, evt.Type);
                 break;
         }
 
@@ -246,6 +269,7 @@ public class PaymentService(
 
         await loyaltyRepository.MarkPendingRedemptionsCommittedForOrderAsync(order.Id, ct);
         await discountRepository.MarkPendingRedemptionsCommittedForOrderAsync(order.Id, ct);
+        await discountRepository.IncrementRedemptionCountersForCommittedAsync(order.Id, ct);
 
         order.Status = OrderStatus.Pending;
         order.PaymentStatus = PaymentStatus.Authorized;
