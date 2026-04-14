@@ -1,0 +1,87 @@
+@page "/paiement/resultat"
+@attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableSharedLibrary.Dtos.Order
+@inject IOrderService OrderService
+@inject NavigationManager Nav
+
+<PageTitle>Résultat du paiement — DeliverTable</PageTitle>
+
+<div class="checkout-result">
+    @if (_state == State.Waiting)
+    {
+        <div class="checkout-result__waiting">
+            <div class="checkout-result__spinner" aria-hidden="true"></div>
+            <p>Vérification du paiement...</p>
+        </div>
+    }
+    else if (_state == State.Success)
+    {
+        <div class="checkout-result__icon checkout-result__icon--success" aria-hidden="true">&#10003;</div>
+        <h1>Commande confirmée !</h1>
+        <p>Votre paiement a été accepté. En attente de la confirmation du restaurant.</p>
+        <div class="checkout-result__actions">
+            <a class="app-btn app-btn--primary" href="@($"/commande/{_orderId}/confirmation")">
+                Voir ma commande
+            </a>
+            <a class="app-btn app-btn--secondary" href="/restaurants">
+                Continuer à explorer
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="checkout-result__icon checkout-result__icon--failure" aria-hidden="true">&#10005;</div>
+        <h1>Paiement non abouti</h1>
+        <p>Votre paiement n'a pas pu être finalisé. Vous pouvez réessayer ou choisir un autre moyen de paiement.</p>
+        <div class="checkout-result__actions">
+            <a class="app-btn app-btn--primary" href="/restaurants">
+                Retour aux restaurants
+            </a>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "orderId")]
+    public int OrderId { get; set; }
+
+    private int _orderId;
+
+    private enum State { Waiting, Success, Failure }
+    private State _state = State.Waiting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _orderId = OrderId;
+
+        if (_orderId <= 0)
+        {
+            _state = State.Failure;
+            return;
+        }
+
+        for (int i = 0; i < 10; i++)
+        {
+            var (dto, error) = await OrderService.GetOrderByIdAsync(_orderId);
+
+            if (error is not null || dto is null)
+            {
+                _state = State.Failure;
+                return;
+            }
+
+            if (dto.Status != nameof(OrderStatus.AwaitingPayment))
+            {
+                _state = dto.Status == nameof(OrderStatus.Cancelled)
+                    ? State.Failure
+                    : State.Success;
+                return;
+            }
+
+            await Task.Delay(1000);
+        }
+
+        // Timed out — treat as failure so the user can retry
+        _state = State.Failure;
+    }
+}
