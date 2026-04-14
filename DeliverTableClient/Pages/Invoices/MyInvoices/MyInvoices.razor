@@ -1,0 +1,71 @@
+@page "/factures"
+@attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.Invoice
+@using DeliverTableSharedLibrary.Enums
+@inject IInvoiceApiClient InvoiceApi
+
+<PageTitle>Mes factures — DeliverTable</PageTitle>
+
+<section class="my-invoices">
+    <h1>Mes factures</h1>
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_items is null || _items.Count == 0)
+    {
+        <p>Aucune facture pour le moment.</p>
+    }
+    else
+    {
+        <table class="invoices-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Numéro</th>
+                    <th>N° commande</th>
+                    <th>Montant TTC</th>
+                    <th>Statut</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var inv in _items)
+                {
+                    <tr>
+                        <td>@inv.IssuedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @inv.Number
+                            @if (inv.Kind == InvoiceKind.CreditNoteToCustomer || inv.Kind == InvoiceKind.CommissionCreditNoteToRestaurant)
+                            {
+                                <span class="badge">AVOIR</span>
+                            }
+                        </td>
+                        <td>#@inv.OrderId</td>
+                        <td>@inv.TotalTtc.ToString("0.00 €")</td>
+                        <td>@inv.Status</td>
+                        <td>
+                            @if (inv.Status == InvoiceStatus.Generated)
+                            {
+                                <a class="btn-download" href="@($"/api/v1/invoice/{inv.Id}/pdf")" target="_blank">Télécharger</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    private bool _loading = true;
+    private List<InvoiceListItemDto>? _items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await InvoiceApi.GetMineAsync(1, 50);
+        _items = result?.Items.ToList() ?? new();
+        _loading = false;
+    }
+}
