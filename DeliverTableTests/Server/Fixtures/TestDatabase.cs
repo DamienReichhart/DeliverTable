@@ -1,5 +1,6 @@
 using DeliverTableInfrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace DeliverTableTests.Server.Fixtures;
 
@@ -15,6 +16,9 @@ public sealed class TestDatabase : IDisposable
     {
         var options = new DbContextOptionsBuilder<DeliverTableContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            // The in-memory provider does not support real transactions; suppress the warning
+            // so that service code using BeginTransactionAsync works in unit tests.
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         Context = new DeliverTableContext(options);
