@@ -17,6 +17,7 @@ public class InvoiceService(
     IInvoiceRepository invoiceRepository,
     IOrderRepository orderRepository,
     IInvoiceNumberingService numbering,
+    IPaymentRepository paymentRepository,
     AppEnvironment env) : IInvoiceService
 {
     public async Task<ServiceResult<List<InvoiceJobMessage>>> CreatePendingInvoicesForCapturedOrderAsync(
@@ -51,6 +52,119 @@ public class InvoiceService(
         };
 
         return ServiceResult<List<InvoiceJobMessage>>.Success(messages);
+    }
+
+    public async Task<ServiceResult<List<InvoiceJobMessage>>> CreateCreditNotesForRefundAsync(
+        int refundId,
+        CancellationToken ct)
+    {
+        var refund = await paymentRepository.GetRefundByIdAsync(refundId, ct);
+        if (refund is null)
+            return ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage>());
+
+        var payment = await paymentRepository.GetByIdAsync(refund.PaymentId, ct);
+        if (payment is null)
+            return ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage>());
+
+        var originals = await invoiceRepository.ListByOrderIdAsync(payment.OrderId, ct);
+        var customerOriginal = originals.FirstOrDefault(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        var commissionOriginal = originals.FirstOrDefault(i =>
+            i.Kind == InvoiceKind.CommissionInvoiceToRestaurant);
+
+        if (customerOriginal is null && commissionOriginal is null)
+            return ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage>());
+
+        if (customerOriginal is not null && customerOriginal.Lines.Count == 0)
+            customerOriginal =
+                await invoiceRepository.GetByIdWithLinesAsync(customerOriginal.Id, ct) ?? customerOriginal;
+
+        if (commissionOriginal is not null && commissionOriginal.Lines.Count == 0)
+            commissionOriginal =
+                await invoiceRepository.GetByIdWithLinesAsync(commissionOriginal.Id, ct) ?? commissionOriginal;
+
+        var messages = new List<InvoiceJobMessage>();
+
+        if (customerOriginal is not null)
+        {
+            decimal ratio = customerOriginal.TotalTtc != 0m
+                ? refund.Amount / customerOriginal.TotalTtc
+                : 0m;
+            var creditNote = await BuildCreditNoteAsync(
+                customerOriginal, InvoiceKind.CreditNoteToCustomer, ratio, ct);
+            await invoiceRepository.CreateAsync(creditNote, ct);
+            messages.Add(new InvoiceJobMessage(creditNote.Id));
+        }
+
+        if (commissionOriginal is not null)
+        {
+            decimal ratio = customerOriginal is not null && customerOriginal.TotalTtc != 0m
+                ? refund.Amount / customerOriginal.TotalTtc
+                : 0m;
+            var creditNote = await BuildCreditNoteAsync(
+                commissionOriginal, InvoiceKind.CommissionCreditNoteToRestaurant, ratio, ct);
+            await invoiceRepository.CreateAsync(creditNote, ct);
+            messages.Add(new InvoiceJobMessage(creditNote.Id));
+        }
+
+        return ServiceResult<List<InvoiceJobMessage>>.Success(messages);
+    }
+
+    private async Task<Invoice> BuildCreditNoteAsync(
+        Invoice original,
+        InvoiceKind creditKind,
+        decimal ratio,
+        CancellationToken ct)
+    {
+        int year = DateTime.UtcNow.Year;
+        var number = await numbering.IssueNumberAsync(
+            original.IssuerType,
+            original.IssuerType == InvoiceIssuerType.Restaurant ? original.IssuerRestaurantId : null,
+            year,
+            isCreditNote: true,
+            ct);
+
+        var creditNote = new Invoice
+        {
+            Number = number,
+            Kind = creditKind,
+            OrderId = original.OrderId,
+            IssuerType = original.IssuerType,
+            IssuerRestaurantId = original.IssuerRestaurantId,
+            RecipientUserId = original.RecipientUserId,
+            RecipientRestaurantId = original.RecipientRestaurantId,
+            RelatedInvoiceId = original.Id,
+            IssuedAt = DateTime.UtcNow,
+            Currency = original.Currency,
+            Status = InvoiceStatus.Queued,
+            IssuerLegalSnapshotJson = original.IssuerLegalSnapshotJson,
+            RecipientSnapshotJson = original.RecipientSnapshotJson,
+        };
+
+        foreach (var origLine in original.Lines.OrderBy(l => l.SortOrder))
+        {
+            var qty = Math.Round(origLine.Quantity * -ratio, 3, MidpointRounding.AwayFromZero);
+            var lineHt = Math.Round(origLine.LineHt * -ratio, 2, MidpointRounding.AwayFromZero);
+            var lineVat = Math.Round(origLine.LineVat * -ratio, 2, MidpointRounding.AwayFromZero);
+            var lineTtc = Math.Round(origLine.LineTtc * -ratio, 2, MidpointRounding.AwayFromZero);
+
+            creditNote.Lines.Add(new InvoiceLine
+            {
+                Description = origLine.Description,
+                Quantity = qty,
+                UnitPriceTtc = origLine.UnitPriceTtc,
+                UnitPriceHt = origLine.UnitPriceHt,
+                VatRate = origLine.VatRate,
+                LineHt = lineHt,
+                LineVat = lineVat,
+                LineTtc = lineTtc,
+                SortOrder = origLine.SortOrder,
+            });
+        }
+
+        creditNote.TotalHt = creditNote.Lines.Sum(l => l.LineHt);
+        creditNote.TotalVat = creditNote.Lines.Sum(l => l.LineVat);
+        creditNote.TotalTtc = creditNote.Lines.Sum(l => l.LineTtc);
+        return creditNote;
     }
 
     private Invoice BuildCustomerInvoice(Order order, Restaurant restaurant, User customer, string number)

@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Invoicing;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories;
 using DeliverTableInfrastructure.Repositories.Interfaces;
@@ -41,6 +42,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderConfigRepository, OrderConfigRepository>();
         services.AddScoped<IEmailJobRepository, EmailJobRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IInvoiceRepository, InvoiceRepository>();
     }
 
     private static void RegisterServices(IServiceCollection services)
@@ -73,11 +75,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailJobService, EmailJobService>();
         services.AddScoped<IRatingService, RatingService>();
         services.AddScoped<IPaymentService, PaymentService>();
+        services.AddScoped<IInvoiceService, InvoiceService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
     {
         services.AddHttpClient<IGeoLocationService, GeoLocationService>();
         services.AddScoped<IStripeGateway, StripeGateway>();
+        services.AddScoped<IInvoiceNumberingService, InvoiceNumberingService>();
     }
 }
