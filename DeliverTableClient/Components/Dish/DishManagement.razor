@@ -1,6 +1,7 @@
 @using DeliverTableClient.Components.Modales
 @using DeliverTableSharedLibrary.Dtos.Dish
 @using DeliverTableSharedLibrary.Dtos
+@using DeliverTableSharedLibrary.Enums
 @using DeliverTableClient.Services.Interfaces
 @inject IDishService DishService
 
@@ -122,6 +123,17 @@
                                     <label class="form-check-label" for="isDishOfTheDay">Plat du jour</label>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="vat-rate">Taux de TVA</label>
+                            <select id="vat-rate" class="form-control mb-3" @bind="currentDish.VatRate">
+                                <option value="@VatRate.Zero">0 % (Zéro)</option>
+                                <option value="@VatRate.Special2_1">2,1 % (Spécial)</option>
+                                <option value="@VatRate.Reduced5_5">5,5 % (Réduit)</option>
+                                <option value="@VatRate.Intermediate10">10 % (Intermédiaire)</option>
+                                <option value="@VatRate.Normal20">20 % (Normal)</option>
+                            </select>
                         </div>
 
                         <div class="form-group mb-3">
