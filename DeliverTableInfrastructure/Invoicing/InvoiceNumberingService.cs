@@ -16,6 +16,32 @@ public class InvoiceNumberingService(DeliverTableContext dbContext) : IInvoiceNu
         bool isCreditNote,
         CancellationToken ct)
     {
+        const int maxAttempts = 5;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                return await IssueOnceAsync(issuerType, issuerEntityId, year, isCreditNote, ct);
+            }
+            catch (DbUpdateException) when (attempt < maxAttempts)
+            {
+                // Re-read counter and retry — another concurrent call won this round.
+                _dbContext.ChangeTracker.Clear();
+                await Task.Delay(10 * attempt, ct);
+            }
+        }
+
+        // Final attempt — let any DbUpdateException propagate to the caller.
+        return await IssueOnceAsync(issuerType, issuerEntityId, year, isCreditNote, ct);
+    }
+
+    private async Task<string> IssueOnceAsync(
+        InvoiceIssuerType issuerType,
+        int? issuerEntityId,
+        int year,
+        bool isCreditNote,
+        CancellationToken ct)
+    {
         var counter = await _dbContext.InvoiceCounters
             .FirstOrDefaultAsync(c =>
                 c.EntityType == issuerType &&
