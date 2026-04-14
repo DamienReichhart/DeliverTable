@@ -47,6 +47,21 @@
 <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 <script>navigator.serviceWorker.register('service-worker.js', {updateViaCache: 'none'});</script>
 <script>
+    window.downloadFileFromBase64 = function (fileName, contentType, base64) {
+        const binary = atob(base64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: contentType || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    };
     window.getGeolocation = function () {
         return new Promise(function (resolve, reject) {
             if (!navigator.geolocation) {

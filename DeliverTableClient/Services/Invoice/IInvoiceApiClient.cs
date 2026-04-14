@@ -11,4 +11,5 @@ public interface IInvoiceApiClient
     Task<PaginatedResult<AdminInvoiceRowDto>?> AdminListAsync(int? year, InvoiceKind? kind, InvoiceIssuerType? issuerType, int? restaurantId, string? customerEmail, int page, int pageSize);
     Task<AdminInvoiceDetailDto?> AdminGetAsync(int id);
     Task AdminResendEmailAsync(int id);
+    Task DownloadPdfAsync(int id);
 }

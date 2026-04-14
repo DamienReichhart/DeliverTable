@@ -148,9 +148,9 @@
             }
             @if (_invoice is not null)
             {
-                <a class="app-btn app-btn--secondary" href="@($"/api/v1/invoice/{_invoice.Id}/pdf")" target="_blank">
+                <button type="button" class="app-btn app-btn--secondary" @onclick="DownloadInvoice">
                     Télécharger la facture
-                </a>
+                </button>
             }
             <button type="button" class="app-btn app-btn--primary" @onclick="GoToOrders">
                 Voir mes commandes
@@ -262,4 +262,6 @@
         "LoyaltyPoints" => "Fidélité :",
         _ => ""
     };
+
+    private Task DownloadInvoice() => _invoice is null ? Task.CompletedTask : InvoiceApi.DownloadPdfAsync(_invoice.Id);
 }
