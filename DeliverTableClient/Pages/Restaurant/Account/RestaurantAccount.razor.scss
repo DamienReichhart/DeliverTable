@@ -177,3 +177,14 @@
   background: rgba($color-error, 0.10);
   color: $color-error;
 }
+
+.invoice-badge {
+  display: inline-block;
+  background: #ff9800;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  font-size: 0.8em;
+  font-weight: 600;
+}

@@ -3,7 +3,11 @@
 @inject IRestaurantService RestaurantService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.Invoice
 @using DeliverTableSharedLibrary.Dtos.Restaurant
+@using DeliverTableSharedLibrary.Enums
+@inject IInvoiceApiClient InvoiceApi
 
 <PageTitle>Compte — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
 
@@ -73,6 +77,62 @@
                 </EditForm>
             </div>
         }
+
+        <div class="transactions-section">
+            <h2>Factures de commission</h2>
+
+            @if (_invoicesLoading)
+            {
+                <p>Chargement des factures...</p>
+            }
+            else if (_invoices is null || _invoices.Count == 0)
+            {
+                <div class="empty-state">
+                    <p>Aucune facture de commission pour le moment.</p>
+                </div>
+            }
+            else
+            {
+                <div class="transactions-table-container">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Numéro</th>
+                                <th>N° commande</th>
+                                <th>Montant TTC</th>
+                                <th>Statut</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var inv in _invoices)
+                            {
+                                <tr>
+                                    <td>@inv.IssuedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @inv.Number
+                                        @if (inv.Kind == InvoiceKind.CommissionCreditNoteToRestaurant)
+                                        {
+                                            <span class="invoice-badge">AVOIR</span>
+                                        }
+                                    </td>
+                                    <td>#@inv.OrderId</td>
+                                    <td>@inv.TotalTtc.ToString("C", _frCulture)</td>
+                                    <td>@inv.Status</td>
+                                    <td>
+                                        @if (inv.Status == InvoiceStatus.Generated)
+                                        {
+                                            <a href="@($"/api/v1/invoice/{inv.Id}/pdf")" target="_blank" class="app-btn app-btn--secondary app-btn--sm">Télécharger</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
 
         <div class="transactions-section">
             <h2>Historique des transactions</h2>
@@ -151,6 +211,9 @@
     private bool _loading = true;
     private string? _error;
 
+    private List<InvoiceListItemDto>? _invoices;
+    private bool _invoicesLoading = true;
+
     private bool _showWithdraw;
     private bool _withdrawing;
     private string? _withdrawError;
@@ -161,7 +224,15 @@
     {
         var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
         _restaurantName = restaurant?.Name;
-        await LoadAccount();
+        await Task.WhenAll(LoadAccount(), LoadInvoices());
+    }
+
+    private async Task LoadInvoices()
+    {
+        _invoicesLoading = true;
+        var result = await InvoiceApi.GetForRestaurantAsync(RestaurantId, 1, 50);
+        _invoices = result?.Items.ToList() ?? new();
+        _invoicesLoading = false;
     }
 
     private async Task LoadAccount()
