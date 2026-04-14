@@ -12,5 +12,8 @@ namespace DeliverTableInfrastructure.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Refund> Refunds { get; set; }
         public DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }
+        public DbSet<Invoice> Invoices => Set<Invoice>();
+        public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
+        public DbSet<InvoiceCounter> InvoiceCounters => Set<InvoiceCounter>();
     }
 }
