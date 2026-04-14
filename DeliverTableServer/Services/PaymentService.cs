@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Data;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
@@ -19,9 +20,11 @@ public class PaymentService(
     IDiscountCodeRepository discountRepository,
     ICartRepository cartRepository,
     IEmailJobService emailJobService,
+    DeliverTableContext dbContext,
     AppEnvironment env) : IPaymentService
 {
     private readonly AppEnvironment _env = env;
+    private readonly DeliverTableContext _dbContext = dbContext;
 
     public async Task<ServiceResult<CreateIntentResult>> CreateIntentAsync(int orderId, CancellationToken ct)
     {
@@ -185,8 +188,14 @@ public class PaymentService(
 
     public async Task<ServiceResult> HandleStripeEventAsync(Stripe.Event evt, CancellationToken ct)
     {
+        using var tx = await _dbContext.Database.BeginTransactionAsync(ct);
+
         var registered = await paymentRepository.TryRegisterProcessedEventAsync(evt.Id, evt.Type, ct);
-        if (!registered) return ServiceResult.Success();
+        if (!registered)
+        {
+            await tx.CommitAsync(ct);
+            return ServiceResult.Success();
+        }
 
         switch (evt.Type)
         {
@@ -209,6 +218,8 @@ public class PaymentService(
             default:
                 break;
         }
+
+        await tx.CommitAsync(ct);
         return ServiceResult.Success();
     }
 

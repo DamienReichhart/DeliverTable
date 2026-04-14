@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Data;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
@@ -7,6 +8,8 @@ using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
+using DeliverTableTests.Server.Fixtures;
+using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
@@ -25,6 +28,7 @@ public class PaymentServiceTests
     private ICartRepository _cartRepo = null!;
     private IEmailJobService _emailJobService = null!;
     private AppEnvironment _env = null!;
+    private TestDatabase _testDb = null!;
     private PaymentService _sut = null!;
 
     [SetUp]
@@ -39,9 +43,16 @@ public class PaymentServiceTests
         _cartRepo = Substitute.For<ICartRepository>();
         _emailJobService = Substitute.For<IEmailJobService>();
         _env = TestEnvironmentFactory.Create();
+        _testDb = new TestDatabase();
         _sut = new PaymentService(
             _stripe, _paymentRepo, _orderRepo, _userRepo,
-            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _env);
+            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _testDb.Context, _env);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _testDb.Dispose();
     }
 
     [Test]
@@ -304,5 +315,31 @@ public class PaymentServiceTests
             Arg.Is<DeliverTableInfrastructure.Models.Refund>(r => r.StripeRefundId == "re_1" && r.Amount == 25m),
             Arg.Any<CancellationToken>());
         Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.PartiallyRefunded));
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_HandlerThrows_RollsBackProcessedEvent()
+    {
+        // Arrange: TryRegisterProcessedEventAsync returns true (event registered),
+        // but the payment repo then throws during handler execution.
+        // The exception should propagate so that Stripe can retry the webhook.
+        // With real DB + transaction this means the ProcessedStripeEvent row is also rolled back.
+        var pi = new Stripe.PaymentIntent { Id = "pi_throw" };
+        var evt = new Stripe.Event
+        {
+            Id = "evt_throw",
+            Type = "payment_intent.succeeded",
+            Data = new Stripe.EventData { Object = pi }
+        };
+
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_throw", Arg.Any<string>(), Arg.Any<CancellationToken>())
+                    .Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_throw", Arg.Any<CancellationToken>())
+                    .ThrowsAsync(new InvalidOperationException("handler blowup"));
+
+        // The exception must propagate — not be swallowed — so Stripe can retry.
+        Assert.That(
+            async () => await _sut.HandleStripeEventAsync(evt, CancellationToken.None),
+            Throws.TypeOf<InvalidOperationException>().With.Message.EqualTo("handler blowup"));
     }
 }
