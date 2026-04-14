@@ -267,6 +267,27 @@ services:
         ipv4_address: 192.168.60.80
     restart: unless-stopped
 
+  # ── Background Scheduler ─────────────────────────────────────
+  scheduler:
+    container_name: dt-scheduler-dev
+    build:
+      context: .
+      dockerfile: docker/images/scheduler.dev.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    environment:
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      CONNECTION_STRING_DATABASE: ${CONNECTION_STRING_DATABASE}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      dt-backend-net:
+        ipv4_address: 192.168.60.90
+    restart: unless-stopped
+
 networks:
   dt-frontend-net:
     name: dt-frontend-dev
