@@ -4,7 +4,9 @@ using DeliverTableServer.Constants;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services;
+using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Order;
+using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Helpers;
 using NSubstitute;
@@ -23,7 +25,8 @@ public class OrderServiceTests
     private IDiscountCodeRepository _discountCodeRepository = null!;
     private ILoyaltyRepository _loyaltyRepository = null!;
     private IUserRepository _userRepository = null!;
-    private DeliverTableServer.Services.Interfaces.IEmailJobService _emailJobService = null!;
+    private IEmailJobService _emailJobService = null!;
+    private IPaymentService _paymentService = null!;
     private AppEnvironment _appEnvironment = null!;
     private OrderService _sut = null!;
 
@@ -41,14 +44,19 @@ public class OrderServiceTests
         _discountCodeRepository = Substitute.For<IDiscountCodeRepository>();
         _loyaltyRepository = Substitute.For<ILoyaltyRepository>();
         _userRepository = Substitute.For<IUserRepository>();
-        _emailJobService = Substitute.For<DeliverTableServer.Services.Interfaces.IEmailJobService>();
+        _emailJobService = Substitute.For<IEmailJobService>();
+        _paymentService = Substitute.For<IPaymentService>();
 
         _appEnvironment = AppEnvironmentTestHelper.SetupEnvironment();
+
+        _paymentService.CreateIntentAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<CreateIntentResult>.Success(
+                new CreateIntentResult("pi_test_secret", "pi_test_id", 70m, "EUR")));
 
         _sut = new OrderService(
             _orderRepository, _cartRepository, _restaurantRepository,
             _transactionRepository, _promotionRepository, _discountCodeRepository,
-            _loyaltyRepository, _userRepository, _emailJobService, _appEnvironment);
+            _loyaltyRepository, _userRepository, _emailJobService, _paymentService, _appEnvironment);
     }
 
     [TearDown]
@@ -875,5 +883,92 @@ public class OrderServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.GuestCountRequired));
+    }
+
+    // ─── New payment-flow tests ────────────────────────────────────────────
+
+    [Test]
+    public async Task CreateFromCartAsync_NewFlow_CreatesAwaitingPaymentAndReturnsClientSecret()
+    {
+        SetupBaseCreateMocks();
+
+        Order? capturedOrder = null;
+        _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                capturedOrder = callInfo.Arg<Order>();
+                return capturedOrder;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest());
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(capturedOrder, Is.Not.Null);
+        Assert.That(capturedOrder!.Status, Is.EqualTo(OrderStatus.AwaitingPayment));
+        Assert.That(capturedOrder.PaymentStatus, Is.EqualTo(PaymentStatus.Pending));
+        Assert.That(result.Value!.ClientSecret, Is.EqualTo("pi_test_secret"));
+        Assert.That(result.Value.PublishableKey, Is.EqualTo("pk_test_stripe"));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_NewFlow_DoesNotClearCart()
+    {
+        SetupBaseCreateMocks();
+
+        await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest());
+
+        await _cartRepository.DidNotReceive().DeleteAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_NewFlow_DoesNotQueueConfirmationEmail()
+    {
+        SetupBaseCreateMocks();
+
+        await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest());
+
+        await _emailJobService.DidNotReceive().QueueOrderConfirmationAsync(
+            Arg.Any<DeliverTableInfrastructure.Models.Order>(),
+            Arg.Any<string>(),
+            Arg.Any<string>());
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_NewFlow_WhenPaymentServiceFails_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        _paymentService.CreateIntentAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<CreateIntentResult>.Failure(
+                new ServiceError("Stripe indisponible", 502)));
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest());
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo("Stripe indisponible"));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_NewFlow_ReturnsCreateOrderResponseWithCorrectOrderId()
+    {
+        SetupBaseCreateMocks();
+
+        _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var o = callInfo.Arg<Order>();
+                o.Id = 42;
+                return o;
+            });
+
+        _paymentService.CreateIntentAsync(42, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<CreateIntentResult>.Success(
+                new CreateIntentResult("pi_secret_42", "pi_42", 70m, "EUR")));
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest());
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.OrderId, Is.EqualTo(42));
+        Assert.That(result.Value.ClientSecret, Is.EqualTo("pi_secret_42"));
     }
 }
