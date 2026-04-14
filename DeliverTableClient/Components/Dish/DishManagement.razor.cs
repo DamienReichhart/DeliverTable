@@ -84,7 +84,8 @@ namespace DeliverTableClient.Components.Dish
                 IsVegan = dish.IsVegan,
                 IsGlutenFree = dish.IsGlutenFree,
                 IsAllergenHazard = dish.IsAllergenHazard,
-                IsDishOfTheDay = dish.IsDishOfTheDay
+                IsDishOfTheDay = dish.IsDishOfTheDay,
+                VatRate = dish.VatRate,
             };
 
             selectedImage = null;

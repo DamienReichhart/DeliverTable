@@ -66,6 +66,7 @@ namespace DeliverTableClient.Services
                 content.Add(new StringContent(createDto.IsGlutenFree.ToString()), nameof(CreateDishDto.IsGlutenFree));
                 content.Add(new StringContent(createDto.IsAllergenHazard.ToString()), nameof(CreateDishDto.IsAllergenHazard));
                 content.Add(new StringContent(createDto.IsDishOfTheDay.ToString()), nameof(CreateDishDto.IsDishOfTheDay));
+                content.Add(new StringContent(((int)createDto.VatRate).ToString()), nameof(CreateDishDto.VatRate));
 
                 if (image is not null)
                 {
@@ -108,6 +109,7 @@ namespace DeliverTableClient.Services
                 content.Add(new StringContent(updateDto.IsGlutenFree.ToString()), nameof(CreateDishDto.IsGlutenFree));
                 content.Add(new StringContent(updateDto.IsAllergenHazard.ToString()), nameof(CreateDishDto.IsAllergenHazard));
                 content.Add(new StringContent(updateDto.IsDishOfTheDay.ToString()), nameof(CreateDishDto.IsDishOfTheDay));
+                content.Add(new StringContent(((int)updateDto.VatRate).ToString()), nameof(CreateDishDto.VatRate));
 
                 if (image is not null)
                 {
