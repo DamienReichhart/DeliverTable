@@ -117,6 +117,10 @@ public static class ErrorMessages
     public const string InvoiceNotGeneratedYet = "La facture est en cours de génération, réessayez dans quelques instants";
     public const string InvoiceAccessDenied = "Vous n'êtes pas autorisé à consulter cette facture";
 
+    // SIRET / Legal
+    public const string SiretInvalid = "Le numéro SIRET est invalide";
+    public const string LegalFieldsRequired = "Les informations légales (SIRET, raison sociale, adresse, forme juridique) sont obligatoires";
+
     // Stripe / Payments
     public const string OrderAccessDenied = "Vous n'êtes pas autorisé à modifier cette commande";
     public const string PaymentIntentCreationFailed = "Impossible de créer l'intention de paiement";
