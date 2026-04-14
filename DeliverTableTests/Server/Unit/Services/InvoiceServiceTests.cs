@@ -17,6 +17,7 @@ public class InvoiceServiceTests
     private IInvoiceRepository _invoiceRepo = null!;
     private IOrderRepository _orderRepo = null!;
     private IInvoiceNumberingService _numbering = null!;
+    private IPaymentRepository _paymentRepo = null!;
     private AppEnvironment _env = null!;
     private InvoiceService _sut = null!;
 
@@ -26,8 +27,9 @@ public class InvoiceServiceTests
         _invoiceRepo = Substitute.For<IInvoiceRepository>();
         _orderRepo = Substitute.For<IOrderRepository>();
         _numbering = Substitute.For<IInvoiceNumberingService>();
+        _paymentRepo = Substitute.For<IPaymentRepository>();
         _env = TestEnvironmentFactory.Create();
-        _sut = new InvoiceService(_invoiceRepo, _orderRepo, _numbering, _env);
+        _sut = new InvoiceService(_invoiceRepo, _orderRepo, _numbering, _paymentRepo, _env);
     }
 
     [Test]
@@ -163,5 +165,183 @@ public class InvoiceServiceTests
         Assert.That(customerInvoice, Is.Not.Null);
         Assert.That(customerInvoice!.Lines, Has.All.Matches<InvoiceLine>(l => l.VatRate == 0m));
         Assert.That(customerInvoice.TotalVat, Is.EqualTo(0m));
+    }
+
+    [Test]
+    public async Task CreateCreditNotes_FullRefund_MirrorsOriginalLinesNegatively()
+    {
+        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 20m };
+        var payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
+        var originalCustomer = new Invoice
+        {
+            Id = 100,
+            OrderId = 42,
+            Kind = InvoiceKind.OrderInvoiceToCustomer,
+            Number = "R0005-2026-000001",
+            TotalTtc = 20m,
+            TotalHt = 18.18m,
+            TotalVat = 1.82m,
+            IssuerType = InvoiceIssuerType.Restaurant,
+            IssuerRestaurantId = 5,
+            RecipientUserId = 1,
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = "{}",
+            Lines = new List<InvoiceLine>
+            {
+                new()
+                {
+                    Description = "Plat",
+                    Quantity = 2m,
+                    UnitPriceTtc = 10m,
+                    UnitPriceHt = 9.09m,
+                    VatRate = 10m,
+                    LineHt = 18.18m,
+                    LineVat = 1.82m,
+                    LineTtc = 20m,
+                    SortOrder = 0,
+                },
+            },
+        };
+        var originalCommission = new Invoice
+        {
+            Id = 101,
+            OrderId = 42,
+            Kind = InvoiceKind.CommissionInvoiceToRestaurant,
+            Number = "DT-2026-000001",
+            TotalTtc = 2.40m,
+            TotalHt = 2m,
+            TotalVat = 0.40m,
+            IssuerType = InvoiceIssuerType.Platform,
+            RecipientRestaurantId = 5,
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = "{}",
+            Lines = new List<InvoiceLine>
+            {
+                new()
+                {
+                    Description = "Commission",
+                    Quantity = 1m,
+                    UnitPriceHt = 2m,
+                    UnitPriceTtc = 2.40m,
+                    VatRate = 20m,
+                    LineHt = 2m,
+                    LineVat = 0.40m,
+                    LineTtc = 2.40m,
+                    SortOrder = 0,
+                },
+            },
+        };
+
+        _paymentRepo.GetRefundByIdAsync(7, Arg.Any<CancellationToken>()).Returns(refund);
+        _paymentRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(payment);
+        _invoiceRepo
+            .ListByOrderIdAsync(42, Arg.Any<CancellationToken>())
+            .Returns(new List<Invoice> { originalCustomer, originalCommission });
+        _numbering
+            .IssueNumberAsync(
+                Arg.Any<InvoiceIssuerType>(),
+                Arg.Any<int?>(),
+                Arg.Any<int>(),
+                true,
+                Arg.Any<CancellationToken>())
+            .Returns("AV-TEST-000002");
+        int nextId = 200;
+        _invoiceRepo
+            .CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                var inv = ci.Arg<Invoice>();
+                inv.Id = nextId++;
+                return inv;
+            });
+
+        var result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(2));
+        await _invoiceRepo.Received().CreateAsync(
+            Arg.Is<Invoice>(i =>
+                i.Kind == InvoiceKind.CreditNoteToCustomer
+                && i.RelatedInvoiceId == 100
+                && i.TotalTtc == -20m
+                && i.Lines[0].Quantity == -2m),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CreateCreditNotes_PartialRefund_ProratesNegativeLines()
+    {
+        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 5m }; // 25% of 20
+        var payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
+        var originalCustomer = new Invoice
+        {
+            Id = 100,
+            OrderId = 42,
+            Kind = InvoiceKind.OrderInvoiceToCustomer,
+            Number = "R0005-2026-000001",
+            TotalTtc = 20m,
+            TotalHt = 18.18m,
+            TotalVat = 1.82m,
+            IssuerType = InvoiceIssuerType.Restaurant,
+            IssuerRestaurantId = 5,
+            RecipientUserId = 1,
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = "{}",
+            Lines = new List<InvoiceLine>
+            {
+                new()
+                {
+                    Description = "Plat",
+                    Quantity = 2m,
+                    UnitPriceTtc = 10m,
+                    UnitPriceHt = 9.09m,
+                    VatRate = 10m,
+                    LineHt = 18.18m,
+                    LineVat = 1.82m,
+                    LineTtc = 20m,
+                    SortOrder = 0,
+                },
+            },
+        };
+
+        _paymentRepo.GetRefundByIdAsync(7, Arg.Any<CancellationToken>()).Returns(refund);
+        _paymentRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(payment);
+        _invoiceRepo
+            .ListByOrderIdAsync(42, Arg.Any<CancellationToken>())
+            .Returns(new List<Invoice> { originalCustomer });
+        _numbering
+            .IssueNumberAsync(
+                Arg.Any<InvoiceIssuerType>(),
+                Arg.Any<int?>(),
+                Arg.Any<int>(),
+                true,
+                Arg.Any<CancellationToken>())
+            .Returns("AV-TEST-000002");
+        Invoice? cn = null;
+        _invoiceRepo
+            .CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                cn = ci.Arg<Invoice>();
+                cn.Id = 201;
+                return cn;
+            });
+
+        await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
+
+        Assert.That(cn, Is.Not.Null);
+        Assert.That(cn!.Lines[0].Quantity, Is.EqualTo(-0.5m)); // 2 * -0.25
+        Assert.That(cn.TotalTtc, Is.EqualTo(-5m));
+    }
+
+    [Test]
+    public async Task CreateCreditNotes_RefundNotFound_ReturnsEmpty()
+    {
+        _paymentRepo.GetRefundByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Refund?)null);
+
+        var result = await _sut.CreateCreditNotesForRefundAsync(99, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(0));
     }
 }

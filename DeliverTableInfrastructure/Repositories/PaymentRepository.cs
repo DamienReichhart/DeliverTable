@@ -39,6 +39,9 @@ public class PaymentRepository(DeliverTableContext dbContext) : IPaymentReposito
         return refund;
     }
 
+    public Task<Refund?> GetRefundByIdAsync(int id, CancellationToken ct = default) =>
+        _dbContext.Refunds.FirstOrDefaultAsync(r => r.Id == id, ct);
+
     public Task<Refund?> GetRefundByStripeIdAsync(string stripeRefundId, CancellationToken ct = default) =>
         _dbContext.Refunds.FirstOrDefaultAsync(r => r.StripeRefundId == stripeRefundId, ct);
 

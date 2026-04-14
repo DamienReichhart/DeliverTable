@@ -11,6 +11,7 @@ public interface IPaymentRepository
     Task UpdateAsync(Payment payment, CancellationToken ct = default);
 
     Task<Refund> AddRefundAsync(Refund refund, CancellationToken ct = default);
+    Task<Refund?> GetRefundByIdAsync(int id, CancellationToken ct = default);
     Task<Refund?> GetRefundByStripeIdAsync(string stripeRefundId, CancellationToken ct = default);
     Task<decimal> GetTotalRefundedAsync(int paymentId, CancellationToken ct = default);
 
