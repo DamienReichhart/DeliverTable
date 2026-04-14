@@ -29,6 +29,7 @@ erDiagram
         string  status              "ACTIVE | SUSPENDED | BANNED"
         string  first_name
         string  last_name
+        string  stripe_customer_id  "optional – Stripe Customer object ID (cus_...)"
         datetime created_at
         datetime updated_at
     }
@@ -155,6 +156,7 @@ erDiagram
         int     id PK
         int     loyalty_account_id FK
         string  type               "EARN | REDEEM | ADJUST"
+        string  status             "PENDING | COMMITTED | REVERSED"
         int     points
         int     order_id FK         "nullable – null for adjustments"
         datetime created_at
@@ -183,6 +185,7 @@ erDiagram
         int     discount_code_id FK
         int     customer_user_id FK
         int     order_id FK
+        string  status             "PENDING | COMMITTED | REVERSED"
         datetime created_at
     }
 
@@ -232,8 +235,8 @@ erDiagram
         int     customer_user_id FK
         int     restaurant_id FK
         string  order_type          "DELIVERY | DINE_IN"
-        string  status              "PENDING | CONFIRMED | PREPARING | READY | DELIVERING | DELIVERED | CANCELLED | REFUSED"
-        string  payment_status      "PENDING | COMPLETED | FAILED | REFUNDED"
+        string  status              "AWAITING_PAYMENT | PENDING | CONFIRMED | PREPARING | READY | DELIVERING | DELIVERED | CANCELLED | REFUSED"
+        string  payment_status      "PENDING | AUTHORIZED | COMPLETED | FAILED | REFUNDED | PARTIALLY_REFUNDED"
         float   original_amount     "sum of items before discounts"
         float   discount_amount     "total discount applied"
         float   total_amount        "original - discount (what customer pays)"
@@ -295,12 +298,31 @@ erDiagram
         string  stripe_charge_id  "optional, depending on Stripe mode"
         float   amount
         string  currency
-        string  status            "REQUIRES_PAYMENT_METHOD | REQUIRES_CONFIRMATION | SUCCEEDED | CANCELED | REFUNDED"
+        string  status            "REQUIRES_PAYMENT_METHOD | REQUIRES_CONFIRMATION | AUTHORIZED | SUCCEEDED | CANCELED | REFUNDED"
         datetime authorized_at
         datetime captured_at
         datetime canceled_at
         datetime created_at
         datetime updated_at
+    }
+
+    REFUND {
+        string  id PK
+        string  payment_id FK
+        string  stripe_refund_id  "Stripe Refund object ID (re_...)"
+        float   amount
+        string  currency
+        string  reason            "REQUESTED_BY_CUSTOMER | DUPLICATE | FRAUDULENT | OTHER"
+        string  status            "PENDING | SUCCEEDED | FAILED | CANCELED"
+        string  created_by_user_id FK "optional – admin or system who initiated the refund"
+        datetime created_at
+        datetime updated_at
+    }
+
+    PROCESSED_STRIPE_EVENT {
+        string  id PK             "Stripe event ID (evt_...) – natural PK for idempotency"
+        string  event_type        "e.g. payment_intent.succeeded"
+        datetime processed_at
     }
 
     %% Events, ratings, notifications & moderation
@@ -385,6 +407,8 @@ erDiagram
     ORDER ||--o{ ORDER_ITEM : "contains"
     MENU_ITEM ||--o{ ORDER_ITEM : "is ordered in"
     ORDER ||--o{ PAYMENT : "has payments"
+    PAYMENT ||--o{ REFUND : "has refunds"
+    USER ||--o{ REFUND : "initiated by (optional)"
     ORDER ||--o{ RESTAURANT_RATING : "yields rating"
     ORDER ||--o{ CUSTOMER_RATING : "yields customer rating"
 
@@ -452,6 +476,9 @@ erDiagram
   An alternative was to make `PAYMENT` Stripe‑agnostic with a link table to provider‑specific details. The current model inlines Stripe identifiers but isolates all payment gateway fields inside `PAYMENT`, making it straightforward to:
   - map `PAYMENT` records to Stripe `PaymentIntent`/`Charge` objects;
   - add another provider later by adding new columns or a secondary detail table without touching orders.
+  - `REFUND` stores each Stripe `Refund` object as a child of `PAYMENT`, supporting both full and partial refunds (`PaymentStatus.PartiallyRefunded`).
+  - `PROCESSED_STRIPE_EVENT` is a standalone idempotency log keyed on the Stripe event ID (`evt_...`), preventing duplicate processing of webhook events.
+  - `USER.stripe_customer_id` maps platform users to Stripe `Customer` objects, enabling saved payment methods and Stripe-side customer management.
 
 - **Moderation & audit**
   Per‑entity moderation tables (e.g. `RESTAURANT_MODERATION`, `EVENT_MODERATION`) were considered. A single `MODERATION_ACTION` table is more flexible and easier to extend as new content types appear.
