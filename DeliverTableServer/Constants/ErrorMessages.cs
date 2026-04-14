@@ -113,6 +113,7 @@ public static class ErrorMessages
     public const string RestaurantTableNotFound = "Table de restaurant introuvable";
 
     // Stripe / Payments
+    public const string OrderAccessDenied = "Vous n'êtes pas autorisé à modifier cette commande";
     public const string PaymentIntentCreationFailed = "Impossible de créer l'intention de paiement";
     public const string PaymentCaptureFailed = "Le prélèvement du paiement a échoué";
     public const string PaymentCancelFailed = "L'annulation du paiement a échoué";

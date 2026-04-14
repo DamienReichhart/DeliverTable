@@ -101,6 +101,14 @@ public class PaymentService(
         }
     }
 
+    public async Task<ServiceResult> CancelAuthorizationAsync(int orderId, int customerId, CancellationToken ct)
+    {
+        var order = await orderRepository.GetByIdAsync(orderId, ct);
+        if (order is null) return new ServiceError(ErrorMessages.PaymentNotFound);
+        if (order.CustomerId != customerId) return new ServiceError(ErrorMessages.OrderAccessDenied, 403);
+        return await CancelAuthorizationAsync(orderId, ct);
+    }
+
     public async Task<ServiceResult> CancelAuthorizationAsync(int orderId, CancellationToken ct)
     {
         var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);

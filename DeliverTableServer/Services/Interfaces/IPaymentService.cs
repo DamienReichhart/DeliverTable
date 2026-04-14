@@ -8,6 +8,7 @@ public interface IPaymentService
     Task<ServiceResult<CreateIntentResult>> CreateIntentAsync(int orderId, CancellationToken ct);
     Task<ServiceResult> CaptureAsync(int orderId, CancellationToken ct);
     Task<ServiceResult> CancelAuthorizationAsync(int orderId, CancellationToken ct);
+    Task<ServiceResult> CancelAuthorizationAsync(int orderId, int customerId, CancellationToken ct);
     Task<ServiceResult<RefundDto>> RefundAsync(int orderId, decimal amount, string reason, int? adminUserId, CancellationToken ct);
     Task<ServiceResult> HandleStripeEventAsync(Stripe.Event evt, CancellationToken ct);
 }

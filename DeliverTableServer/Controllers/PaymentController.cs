@@ -18,9 +18,9 @@ public class PaymentController(IPaymentService paymentService) : ControllerBase
     [Authorize(Roles = nameof(UserRole.Customer))]
     public async Task<IActionResult> Cancel([FromRoute] int orderId, CancellationToken ct)
     {
-        if (!this.TryGetUserId(out int _)) return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
-        var result = await _paymentService.CancelAuthorizationAsync(orderId, ct);
+        var result = await _paymentService.CancelAuthorizationAsync(orderId, userId, ct);
         return result.ToNoContentResult();
     }
 }

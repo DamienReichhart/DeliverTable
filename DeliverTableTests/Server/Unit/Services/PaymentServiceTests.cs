@@ -2,6 +2,7 @@ using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Configuration;
+using DeliverTableServer.Constants;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Enums;
@@ -139,6 +140,35 @@ public class PaymentServiceTests
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(payment.Status, Is.EqualTo(PaymentGatewayStatus.Canceled));
         await _paymentRepo.Received(1).UpdateAsync(payment, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CancelAuthorizationAsync_WithCustomerId_OrderOwnedByCustomer_Succeeds()
+    {
+        var order = new Order { Id = 10, CustomerId = 5 };
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_c" };
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _stripe.CancelPaymentIntentAsync("pi_c", "order:10:cancel-auth", Arg.Any<CancellationToken>())
+               .Returns(new StripeCancelResult("pi_c", "canceled"));
+
+        var result = await _sut.CancelAuthorizationAsync(10, 5, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(payment.Status, Is.EqualTo(PaymentGatewayStatus.Canceled));
+    }
+
+    [Test]
+    public async Task CancelAuthorizationAsync_OrderNotOwnedByCustomer_ReturnsError()
+    {
+        var order = new Order { Id = 10, CustomerId = 99 };
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+
+        var result = await _sut.CancelAuthorizationAsync(10, customerId: 5, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.OrderAccessDenied));
+        await _paymentRepo.DidNotReceive().GetByOrderIdAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     [Test]
