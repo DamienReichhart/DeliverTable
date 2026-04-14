@@ -97,6 +97,40 @@ public sealed class ObjectStorageService(
         }
     }
 
+    public async Task<string> UploadAsync(byte[] content, string contentType, string folder, string fileName, CancellationToken cancellationToken = default)
+    {
+        string key = $"{folder.Trim('/')}/{fileName}";
+
+        var request = new PutObjectRequest
+        {
+            BucketName = _config.BucketName,
+            Key = key,
+            ContentType = contentType,
+            InputStream = new MemoryStream(content),
+            UseChunkEncoding = false,
+            AutoCloseStream = true
+        };
+
+        try
+        {
+            var response = await _s3Client.PutObjectAsync(request, cancellationToken);
+
+            if (response.HttpStatusCode == HttpStatusCode.OK)
+            {
+                return key;
+            }
+
+            throw new Exception($"Upload failed with status code: {response.HttpStatusCode}");
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex,
+                "S3 upload failed — ErrorCode: {ErrorCode}, StatusCode: {StatusCode}, RequestId: {RequestId}",
+                ex.ErrorCode, ex.StatusCode, ex.RequestId);
+            throw;
+        }
+    }
+
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         try

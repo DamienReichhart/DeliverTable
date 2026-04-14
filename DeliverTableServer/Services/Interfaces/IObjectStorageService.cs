@@ -15,6 +15,8 @@ public interface IObjectStorageService
 
     Task<string?> UploadAsync(IFormFile file, string folder = "dishes", int? identifier = null, CancellationToken cancellationToken = default);
 
+    Task<string> UploadAsync(byte[] content, string contentType, string folder, string fileName, CancellationToken cancellationToken = default);
+
     Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 }
 
