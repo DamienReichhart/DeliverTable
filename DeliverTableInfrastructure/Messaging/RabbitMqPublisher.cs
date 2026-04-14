@@ -37,7 +37,7 @@ public class RabbitMqPublisher : IMessagePublisher, IAsyncDisposable
         return new RabbitMqPublisher(connection, channel);
     }
 
-    public async Task PublishAsync<T>(string routingKey, T message) where T : class
+    public async Task PublishAsync<T>(string routingKey, T message, CancellationToken ct = default) where T : class
     {
         var json = JsonSerializer.Serialize(message);
         var body = Encoding.UTF8.GetBytes(json);

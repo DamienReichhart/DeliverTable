@@ -1,4 +1,5 @@
 using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
@@ -21,6 +22,8 @@ public class PaymentService(
     IDiscountCodeRepository discountRepository,
     ICartRepository cartRepository,
     IEmailJobService emailJobService,
+    IInvoiceService invoiceService,
+    IMessagePublisher publisher,
     DeliverTableContext dbContext,
     AppEnvironment env,
     ILogger<PaymentService> logger) : IPaymentService
@@ -250,7 +253,7 @@ public class PaymentService(
                     ct);
                 break;
             case "charge.refunded":
-                await HandleChargeRefundedAsync((Stripe.Charge)evt.Data.Object, ct);
+                await HandleChargeRefundedAsync((Stripe.Charge)evt.Data.Object, deferredPublishes, ct);
                 break;
             default:
                 _logger.LogInformation("Stripe event {EventId} of type {EventType} not handled", evt.Id, evt.Type);
@@ -311,6 +314,16 @@ public class PaymentService(
                 deferredPublishes.Add(() => emailJobService.QueueNewOrderForRestaurantAsync(orderSnapshot, ownerEmail, restaurantName));
             }
         }
+
+        var invoicesResult = await invoiceService.CreatePendingInvoicesForCapturedOrderAsync(order.Id, ct);
+        if (invoicesResult is { IsSuccess: true, Value: not null })
+        {
+            foreach (var msg in invoicesResult.Value)
+            {
+                var captured = msg;
+                deferredPublishes.Add(() => publisher.PublishAsync("invoice", captured, ct));
+            }
+        }
     }
 
     private async Task HandleCaptureCompletedAsync(Stripe.PaymentIntent pi, CancellationToken ct)
@@ -349,11 +362,13 @@ public class PaymentService(
         await orderRepository.UpdateAsync(order, ct);
     }
 
-    private async Task HandleChargeRefundedAsync(Stripe.Charge charge, CancellationToken ct)
+    private async Task HandleChargeRefundedAsync(Stripe.Charge charge, List<Func<Task>> deferredPublishes, CancellationToken ct)
     {
         var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(charge.PaymentIntentId, ct);
         if (payment is null) return;
         if (charge.Refunds?.Data is null) return;
+
+        var newRefundIds = new List<int>();
 
         foreach (var r in charge.Refunds.Data)
         {
@@ -369,6 +384,7 @@ public class PaymentService(
                 CreatedAt = DateTime.UtcNow,
             };
             await paymentRepository.AddRefundAsync(refund, ct);
+            newRefundIds.Add(refund.Id);
         }
 
         var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
@@ -379,5 +395,18 @@ public class PaymentService(
             : PaymentStatus.PartiallyRefunded;
         order.UpdatedAt = DateTime.UtcNow;
         await orderRepository.UpdateAsync(order, ct);
+
+        foreach (var newRefundId in newRefundIds)
+        {
+            var cnResult = await invoiceService.CreateCreditNotesForRefundAsync(newRefundId, ct);
+            if (cnResult is { IsSuccess: true, Value: not null })
+            {
+                foreach (var msg in cnResult.Value)
+                {
+                    var captured = msg;
+                    deferredPublishes.Add(() => publisher.PublishAsync("invoice", captured, ct));
+                }
+            }
+        }
     }
 }
