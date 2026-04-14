@@ -57,6 +57,7 @@ public sealed class PaymentLifecycleService(
         }
 
         order.Status = OrderStatus.Refused;
+        order.PaymentStatus = PaymentStatus.Failed;
         order.UpdatedAt = DateTime.UtcNow;
         await orderRepository.UpdateAsync(order, ct);
 

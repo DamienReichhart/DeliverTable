@@ -75,5 +75,6 @@ public class PaymentLifecycleServiceTests
 
         Assert.That(changed, Is.True);
         Assert.That(order.Status, Is.EqualTo(OrderStatus.Refused));
+        Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.Failed));
     }
 }
