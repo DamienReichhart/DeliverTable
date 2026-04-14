@@ -46,13 +46,24 @@
 22. [ORDER_RULE](#22-order_rule)
 23. [ORDER_BLOCKED_SLOT](#23-order_blocked_slot)
 24. [PAYMENT](#24-payment)
-25. [EVENT](#25-event)
-26. [EVENT_MENU_ITEM](#26-event_menu_item)
-27. [EVENT_BOOKING_POLICY](#27-event_booking_policy)
-28. [RESTAURANT_RATING](#28-restaurant_rating)
-29. [CUSTOMER_RATING](#29-customer_rating)
-30. [NOTIFICATION](#30-notification)
-31. [MODERATION_ACTION](#31-moderation_action)
+25. [REFUND](#25-refund)
+26. [PROCESSED_STRIPE_EVENT](#26-processed_stripe_event)
+27. [EVENT](#27-event)
+28. [EVENT_MENU_ITEM](#28-event_menu_item)
+29. [EVENT_BOOKING_POLICY](#29-event_booking_policy)
+30. [RESTAURANT_RATING](#30-restaurant_rating)
+31. [CUSTOMER_RATING](#31-customer_rating)
+32. [NOTIFICATION](#32-notification)
+33. [MODERATION_ACTION](#33-moderation_action)
+
+---
+
+## Enumerations
+
+- [OrderStatus](#orderstatus)
+- [PaymentStatus](#paymentstatus)
+- [LoyaltyRedemptionStatus](#loyaltyredemptionstatus)
+- [DiscountRedemptionStatus](#discountredemptionstatus)
 
 ---
 
@@ -69,6 +80,7 @@ Central account table for all platform participants. Role-based extensions (see 
 | `status` | `string` (enum) | **NOT NULL** | Account status. Allowed values: `ACTIVE`, `SUSPENDED`, `BANNED`. |
 | `first_name` | `string` | **NOT NULL** | User's first name. |
 | `last_name` | `string` | **NOT NULL** | User's last name. |
+| `stripe_customer_id` | `string` | NULLABLE | Stripe `Customer` object ID (`cus_...`). Set when the user first initiates a Stripe payment. Used to attach saved payment methods and retrieve Stripe-side customer data. |
 | `created_at` | `datetime` | **NOT NULL** | Timestamp of account creation (UTC). |
 | `updated_at` | `datetime` | **NOT NULL** | Timestamp of last update (UTC). |
 
@@ -327,16 +339,17 @@ Tracks a single customer's enrolment and points balance in a loyalty program.
 
 ## 12. LOYALTY_TRANSACTION
 
-Immutable ledger entry recording points earned, redeemed, or manually adjusted on a loyalty account.
+Ledger entry recording points earned, redeemed, or manually adjusted on a loyalty account. Entries are created with `PENDING` status and committed or reversed depending on payment outcome.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
 | `id` | `string` | **PK** | Unique transaction identifier (UUID/ULID). |
 | `loyalty_account_id` | `string` | **FK → LOYALTY_ACCOUNT.id, NOT NULL** | The loyalty account affected. |
 | `type` | `string` (enum) | **NOT NULL** | Transaction type. Allowed values: `EARN`, `REDEEM`, `ADJUST`. |
+| `status` | `string` (enum) | **NOT NULL, DEFAULT PENDING** | Lifecycle state. Allowed values: `PENDING`, `COMMITTED`, `REVERSED`. See [`LoyaltyRedemptionStatus`](#loyaltyredemptionstatus). |
 | `points` | `int` | **NOT NULL** | Number of points (positive for earn/adjust, negative for redeem). |
 | `source` | `string` | NULLABLE | Origin reference (e.g. an order ID, or "admin adjustment"). |
-| `created_at` | `datetime` | **NOT NULL** | Transaction timestamp (UTC). Immutable. |
+| `created_at` | `datetime` | **NOT NULL** | Transaction timestamp (UTC). |
 
 **Relationships:**
 
@@ -374,7 +387,7 @@ A reusable or limited-use discount code issued by a restaurant.
 
 ## 14. DISCOUNT_CODE_REDEMPTION
 
-Tracks each use of a discount code by a customer on an order.
+Tracks each use of a discount code by a customer on an order. Redemptions are created with `PENDING` status and committed or reversed depending on payment outcome.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
@@ -382,6 +395,7 @@ Tracks each use of a discount code by a customer on an order.
 | `discount_code_id` | `integer` | **FK → DISCOUNT_CODE.id, NOT NULL** | The discount code that was redeemed. |
 | `customer_user_id` | `integer` | **FK → USER.id, NOT NULL** | The customer who redeemed the code. |
 | `order_id` | `integer` | **FK → ORDER.id, NOT NULL** | The order the code was applied to. |
+| `status` | `string` (enum) | **NOT NULL, DEFAULT PENDING** | Lifecycle state. Allowed values: `PENDING`, `COMMITTED`, `REVERSED`. See [`DiscountRedemptionStatus`](#discountredemptionstatus). |
 | `created_at` | `datetime` | **NOT NULL** | Redemption timestamp (UTC). |
 
 **Relationships:**
@@ -487,8 +501,8 @@ A confirmed customer order. Supports two order types: delivery (food brought to 
 | `customer_user_id` | `integer` | **FK → USER.id, NOT NULL** | The customer who placed the order. |
 | `restaurant_id` | `integer` | **FK → RESTAURANT.id, NOT NULL** | The restaurant fulfilling the order. |
 | `order_type` | `string` (enum) | **NOT NULL** | Fulfilment mode. Allowed values: `DELIVERY`, `DINE_IN`. |
-| `status` | `string` (enum) | **NOT NULL** | Order lifecycle state. Allowed values: `PENDING`, `CONFIRMED`, `PREPARING`, `READY`, `DELIVERING`, `DELIVERED`, `CANCELLED`. |
-| `payment_status` | `string` (enum) | **NOT NULL** | Payment lifecycle state. Allowed values: `PENDING`, `COMPLETED`, `FAILED`, `REFUNDED`. |
+| `status` | `string` (enum) | **NOT NULL** | Order lifecycle state. Allowed values: `AWAITING_PAYMENT`, `PENDING`, `CONFIRMED`, `PREPARING`, `READY`, `DELIVERING`, `DELIVERED`, `CANCELLED`. `AWAITING_PAYMENT` is the initial state when a Stripe PaymentIntent is created but not yet confirmed. See [`OrderStatus`](#orderstatus). |
+| `payment_status` | `string` (enum) | **NOT NULL** | Payment lifecycle state. Allowed values: `PENDING`, `AUTHORIZED`, `COMPLETED`, `FAILED`, `REFUNDED`, `PARTIALLY_REFUNDED`. `AUTHORIZED` means the card has been authorized but not yet captured. See [`PaymentStatus`](#paymentstatus). |
 | `total_amount` | `decimal(9,2)` | **NOT NULL** | Sum of all order item subtotals. |
 | `guest_count` | `int` | **NOT NULL, DEFAULT 1** | Number of people dining (1–50). For delivery: how many will eat. For dine-in: how many seats to prepare. |
 | `delivery_address` | `string` | NULLABLE, MAX 500 | Required for `DELIVERY` orders. Empty for `DINE_IN`. |
@@ -620,7 +634,7 @@ Records a payment transaction against an order. Designed to be Stripe-ready: per
 | `stripe_charge_id` | `string` | NULLABLE | Stripe `Charge` ID, populated depending on Stripe integration mode. |
 | `amount` | `float` | **NOT NULL** | Payment amount. Use `DECIMAL` in physical schema. |
 | `currency` | `string` | **NOT NULL** | ISO 4217 currency code (e.g. `EUR`, `USD`). |
-| `status` | `string` (enum) | **NOT NULL** | Payment lifecycle state. Allowed values: `REQUIRES_PAYMENT_METHOD`, `REQUIRES_CONFIRMATION`, `SUCCEEDED`, `CANCELED`, `REFUNDED`. |
+| `status` | `string` (enum) | **NOT NULL** | Payment lifecycle state. Allowed values: `REQUIRES_PAYMENT_METHOD`, `REQUIRES_CONFIRMATION`, `AUTHORIZED`, `SUCCEEDED`, `CANCELED`, `REFUNDED`. `AUTHORIZED` indicates the PaymentIntent has been confirmed and funds are on hold pending capture. |
 | `authorized_at` | `datetime` | NULLABLE | Timestamp when the payment was authorized (UTC). |
 | `captured_at` | `datetime` | NULLABLE | Timestamp when the payment was captured (UTC). |
 | `canceled_at` | `datetime` | NULLABLE | Timestamp when the payment was canceled (UTC). |
@@ -630,10 +644,52 @@ Records a payment transaction against an order. Designed to be Stripe-ready: per
 **Relationships:**
 
 - `N → 1` **ORDER** — each payment belongs to one order.
+- `1 → 0..*` **REFUND** — a payment can have zero or more refunds (supporting partial refunds).
 
 ---
 
-## 25. EVENT
+## 25. REFUND
+
+Records a Stripe refund issued against a payment. Supports both full and partial refunds; multiple `REFUND` rows against the same `PAYMENT` result in `PaymentStatus.PARTIALLY_REFUNDED` until the total refunded equals the original amount.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `string` | **PK** | Unique refund identifier (UUID/ULID). |
+| `payment_id` | `string` | **FK → PAYMENT.id, NOT NULL** | The payment this refund is applied to. |
+| `stripe_refund_id` | `string` | NULLABLE | Stripe `Refund` object ID (`re_...`). Populated when Stripe processes the refund. |
+| `amount` | `decimal(9,2)` | **NOT NULL** | Refunded amount. Must be > 0 and ≤ remaining refundable amount on the payment. |
+| `currency` | `string` | **NOT NULL** | ISO 4217 currency code (e.g. `EUR`, `USD`). Must match the parent payment's currency. |
+| `reason` | `string` (enum) | NULLABLE | Reason for the refund. Allowed values: `REQUESTED_BY_CUSTOMER`, `DUPLICATE`, `FRAUDULENT`, `OTHER`. |
+| `status` | `string` (enum) | **NOT NULL** | Refund lifecycle state. Allowed values: `PENDING`, `SUCCEEDED`, `FAILED`, `CANCELED`. |
+| `created_by_user_id` | `string` | **FK → USER.id, NULLABLE** | The admin or system actor who initiated the refund. `NULL` for automated refunds. |
+| `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
+| `updated_at` | `datetime` | **NOT NULL** | Last update timestamp (UTC). |
+
+**Relationships:**
+
+- `N → 1` **PAYMENT** — each refund belongs to one payment.
+- `N → 0..1` **USER** — optionally references the admin who initiated the refund.
+
+---
+
+## 26. PROCESSED_STRIPE_EVENT
+
+Idempotency log for Stripe webhook events. Before processing any incoming event, the system checks this table; if the `id` already exists, the event is skipped. This prevents duplicate side-effects caused by Stripe retrying delivery.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `string` | **PK** | Stripe event ID (`evt_...`). Used as the natural primary key to guarantee uniqueness and enable fast lookup. |
+| `event_type` | `string` | **NOT NULL** | Stripe event type string (e.g. `payment_intent.succeeded`, `charge.refunded`). |
+| `processed_at` | `datetime` | **NOT NULL** | Timestamp when the event was successfully processed (UTC). |
+
+**Notes:**
+
+- No foreign keys: this table is intentionally standalone and must remain lightweight for fast idempotency checks.
+- Rows are insert-only; there is no update or delete path.
+
+---
+
+## 27. EVENT
 
 A special dining or social event, optionally hosted at a restaurant. Events reuse the `ORDER` entity for reservations and can have custom menus and booking policies.
 
@@ -662,7 +718,7 @@ A special dining or social event, optionally hosted at a restaurant. Events reus
 
 ---
 
-## 26. EVENT_MENU_ITEM
+## 28. EVENT_MENU_ITEM
 
 Links a menu item to an event with an optional price override (e.g. prix-fixe pricing, event-only specials).
 
@@ -680,7 +736,7 @@ Links a menu item to an event with an optional price override (e.g. prix-fixe pr
 
 ---
 
-## 27. EVENT_BOOKING_POLICY
+## 29. EVENT_BOOKING_POLICY
 
 Defines per-event booking and payment rules (minimum prepayment, custom policy schemas) that override or extend the restaurant's default `ORDER_RULE`.
 
@@ -697,7 +753,7 @@ Defines per-event booking and payment rules (minimum prepayment, custom policy s
 
 ---
 
-## 28. RESTAURANT_RATING
+## 30. RESTAURANT_RATING
 
 A rating left by a customer for a restaurant following a completed order.
 
@@ -719,7 +775,7 @@ A rating left by a customer for a restaurant following a completed order.
 
 ---
 
-## 29. CUSTOMER_RATING
+## 31. CUSTOMER_RATING
 
 A rating left by a restaurant (owner/staff) for a customer following a completed order (e.g. no-show, good guest).
 
@@ -743,7 +799,7 @@ A rating left by a restaurant (owner/staff) for a customer following a completed
 
 ---
 
-## 30. NOTIFICATION
+## 32. NOTIFICATION
 
 A notification delivered to a user (push, email, in-app, etc.) triggered by system events.
 
@@ -762,7 +818,7 @@ A notification delivered to a user (push, email, in-app, etc.) triggered by syst
 
 ---
 
-## 31. MODERATION_ACTION
+## 33. MODERATION_ACTION
 
 Audit log of administrative actions taken on platform content or users (approvals, rejections, bans, warnings).
 
@@ -779,3 +835,62 @@ Audit log of administrative actions taken on platform content or users (approval
 **Relationships:**
 
 - `N → 1` **USER** — each action is performed by one admin user.
+
+---
+
+## Enumerations
+
+### OrderStatus
+
+Lifecycle states for an `ORDER`. New states introduced for Stripe integration are marked.
+
+| Value | Description |
+|---|---|
+| `AWAITING_PAYMENT` | **New (Stripe).** Initial state when the order is created and a Stripe PaymentIntent has been initiated but payment has not yet been confirmed by the customer. |
+| `PENDING` | Payment confirmed; order is awaiting acceptance by the restaurant. |
+| `CONFIRMED` | Restaurant has accepted the order. |
+| `PREPARING` | Kitchen is actively preparing the order. |
+| `READY` | Order is ready for pick-up or delivery. |
+| `DELIVERING` | Order is in transit (delivery orders only). |
+| `DELIVERED` | Order has been delivered or served. |
+| `CANCELLED` | Order was cancelled (by customer, restaurant, or admin). |
+| `REFUSED` | Restaurant rejected the order. |
+
+---
+
+### PaymentStatus
+
+Lifecycle states for the `payment_status` column on `ORDER`. New states introduced for Stripe integration are marked.
+
+| Value | Description |
+|---|---|
+| `PENDING` | No payment action taken yet. |
+| `AUTHORIZED` | **New (Stripe).** Card has been authorized (funds on hold) but not yet captured. Used with Stripe's manual capture flow. |
+| `COMPLETED` | Payment has been successfully captured and settled. |
+| `FAILED` | Payment attempt failed. |
+| `REFUNDED` | Full refund has been issued. |
+| `PARTIALLY_REFUNDED` | **New (Stripe).** One or more partial refunds have been issued but the total refunded amount is less than the original charge. |
+
+---
+
+### LoyaltyRedemptionStatus
+
+Lifecycle states for the `status` column on `LOYALTY_TRANSACTION`. Introduced to support Stripe's payment authorization / capture flow, where points should only be definitively awarded or deducted once payment is confirmed.
+
+| Value | Description |
+|---|---|
+| `PENDING` | Transaction has been reserved (e.g. points deducted from balance tentatively) but not yet finalized. |
+| `COMMITTED` | Payment confirmed; points change is permanent. |
+| `REVERSED` | Payment failed or order cancelled; the points operation has been undone. |
+
+---
+
+### DiscountRedemptionStatus
+
+Lifecycle states for the `status` column on `DISCOUNT_CODE_REDEMPTION`. Mirrors `LoyaltyRedemptionStatus` to ensure discount code quota counters are only incremented once payment is confirmed.
+
+| Value | Description |
+|---|---|
+| `PENDING` | Redemption has been reserved (counted against quota tentatively) but not yet finalized. |
+| `COMMITTED` | Payment confirmed; the redemption is permanent and counts against the code's quota. |
+| `REVERSED` | Payment failed or order cancelled; the redemption has been rolled back and the quota slot released. |
