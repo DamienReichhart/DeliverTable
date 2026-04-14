@@ -15,6 +15,10 @@ public class PaymentService(
     IPaymentRepository paymentRepository,
     IOrderRepository orderRepository,
     IUserRepository userRepository,
+    ILoyaltyRepository loyaltyRepository,
+    IDiscountCodeRepository discountRepository,
+    ICartRepository cartRepository,
+    IEmailJobService emailJobService,
     AppEnvironment env) : IPaymentService
 {
     private readonly AppEnvironment _env = env;
@@ -169,5 +173,129 @@ public class PaymentService(
 
         return ServiceResult<RefundDto>.Success(
             new RefundDto(refund.Id, refund.Amount, refund.Currency, refund.Reason, refund.CreatedAt));
+    }
+
+    public async Task<ServiceResult> HandleStripeEventAsync(Stripe.Event evt, CancellationToken ct)
+    {
+        var registered = await paymentRepository.TryRegisterProcessedEventAsync(evt.Id, evt.Type, ct);
+        if (!registered) return ServiceResult.Success();
+
+        switch (evt.Type)
+        {
+            case "payment_intent.amount_capturable_updated":
+                await HandleAuthorizationCompletedAsync((Stripe.PaymentIntent)evt.Data.Object, ct);
+                break;
+            case "payment_intent.succeeded":
+                await HandleCaptureCompletedAsync((Stripe.PaymentIntent)evt.Data.Object, ct);
+                break;
+            case "payment_intent.payment_failed":
+            case "payment_intent.canceled":
+                await HandlePaymentAbortedAsync(
+                    (Stripe.PaymentIntent)evt.Data.Object,
+                    failed: evt.Type == "payment_intent.payment_failed",
+                    ct);
+                break;
+            case "charge.refunded":
+                await HandleChargeRefundedAsync((Stripe.Charge)evt.Data.Object, ct);
+                break;
+            default:
+                break;
+        }
+        return ServiceResult.Success();
+    }
+
+    private async Task HandleAuthorizationCompletedAsync(Stripe.PaymentIntent pi, CancellationToken ct)
+    {
+        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
+        if (payment is null) return;
+        payment.AuthorizedAt = DateTime.UtcNow;
+        await paymentRepository.UpdateAsync(payment, ct);
+
+        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        if (order is null || order.Status != OrderStatus.AwaitingPayment) return;
+
+        await loyaltyRepository.MarkPendingRedemptionsCommittedForOrderAsync(order.Id, ct);
+        await discountRepository.MarkPendingRedemptionsCommittedForOrderAsync(order.Id, ct);
+
+        order.Status = OrderStatus.Pending;
+        order.PaymentStatus = PaymentStatus.Authorized;
+        order.UpdatedAt = DateTime.UtcNow;
+        await orderRepository.UpdateAsync(order, ct);
+
+        var carts = await cartRepository.GetByCustomerAsync(order.CustomerId, ct);
+        foreach (var cart in carts)
+            await cartRepository.DeleteAsync(cart.Id, ct);
+
+        // TODO Task 18: queue confirmation email via emailJobService once order is loaded
+        // with full navigation properties (Restaurant, Items, Customer) from OrderRepository.
+        // emailJobService.QueueOrderConfirmationAsync(fullOrder, customerEmail, customerName)
+    }
+
+    private async Task HandleCaptureCompletedAsync(Stripe.PaymentIntent pi, CancellationToken ct)
+    {
+        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
+        if (payment is null) return;
+        payment.CapturedAt ??= DateTime.UtcNow;
+        payment.Status = PaymentGatewayStatus.Succeeded;
+        await paymentRepository.UpdateAsync(payment, ct);
+
+        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        if (order is null) return;
+        if (order.PaymentStatus != PaymentStatus.Refunded && order.PaymentStatus != PaymentStatus.PartiallyRefunded)
+        {
+            order.PaymentStatus = PaymentStatus.Completed;
+            order.UpdatedAt = DateTime.UtcNow;
+            await orderRepository.UpdateAsync(order, ct);
+        }
+    }
+
+    private async Task HandlePaymentAbortedAsync(Stripe.PaymentIntent pi, bool failed, CancellationToken ct)
+    {
+        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
+        if (payment is null) return;
+        payment.Status = PaymentGatewayStatus.Canceled;
+        payment.CanceledAt = DateTime.UtcNow;
+        await paymentRepository.UpdateAsync(payment, ct);
+
+        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        if (order is null || order.Status != OrderStatus.AwaitingPayment) return;
+        await loyaltyRepository.MarkPendingRedemptionsReversedForOrderAsync(order.Id, ct);
+        await discountRepository.MarkPendingRedemptionsReversedForOrderAsync(order.Id, ct);
+        order.Status = OrderStatus.Cancelled;
+        order.PaymentStatus = failed ? PaymentStatus.Failed : PaymentStatus.Pending;
+        order.UpdatedAt = DateTime.UtcNow;
+        await orderRepository.UpdateAsync(order, ct);
+    }
+
+    private async Task HandleChargeRefundedAsync(Stripe.Charge charge, CancellationToken ct)
+    {
+        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(charge.PaymentIntentId, ct);
+        if (payment is null) return;
+        if (charge.Refunds?.Data is null) return;
+
+        foreach (var r in charge.Refunds.Data)
+        {
+            var existing = await paymentRepository.GetRefundByStripeIdAsync(r.Id, ct);
+            if (existing is not null) continue;
+            var refund = new Refund
+            {
+                PaymentId = payment.Id,
+                StripeRefundId = r.Id,
+                Amount = (decimal)r.Amount / 100m,
+                Currency = r.Currency.ToUpperInvariant(),
+                Reason = r.Reason ?? string.Empty,
+                CreatedAt = DateTime.UtcNow,
+            };
+            await paymentRepository.AddRefundAsync(refund, ct);
+        }
+
+        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        if (order is null) return;
+        var totalRefunded = await paymentRepository.GetTotalRefundedAsync(payment.Id, ct);
+        order.PaymentStatus = totalRefunded >= payment.Amount
+            ? PaymentStatus.Refunded
+            : PaymentStatus.PartiallyRefunded;
+        order.UpdatedAt = DateTime.UtcNow;
+        await orderRepository.UpdateAsync(order, ct);
     }
 }
