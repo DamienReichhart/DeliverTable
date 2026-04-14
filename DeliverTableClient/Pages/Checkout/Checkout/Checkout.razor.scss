@@ -1,0 +1,285 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.checkout-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  > h1 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0;
+  }
+}
+
+.checkout-page__loading {
+  color: $color-text-muted;
+  font-size: $font-size-base;
+}
+
+.checkout-page__back {
+  margin-top: $spacing-md;
+}
+
+// ── Two-column layout ──
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+
+  @media (min-width: $breakpoint-desktop) {
+    grid-template-columns: 1fr 420px;
+    align-items: start;
+  }
+}
+
+// ── Left: form ──
+.checkout-form {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  h2 {
+    font-family: $font-family-display;
+    font-size: $font-size-h3;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.checkout-restaurant {
+  color: $color-text-muted;
+  font-size: $font-size-base;
+  margin: 0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
+}
+
+.optional-label {
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  margin-left: $spacing-xs;
+}
+
+.order-type-selector {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.order-type-btn {
+  flex: 1;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-white;
+  color: $color-text;
+  font-size: $font-size-base;
+  cursor: pointer;
+  transition: border-color $transition-fast, background $transition-fast;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+
+  &--active {
+    border-color: $color-primary;
+    background: rgba($color-primary, 0.06);
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.guest-count-selector {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.qty-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-bg-white;
+  color: $color-text;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &:hover:not(:disabled) { border-color: $color-primary; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.qty-value {
+  min-width: 2rem;
+  text-align: center;
+  font-family: $font-family-mono;
+  font-size: $font-size-base;
+}
+
+.filter-input {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  color: $color-text;
+  background: $color-bg-white;
+  transition: border-color $transition-fast;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $color-border-focus;
+    box-shadow: $focus-ring;
+  }
+}
+
+// ── Discount section ──
+.discount-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-border;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+.applied-codes {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.applied-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border: 1px solid $color-garden-sage;
+  border-radius: $radius-sm;
+  background: rgba($color-garden-sage, 0.06);
+}
+
+.applied-code-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong { font-size: $font-size-sm; color: $color-text; }
+  span { font-size: $font-size-xs; color: $color-text-muted; }
+}
+
+.discount-code-input {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.code-error { color: $color-error; font-size: $font-size-sm; margin: 0; }
+.code-success { color: $color-success; font-size: $font-size-sm; margin: 0; }
+
+.loyalty-info { font-size: $font-size-sm; color: $color-text-muted; margin: 0; }
+.loyalty-redeem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  label { font-size: $font-size-sm; color: $color-text; }
+}
+
+// ── Right: payment panel ──
+.checkout-payment-panel {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  position: sticky;
+  top: calc($topbar-height + $spacing-md);
+}
+
+.checkout-summary {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-h4;
+    color: $color-text;
+    margin: 0 0 $spacing-sm;
+  }
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  padding: $spacing-xs 0;
+
+  &--total {
+    border-top: 2px solid $color-border;
+    padding-top: $spacing-sm;
+    font-size: $font-size-base;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+
+    strong {
+      font-family: $font-family-display;
+      font-size: $font-size-h4;
+      color: $color-text;
+    }
+  }
+}
+
+// ── Stripe payment element ──
+.payment-element {
+  margin: $spacing-sm 0;
+}
+
+// ── Pay button ──
+.checkout-pay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.checkout-pay-btn {
+  width: 100%;
+}
+
+.error-message {
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  background: rgba($color-error, 0.08);
+  border: 1px solid rgba($color-error, 0.2);
+
+  p {
+    margin: 0;
+    color: $color-error;
+    font-size: $font-size-sm;
+  }
+}
