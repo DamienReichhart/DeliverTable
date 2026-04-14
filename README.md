@@ -171,6 +171,25 @@ make check    # format-check → build → test (quick pre-commit gate)
 
 ---
 
+## Stripe webhooks (dev)
+
+Webhook events for Stripe are forwarded to the backend via the Stripe CLI. Install from [stripe.com/docs/stripe-cli](https://stripe.com/docs/stripe-cli), then:
+
+```bash
+stripe login
+stripe listen --forward-to http://localhost:5268/api/v1/stripe/webhook
+```
+
+The CLI prints a signing secret starting with `whsec_...`. Copy it into `STRIPE_WEBHOOK_SECRET` in your local `.env`. Restart the backend container for it to reload (`docker compose -f docker-dev.yaml restart backend`).
+
+Trigger a test event:
+
+```bash
+stripe trigger payment_intent.amount_capturable_updated
+```
+
+---
+
 ## Environment Variables
 
 All environment variables live in a single `.env` file at the repository root. Copy `.env.example` to `.env` and adjust as needed. Never commit `.env`.
