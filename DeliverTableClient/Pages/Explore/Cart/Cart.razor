@@ -1,6 +1,5 @@
 @page "/panier/{RestaurantId:int}"
 @inject ICartService CartService
-@inject IOrderService OrderService
 @inject IRestaurantService RestaurantService
 @inject IPromotionService PromotionService
 @inject IDiscountCodeClientService DiscountCodeService
@@ -8,7 +7,6 @@
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
 @using DeliverTableSharedLibrary.Dtos.Cart
-@using DeliverTableSharedLibrary.Dtos.Order
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 
 <PageTitle>Panier — DeliverTable</PageTitle>
@@ -299,16 +297,8 @@
                 <button type="button" class="app-btn app-btn--danger" @onclick="ClearCart">
                     Vider le panier
                 </button>
-                <button type="button" class="app-btn app-btn--primary app-btn--lg" @onclick="Checkout"
-                        disabled="@_processing">
-                    @if (_processing)
-                    {
-                        <span>Traitement en cours...</span>
-                    }
-                    else
-                    {
-                        <span>Payer — @EstimatedTotal.ToString("C", _frCulture)</span>
-                    }
+                <button type="button" class="app-btn app-btn--primary app-btn--lg" @onclick="GoToCheckout">
+                    <span>Commander — @EstimatedTotal.ToString("C", _frCulture)</span>
                 </button>
             </div>
         </div>
@@ -321,7 +311,6 @@
 
     private CartDto? _cart;
     private bool _loading = true;
-    private bool _processing;
     private string? _error;
     private string? _validationError;
     private static readonly System.Globalization.CultureInfo _frCulture =
@@ -555,50 +544,7 @@
     }
 
     // ── Checkout ──
-    private async Task Checkout()
-    {
-        _validationError = null;
-
-        if (_orderType == "Delivery" && string.IsNullOrWhiteSpace(_deliveryAddress))
-        {
-            _validationError = "L'adresse de livraison est obligatoire pour une commande en livraison.";
-            return;
-        }
-
-        if (_orderType == "DineIn" && (_guestCount < 1 || _guestCount > 50))
-        {
-            _validationError = "Le nombre de convives doit être compris entre 1 et 50.";
-            return;
-        }
-
-        _processing = true;
-        _error = null;
-        StateHasChanged();
-
-        var request = new CreateOrderRequest
-        {
-            RestaurantId = RestaurantId,
-            OrderType = _orderType,
-            GuestCount = _guestCount,
-            DeliveryAddress = _deliveryAddress,
-            Notes = _notes,
-            ScheduledAt = _scheduledAt.HasValue ? _scheduledAt.Value.ToUniversalTime() : null,
-            DiscountCodes = _appliedCodes.Select(c => c.Code).ToList(),
-            LoyaltyPointsToRedeem = _loyaltyPointsToRedeem
-        };
-
-        var (order, error) = await OrderService.CreateOrderAsync(request);
-        if (error is not null)
-        {
-            _error = error.Error;
-            _processing = false;
-            StateHasChanged();
-        }
-        else if (order is not null)
-        {
-            Nav.NavigateTo($"/commande/{order.Id}/confirmation");
-        }
-    }
+    private void GoToCheckout() => Nav.NavigateTo($"/paiement?restaurantId={RestaurantId}");
 
     // ── Helpers ──
     private static string FormatDiscount(string discountType, decimal value) => discountType switch
