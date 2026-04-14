@@ -24,6 +24,10 @@ public class LoyaltyTransactionConfiguration : IEntityTypeConfiguration<LoyaltyT
             .HasConversion<string>()
             .IsRequired();
 
+        builder.Property(lt => lt.Status)
+            .HasConversion<string>()
+            .IsRequired();
+
         builder.Property(lt => lt.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("CURRENT_TIMESTAMP")

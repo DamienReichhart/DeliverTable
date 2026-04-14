@@ -24,6 +24,9 @@ public class User : IdentityUser<int>
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    [MaxLength(200)]
+    public string? StripeCustomerId { get; set; }
+
     public RestaurantOwner? RestaurantOwner { get; set; }
     public Customer? Customer { get; set; }
 

@@ -25,6 +25,10 @@ public class DiscountCodeRedemptionConfiguration : IEntityTypeConfiguration<Disc
             .HasForeignKey(r => r.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(r => r.Status)
+            .HasConversion<string>()
+            .IsRequired();
+
         builder.Property(r => r.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("CURRENT_TIMESTAMP")
