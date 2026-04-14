@@ -6,7 +6,7 @@ namespace DeliverTableInfrastructure.Repositories.Interfaces;
 
 public interface IReclamationRepository
 {
-    Task<List<ReclamationDto>> GetAllReclamations(ReclamationQuery query);
+    Task<List<Reclamation>> GetAllReclamations(ReclamationQuery query);
     Task<Reclamation?> GetReclamationById(int reclamationId);
     Task<Reclamation?> GetReclamationsByOrderId(int orderId);
     Task<List<Reclamation>> GetReclamationsByUser(int userId);
