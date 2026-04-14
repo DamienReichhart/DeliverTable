@@ -460,6 +460,24 @@ erDiagram
         datetime created_at
     }
 
+    RECLAMATION {
+        string  id PK
+        string  order_id FK
+        string  type
+        string  description
+        string  status
+        datetime created_at
+        datetime updated_at
+    }
+
+    RECLAMATION_ITEM {
+        string  id PK
+        string  reclamation_id FK
+        string  menu_item_id FK
+        datetime created_at
+        datetime updated_at
+    }
+
     %% Relationships – Cart & Orders
     USER ||--o{ CART : "has carts"
     RESTAURANT ||--o{ CART : "carts target"
@@ -533,6 +551,9 @@ erDiagram
 
     USER ||--o{ NOTIFICATION : "receives"
     USER ||--o{ MODERATION_ACTION : "performs (admin)"
+
+    ORDER ||--o{ RECLAMATION : "yields reclamation"
+    MENU_ITEM ||--o{ RECLAMATION_ITEM : "is complained about in"
 ```
 
 ---
