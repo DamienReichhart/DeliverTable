@@ -126,4 +126,20 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
 
         await _dbContext.SaveChangesAsync(ct);
     }
+
+    public async Task IncrementRedemptionCountersForCommittedAsync(int orderId, CancellationToken ct = default)
+    {
+        var rows = await _dbContext.DiscountCodeRedemptions
+            .Include(r => r.DiscountCode)
+            .Where(r => r.OrderId == orderId && r.Status == DiscountRedemptionStatus.Committed)
+            .ToListAsync(ct);
+
+        foreach (var row in rows)
+        {
+            row.DiscountCode.CurrentRedemptions++;
+            row.DiscountCode.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
+    }
 }
