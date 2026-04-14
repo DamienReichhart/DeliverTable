@@ -1,7 +1,7 @@
-﻿using DeliverTableServer.Models;
+﻿using DeliverTableInfrastructure.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace DeliverTableServer.Data;
+namespace DeliverTableInfrastructure.Data;
 
 public partial class DeliverTableContext
 {

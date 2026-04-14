@@ -1,7 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using DeliverTableInfrastructure.Models;
 
-namespace DeliverTableServer.Models;
+namespace DeliverTableInfrastructure.Models;
 
 public class ReclamationItem
 {

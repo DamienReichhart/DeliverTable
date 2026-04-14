@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace DeliverTableServer.Migrations
+namespace DeliverTableInfrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class AddRefundAmountToReclamation : Migration

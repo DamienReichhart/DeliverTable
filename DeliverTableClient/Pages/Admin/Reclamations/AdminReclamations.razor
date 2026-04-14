@@ -53,7 +53,7 @@
                          SearchTextChanged="HandleSearchChanged">
             <HeaderContent>
                 <th>#</th>
-                <th>Commande</th>
+                <th>N° Commande</th>
                 <th>Type</th>
                 <th>Statut</th>
                 <th>Articles</th>
@@ -76,7 +76,7 @@
                     <td>
                         <div class="adm-cell-actions">
                             <button class="adm-ghost-btn adm-ghost-btn--primary" @onclick="() => OpenEditModal(reclamation)">
-                                Traiter
+                                Détails
                             </button>
                             @if (reclamation.Status == ReclamationStatus.Contested)
                             {
@@ -86,9 +86,6 @@
                                     @(_completingId == reclamation.ReclamationId ? "..." : "Clôturer")
                                 </button>
                             }
-                            <button class="adm-ghost-btn" @onclick="() => OpenDetailsModal(reclamation)">
-                                Détails
-                            </button>
                             <button class="adm-ghost-btn adm-ghost-btn--danger" @onclick="() => OpenDeleteConfirm(reclamation)">
                                 Supprimer
                             </button>
@@ -129,22 +126,16 @@
                         </div>
 
                         <div class="adm-form-group">
-                            <label class="adm-form-label" for="edit-reclamation-type">Type</label>
-                            <InputSelect id="edit-reclamation-type" class="adm-form-select" @bind-Value="_editModel.Type">
-                                @foreach (var type in Enum.GetValues<ReclamationType>())
-                                {
-                                    <option value="@type">@TranslateType(type)</option>
-                                }
-                            </InputSelect>
+                            <h3 class="adm-form-label" for="edit-reclamation-type">Type de problème :</h3>
+                            <p class="mt-0">@TranslateType(_editModel.Type)</p>
                         </div>
                     </div>
 
                     <div class="adm-form-group">
-                        <label class="adm-form-label" for="edit-reclamation-description">Description</label>
-                        <InputTextArea id="edit-reclamation-description"
-                                       class="adm-form-textarea"
-                                       rows="6"
-                                       @bind-Value="_editModel.Description" />
+                        <h3>Description du problème :</h3>
+                        <p>
+                            @_editModel.Description
+                        </p>
                     </div>
 
                     <div class="adm-form-actions">
