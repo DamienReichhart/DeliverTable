@@ -1,3 +1,5 @@
+using DeliverTableInfrastructure.Configuration;
+
 namespace DeliverTableWorker.Configuration;
 
 public sealed class WorkerEnvironment
@@ -21,6 +23,7 @@ public sealed class WorkerEnvironment
     public string PlatformVatNumber { get; }
     public string PlatformAddress { get; }
     public bool PlatformVatApplicable { get; }
+    public ObjectStorageConfig ObjectStorage { get; }
 
     private WorkerEnvironment(
         string connectionStringDatabase,
@@ -29,7 +32,8 @@ public sealed class WorkerEnvironment
         string smtpFromEmail, string smtpFromName, int smtpMaxSendsPerMinute,
         bool neutralizeEmail,
         string platformLegalName, string platformLegalForm, string platformSiret,
-        string platformVatNumber, string platformAddress, bool platformVatApplicable)
+        string platformVatNumber, string platformAddress, bool platformVatApplicable,
+        ObjectStorageConfig objectStorage)
     {
         ConnectionStringDatabase = connectionStringDatabase;
         RabbitMqHost = rabbitMqHost;
@@ -50,6 +54,7 @@ public sealed class WorkerEnvironment
         PlatformVatNumber = platformVatNumber;
         PlatformAddress = platformAddress;
         PlatformVatApplicable = platformVatApplicable;
+        ObjectStorage = objectStorage;
     }
 
     public static WorkerEnvironment Load()
@@ -77,6 +82,13 @@ public sealed class WorkerEnvironment
         var platformAddress = RequireVar("PLATFORM_ADDRESS", errors);
         var platformVatApplicable = ParseBool("PLATFORM_VAT_APPLICABLE");
 
+        var osUrl = RequireVar("OBJECT_STORAGE_SERVICE_URL", errors);
+        var osAccessKey = RequireVar("OBJECT_STORAGE_ACCESS_KEY", errors);
+        var osSecretKey = RequireVar("OBJECT_STORAGE_SECRET_KEY", errors);
+        var osBucket = RequireVar("OBJECT_STORAGE_BUCKET_NAME", errors);
+        var osForcePathStyle = ParseBool("OBJECT_STORAGE_FORCE_PATH_STYLE");
+        var osRegion = GetVar("OBJECT_STORAGE_REGION") ?? "garage";
+
         if (errors.Count > 0)
             throw new InvalidOperationException(
                 $"Missing or invalid environment variables:\n- {string.Join("\n- ", errors)}");
@@ -87,7 +99,8 @@ public sealed class WorkerEnvironment
             smtpFrom!, smtpName, smtpRate,
             neutralizeEmail,
             platformLegalName!, platformLegalForm!, platformSiret!,
-            platformVatNumber!, platformAddress!, platformVatApplicable);
+            platformVatNumber!, platformAddress!, platformVatApplicable,
+            new ObjectStorageConfig(osUrl!, osAccessKey!, osSecretKey!, osBucket!, osForcePathStyle, osRegion));
     }
 
     private static string? GetVar(string name) => Environment.GetEnvironmentVariable(name);

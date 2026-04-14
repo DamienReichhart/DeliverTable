@@ -1,0 +1,21 @@
+@model DeliverTableInfrastructure.TemplateData.InvoiceReadyRestaurantData
+
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #333;">Votre facture est disponible</h2>
+    <p>La facture <strong>@Model.InvoiceNumber</strong> relative à la commande <strong>#@Model.OrderId</strong> a été générée.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr>
+            <td style="padding: 8px; color: #666;">Date d'émission :</td>
+            <td style="padding: 8px;"><strong>@Model.IssuedAt</strong></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; color: #666;">Montant TTC :</td>
+            <td style="padding: 8px;"><strong>@Model.TotalTtc @Model.Currency</strong></td>
+        </tr>
+    </table>
+    <p style="color: #666; font-size: 12px;">Vous pouvez consulter et télécharger cette facture depuis votre espace restaurateur sur DeliverTable.</p>
+</body>
+</html>

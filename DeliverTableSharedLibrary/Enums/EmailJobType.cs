@@ -10,5 +10,7 @@ public enum EmailJobType
     NewOrderForRestaurant,
     PasswordReset,
     PasswordChanged,
-    WelcomeEmail
+    WelcomeEmail,
+    InvoiceReadyCustomer,
+    InvoiceReadyRestaurant,
 }
