@@ -54,6 +54,7 @@ public static class ApiClientServiceCollectionExtensions
         RegisterInvoiceService(services);
         RegisterDisputeService(services);
         RegisterAdminDomainServices(services);
+        RegisterReclamationServices(services);
 
         return services;
     }
@@ -156,5 +157,10 @@ public static class ApiClientServiceCollectionExtensions
         services.AddScoped<IAdminModerationClientService, AdminModerationClientService>();
         services.AddScoped<IAdminOrderConfigClientService, AdminOrderConfigClientService>();
         services.AddScoped<IAdminDashboardClientService, AdminDashboardClientService>();
+    }
+
+    private static void RegisterReclamationServices(IServiceCollection services)
+    {
+        services.AddScoped<IReclamationService, ReclamationService>();
     }
 }

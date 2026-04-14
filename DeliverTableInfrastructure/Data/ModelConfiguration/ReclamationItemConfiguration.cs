@@ -9,7 +9,7 @@ public class ReclamationItemConfiguration : IEntityTypeConfiguration<Reclamation
     public void Configure(EntityTypeBuilder<ReclamationItem> builder)
     {
         builder.HasKey(r => r.Id);
-        builder.HasOne(r => r.Reclamation).WithMany().HasForeignKey(r => r.ReclamationId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(r => r.Reclamation).WithMany(r => r.Items).HasForeignKey(r => r.ReclamationId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(r => r.OrderItem).WithMany().HasForeignKey(r => r.OrderItemId).OnDelete(DeleteBehavior.Cascade);
     }
 }

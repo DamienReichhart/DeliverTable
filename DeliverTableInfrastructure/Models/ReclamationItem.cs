@@ -8,14 +8,14 @@ public class ReclamationItem
     [Key]
     public int Id { get; set; }
 
-    [ForeignKey("OrderItemId")]
     public int OrderItemId { get; set; }
 
-    [ForeignKey("ReclamationId")]
     public int ReclamationId { get; set; }
 
     public bool HasAttachedImage { get; set; } = false;
 
+    [ForeignKey("ReclamationId")]
     public Reclamation Reclamation { get; set; } = null!;
+    [ForeignKey("OrderItemId")]
     public OrderItem OrderItem { get; set; } = null!;
 }
