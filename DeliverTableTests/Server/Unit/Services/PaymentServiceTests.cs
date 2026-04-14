@@ -10,6 +10,7 @@ using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
 using DeliverTableTests.Server.Fixtures;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
@@ -46,7 +47,8 @@ public class PaymentServiceTests
         _testDb = new TestDatabase();
         _sut = new PaymentService(
             _stripe, _paymentRepo, _orderRepo, _userRepo,
-            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _testDb.Context, _env);
+            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _testDb.Context, _env,
+            NullLogger<PaymentService>.Instance);
     }
 
     [TearDown]
@@ -366,5 +368,58 @@ public class PaymentServiceTests
         Assert.That(
             async () => await _sut.HandleStripeEventAsync(evt, CancellationToken.None),
             Throws.TypeOf<InvalidOperationException>().With.Message.EqualTo("handler blowup"));
+    }
+
+    [Test]
+    public async Task HandleAuthorizationCompletedAsync_IncrementsDiscountCounter()
+    {
+        // When payment_intent.amount_capturable_updated is handled successfully,
+        // IncrementRedemptionCountersForCommittedAsync must be called so that
+        // CurrentRedemptions is only bumped at actual payment commit (not at order creation).
+        var payment = new Payment
+        {
+            Id = 1,
+            OrderId = 10,
+            StripePaymentIntentId = "pi_dc",
+            Status = PaymentGatewayStatus.RequiresConfirmation
+        };
+        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, CustomerId = 3 };
+        var pi = new Stripe.PaymentIntent { Id = "pi_dc" };
+        var evt = new Stripe.Event
+        {
+            Id = "evt_dc",
+            Type = "payment_intent.amount_capturable_updated",
+            Data = new Stripe.EventData { Object = pi }
+        };
+
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_dc", Arg.Any<string>(), Arg.Any<CancellationToken>())
+                    .Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_dc", Arg.Any<CancellationToken>())
+                    .Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>())
+                  .Returns(order);
+        _cartRepo.GetByCustomerAsync(3, Arg.Any<CancellationToken>())
+                 .Returns(new List<Cart>());
+
+        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _discountRepo.Received(1).IncrementRedemptionCountersForCommittedAsync(10, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_UnknownEventType_ReturnsSuccess()
+    {
+        // Unknown event types must be acknowledged (return 200) and logged (not asserted here).
+        var evt = new Stripe.Event { Id = "evt_unknown", Type = "some.unknown.event" };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_unknown", Arg.Any<string>(), Arg.Any<CancellationToken>())
+                    .Returns(true);
+
+        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        // No handler should have been invoked — no payment lookup.
+        await _paymentRepo.DidNotReceive()
+            .GetByStripePaymentIntentIdAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }
