@@ -36,5 +36,14 @@ namespace DeliverTableInfrastructure.Models
         [Column(TypeName = "decimal(9, 2)")]
         public decimal Balance { get; set; }
         public List<RestaurantTransaction> Transactions { get; set; } = [];
+        [MaxLength(14)]
+        public string Siret { get; set; } = string.Empty;
+        [MaxLength(200)]
+        public string LegalName { get; set; } = string.Empty;
+        [MaxLength(500)]
+        public string LegalAddress { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string LegalForm { get; set; } = string.Empty;
+        public bool IsVatRegistered { get; set; } = true;
     }
 }
