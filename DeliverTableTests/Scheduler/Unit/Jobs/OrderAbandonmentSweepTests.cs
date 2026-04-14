@@ -9,7 +9,7 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
 
-namespace DeliverTableSchedulerTests.Jobs;
+namespace DeliverTableTests.Scheduler.Unit.Jobs;
 
 [TestFixture]
 public class OrderAbandonmentSweepTests
@@ -31,6 +31,12 @@ public class OrderAbandonmentSweepTests
         _scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
         _sut = new OrderAbandonmentSweep(_scopeFactory, NullLogger<OrderAbandonmentSweep>.Instance);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _sut.Dispose();
     }
 
     [Test]
