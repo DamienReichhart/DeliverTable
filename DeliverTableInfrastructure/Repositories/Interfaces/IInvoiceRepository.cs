@@ -9,6 +9,7 @@ public interface IInvoiceRepository
     Task UpdateAsync(Invoice invoice, CancellationToken ct = default);
     Task<Invoice?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<Invoice?> GetByIdWithLinesAsync(int id, CancellationToken ct = default);
+    Task<Invoice?> GetByIdWithLinesAndRecipientsAsync(int id, CancellationToken ct = default);
     Task<bool> ExistsForOrderAndKindAsync(int orderId, InvoiceKind kind, CancellationToken ct = default);
     Task<List<Invoice>> ListByOrderIdAsync(int orderId, CancellationToken ct = default);
     Task<(List<Invoice> Items, int Total)> ListForRecipientUserAsync(int userId, int page, int pageSize, CancellationToken ct = default);

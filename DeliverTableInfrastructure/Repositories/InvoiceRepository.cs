@@ -30,6 +30,13 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
     public Task<Invoice?> GetByIdWithLinesAsync(int id, CancellationToken ct = default) =>
         _dbContext.Invoices.Include(i => i.Lines).FirstOrDefaultAsync(i => i.Id == id, ct);
 
+    public Task<Invoice?> GetByIdWithLinesAndRecipientsAsync(int id, CancellationToken ct = default) =>
+        _dbContext.Invoices
+            .Include(i => i.Lines)
+            .Include(i => i.RecipientUser)
+            .Include(i => i.RecipientRestaurant).ThenInclude(r => r!.Owner)
+            .FirstOrDefaultAsync(i => i.Id == id, ct);
+
     public Task<bool> ExistsForOrderAndKindAsync(int orderId, InvoiceKind kind, CancellationToken ct = default) =>
         _dbContext.Invoices.AnyAsync(i => i.OrderId == orderId && i.Kind == kind, ct);
 

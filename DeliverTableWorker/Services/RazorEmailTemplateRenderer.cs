@@ -31,6 +31,8 @@ public class RazorEmailTemplateRenderer : IEmailTemplateRenderer
             EmailJobType.PasswordReset => await RenderTypedAsync<PasswordResetData>("PasswordReset", templateDataJson),
             EmailJobType.PasswordChanged => await RenderTypedAsync<PasswordChangedData>("PasswordChanged", templateDataJson),
             EmailJobType.WelcomeEmail => await RenderTypedAsync<WelcomeEmailData>("WelcomeEmail", templateDataJson),
+            EmailJobType.InvoiceReadyCustomer => await RenderTypedAsync<InvoiceReadyCustomerData>("InvoiceReadyCustomer", templateDataJson),
+            EmailJobType.InvoiceReadyRestaurant => await RenderTypedAsync<InvoiceReadyRestaurantData>("InvoiceReadyRestaurant", templateDataJson),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown email job type")
         };
     }
