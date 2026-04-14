@@ -23,5 +23,6 @@ builder.Services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
 builder.Services.AddScoped<IPaymentLifecycleService, PaymentLifecycleService>();
 
 builder.Services.AddHostedService<OrderAbandonmentSweep>();
+builder.Services.AddHostedService<OrderRestaurantTimeoutSweep>();
 
 await builder.Build().RunAsync();
