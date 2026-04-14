@@ -127,14 +127,10 @@ public class LoyaltyRepository(DeliverTableContext dbContext) : ILoyaltyReposito
         {
             row.Status = LoyaltyRedemptionStatus.Reversed;
 
-            if (row.Type == LoyaltyTransactionType.Redeem)
-            {
-                row.LoyaltyAccount.PointsBalance += row.Points;
-            }
-            else if (row.Type == LoyaltyTransactionType.Earn)
-            {
-                row.LoyaltyAccount.PointsBalance -= row.Points;
-            }
+            // Reversal subtracts the stored Points value.
+            // Redeem rows store Points as negative (e.g. -30), so subtracting restores +30.
+            // Earn rows store Points as positive (e.g. +10), so subtracting removes -10.
+            row.LoyaltyAccount.PointsBalance -= row.Points;
         }
 
         await _dbContext.SaveChangesAsync(ct);
