@@ -104,11 +104,22 @@ public class InvoiceService(
 
         if (commissionOriginal is not null)
         {
-            decimal ratio = customerOriginal is not null && customerOriginal.TotalTtc != 0m
-                ? refund.Amount / customerOriginal.TotalTtc
-                : 0m;
+            decimal commissionRatio;
+            if (customerOriginal is not null && customerOriginal.TotalTtc != 0m)
+            {
+                commissionRatio = refund.Amount / customerOriginal.TotalTtc;
+            }
+            else if (payment.Amount != 0m)
+            {
+                commissionRatio = refund.Amount / payment.Amount;
+            }
+            else
+            {
+                commissionRatio = 0m;
+            }
+
             var creditNote = await BuildCreditNoteAsync(
-                commissionOriginal, InvoiceKind.CommissionCreditNoteToRestaurant, ratio, ct);
+                commissionOriginal, InvoiceKind.CommissionCreditNoteToRestaurant, commissionRatio, ct);
             await invoiceRepository.CreateAsync(creditNote, ct);
             messages.Add(new InvoiceJobMessage(creditNote.Id));
         }

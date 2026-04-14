@@ -355,6 +355,80 @@ public class InvoiceServiceTests
     }
 
     [Test]
+    public async Task CreateCreditNotes_CommissionOnly_FallsBackToPaymentAmount()
+    {
+        // Only commissionOriginal is present; no customer original.
+        // The commission credit note ratio must be based on payment.Amount.
+        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 5m };
+        var payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
+        var commissionOriginal = new Invoice
+        {
+            Id = 101,
+            OrderId = 42,
+            Kind = InvoiceKind.CommissionInvoiceToRestaurant,
+            Number = "DT-2026-000001",
+            TotalTtc = 2.40m,
+            TotalHt = 2m,
+            TotalVat = 0.40m,
+            IssuerType = InvoiceIssuerType.Platform,
+            RecipientRestaurantId = 5,
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = "{}",
+            Lines = new List<InvoiceLine>
+            {
+                new()
+                {
+                    Description = "Commission",
+                    Quantity = 1m,
+                    UnitPriceHt = 2m,
+                    UnitPriceTtc = 2.40m,
+                    VatRate = 20m,
+                    LineHt = 2m,
+                    LineVat = 0.40m,
+                    LineTtc = 2.40m,
+                    SortOrder = 0,
+                },
+            },
+        };
+
+        _paymentRepo.GetRefundByIdAsync(7, Arg.Any<CancellationToken>()).Returns(refund);
+        _paymentRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(payment);
+        // No customer original — only the commission invoice is returned.
+        _invoiceRepo
+            .ListByOrderIdAsync(42, Arg.Any<CancellationToken>())
+            .Returns(new List<Invoice> { commissionOriginal });
+        _numbering
+            .IssueNumberAsync(
+                Arg.Any<InvoiceIssuerType>(),
+                Arg.Any<int?>(),
+                Arg.Any<int>(),
+                true,
+                Arg.Any<CancellationToken>())
+            .Returns("AV-TEST-000003");
+
+        Invoice? creditNote = null;
+        _invoiceRepo
+            .CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                creditNote = ci.Arg<Invoice>();
+                creditNote.Id = 202;
+                return creditNote;
+            });
+
+        var result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Has.Count.EqualTo(1));
+        Assert.That(creditNote, Is.Not.Null);
+
+        // Expected ratio: refund.Amount / payment.Amount = 5 / 20 = 0.25
+        // Line qty: 1 * -0.25 = -0.25
+        Assert.That(creditNote!.Lines[0].Quantity, Is.EqualTo(-0.25m));
+        Assert.That(creditNote.TotalTtc, Is.EqualTo(Math.Round(-2.40m * 0.25m, 2, MidpointRounding.AwayFromZero)));
+    }
+
+    [Test]
     public async Task CreateCreditNotes_RefundNotFound_ReturnsEmpty()
     {
         _paymentRepo.GetRefundByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Refund?)null);
