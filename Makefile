@@ -154,6 +154,16 @@ hooks-uninstall: ## Remove Git hooks
 	@git config --unset core.hooksPath || true
 	@echo 'Git hooks removed'
 
+# ── Stripe ───────────────────────────────────────────────────────
+
+.PHONY: stripe-login
+stripe-login: ## Login to Stripe CLI
+	stripe login
+
+.PHONY: stripe-listen
+stripe-listen: ## Listen for Stripe webhooks
+	stripe listen --forward-to http://localhost:8080/api/v1/stripe/webhooks
+
 # ── Composite Targets ────────────────────────────────────────────
 
 .PHONY: ci
