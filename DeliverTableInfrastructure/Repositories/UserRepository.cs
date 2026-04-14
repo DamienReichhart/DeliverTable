@@ -72,6 +72,12 @@ public class UserRepository(
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
 
+    public async Task UpdateAsync(User user, CancellationToken ct = default)
+    {
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync(ct);
+    }
+
     public async Task SaveChangesAsync(CancellationToken ct = default)
         => await _dbContext.SaveChangesAsync(ct);
 }
