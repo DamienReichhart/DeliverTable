@@ -6,6 +6,7 @@ using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
 
 namespace DeliverTableTests.Server.Unit.Services;
@@ -76,5 +77,56 @@ public class PaymentServiceTests
         var result = await _sut.CreateIntentAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
+    }
+
+    [Test]
+    public async Task CaptureAsync_HappyPath_CapturesIntentAndUpdatesPayment()
+    {
+        var payment = new Payment
+        {
+            Id = 1,
+            OrderId = 10,
+            StripePaymentIntentId = "pi_cap",
+            Status = PaymentGatewayStatus.RequiresConfirmation,
+            Amount = 15m,
+        };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _stripe.CapturePaymentIntentAsync("pi_cap", "order:10:capture", Arg.Any<CancellationToken>())
+               .Returns(new StripeCaptureResult("pi_cap", "succeeded"));
+
+        var result = await _sut.CaptureAsync(10, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(payment.CapturedAt, Is.Not.Null);
+        await _paymentRepo.Received(1).UpdateAsync(payment, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CaptureAsync_StripeFails_ReturnsErrorAndDoesNotUpdate()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_fail" };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _stripe.CapturePaymentIntentAsync("pi_fail", Arg.Any<string>(), Arg.Any<CancellationToken>())
+               .Throws(new Stripe.StripeException("boom"));
+
+        var result = await _sut.CaptureAsync(10, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        await _paymentRepo.DidNotReceive().UpdateAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CancelAuthorizationAsync_CancelsIntentAndUpdatesPayment()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_c" };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _stripe.CancelPaymentIntentAsync("pi_c", "order:10:cancel-auth", Arg.Any<CancellationToken>())
+               .Returns(new StripeCancelResult("pi_c", "canceled"));
+
+        var result = await _sut.CancelAuthorizationAsync(10, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(payment.Status, Is.EqualTo(PaymentGatewayStatus.Canceled));
+        await _paymentRepo.Received(1).UpdateAsync(payment, Arg.Any<CancellationToken>());
     }
 }

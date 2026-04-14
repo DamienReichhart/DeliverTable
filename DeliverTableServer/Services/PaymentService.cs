@@ -72,4 +72,48 @@ public class PaymentService(
         return ServiceResult<CreateIntentResult>.Success(
             new CreateIntentResult(intent.ClientSecret, intent.PaymentIntentId, order.TotalAmount, "EUR"));
     }
+
+    public async Task<ServiceResult> CaptureAsync(int orderId, CancellationToken ct)
+    {
+        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
+        try
+        {
+            var capture = await stripe.CapturePaymentIntentAsync(
+                payment.StripePaymentIntentId,
+                idempotencyKey: $"order:{orderId}:capture",
+                ct);
+            payment.CapturedAt = DateTime.UtcNow;
+            payment.Status = capture.Status == "succeeded"
+                ? PaymentGatewayStatus.Succeeded
+                : payment.Status;
+            await paymentRepository.UpdateAsync(payment, ct);
+            return ServiceResult.Success();
+        }
+        catch (Stripe.StripeException ex)
+        {
+            return new ServiceError(ErrorMessages.PaymentCaptureFailed + " " + ex.Message);
+        }
+    }
+
+    public async Task<ServiceResult> CancelAuthorizationAsync(int orderId, CancellationToken ct)
+    {
+        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
+        try
+        {
+            await stripe.CancelPaymentIntentAsync(
+                payment.StripePaymentIntentId,
+                idempotencyKey: $"order:{orderId}:cancel-auth",
+                ct);
+            payment.Status = PaymentGatewayStatus.Canceled;
+            payment.CanceledAt = DateTime.UtcNow;
+            await paymentRepository.UpdateAsync(payment, ct);
+            return ServiceResult.Success();
+        }
+        catch (Stripe.StripeException ex)
+        {
+            return new ServiceError(ErrorMessages.PaymentCancelFailed + " " + ex.Message);
+        }
+    }
 }
