@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableInfrastructure.Models
 {
@@ -28,5 +29,6 @@ namespace DeliverTableInfrastructure.Models
         public int RestaurantId { get; set; }
         [ForeignKey("RestaurantId")]
         public Restaurant Restaurant { get; set; } = null!;
+        public VatRate VatRate { get; set; } = VatRate.Intermediate10;
     }
 }
