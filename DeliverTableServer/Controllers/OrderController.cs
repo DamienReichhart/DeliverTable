@@ -3,6 +3,7 @@ using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Order;
+using DeliverTableSharedLibrary.Dtos.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +24,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
 
         var result = await _orderService.CreateFromCartAsync(userId, request, ct);
         if (result.IsSuccess)
-            return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+            return Ok(result.Value);
 
         return result.Error!.ToErrorResult();
     }

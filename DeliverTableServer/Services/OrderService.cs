@@ -10,6 +10,7 @@ using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Order;
+using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableServer.Services;
@@ -24,6 +25,7 @@ public sealed class OrderService(
     ILoyaltyRepository loyaltyRepository,
     IUserRepository userRepository,
     IEmailJobService emailJobService,
+    IPaymentService paymentService,
     AppEnvironment appEnvironment
 ) : IOrderService
 {
@@ -36,9 +38,11 @@ public sealed class OrderService(
     private readonly ILoyaltyRepository _loyaltyRepository = loyaltyRepository;
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IEmailJobService _emailJobService = emailJobService;
+    private readonly IPaymentService _paymentService = paymentService;
     private readonly decimal _commissionRate = appEnvironment.PlatformCommissionRate;
+    private readonly string _stripePublishableKey = appEnvironment.StripePublishableKey;
 
-    public async Task<ServiceResult<OrderDto>> CreateFromCartAsync(
+    public async Task<ServiceResult<CreateOrderResponse>> CreateFromCartAsync(
         int customerId, CreateOrderRequest request, CancellationToken ct = default)
     {
         if (!Enum.TryParse<OrderType>(request.OrderType, out var orderType))
@@ -101,8 +105,8 @@ public sealed class OrderService(
             CustomerId = customerId,
             RestaurantId = request.RestaurantId,
             OrderType = orderType,
-            Status = OrderStatus.Confirmed,
-            PaymentStatus = PaymentStatus.Completed,
+            Status = OrderStatus.AwaitingPayment,
+            PaymentStatus = PaymentStatus.Pending,
             OriginalAmount = originalAmount,
             DiscountAmount = discountAmount,
             TotalAmount = totalAmount,
@@ -120,34 +124,16 @@ public sealed class OrderService(
         var created = await _orderRepository.CreateAsync(order, ct);
         await TrackDiscountCodeRedemptionsAsync(appliedDiscountCodes, customerId, created.Id, ct);
 
-        if (totalAmount > 0)
-        {
-            created.Payments.Add(new Payment
-            {
-                OrderId = created.Id,
-                Amount = totalAmount,
-                Currency = "EUR",
-                Status = PaymentGatewayStatus.Succeeded
-            });
-            await _orderRepository.UpdateAsync(created, ct);
-        }
+        var intentResult = await _paymentService.CreateIntentAsync(created.Id, ct);
+        if (!intentResult.IsSuccess)
+            return intentResult.Error!;
 
-        await _cartRepository.DeleteAsync(cart.Id, ct);
-
-        var fullOrder = await _orderRepository.GetByIdAsync(created.Id, ct);
-
-        var customer = await _userRepository.GetByIdAsync(customerId, ct);
-        if (customer is not null && !string.IsNullOrWhiteSpace(customer.Email))
-        {
-            var customerName = $"{customer.FirstName} {customer.LastName}".Trim();
-            await _emailJobService.QueueOrderConfirmationAsync(fullOrder!, customer.Email, customerName);
-        }
-
-        var owner = await _userRepository.GetByIdAsync(restaurant.OwnerId, ct);
-        if (owner is not null && !string.IsNullOrWhiteSpace(owner.Email))
-            await _emailJobService.QueueNewOrderForRestaurantAsync(fullOrder!, owner.Email, restaurant.Name);
-
-        return fullOrder!.ToDto();
+        return new CreateOrderResponse(
+            created.Id,
+            intentResult.Value!.ClientSecret,
+            _stripePublishableKey,
+            intentResult.Value.Amount,
+            intentResult.Value.Currency);
     }
 
     public async Task<ServiceResult<OrderDto>> GetByIdAsync(int orderId, int userId, CancellationToken ct = default)
@@ -349,6 +335,7 @@ public sealed class OrderService(
         {
             LoyaltyAccountId = account.Id,
             Type = LoyaltyTransactionType.Redeem,
+            Status = LoyaltyRedemptionStatus.Pending,
             Points = -actualPointsUsed
         }, ct);
 
@@ -374,7 +361,8 @@ public sealed class OrderService(
             {
                 DiscountCodeId = dc.Id,
                 CustomerId = customerId,
-                OrderId = orderId
+                OrderId = orderId,
+                Status = DiscountRedemptionStatus.Pending
             }, ct);
         }
     }

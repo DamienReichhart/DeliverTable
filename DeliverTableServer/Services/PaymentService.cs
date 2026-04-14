@@ -226,9 +226,19 @@ public class PaymentService(
         foreach (var cart in carts)
             await cartRepository.DeleteAsync(cart.Id, ct);
 
-        // TODO Task 18: queue confirmation email via emailJobService once order is loaded
-        // with full navigation properties (Restaurant, Items, Customer) from OrderRepository.
-        // emailJobService.QueueOrderConfirmationAsync(fullOrder, customerEmail, customerName)
+        var fullOrder = await orderRepository.GetByIdWithFullDetailsAsync(order.Id, ct);
+        if (fullOrder?.Customer is not null && !string.IsNullOrWhiteSpace(fullOrder.Customer.Email))
+        {
+            var customerName = $"{fullOrder.Customer.FirstName} {fullOrder.Customer.LastName}".Trim();
+            await emailJobService.QueueOrderConfirmationAsync(fullOrder, fullOrder.Customer.Email, customerName);
+        }
+
+        if (fullOrder?.Restaurant is not null)
+        {
+            var restaurantOwner = await userRepository.GetByIdAsync(fullOrder.Restaurant.OwnerId, ct);
+            if (restaurantOwner is not null && !string.IsNullOrWhiteSpace(restaurantOwner.Email))
+                await emailJobService.QueueNewOrderForRestaurantAsync(fullOrder, restaurantOwner.Email, fullOrder.Restaurant.Name);
+        }
     }
 
     private async Task HandleCaptureCompletedAsync(Stripe.PaymentIntent pi, CancellationToken ct)
