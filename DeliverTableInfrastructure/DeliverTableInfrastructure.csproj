@@ -19,6 +19,7 @@
         </PackageReference>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
         <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
+        <PackageReference Include="Stripe.net" Version="51.0.0" />
     </ItemGroup>
 
     <ItemGroup>

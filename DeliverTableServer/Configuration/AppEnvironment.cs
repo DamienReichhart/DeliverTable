@@ -19,6 +19,9 @@ public sealed class AppEnvironment
     public int RabbitMqPort { get; }
     public string RabbitMqUser { get; }
     public string RabbitMqPassword { get; }
+    public string StripePublishableKey { get; }
+    public string StripeSecretKey { get; }
+    public string StripeWebhookSecret { get; }
 
     private AppEnvironment(
         string databaseConnectionString,
@@ -32,7 +35,10 @@ public sealed class AppEnvironment
         string rabbitMqHost,
         int rabbitMqPort,
         string rabbitMqUser,
-        string rabbitMqPassword)
+        string rabbitMqPassword,
+        string stripePublishableKey,
+        string stripeSecretKey,
+        string stripeWebhookSecret)
     {
         DatabaseConnectionString = databaseConnectionString;
         RedisConnectionString = redisConnectionString;
@@ -46,6 +52,9 @@ public sealed class AppEnvironment
         RabbitMqPort = rabbitMqPort;
         RabbitMqUser = rabbitMqUser;
         RabbitMqPassword = rabbitMqPassword;
+        StripePublishableKey = stripePublishableKey;
+        StripeSecretKey = stripeSecretKey;
+        StripeWebhookSecret = stripeWebhookSecret;
     }
 
     /// <summary>
@@ -87,6 +96,10 @@ public sealed class AppEnvironment
         var rmqUser = RequireVar("RABBITMQ_USER", errors);
         var rmqPass = RequireVar("RABBITMQ_PASSWORD", errors);
 
+        var stripePublishableKey = RequireVar("STRIPE_PUBLISHABLE_KEY", errors);
+        var stripeSecretKey = RequireVar("STRIPE_SECRET_KEY", errors);
+        var stripeWebhookSecret = RequireVar("STRIPE_WEBHOOK_SECRET", errors);
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
@@ -111,7 +124,10 @@ public sealed class AppEnvironment
             rmqHost!,
             rmqPort,
             rmqUser!,
-            rmqPass!);
+            rmqPass!,
+            stripePublishableKey!,
+            stripeSecretKey!,
+            stripeWebhookSecret!);
     }
 
     private static string? GetVar(string name)
