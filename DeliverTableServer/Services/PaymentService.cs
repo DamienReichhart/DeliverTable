@@ -96,6 +96,17 @@ public class PaymentService(
                 ? PaymentGatewayStatus.Succeeded
                 : payment.Status;
             await paymentRepository.UpdateAsync(payment, ct);
+
+            // Eagerly mark order as Completed so late-cancellation logic in UpdateStatusAsync
+            // doesn't miss the refund branch before the payment_intent.succeeded webhook arrives.
+            var order = await orderRepository.GetByIdAsync(orderId, ct);
+            if (order is not null && order.PaymentStatus == PaymentStatus.Authorized)
+            {
+                order.PaymentStatus = PaymentStatus.Completed;
+                order.UpdatedAt = DateTime.UtcNow;
+                await orderRepository.UpdateAsync(order, ct);
+            }
+
             return ServiceResult.Success();
         }
         catch (Stripe.StripeException ex)

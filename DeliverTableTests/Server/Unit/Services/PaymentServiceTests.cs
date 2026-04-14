@@ -125,6 +125,31 @@ public class PaymentServiceTests
     }
 
     [Test]
+    public async Task CaptureAsync_SetsOrderPaymentStatusToCompleted()
+    {
+        var payment = new Payment
+        {
+            Id = 1,
+            OrderId = 10,
+            StripePaymentIntentId = "pi_cap2",
+            Status = PaymentGatewayStatus.RequiresConfirmation,
+            Amount = 20m,
+        };
+        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Authorized };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepo.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _stripe.CapturePaymentIntentAsync("pi_cap2", "order:10:capture", Arg.Any<CancellationToken>())
+               .Returns(new StripeCaptureResult("pi_cap2", "succeeded"));
+
+        var result = await _sut.CaptureAsync(10, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.Completed));
+        await _orderRepo.Received(1).UpdateAsync(order, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task CaptureAsync_StripeFails_ReturnsErrorAndDoesNotUpdate()
     {
         var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_fail" };
