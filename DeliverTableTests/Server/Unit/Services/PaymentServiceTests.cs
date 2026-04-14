@@ -129,4 +129,56 @@ public class PaymentServiceTests
         Assert.That(payment.Status, Is.EqualTo(PaymentGatewayStatus.Canceled));
         await _paymentRepo.Received(1).UpdateAsync(payment, Arg.Any<CancellationToken>());
     }
+
+    [Test]
+    public async Task RefundAsync_HappyPath_PersistsRefundAndUpdatesOrderStatus()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
+        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(0m);
+        _stripe.CreateRefundAsync("pi_r", 2500, Arg.Any<string>(), Arg.Any<CancellationToken>())
+               .Returns(new StripeRefundResult("re_1", "pi_r", 25m, "eur", "succeeded"));
+        _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>())
+                    .Returns(ci => ci.Arg<Refund>());
+
+        var result = await _sut.RefundAsync(10, 25m, "customer request", adminUserId: 99, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Amount, Is.EqualTo(25m));
+        Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.PartiallyRefunded));
+    }
+
+    [Test]
+    public async Task RefundAsync_FullRefund_SetsStatusRefunded()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
+        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(0m);
+        _stripe.CreateRefundAsync("pi_r", 5000, Arg.Any<string>(), Arg.Any<CancellationToken>())
+               .Returns(new StripeRefundResult("re_full", "pi_r", 50m, "eur", "succeeded"));
+        _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>()).Returns(ci => ci.Arg<Refund>());
+
+        await _sut.RefundAsync(10, 50m, "full", adminUserId: null, CancellationToken.None);
+
+        Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.Refunded));
+    }
+
+    [Test]
+    public async Task RefundAsync_AmountExceedsRemaining_ReturnsError()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(45m);
+
+        var result = await _sut.RefundAsync(10, 10m, "x", adminUserId: 99, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Does.Contain("dépasse"));
+        await _stripe.DidNotReceive().CreateRefundAsync(
+            Arg.Any<string>(), Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }

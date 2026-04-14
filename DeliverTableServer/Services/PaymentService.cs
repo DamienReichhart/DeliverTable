@@ -5,6 +5,7 @@ using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableServer.Services;
@@ -115,5 +116,58 @@ public class PaymentService(
         {
             return new ServiceError(ErrorMessages.PaymentCancelFailed + " " + ex.Message);
         }
+    }
+
+    public async Task<ServiceResult<RefundDto>> RefundAsync(int orderId, decimal amount, string reason, int? adminUserId, CancellationToken ct)
+    {
+        if (amount <= 0m) return new ServiceError(ErrorMessages.PaymentRefundFailed);
+
+        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
+
+        var alreadyRefunded = await paymentRepository.GetTotalRefundedAsync(payment.Id, ct);
+        var remaining = payment.Amount - alreadyRefunded;
+        if (remaining <= 0m) return new ServiceError(ErrorMessages.PaymentAlreadyRefunded);
+        if (amount > remaining) return new ServiceError(ErrorMessages.PaymentRefundExceedsAmount);
+
+        long amountMinor = (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero);
+        var idempotencyKey = $"order:{orderId}:refund:{DateTime.UtcNow.Ticks}";
+
+        StripeRefundResult stripeRefund;
+        try
+        {
+            stripeRefund = await stripe.CreateRefundAsync(
+                payment.StripePaymentIntentId, amountMinor, idempotencyKey, ct);
+        }
+        catch (Stripe.StripeException ex)
+        {
+            return new ServiceError(ErrorMessages.PaymentRefundFailed + " " + ex.Message);
+        }
+
+        var refund = new Refund
+        {
+            PaymentId = payment.Id,
+            StripeRefundId = stripeRefund.RefundId,
+            Amount = amount,
+            Currency = "EUR",
+            Reason = reason,
+            CreatedByUserId = adminUserId,
+            CreatedAt = DateTime.UtcNow,
+        };
+        await paymentRepository.AddRefundAsync(refund, ct);
+
+        var order = await orderRepository.GetByIdAsync(orderId, ct);
+        if (order is not null)
+        {
+            var totalAfter = alreadyRefunded + amount;
+            order.PaymentStatus = totalAfter >= payment.Amount
+                ? PaymentStatus.Refunded
+                : PaymentStatus.PartiallyRefunded;
+            order.UpdatedAt = DateTime.UtcNow;
+            await orderRepository.UpdateAsync(order, ct);
+        }
+
+        return ServiceResult<RefundDto>.Success(
+            new RefundDto(refund.Id, refund.Amount, refund.Currency, refund.Reason, refund.CreatedAt));
     }
 }
