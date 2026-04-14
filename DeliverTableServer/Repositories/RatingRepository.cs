@@ -26,6 +26,7 @@ public class RatingRepository(DeliverTableContext dbContext) : IRatingRepository
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
+<<<<<<< HEAD
 
     public async Task<RestaurantRating?> GetByOrderAndCustomerAsync(int orderId, int customerId, CancellationToken ct = default)
     {
@@ -53,4 +54,6 @@ public class RatingRepository(DeliverTableContext dbContext) : IRatingRepository
         _dbContext.RestaurantRatings.Remove(rating);
         await _dbContext.SaveChangesAsync(ct);
     }
+=======
+>>>>>>> d03da84 (refactor(server): remove CustomerRating entity and all related code)
 }
