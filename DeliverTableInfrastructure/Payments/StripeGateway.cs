@@ -2,7 +2,7 @@ using Stripe;
 
 namespace DeliverTableInfrastructure.Payments;
 
-public class StripeGateway : IStripeGateway
+public sealed class StripeGateway : IStripeGateway
 {
     public async Task<StripeCustomerResult> CreateCustomerAsync(
         string email, string fullName, IDictionary<string, string>? metadata, CancellationToken ct)
