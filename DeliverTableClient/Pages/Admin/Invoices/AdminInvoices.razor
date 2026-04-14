@@ -1,0 +1,87 @@
+@page "/admin/factures"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.Invoice
+@using DeliverTableSharedLibrary.Enums
+@inject IInvoiceApiClient InvoiceApi
+@inject NavigationManager Nav
+
+<PageTitle>Factures — Administration</PageTitle>
+
+<section class="admin-invoices">
+    <h1>Factures (admin)</h1>
+
+    <form class="filters" @onsubmit="ApplyFilters">
+        <input type="number" @bind="_year" placeholder="Année" />
+        <select @bind="_kind">
+            <option value="">Tous types</option>
+            @foreach (var kind in Enum.GetValues<InvoiceKind>())
+            {
+                <option value="@kind">@kind</option>
+            }
+        </select>
+        <input type="text" @bind="_customerEmail" placeholder="Email client contient..." />
+        <button type="submit">Filtrer</button>
+    </form>
+
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_items is null || _items.Count == 0)
+    {
+        <p>Aucune facture.</p>
+    }
+    else
+    {
+        <table class="invoices-table">
+            <thead>
+                <tr>
+                    <th>Numéro</th>
+                    <th>Type</th>
+                    <th>Émetteur</th>
+                    <th>Destinataire</th>
+                    <th>Date</th>
+                    <th>Montant TTC</th>
+                    <th>Statut</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var inv in _items)
+                {
+                    <tr>
+                        <td>@inv.Number</td>
+                        <td>@inv.Kind</td>
+                        <td>@inv.IssuerName</td>
+                        <td>@inv.RecipientName</td>
+                        <td>@inv.IssuedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@inv.TotalTtc.ToString("0.00 €")</td>
+                        <td>@inv.Status</td>
+                        <td><a href="@($"/admin/factures/{inv.Id}")">Détails</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    private bool _loading = true;
+    private List<AdminInvoiceRowDto>? _items;
+    private int? _year;
+    private InvoiceKind? _kind;
+    private string? _customerEmail;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task ApplyFilters() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var result = await InvoiceApi.AdminListAsync(_year, _kind, null, null, _customerEmail, 1, 50);
+        _items = result?.Items.ToList() ?? new();
+        _loading = false;
+    }
+}

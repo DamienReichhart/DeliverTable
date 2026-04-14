@@ -1,0 +1,46 @@
+@use "../../../Styles/abstracts/variables" as *;
+
+.admin-invoices {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  .filters {
+    display: flex;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+    align-items: center;
+
+    input,
+    select {
+      padding: $spacing-xs $spacing-sm;
+      border: 1px solid $color-border;
+      border-radius: $radius-md;
+      font-size: $font-size-sm;
+    }
+  }
+
+  .invoices-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: $font-size-sm;
+
+    th,
+    td {
+      padding: 0.6rem;
+      border-bottom: 1px solid $color-border;
+      text-align: left;
+    }
+
+    th {
+      background: rgba($color-deep-charcoal, 0.03);
+    }
+
+    tbody tr:hover {
+      background: $color-bg-subtle;
+    }
+  }
+}

@@ -1,0 +1,101 @@
+@page "/admin/factures/{Id:int}"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.Invoice
+@inject IInvoiceApiClient InvoiceApi
+@inject NavigationManager Nav
+
+<PageTitle>Facture — Administration</PageTitle>
+
+<section class="admin-invoice-detail">
+    @if (_detail is null)
+    {
+        <p>Chargement...</p>
+    }
+    else
+    {
+        <div class="detail-header">
+            <a href="/admin/factures" class="back-link">&larr; Toutes les factures</a>
+            <h1>Facture @_detail.Header.Number</h1>
+        </div>
+
+        <dl class="invoice-meta">
+            <dt>Date</dt><dd>@_detail.Header.IssuedAt.ToString("dd/MM/yyyy")</dd>
+            <dt>Montant TTC</dt><dd>@_detail.Header.TotalTtc.ToString("0.00 €")</dd>
+            <dt>Statut</dt><dd>@_detail.Header.Status</dd>
+            <dt>Type</dt><dd>@_detail.Header.Kind</dd>
+        </dl>
+
+        <h2>Émetteur</h2>
+        <pre class="legal-block">@_detail.Issuer.Name — @_detail.Issuer.LegalForm — SIRET @_detail.Issuer.Siret
+@_detail.Issuer.Address</pre>
+
+        <h2>Destinataire</h2>
+        <pre class="legal-block">@_detail.Recipient.Name
+@_detail.Recipient.Address</pre>
+
+        <h2>Lignes</h2>
+        <table class="lines-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Qté</th>
+                    <th>PU HT</th>
+                    <th>TVA %</th>
+                    <th>Total HT</th>
+                    <th>Total TTC</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in _detail.Lines)
+                {
+                    <tr>
+                        <td>@l.Description</td>
+                        <td>@l.Quantity.ToString("0.###")</td>
+                        <td>@l.UnitPriceHt.ToString("0.00 €")</td>
+                        <td>@l.VatRate %</td>
+                        <td>@l.LineHt.ToString("0.00 €")</td>
+                        <td>@l.LineTtc.ToString("0.00 €")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (_detail.RelatedInvoiceId.HasValue)
+        {
+            <p class="related-invoice">
+                Référence facture d'origine :
+                <a href="@($"/admin/factures/{_detail.RelatedInvoiceId}")">Voir facture #@_detail.RelatedInvoiceId</a>
+            </p>
+        }
+
+        <div class="detail-actions">
+            <a class="app-btn app-btn--primary" href="@($"/api/v1/invoice/{_detail.Header.Id}/pdf")" target="_blank">Télécharger le PDF</a>
+            <button class="app-btn app-btn--secondary" @onclick="ResendEmail">Renvoyer l'email</button>
+        </div>
+
+        @if (_emailSent)
+        {
+            <p class="action-success">Email renvoyé avec succès.</p>
+        }
+    }
+</section>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private AdminInvoiceDetailDto? _detail;
+    private bool _emailSent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _detail = await InvoiceApi.AdminGetAsync(Id);
+    }
+
+    private async Task ResendEmail()
+    {
+        await InvoiceApi.AdminResendEmailAsync(Id);
+        _emailSent = true;
+    }
+}

@@ -1,0 +1,91 @@
+@use "../../../../Styles/abstracts/variables" as *;
+
+.admin-invoice-detail {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  .detail-header {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+
+    .back-link {
+      font-size: $font-size-sm;
+      color: $color-coral-fire;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    h1 {
+      margin: 0;
+    }
+  }
+
+  .invoice-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: $spacing-xs $spacing-md;
+    background: $color-bg-subtle;
+    padding: $spacing-md;
+    border-radius: $radius-md;
+
+    dt {
+      font-weight: 600;
+      color: $color-text-muted;
+      white-space: nowrap;
+    }
+
+    dd {
+      margin: 0;
+    }
+  }
+
+  .legal-block {
+    background: $color-bg-subtle;
+    padding: $spacing-md;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    white-space: pre-wrap;
+    margin: 0;
+  }
+
+  .lines-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: $font-size-sm;
+
+    th,
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid $color-border;
+      text-align: left;
+    }
+
+    th {
+      background: rgba($color-deep-charcoal, 0.03);
+    }
+  }
+
+  .related-invoice {
+    font-size: $font-size-sm;
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+  }
+
+  .action-success {
+    color: $color-garden-sage;
+    font-size: $font-size-sm;
+    margin: 0;
+  }
+}
