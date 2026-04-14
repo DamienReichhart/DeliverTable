@@ -185,7 +185,8 @@ public sealed class OrderService(
             var capture = await _paymentService.CaptureAsync(order.Id, ct);
             if (!capture.IsSuccess) return capture.Error!;
         }
-        else if (order.Status == OrderStatus.Pending && newStatus == OrderStatus.Refused)
+        else if (order.Status == OrderStatus.Pending &&
+                 (newStatus == OrderStatus.Refused || newStatus == OrderStatus.Cancelled))
         {
             var cancel = await _paymentService.CancelAuthorizationAsync(order.Id, ct);
             if (!cancel.IsSuccess) return cancel.Error!;
@@ -219,12 +220,10 @@ public sealed class OrderService(
         if (order.Status is OrderStatus.Delivering or OrderStatus.Delivered or OrderStatus.Cancelled or OrderStatus.Refused)
             return new ServiceError(ErrorMessages.OrderCannotBeCancelled);
 
-        order.Status = OrderStatus.Cancelled;
-        var updated = await _orderRepository.UpdateAsync(order, ct);
-
-        await SendStatusEmailAsync(order, OrderStatus.Cancelled, ct);
-
-        return updated.ToDto();
+        return await UpdateStatusAsync(
+            orderId,
+            new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Cancelled) },
+            ct);
     }
 
     private async Task SendStatusEmailAsync(Order order, OrderStatus status, CancellationToken ct)
