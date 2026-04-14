@@ -76,7 +76,7 @@ public class InvoiceService(
         if (payment is null)
             return ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage>());
 
-        var originals = await invoiceRepository.ListByOrderIdAsync(payment.OrderId, ct);
+        var originals = await invoiceRepository.ListOriginalsByOrderIdAsync(payment.OrderId, ct);
         var customerOriginal = originals.FirstOrDefault(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
         var commissionOriginal = originals.FirstOrDefault(i =>
             i.Kind == InvoiceKind.CommissionInvoiceToRestaurant);
