@@ -162,7 +162,7 @@ stripe-login: ## Login to Stripe CLI
 
 .PHONY: stripe-listen
 stripe-listen: ## Listen for Stripe webhooks
-	stripe listen --forward-to http://localhost:8080/api/v1/stripe/webhooks
+	stripe listen --forward-to http://localhost:5268/api/v1/stripe/webhook
 
 # ── Composite Targets ────────────────────────────────────────────
 
