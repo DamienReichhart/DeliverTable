@@ -30,4 +30,22 @@ public class CreateRestaurantDto
 
     [Required(ErrorMessage = "Ce champ est requis")]
     public string Country { get; set; } = AvailableCountries.France.ToString();
+
+    [Required]
+    [MaxLength(14)]
+    public string Siret { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(200)]
+    public string LegalName { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(500)]
+    public string LegalAddress { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(50)]
+    public string LegalForm { get; set; } = string.Empty;
+
+    public bool IsVatRegistered { get; set; } = true;
 }

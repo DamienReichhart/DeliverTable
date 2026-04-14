@@ -1,3 +1,5 @@
+using DeliverTableSharedLibrary.Enums;
+
 namespace DeliverTableSharedLibrary.Dtos.Dish;
 
 public class DishDto
@@ -13,4 +15,5 @@ public class DishDto
     public bool IsDishOfTheDay { get; set; } = false;
     public bool IsActive { get; set; } = true;
     public string Image { get; set; } = string.Empty;
+    public VatRate VatRate { get; set; } = VatRate.Intermediate10;
 }

@@ -166,6 +166,10 @@ public static class ApiRoutes
 
         public const string DashboardAnalyticsRoute = "dashboard/analytics";
         public const string DashboardAnalytics = Base + "/" + DashboardAnalyticsRoute;
+
+        // ── Invoices ──
+        public const string InvoicesRoute = "invoices";
+        public const string InvoiceByIdRoute = "invoices/{id:int}";
     }
 
     /// <summary>Cart routes (Customer role required).</summary>
@@ -226,6 +230,15 @@ public static class ApiRoutes
     {
         public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/loyalty";
         public const string MyAccountRoute = "my-account";
+    }
+
+    /// <summary>Invoice routes.</summary>
+    public static class Invoice
+    {
+        public const string Base = "api/v1/invoice";
+        public const string MyListRoute = "me";
+        public const string RestaurantListRoute = "restaurant/{id:int}";
+        public const string DownloadRoute = "{id:int}/pdf";
     }
 
     /// <summary>Payment routes (Customer role required).</summary>
