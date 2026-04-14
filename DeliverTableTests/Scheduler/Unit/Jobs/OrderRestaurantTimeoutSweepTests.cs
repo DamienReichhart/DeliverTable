@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NUnit.Framework;
 
-namespace DeliverTableSchedulerTests.Jobs;
+namespace DeliverTableTests.Scheduler.Unit.Jobs;
 
 [TestFixture]
 public class OrderRestaurantTimeoutSweepTests
@@ -28,6 +28,12 @@ public class OrderRestaurantTimeoutSweepTests
         services.AddSingleton(_lifecycle);
         _scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
         _sut = new OrderRestaurantTimeoutSweep(_scopeFactory, NullLogger<OrderRestaurantTimeoutSweep>.Instance);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _sut.Dispose();
     }
 
     [Test]
