@@ -117,7 +117,9 @@ public class InvoiceJobConsumerTests
         await _emailJobRepo.Received(1).CreateAsync(
             Arg.Is<EmailJob>(j =>
                 j.Type == EmailJobType.InvoiceReadyCustomer
-                && j.RecipientEmail == "client@example.fr"),
+                && j.RecipientEmail == "client@example.fr"
+                && j.AttachmentStoragePath == storageKey
+                && j.AttachmentFilename == "R0001-2026-000001.pdf"),
             Arg.Any<CancellationToken>());
 
         await _publisher.Received(1).PublishAsync(

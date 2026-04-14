@@ -43,6 +43,12 @@ public class EmailJobConfiguration : IEntityTypeConfiguration<EmailJob>
         builder.Property(j => j.ErrorMessage)
             .HasMaxLength(2000);
 
+        builder.Property(j => j.AttachmentStoragePath)
+            .HasMaxLength(400);
+
+        builder.Property(j => j.AttachmentFilename)
+            .HasMaxLength(200);
+
         builder.Property(j => j.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("CURRENT_TIMESTAMP")

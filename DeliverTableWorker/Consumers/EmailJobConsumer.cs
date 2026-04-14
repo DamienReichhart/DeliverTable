@@ -2,7 +2,9 @@ using System.Text;
 using System.Text.Json;
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
+using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableWorker.Configuration;
 using DeliverTableWorker.Services;
@@ -262,11 +264,7 @@ public class EmailJobConsumer(
             // Rate limiting
             await WaitForRateLimitAsync(ct);
 
-            // Render template
-            var htmlBody = await templateRenderer.RenderAsync(job.Type, job.TemplateData, ct);
-
-            // Send email
-            await emailSender.SendAsync(job.RecipientEmail, job.RecipientName, job.Subject, htmlBody, ct);
+            await ProcessJobAsync(job, scope, ct);
 
             // Success
             job.Status = EmailJobStatus.Sent;
@@ -339,6 +337,35 @@ public class EmailJobConsumer(
                 );
             }
         }
+    }
+
+    /// <summary>
+    /// Renders the email template, downloads any attachment from object storage, and sends the email.
+    /// Extracted for testability — does not touch the DB row or the RabbitMQ channel.
+    /// </summary>
+    public async Task ProcessJobAsync(EmailJob job, IServiceScope scope, CancellationToken ct)
+    {
+        // Render template
+        var htmlBody = await templateRenderer.RenderAsync(job.Type, job.TemplateData, ct);
+
+        // Resolve attachment if the job carries a storage path
+        AttachmentPayload? attachment = null;
+        if (!string.IsNullOrEmpty(job.AttachmentStoragePath))
+        {
+            var storage = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
+            var blob = await storage.GetObjectAsync(job.AttachmentStoragePath, ct);
+            if (blob is not null)
+            {
+                using var ms = new MemoryStream();
+                await blob.Content.CopyToAsync(ms, ct);
+                attachment = new AttachmentPayload(
+                    ms.ToArray(),
+                    job.AttachmentFilename ?? Path.GetFileName(job.AttachmentStoragePath));
+            }
+        }
+
+        // Send email
+        await emailSender.SendAsync(job.RecipientEmail, job.RecipientName, job.Subject, htmlBody, attachment, ct);
     }
 
     private async Task WaitForRateLimitAsync(CancellationToken ct)

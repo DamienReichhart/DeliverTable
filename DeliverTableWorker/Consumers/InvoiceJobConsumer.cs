@@ -200,6 +200,8 @@ public sealed class InvoiceJobConsumer(
                 Subject = BuildSubject(invoice),
                 TemplateData = JsonSerializer.Serialize(templateData),
                 MaxRetries = 3,
+                AttachmentStoragePath = key,
+                AttachmentFilename = fileName,
             };
 
             await emailJobRepo.CreateAsync(emailJob, ct);
