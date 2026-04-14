@@ -230,10 +230,14 @@ public class PaymentService(
             return ServiceResult.Success();
         }
 
+        // Collect deferred publish actions: they must run AFTER the transaction commits so that
+        // RabbitMQ messages are never enqueued for DB writes that were ultimately rolled back.
+        var deferredPublishes = new List<Func<Task>>();
+
         switch (evt.Type)
         {
             case "payment_intent.amount_capturable_updated":
-                await HandleAuthorizationCompletedAsync((Stripe.PaymentIntent)evt.Data.Object, ct);
+                await HandleAuthorizationCompletedAsync((Stripe.PaymentIntent)evt.Data.Object, deferredPublishes, ct);
                 break;
             case "payment_intent.succeeded":
                 await HandleCaptureCompletedAsync((Stripe.PaymentIntent)evt.Data.Object, ct);
@@ -254,10 +258,16 @@ public class PaymentService(
         }
 
         await tx.CommitAsync(ct);
+
+        // Execute email publishes after the transaction has committed.
+        foreach (var publish in deferredPublishes)
+            await publish();
+
         return ServiceResult.Success();
     }
 
-    private async Task HandleAuthorizationCompletedAsync(Stripe.PaymentIntent pi, CancellationToken ct)
+    private async Task HandleAuthorizationCompletedAsync(
+        Stripe.PaymentIntent pi, List<Func<Task>> deferredPublishes, CancellationToken ct)
     {
         var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
         if (payment is null) return;
@@ -280,18 +290,26 @@ public class PaymentService(
         foreach (var cart in carts)
             await cartRepository.DeleteAsync(cart.Id, ct);
 
+        // Load email data while still inside the transaction, then enqueue after commit.
         var fullOrder = await orderRepository.GetByIdWithFullDetailsAsync(order.Id, ct);
         if (fullOrder?.Customer is not null && !string.IsNullOrWhiteSpace(fullOrder.Customer.Email))
         {
             var customerName = $"{fullOrder.Customer.FirstName} {fullOrder.Customer.LastName}".Trim();
-            await emailJobService.QueueOrderConfirmationAsync(fullOrder, fullOrder.Customer.Email, customerName);
+            var email = fullOrder.Customer.Email;
+            var orderSnapshot = fullOrder;
+            deferredPublishes.Add(() => emailJobService.QueueOrderConfirmationAsync(orderSnapshot, email, customerName));
         }
 
         if (fullOrder?.Restaurant is not null)
         {
             var restaurantOwner = await userRepository.GetByIdAsync(fullOrder.Restaurant.OwnerId, ct);
             if (restaurantOwner is not null && !string.IsNullOrWhiteSpace(restaurantOwner.Email))
-                await emailJobService.QueueNewOrderForRestaurantAsync(fullOrder, restaurantOwner.Email, fullOrder.Restaurant.Name);
+            {
+                var ownerEmail = restaurantOwner.Email;
+                var restaurantName = fullOrder.Restaurant.Name;
+                var orderSnapshot = fullOrder;
+                deferredPublishes.Add(() => emailJobService.QueueNewOrderForRestaurantAsync(orderSnapshot, ownerEmail, restaurantName));
+            }
         }
     }
 
