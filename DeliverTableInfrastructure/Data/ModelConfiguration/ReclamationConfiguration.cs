@@ -1,8 +1,8 @@
-﻿using DeliverTableServer.Models;
+﻿using DeliverTableInfrastructure.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DeliverTableServer.Data.ModelConfiguration;
+namespace DeliverTableInfrastructure.Data.ModelConfiguration;
 
 public class ReclamationConfiguration : IEntityTypeConfiguration<Reclamation>
 {

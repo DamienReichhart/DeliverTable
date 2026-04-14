@@ -43,11 +43,11 @@ public partial class DeliverTableContext(DbContextOptions<DeliverTableContext> o
 
         builder.ApplyConfigurationsFromAssembly(typeof(DeliverTableContext).Assembly);
     }
-    
+
     public override Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
         var entries = ChangeTracker.Entries()
-            .Where(e => e.Entity is ITrackable && 
+            .Where(e => e.Entity is ITrackable &&
                         (e.State == EntityState.Added || e.State == EntityState.Modified));
 
         foreach (var entry in entries)

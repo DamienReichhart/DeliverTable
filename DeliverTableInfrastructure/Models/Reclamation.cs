@@ -1,9 +1,9 @@
-﻿using DeliverTableServer.Models;
-using DeliverTableSharedLibrary.Enums;
+﻿using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+namespace DeliverTableInfrastructure.Models;
 
 [Table("Reclamation")]
 public class Reclamation : ITrackable
