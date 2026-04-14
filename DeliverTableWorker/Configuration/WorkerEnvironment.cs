@@ -15,13 +15,21 @@ public sealed class WorkerEnvironment
     public string SmtpFromName { get; }
     public int SmtpMaxSendsPerMinute { get; }
     public bool NeutralizeEmail { get; }
+    public string PlatformLegalName { get; }
+    public string PlatformLegalForm { get; }
+    public string PlatformSiret { get; }
+    public string PlatformVatNumber { get; }
+    public string PlatformAddress { get; }
+    public bool PlatformVatApplicable { get; }
 
     private WorkerEnvironment(
         string connectionStringDatabase,
         string rabbitMqHost, int rabbitMqPort, string rabbitMqUser, string rabbitMqPassword,
         string smtpHost, int smtpPort, string smtpUser, string smtpPassword,
         string smtpFromEmail, string smtpFromName, int smtpMaxSendsPerMinute,
-        bool neutralizeEmail)
+        bool neutralizeEmail,
+        string platformLegalName, string platformLegalForm, string platformSiret,
+        string platformVatNumber, string platformAddress, bool platformVatApplicable)
     {
         ConnectionStringDatabase = connectionStringDatabase;
         RabbitMqHost = rabbitMqHost;
@@ -36,6 +44,12 @@ public sealed class WorkerEnvironment
         SmtpFromName = smtpFromName;
         SmtpMaxSendsPerMinute = smtpMaxSendsPerMinute;
         NeutralizeEmail = neutralizeEmail;
+        PlatformLegalName = platformLegalName;
+        PlatformLegalForm = platformLegalForm;
+        PlatformSiret = platformSiret;
+        PlatformVatNumber = platformVatNumber;
+        PlatformAddress = platformAddress;
+        PlatformVatApplicable = platformVatApplicable;
     }
 
     public static WorkerEnvironment Load()
@@ -56,6 +70,13 @@ public sealed class WorkerEnvironment
         var smtpRate = ParseInt("SMTP_MAX_SENDS_PER_MINUTE", 5, errors);
         var neutralizeEmail = ParseBool("NEUTRALIZE_EMAIL");
 
+        var platformLegalName = RequireVar("PLATFORM_LEGAL_NAME", errors);
+        var platformLegalForm = RequireVar("PLATFORM_LEGAL_FORM", errors);
+        var platformSiret = RequireVar("PLATFORM_SIRET", errors);
+        var platformVatNumber = RequireVar("PLATFORM_VAT_NUMBER", errors);
+        var platformAddress = RequireVar("PLATFORM_ADDRESS", errors);
+        var platformVatApplicable = ParseBool("PLATFORM_VAT_APPLICABLE");
+
         if (errors.Count > 0)
             throw new InvalidOperationException(
                 $"Missing or invalid environment variables:\n- {string.Join("\n- ", errors)}");
@@ -64,7 +85,9 @@ public sealed class WorkerEnvironment
             dbConn!, rmqHost!, rmqPort, rmqUser!, rmqPass!,
             smtpHost!, smtpPort, smtpUser!, smtpPass!,
             smtpFrom!, smtpName, smtpRate,
-            neutralizeEmail);
+            neutralizeEmail,
+            platformLegalName!, platformLegalForm!, platformSiret!,
+            platformVatNumber!, platformAddress!, platformVatApplicable);
     }
 
     private static string? GetVar(string name) => Environment.GetEnvironmentVariable(name);

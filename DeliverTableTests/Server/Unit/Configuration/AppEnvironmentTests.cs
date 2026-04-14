@@ -12,7 +12,9 @@ public class AppEnvironmentTests
         "OBJECT_STORAGE_SERVICE_URL", "OBJECT_STORAGE_ACCESS_KEY",
         "OBJECT_STORAGE_SECRET_KEY", "OBJECT_STORAGE_BUCKET_NAME",
         "RABBITMQ_HOST", "RABBITMQ_USER", "RABBITMQ_PASSWORD",
-        "STRIPE_PUBLISHABLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"
+        "STRIPE_PUBLISHABLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
+        "PLATFORM_LEGAL_NAME", "PLATFORM_LEGAL_FORM", "PLATFORM_SIRET",
+        "PLATFORM_VAT_NUMBER", "PLATFORM_ADDRESS"
     ];
 
     private static readonly string[] AllOptionalVars =
@@ -23,7 +25,8 @@ public class AppEnvironmentTests
         "OPENAPI_ENABLE_DOCUMENTATION",
         "CORS_ALLOWED_ORIGINS",
         "UPLOAD_MAX_SIZE_MB",
-        "RABBITMQ_PORT"
+        "RABBITMQ_PORT",
+        "PLATFORM_VAT_APPLICABLE"
     ];
 
     [TearDown]
@@ -58,6 +61,12 @@ public class AppEnvironmentTests
             Assert.That(env.StripePublishableKey, Is.EqualTo("pk_test_stripe"));
             Assert.That(env.StripeSecretKey, Is.EqualTo("sk_test_stripe"));
             Assert.That(env.StripeWebhookSecret, Is.EqualTo("whsec_test_stripe"));
+            Assert.That(env.PlatformLegalName, Is.EqualTo("Test Platform"));
+            Assert.That(env.PlatformLegalForm, Is.EqualTo("SAS"));
+            Assert.That(env.PlatformSiret, Is.EqualTo("73282932000074"));
+            Assert.That(env.PlatformVatNumber, Is.EqualTo("FR12345678900"));
+            Assert.That(env.PlatformAddress, Is.EqualTo("1 rue Test, 75001 Paris"));
+            Assert.That(env.PlatformVatApplicable, Is.True);
         });
     }
 
@@ -128,6 +137,11 @@ public class AppEnvironmentTests
     [TestCase("STRIPE_PUBLISHABLE_KEY")]
     [TestCase("STRIPE_SECRET_KEY")]
     [TestCase("STRIPE_WEBHOOK_SECRET")]
+    [TestCase("PLATFORM_LEGAL_NAME")]
+    [TestCase("PLATFORM_LEGAL_FORM")]
+    [TestCase("PLATFORM_SIRET")]
+    [TestCase("PLATFORM_VAT_NUMBER")]
+    [TestCase("PLATFORM_ADDRESS")]
     public void Load_Throws_WhenSingleRequiredVarIsMissing(string missingVar)
     {
         SetAllRequired();
@@ -179,5 +193,11 @@ public class AppEnvironmentTests
         Environment.SetEnvironmentVariable("STRIPE_PUBLISHABLE_KEY", "pk_test_stripe");
         Environment.SetEnvironmentVariable("STRIPE_SECRET_KEY", "sk_test_stripe");
         Environment.SetEnvironmentVariable("STRIPE_WEBHOOK_SECRET", "whsec_test_stripe");
+        Environment.SetEnvironmentVariable("PLATFORM_LEGAL_NAME", "Test Platform");
+        Environment.SetEnvironmentVariable("PLATFORM_LEGAL_FORM", "SAS");
+        Environment.SetEnvironmentVariable("PLATFORM_SIRET", "73282932000074");
+        Environment.SetEnvironmentVariable("PLATFORM_VAT_NUMBER", "FR12345678900");
+        Environment.SetEnvironmentVariable("PLATFORM_ADDRESS", "1 rue Test, 75001 Paris");
+        Environment.SetEnvironmentVariable("PLATFORM_VAT_APPLICABLE", "true");
     }
 }
