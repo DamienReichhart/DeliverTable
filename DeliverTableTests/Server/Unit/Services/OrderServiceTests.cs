@@ -1039,4 +1039,101 @@ public class OrderServiceTests
 
         await _paymentService.Received(1).RefundAsync(10, 20m, "order_cancelled", null, Arg.Any<CancellationToken>());
     }
+
+    // ─── CancelOrderAsync payment-aware tests ──────────────────────────────
+
+    [Test]
+    public async Task CancelOrderAsync_OrderInPending_ReleasesStripeAuthorization()
+    {
+        var order = new Order
+        {
+            Id = 10,
+            CustomerId = CustomerId,
+            Status = OrderStatus.Pending,
+            PaymentStatus = PaymentStatus.Authorized,
+            TotalAmount = 25m,
+            Restaurant = new Restaurant(),
+            Items = [],
+            Discounts = []
+        };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentService.CancelAuthorizationAsync(10, Arg.Any<CancellationToken>()).Returns(ServiceResult.Success());
+
+        var result = await _sut.CancelOrderAsync(10, CustomerId, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(order.Status, Is.EqualTo(OrderStatus.Cancelled));
+        await _paymentService.Received(1).CancelAuthorizationAsync(10, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CancelOrderAsync_OrderInPreparing_RefundsStripe()
+    {
+        var order = new Order
+        {
+            Id = 10,
+            CustomerId = CustomerId,
+            Status = OrderStatus.Preparing,
+            PaymentStatus = PaymentStatus.Completed,
+            TotalAmount = 35m,
+            Restaurant = new Restaurant(),
+            Items = [],
+            Discounts = []
+        };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentService
+            .RefundAsync(10, 35m, "order_cancelled", null, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<RefundDto>.Success(
+                new RefundDto(1, 35m, "EUR", "order_cancelled", DateTime.UtcNow)));
+
+        var result = await _sut.CancelOrderAsync(10, CustomerId, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(order.Status, Is.EqualTo(OrderStatus.Cancelled));
+        await _paymentService.Received(1).RefundAsync(10, 35m, "order_cancelled", null, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CancelOrderAsync_WrongCustomer_ReturnsNotFound()
+    {
+        var order = new Order
+        {
+            Id = 10,
+            CustomerId = 999,
+            Status = OrderStatus.Pending,
+            Restaurant = new Restaurant(),
+            Items = [],
+            Discounts = []
+        };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+
+        var result = await _sut.CancelOrderAsync(10, CustomerId, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.OrderNotFound));
+        await _paymentService.DidNotReceive().CancelAuthorizationAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await _paymentService.DidNotReceive().RefundAsync(Arg.Any<int>(), Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CancelOrderAsync_AlreadyCancelled_ReturnsError()
+    {
+        var order = new Order
+        {
+            Id = 10,
+            CustomerId = CustomerId,
+            Status = OrderStatus.Cancelled,
+            Restaurant = new Restaurant(),
+            Items = [],
+            Discounts = []
+        };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+
+        var result = await _sut.CancelOrderAsync(10, CustomerId, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.OrderCannotBeCancelled));
+    }
 }
