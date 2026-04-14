@@ -270,6 +270,18 @@ public static class ApiRoutes
         public const string Base = "api/v1/stripe";
         public const string WebhookRoute = "webhook";
         public const string Webhook = Base + "/" + WebhookRoute;
+    /// <summary>Reclamation routes.</summary>
+    public static class Reclamation
+    {
+        public const string Base = VersionnedBase + "/reclamation";
+        public const string ImageFolder = "images/reclamation/item";
+        public const string ByIdRoute = "{id:int}";
+        public const string ById = Base + "/" + ByIdRoute;
+
+        public const string ByUserRoute = "user/{userId:int}";
+        public const string ByOrderRoute = "order/{orderId:int}";
+        public const string ByRestaurantRoute = "restaurant/{restaurantId:int}";
+
     }
     /// <summary>Reclamation routes.</summary>
     public static class Reclamation
