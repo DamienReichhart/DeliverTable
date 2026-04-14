@@ -2,6 +2,7 @@ using DeliverTableInfrastructure.Invoicing;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Enums;
@@ -18,6 +19,8 @@ public class InvoiceServiceTests
     private IOrderRepository _orderRepo = null!;
     private IInvoiceNumberingService _numbering = null!;
     private IPaymentRepository _paymentRepo = null!;
+    private IRestaurantRepository _restaurantRepo = null!;
+    private IObjectStorageService _objectStorage = null!;
     private AppEnvironment _env = null!;
     private InvoiceService _sut = null!;
 
@@ -28,8 +31,10 @@ public class InvoiceServiceTests
         _orderRepo = Substitute.For<IOrderRepository>();
         _numbering = Substitute.For<IInvoiceNumberingService>();
         _paymentRepo = Substitute.For<IPaymentRepository>();
+        _restaurantRepo = Substitute.For<IRestaurantRepository>();
+        _objectStorage = Substitute.For<IObjectStorageService>();
         _env = TestEnvironmentFactory.Create();
-        _sut = new InvoiceService(_invoiceRepo, _orderRepo, _numbering, _paymentRepo, _env);
+        _sut = new InvoiceService(_invoiceRepo, _orderRepo, _numbering, _paymentRepo, _restaurantRepo, _objectStorage, _env);
     }
 
     [Test]
@@ -343,5 +348,235 @@ public class InvoiceServiceTests
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(0));
+    }
+
+    // ─── ListForMeAsync ───────────────────────────────────────────────────
+
+    [Test]
+    public async Task ListForMeAsync_ReturnsRecipientUserInvoices()
+    {
+        var invoices = new List<Invoice>
+        {
+            new()
+            {
+                Id = 1,
+                Number = "R0005-2026-000001",
+                Kind = InvoiceKind.OrderInvoiceToCustomer,
+                OrderId = 42,
+                IssuedAt = DateTime.UtcNow,
+                TotalTtc = 20m,
+                Currency = "EUR",
+                Status = InvoiceStatus.Generated,
+            },
+        };
+        _invoiceRepo
+            .ListForRecipientUserAsync(7, 1, 20, Arg.Any<CancellationToken>())
+            .Returns((invoices, 1));
+
+        var result = await _sut.ListForMeAsync(7, 1, 20, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Items, Has.Count.EqualTo(1));
+        Assert.That(result.Value.TotalCount, Is.EqualTo(1));
+        Assert.That(result.Value.Items[0].Number, Is.EqualTo("R0005-2026-000001"));
+    }
+
+    // ─── ListForRestaurantAsync ───────────────────────────────────────────
+
+    [Test]
+    public async Task ListForRestaurantAsync_NonOwnerNonAdmin_ReturnsAccessDenied()
+    {
+        var restaurant = new Restaurant { Id = 5, OwnerId = 99 };
+        _restaurantRepo.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var result = await _sut.ListForRestaurantAsync(5, 7, false, 1, 20, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
+    }
+
+    [Test]
+    public async Task ListForRestaurantAsync_OwnerMatches_ReturnsList()
+    {
+        var restaurant = new Restaurant { Id = 5, OwnerId = 7 };
+        _restaurantRepo.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var invoices = new List<Invoice>
+        {
+            new()
+            {
+                Id = 10,
+                Number = "DT-2026-000001",
+                Kind = InvoiceKind.CommissionInvoiceToRestaurant,
+                OrderId = 42,
+                IssuedAt = DateTime.UtcNow,
+                TotalTtc = 2.40m,
+                Currency = "EUR",
+                Status = InvoiceStatus.Generated,
+            },
+        };
+        _invoiceRepo
+            .ListForRecipientRestaurantAsync(5, 1, 20, Arg.Any<CancellationToken>())
+            .Returns((invoices, 1));
+
+        var result = await _sut.ListForRestaurantAsync(5, 7, false, 1, 20, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Items, Has.Count.EqualTo(1));
+        Assert.That(result.Value.Items[0].Number, Is.EqualTo("DT-2026-000001"));
+    }
+
+    [Test]
+    public async Task ListForRestaurantAsync_Admin_BypassesOwnerCheck()
+    {
+        var invoices = new List<Invoice>
+        {
+            new()
+            {
+                Id = 10,
+                Number = "DT-2026-000001",
+                Kind = InvoiceKind.CommissionInvoiceToRestaurant,
+                OrderId = 42,
+                IssuedAt = DateTime.UtcNow,
+                TotalTtc = 2.40m,
+                Currency = "EUR",
+                Status = InvoiceStatus.Generated,
+            },
+        };
+        _invoiceRepo
+            .ListForRecipientRestaurantAsync(5, 1, 20, Arg.Any<CancellationToken>())
+            .Returns((invoices, 1));
+
+        var result = await _sut.ListForRestaurantAsync(5, 999, true, 1, 20, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _restaurantRepo.DidNotReceive().GetByIdAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    // ─── GetPdfStreamAsync ────────────────────────────────────────────────
+
+    [Test]
+    public async Task GetPdfStreamAsync_NotFound_ReturnsNotFound()
+    {
+        _invoiceRepo.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Invoice?)null);
+
+        var result = await _sut.GetPdfStreamAsync(99, 7, false, false, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
+    }
+
+    [Test]
+    public async Task GetPdfStreamAsync_NotGenerated_Returns409Style()
+    {
+        var invoice = new Invoice
+        {
+            Id = 1,
+            Number = "R0005-2026-000001",
+            RecipientUserId = 7,
+            Status = InvoiceStatus.Queued,
+            StoragePath = null,
+        };
+        _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
+
+        var result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(409));
+    }
+
+    [Test]
+    public async Task GetPdfStreamAsync_WrongUser_ReturnsAccessDenied()
+    {
+        var invoice = new Invoice
+        {
+            Id = 1,
+            Number = "R0005-2026-000001",
+            RecipientUserId = 99,
+            RecipientRestaurantId = null,
+            Status = InvoiceStatus.Generated,
+            StoragePath = "invoices/1.pdf",
+        };
+        _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
+
+        var result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
+    }
+
+    [Test]
+    public async Task GetPdfStreamAsync_Authorized_ReturnsStream()
+    {
+        var invoice = new Invoice
+        {
+            Id = 1,
+            Number = "R0005-2026-000001",
+            RecipientUserId = 7,
+            Status = InvoiceStatus.Generated,
+            StoragePath = "invoices/1.pdf",
+        };
+        _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
+
+        var stream = new MemoryStream(new byte[] { 0x25, 0x50 });
+        _objectStorage
+            .GetObjectAsync("invoices/1.pdf", Arg.Any<CancellationToken>())
+            .Returns(new ObjectStorageResult(stream, "application/pdf", 2));
+
+        var result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.ContentType, Is.EqualTo("application/pdf"));
+        Assert.That(result.Value.FileName, Is.EqualTo("R0005-2026-000001.pdf"));
+    }
+
+    [Test]
+    public async Task GetPdfStreamAsync_Admin_BypassesUserCheck()
+    {
+        var invoice = new Invoice
+        {
+            Id = 1,
+            Number = "DT-2026-000001",
+            RecipientUserId = 99,
+            RecipientRestaurantId = 5,
+            Status = InvoiceStatus.Generated,
+            StoragePath = "invoices/1.pdf",
+        };
+        _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
+
+        var stream = new MemoryStream(new byte[] { 0x25, 0x50 });
+        _objectStorage
+            .GetObjectAsync("invoices/1.pdf", Arg.Any<CancellationToken>())
+            .Returns(new ObjectStorageResult(stream, "application/pdf", 2));
+
+        var result = await _sut.GetPdfStreamAsync(1, 42, true, false, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task GetPdfStreamAsync_RestaurantOwner_WithRecipientRestaurant_ChecksOwnership()
+    {
+        var invoice = new Invoice
+        {
+            Id = 1,
+            Number = "DT-2026-000001",
+            RecipientUserId = null,
+            RecipientRestaurantId = 5,
+            Status = InvoiceStatus.Generated,
+            StoragePath = "invoices/1.pdf",
+        };
+        _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
+        _restaurantRepo.GetByIdAsync(5, Arg.Any<CancellationToken>())
+            .Returns(new Restaurant { Id = 5, OwnerId = 7 });
+
+        var stream = new MemoryStream(new byte[] { 0x25, 0x50 });
+        _objectStorage
+            .GetObjectAsync("invoices/1.pdf", Arg.Any<CancellationToken>())
+            .Returns(new ObjectStorageResult(stream, "application/pdf", 2));
+
+        var result = await _sut.GetPdfStreamAsync(1, 7, false, true, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
     }
 }
