@@ -1,0 +1,95 @@
+using DeliverTableClient.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos.Order;
+using DeliverTableSharedLibrary.Dtos.Reclamation;
+using DeliverTableSharedLibrary.Enums;
+using DeliverTableSharedLibrary.Interfaces;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
+
+namespace DeliverTableClient.Components.Forms.Reclamation;
+
+public partial class ReclamationForm(IReclamationService reclamationService, NavigationManager navigationManager)
+    : ComponentBase
+{
+    private string? _errorMessage;
+
+    private readonly List<Image> _images = new();
+
+    private bool _isReclamationSend;
+
+    private bool _isSubmitting;
+
+    private readonly List<(string Name, string Value)> _reclamationTypes = Enum.GetValues<ReclamationType>()
+        .Select(e => (Name: TranslateType(e.ToString()), Value: e.ToString()))
+        .ToList();
+
+    [Parameter] public required OrderDto Order { get; set; }
+
+    public CreateReclamationDto Reclamation { get; set; } = new();
+
+    private static string TranslateType(string type)
+    {
+        return type switch
+        {
+            nameof(ReclamationType.FoodQuality) => "Qualité du repas",
+            nameof(ReclamationType.ServiceIssue) => "Problème lors du service",
+            nameof(ReclamationType.WrongOrder) => "Mauvaise commande",
+            nameof(ReclamationType.Other) => "Autre motif",
+            _ => type
+        };
+    }
+
+    protected override void OnParametersSet()
+    {
+        Reclamation = new CreateReclamationDto
+        {
+            OrderId = Order.Id,
+            Items = new List<CreateReclamationItemDto>()
+        };
+    }
+
+    private async Task HandleItemChanges((CreateReclamationItemDto ItemDto, IBrowserFile? file) data)
+    {
+        var (itemDto, file) = data;
+        var fileExtension = Path.GetExtension((string)file.Name);
+        var entryName = $"Item_{itemDto.OrderItemId}_image" + fileExtension;
+        Console.WriteLine($"ReclamationForm.HandleItemChanges({entryName})");
+        if (file != null)
+        {
+            using var stream = new MemoryStream();
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(stream);
+            var buffer = stream.ToArray();
+
+            ByteArrayContent byteArrayContent = new(buffer);
+            _images.Add(new Image
+            {
+                Content = byteArrayContent,
+                Name = entryName
+            });
+
+            if (Reclamation.Items.Where(i => i.OrderItemId == itemDto.OrderItemId).Count() == 0)
+                Reclamation.Items.Add(itemDto);
+        }
+        else
+        {
+            Reclamation.Items.RemoveAll(i => i.OrderItemId == itemDto.OrderItemId);
+            _images.RemoveAll(i => i.Name == entryName);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        _isSubmitting = true;
+        try
+        {
+            if (await reclamationService.CreateReclamation(Reclamation, _images))
+                _isReclamationSend = true;
+            else
+                _errorMessage = "Une erreur est survenue veuillez réessayer plsu tard";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

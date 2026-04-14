@@ -14,6 +14,8 @@ public class ReclamationConfiguration : IEntityTypeConfiguration<Reclamation>
 
         builder.HasOne(r => r.Order).WithMany().HasForeignKey(r => r.OrderId);
 
+        builder.HasMany(r => r.Items).WithOne().HasForeignKey(i => i.ReclamationId);
+
         builder.Property(r => r.Created).HasDefaultValueSql("CURRENT_TIMESTAMP");
         builder.Property(r => r.Updated)
             .ValueGeneratedOnAddOrUpdate()
