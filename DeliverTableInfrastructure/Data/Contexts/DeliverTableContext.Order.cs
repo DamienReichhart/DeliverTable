@@ -10,5 +10,7 @@ namespace DeliverTableInfrastructure.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<Refund> Refunds { get; set; }
+        public DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }
     }
 }
