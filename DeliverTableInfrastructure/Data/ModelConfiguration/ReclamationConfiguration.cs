@@ -20,7 +20,6 @@ public class ReclamationConfiguration : IEntityTypeConfiguration<Reclamation>
         builder.Property(r => r.Updated)
             .ValueGeneratedOnAddOrUpdate()
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
         builder.Property(e => e.Description).HasMaxLength(10000);
     }
 }
