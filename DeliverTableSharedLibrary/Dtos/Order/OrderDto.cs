@@ -1,3 +1,5 @@
+using DeliverTableSharedLibrary.Dtos.Payment;
+
 namespace DeliverTableSharedLibrary.Dtos.Order;
 
 public class OrderDto
@@ -23,4 +25,7 @@ public class OrderDto
     public int? EventId { get; set; }
     public List<OrderItemDto> Items { get; set; } = [];
     public DateTime CreatedAt { get; set; }
+    public string? GatewayStatus { get; set; }
+    public List<RefundDto> Refunds { get; set; } = new();
+    public decimal TotalRefunded { get; set; }
 }
