@@ -1,62 +1,15 @@
 @page "/"
-@inject IHealthApiClient HealthApi
+@using DeliverTableClient.Components.Test
 
 <PageTitle>Accueil — DeliverTable</PageTitle>
 
 <div class="health-page">
-    <h1>Server Health</h1>
-
-    <div class="health-card">
-        @if (_loading)
-        {
-            <div class="health-status health-status--loading">
-                <span class="health-status-dot health-status-dot--loading"></span>
-                <span>Checking server…</span>
-            </div>
-        }
-        else if (_health is { } health)
-        {
-            <div class="health-status health-status--ok">
-                <span class="health-status-dot health-status-dot--ok"></span>
-                <strong>@health.Status</strong>
-            </div>
-            <p class="health-timestamp">Last checked (UTC): @health.TimestampUtc.ToString("O")</p>
-        }
-        else
-        {
-            <div class="health-status health-status--error">
-                <span class="health-status-dot health-status-dot--error"></span>
-                <span>Server is unreachable or returned an error.</span>
-            </div>
-        }
-    </div>
-
-    <button type="button" class="app-btn app-btn--primary" @onclick="CheckHealth" disabled="@_loading">
-        Check again
-    </button>
+    <AuthorizeView Roles="Customer">
+        <Authorized>
+            <TestComponent />
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 @code {
-    private bool _loading = true;
-    private HealthResponse? _health;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await CheckHealth();
-    }
-
-    private async Task CheckHealth()
-    {
-        _loading = true;
-        StateHasChanged();
-        try
-        {
-            _health = await HealthApi.GetHealthAsync();
-        }
-        finally
-        {
-            _loading = false;
-            StateHasChanged();
-        }
-    }
 }

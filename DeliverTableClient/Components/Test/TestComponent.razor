@@ -1,0 +1,53 @@
+@inject IOrderService orderService
+@using DeliverTableClient.Components.Forms.Reclamation
+
+<h1>
+    Ceci est un test
+</h1>
+
+@if (order is null)
+{
+    <div>
+        Rien a afficher
+    </div>
+}
+else
+{
+    <ReclamationForm Order="order"/>
+}
+
+@code {
+    // Retirer quand fonctionne
+    private PaginatedResult<OrderDto>? _orders;
+    private readonly OrderQuery _query = new() { PageSize = 10 };
+    private OrderDto? order;
+
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("Searching orders");
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        _error = null;
+        StateHasChanged();
+
+        var (result, error) = await orderService.GetMyOrdersAsync(_query);
+        if (error is not null)
+        {
+            _error = error.Error;
+        }
+        else
+        {
+            _orders = result;
+            Console.WriteLine(result?.Items);
+            order = _orders?.Items.FirstOrDefault() ?? new OrderDto();
+        }
+
+        StateHasChanged();
+    }
+
+}

@@ -1,0 +1,33 @@
+<main>
+    <h1>@Order.RestaurantName</h1>
+    <h2>Commande N°@Order.Id</h2>
+    <EditForm Model="@Reclamation" OnSubmit="HandleSubmit">
+        <DataAnnotationsValidator/>
+        <label for="reclamation_description">Nous sommes désolé d'apprendre que quelque chose s'est mal passé lors de votre commande pouvez vous nous
+            préciser de quoi il est question ?</label>
+        <label for="reclamation_type">
+            <InputSelect @bind-Value="Reclamation.Type">
+                <option value="">-- Select --</option>
+                @foreach ((string Name, string Value) type in _reclamationTypes)
+                {
+                    <option value="@(type.Value)">@type.Name</option>
+                }
+            </InputSelect>            
+        </label>
+        <InputTextArea id="reclamation_description" @bind-Value="Reclamation.Description"/>
+        
+        <div>
+            <p>
+                N'hésitez pas à joindre une photo du/des produit(s) qui ont posé(s) problème
+            </p>
+            @foreach (OrderItemDto orderItemDto in Order.Items)
+            {
+                <ReclamationItemFileUploader OrderItem="orderItemDto" OnItemChanged="HandleItemChanges"/>
+            }
+        </div>
+        
+        <button type="submit" class="app-btn bg-secondary" disabled="@_isSubmitting">
+            Envoyer
+        </button>
+    </EditForm>
+</main>

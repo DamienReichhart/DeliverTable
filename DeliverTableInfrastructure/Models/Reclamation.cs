@@ -1,15 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using DeliverTableServer.Models;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace DeliverTableServer.Models;
 
 [Table("Reclamation")]
-[PrimaryKey(nameof(ReclamationId))]
 public class Reclamation : ITrackable
 {
+    [Key]
     public int ReclamationId { get; set; }
 
     [ForeignKey("OrderId")]
@@ -26,4 +25,6 @@ public class Reclamation : ITrackable
     public DateTime Updated { get; set; } = DateTime.UtcNow;
 
     public Order Order { get; set; } = null!;
+
+    public List<ReclamationItem> Items { get; set; } = [];
 }
