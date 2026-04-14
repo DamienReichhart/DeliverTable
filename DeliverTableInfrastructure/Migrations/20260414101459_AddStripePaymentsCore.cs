@@ -19,12 +19,30 @@ namespace DeliverTableInfrastructure.Migrations
                 nullable: false,
                 defaultValue: "Committed");
 
+            migrationBuilder.AlterColumn<string>(
+                name: "Status",
+                table: "LoyaltyTransactions",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldDefaultValue: "Committed");
+
             migrationBuilder.AddColumn<string>(
                 name: "Status",
                 table: "DiscountCodeRedemptions",
                 type: "text",
                 nullable: false,
                 defaultValue: "Committed");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Status",
+                table: "DiscountCodeRedemptions",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldDefaultValue: "Committed");
 
             migrationBuilder.AddColumn<string>(
                 name: "StripeCustomerId",
@@ -103,9 +121,27 @@ namespace DeliverTableInfrastructure.Migrations
             migrationBuilder.DropTable(
                 name: "Refunds");
 
+            migrationBuilder.AlterColumn<string>(
+                name: "Status",
+                table: "LoyaltyTransactions",
+                type: "text",
+                nullable: false,
+                defaultValue: "Committed",
+                oldClrType: typeof(string),
+                oldType: "text");
+
             migrationBuilder.DropColumn(
                 name: "Status",
                 table: "LoyaltyTransactions");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Status",
+                table: "DiscountCodeRedemptions",
+                type: "text",
+                nullable: false,
+                defaultValue: "Committed",
+                oldClrType: typeof(string),
+                oldType: "text");
 
             migrationBuilder.DropColumn(
                 name: "Status",
