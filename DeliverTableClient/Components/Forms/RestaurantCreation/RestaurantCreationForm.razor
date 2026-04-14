@@ -66,6 +66,44 @@
         <ValidationMessage For="@(() => _creationDto.Type)" class="validation-message" />
     </div>
 
+    <div class="col gap-1 mb-1">
+        <label for="restaurant-siret">Numéro SIRET</label>
+        <InputText id="restaurant-siret" @bind-Value="_creationDto.Siret" class="app-input" placeholder="14 chiffres" maxlength="14" />
+        <ValidationMessage For="@(() => _creationDto.Siret)" class="validation-message" />
+    </div>
+
+    <div class="col gap-1 mb-1">
+        <label for="restaurant-legal-name">Raison sociale</label>
+        <InputText id="restaurant-legal-name" @bind-Value="_creationDto.LegalName" class="app-input" placeholder="Raison sociale" />
+        <ValidationMessage For="@(() => _creationDto.LegalName)" class="validation-message" />
+    </div>
+
+    <div class="col gap-1 mb-1">
+        <label for="restaurant-legal-address">Adresse légale</label>
+        <InputText id="restaurant-legal-address" @bind-Value="_creationDto.LegalAddress" class="app-input" placeholder="Adresse légale" />
+        <ValidationMessage For="@(() => _creationDto.LegalAddress)" class="validation-message" />
+    </div>
+
+    <div class="col gap-1 mb-1">
+        <label for="restaurant-legal-form">Forme juridique</label>
+        <InputSelect id="restaurant-legal-form" @bind-Value="_creationDto.LegalForm" class="app-input">
+            <option value="">-- Sélectionnez une forme juridique --</option>
+            <option value="SAS">SAS</option>
+            <option value="SARL">SARL</option>
+            <option value="EURL">EURL</option>
+            <option value="EI">EI</option>
+            <option value="SA">SA</option>
+        </InputSelect>
+        <ValidationMessage For="@(() => _creationDto.LegalForm)" class="validation-message" />
+    </div>
+
+    <div class="col gap-1 mb-1">
+        <label class="row gap-1">
+            <InputCheckbox @bind-Value="_creationDto.IsVatRegistered" id="restaurant-vat-registered" />
+            <span>TVA applicable</span>
+        </label>
+    </div>
+
     <button type="submit" class="app-btn mx-auto flex mt-1" disabled="@_isSubmitting">
         @if (_isSubmitting)
         {
