@@ -6,6 +6,7 @@ using DeliverTableServer.Extensions;
 using DeliverTableServer.Mappers;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;

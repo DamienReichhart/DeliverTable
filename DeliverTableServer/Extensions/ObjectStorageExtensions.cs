@@ -1,7 +1,7 @@
 using Amazon.S3;
-using DeliverTableServer.Configuration;
-using DeliverTableServer.Services;
-using DeliverTableServer.Services.Interfaces;
+using DeliverTableInfrastructure.Configuration;
+using DeliverTableInfrastructure.Services;
+using DeliverTableInfrastructure.Services.Interfaces;
 
 namespace DeliverTableServer.Extensions;
 

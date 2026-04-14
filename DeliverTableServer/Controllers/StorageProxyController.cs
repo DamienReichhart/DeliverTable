@@ -1,5 +1,5 @@
 using System.Collections.Frozen;
-using DeliverTableServer.Services.Interfaces;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;

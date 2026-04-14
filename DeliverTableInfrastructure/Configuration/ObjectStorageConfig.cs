@@ -1,4 +1,4 @@
-namespace DeliverTableServer.Configuration;
+namespace DeliverTableInfrastructure.Configuration;
 
 /// <summary>
 ///     S3-compatible object storage credentials and endpoint configuration.
