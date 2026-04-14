@@ -3,6 +3,7 @@ using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableScheduler.Configuration;
+using DeliverTableScheduler.Jobs;
 using Microsoft.EntityFrameworkCore;
 
 DotNetEnv.Env.Load();
@@ -21,6 +22,6 @@ builder.Services.AddScoped<ILoyaltyRepository, LoyaltyRepository>();
 builder.Services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
 builder.Services.AddScoped<IPaymentLifecycleService, PaymentLifecycleService>();
 
-// Hosted services added in Tasks 23 and 24.
+builder.Services.AddHostedService<OrderAbandonmentSweep>();
 
 await builder.Build().RunAsync();
