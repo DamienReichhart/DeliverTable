@@ -17,7 +17,6 @@ public interface IDiscountCodeRepository
     Task<Models.DiscountCode?> GetByIdWithRestaurantAsync(int id, CancellationToken ct = default);
     Task<List<DiscountCodeRedemption>> GetRedemptionsByCodeIdAsync(int discountCodeId, CancellationToken ct = default);
 
-    // Lifecycle helpers (used by PaymentLifecycleService)
     Task MarkPendingRedemptionsCommittedForOrderAsync(int orderId, CancellationToken ct = default);
     Task MarkPendingRedemptionsReversedForOrderAsync(int orderId, CancellationToken ct = default);
 }

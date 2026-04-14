@@ -12,7 +12,6 @@ public interface ILoyaltyRepository
     Task<LoyaltyAccount> UpdateAccountAsync(LoyaltyAccount account, CancellationToken ct = default);
     Task<LoyaltyTransaction> CreateTransactionAsync(LoyaltyTransaction transaction, CancellationToken ct = default);
 
-    // Lifecycle helpers (used by PaymentLifecycleService)
     Task MarkPendingRedemptionsCommittedForOrderAsync(int orderId, CancellationToken ct = default);
     Task MarkPendingRedemptionsReversedForOrderAsync(int orderId, CancellationToken ct = default);
 
