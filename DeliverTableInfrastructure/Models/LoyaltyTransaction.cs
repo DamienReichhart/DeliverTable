@@ -16,6 +16,8 @@ public class LoyaltyTransaction
 
     public LoyaltyTransactionType Type { get; set; }
 
+    public LoyaltyRedemptionStatus Status { get; set; } = LoyaltyRedemptionStatus.Committed;
+
     public int Points { get; set; }
 
     public int? OrderId { get; set; }

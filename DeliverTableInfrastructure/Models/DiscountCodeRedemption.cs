@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableInfrastructure.Models;
 
@@ -22,6 +23,8 @@ public class DiscountCodeRedemption
 
     [ForeignKey("OrderId")]
     public Order Order { get; set; } = null!;
+
+    public DiscountRedemptionStatus Status { get; set; } = DiscountRedemptionStatus.Committed;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
