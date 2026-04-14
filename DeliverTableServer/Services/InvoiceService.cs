@@ -45,12 +45,15 @@ public class InvoiceService(
         var customerNumber = await numbering.IssueNumberAsync(
             InvoiceIssuerType.Restaurant, restaurant.Id, year, false, ct);
         var customerInvoice = BuildCustomerInvoice(order, restaurant, customer, customerNumber);
-        await invoiceRepository.CreateAsync(customerInvoice, ct);
 
         var platformNumber = await numbering.IssueNumberAsync(
             InvoiceIssuerType.Platform, null, year, false, ct);
         var commissionInvoice = BuildCommissionInvoice(order, restaurant, platformNumber);
-        await invoiceRepository.CreateAsync(commissionInvoice, ct);
+
+        // Batch both invoices into a single SaveChanges so they are created atomically.
+        // If the process crashes between two separate CreateAsync calls the idempotency
+        // guard on retry would skip the commission invoice — batching prevents that gap.
+        await invoiceRepository.CreateBatchAsync(new[] { customerInvoice, commissionInvoice }, ct);
 
         var messages = new List<InvoiceJobMessage>
         {
