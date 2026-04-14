@@ -6,7 +6,7 @@ namespace DeliverTableServer.Services;
 
 public class ReclamationService(
     IReclamationRepository reclamationRepository
-    ): IReclamationService
+    ) : IReclamationService
 {
     public Task<List<Reclamation>> GetAllReclamations()
     {
