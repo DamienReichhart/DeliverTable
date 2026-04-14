@@ -22,6 +22,12 @@ public sealed class AppEnvironment
     public string StripePublishableKey { get; }
     public string StripeSecretKey { get; }
     public string StripeWebhookSecret { get; }
+    public string PlatformLegalName { get; }
+    public string PlatformLegalForm { get; }
+    public string PlatformSiret { get; }
+    public string PlatformVatNumber { get; }
+    public string PlatformAddress { get; }
+    public bool PlatformVatApplicable { get; }
 
     private AppEnvironment(
         string databaseConnectionString,
@@ -38,7 +44,13 @@ public sealed class AppEnvironment
         string rabbitMqPassword,
         string stripePublishableKey,
         string stripeSecretKey,
-        string stripeWebhookSecret)
+        string stripeWebhookSecret,
+        string platformLegalName,
+        string platformLegalForm,
+        string platformSiret,
+        string platformVatNumber,
+        string platformAddress,
+        bool platformVatApplicable)
     {
         DatabaseConnectionString = databaseConnectionString;
         RedisConnectionString = redisConnectionString;
@@ -55,6 +67,12 @@ public sealed class AppEnvironment
         StripePublishableKey = stripePublishableKey;
         StripeSecretKey = stripeSecretKey;
         StripeWebhookSecret = stripeWebhookSecret;
+        PlatformLegalName = platformLegalName;
+        PlatformLegalForm = platformLegalForm;
+        PlatformSiret = platformSiret;
+        PlatformVatNumber = platformVatNumber;
+        PlatformAddress = platformAddress;
+        PlatformVatApplicable = platformVatApplicable;
     }
 
     /// <summary>
@@ -100,6 +118,13 @@ public sealed class AppEnvironment
         var stripeSecretKey = RequireVar("STRIPE_SECRET_KEY", errors);
         var stripeWebhookSecret = RequireVar("STRIPE_WEBHOOK_SECRET", errors);
 
+        var platformLegalName = RequireVar("PLATFORM_LEGAL_NAME", errors);
+        var platformLegalForm = RequireVar("PLATFORM_LEGAL_FORM", errors);
+        var platformSiret = RequireVar("PLATFORM_SIRET", errors);
+        var platformVatNumber = RequireVar("PLATFORM_VAT_NUMBER", errors);
+        var platformAddress = RequireVar("PLATFORM_ADDRESS", errors);
+        var platformVatApplicable = ParseBool("PLATFORM_VAT_APPLICABLE", defaultValue: true);
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
@@ -127,7 +152,13 @@ public sealed class AppEnvironment
             rmqPass!,
             stripePublishableKey!,
             stripeSecretKey!,
-            stripeWebhookSecret!);
+            stripeWebhookSecret!,
+            platformLegalName!,
+            platformLegalForm!,
+            platformSiret!,
+            platformVatNumber!,
+            platformAddress!,
+            platformVatApplicable);
     }
 
     private static string? GetVar(string name)

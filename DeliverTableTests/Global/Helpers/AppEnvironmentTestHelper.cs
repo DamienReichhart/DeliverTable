@@ -20,7 +20,13 @@ public static class AppEnvironmentTestHelper
         ["RABBITMQ_PASSWORD"] = "guest",
         ["STRIPE_PUBLISHABLE_KEY"] = "pk_test_stripe",
         ["STRIPE_SECRET_KEY"] = "sk_test_stripe",
-        ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_stripe"
+        ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_stripe",
+        ["PLATFORM_LEGAL_NAME"] = "Test Platform",
+        ["PLATFORM_LEGAL_FORM"] = "SAS",
+        ["PLATFORM_SIRET"] = "73282932000074",
+        ["PLATFORM_VAT_NUMBER"] = "FR12345678900",
+        ["PLATFORM_ADDRESS"] = "1 rue Test, 75001 Paris",
+        ["PLATFORM_VAT_APPLICABLE"] = "true"
     };
 
     public static AppEnvironment SetupEnvironment()
