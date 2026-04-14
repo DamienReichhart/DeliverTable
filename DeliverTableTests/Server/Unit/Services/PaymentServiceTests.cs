@@ -3,6 +3,7 @@ using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Services;
+using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
 using NSubstitute;
@@ -18,6 +19,10 @@ public class PaymentServiceTests
     private IPaymentRepository _paymentRepo = null!;
     private IOrderRepository _orderRepo = null!;
     private IUserRepository _userRepo = null!;
+    private ILoyaltyRepository _loyaltyRepo = null!;
+    private IDiscountCodeRepository _discountRepo = null!;
+    private ICartRepository _cartRepo = null!;
+    private IEmailJobService _emailJobService = null!;
     private AppEnvironment _env = null!;
     private PaymentService _sut = null!;
 
@@ -28,8 +33,14 @@ public class PaymentServiceTests
         _paymentRepo = Substitute.For<IPaymentRepository>();
         _orderRepo = Substitute.For<IOrderRepository>();
         _userRepo = Substitute.For<IUserRepository>();
+        _loyaltyRepo = Substitute.For<ILoyaltyRepository>();
+        _discountRepo = Substitute.For<IDiscountCodeRepository>();
+        _cartRepo = Substitute.For<ICartRepository>();
+        _emailJobService = Substitute.For<IEmailJobService>();
         _env = TestEnvironmentFactory.Create();
-        _sut = new PaymentService(_stripe, _paymentRepo, _orderRepo, _userRepo, _env);
+        _sut = new PaymentService(
+            _stripe, _paymentRepo, _orderRepo, _userRepo,
+            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _env);
     }
 
     [Test]
@@ -180,5 +191,88 @@ public class PaymentServiceTests
         Assert.That(result.Error!.Message, Does.Contain("dépasse"));
         await _stripe.DidNotReceive().CreateRefundAsync(
             Arg.Any<string>(), Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_DuplicateEvent_ReturnsSuccessWithoutWork()
+    {
+        var evt = new Stripe.Event { Id = "evt_dup", Type = "payment_intent.succeeded" };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_dup", "payment_intent.succeeded", Arg.Any<CancellationToken>())
+                    .Returns(false);
+
+        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _paymentRepo.DidNotReceive().GetByStripePaymentIntentIdAsync(
+            Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_AmountCapturableUpdated_TransitionsOrderAndCommitsRedemptions()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_x", Status = PaymentGatewayStatus.RequiresConfirmation };
+        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, PaymentStatus = PaymentStatus.Pending, CustomerId = 2 };
+        var pi = new Stripe.PaymentIntent { Id = "pi_x" };
+        var evt = new Stripe.Event { Id = "evt_1", Type = "payment_intent.amount_capturable_updated", Data = new Stripe.EventData { Object = pi } };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_1", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_x", Arg.Any<CancellationToken>()).Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _cartRepo.GetByCustomerAsync(2, Arg.Any<CancellationToken>()).Returns(new List<Cart>());
+
+        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(order.Status, Is.EqualTo(OrderStatus.Pending));
+        Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.Authorized));
+        Assert.That(payment.AuthorizedAt, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_PaymentFailed_CancelsOrderAndReverses()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_f" };
+        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment };
+        var pi = new Stripe.PaymentIntent { Id = "pi_f" };
+        var evt = new Stripe.Event { Id = "evt_f", Type = "payment_intent.payment_failed", Data = new Stripe.EventData { Object = pi } };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_f", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_f", Arg.Any<CancellationToken>()).Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+
+        await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        Assert.That(order.Status, Is.EqualTo(OrderStatus.Cancelled));
+        Assert.That(payment.Status, Is.EqualTo(PaymentGatewayStatus.Canceled));
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_ChargeRefunded_UpsertsRefundAndUpdatesStatus()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 100m };
+        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        var charge = new Stripe.Charge
+        {
+            Id = "ch_1",
+            PaymentIntentId = "pi_r",
+            Refunds = new Stripe.StripeList<Stripe.Refund>
+            {
+                Data = new List<Stripe.Refund>
+                {
+                    new() { Id = "re_1", Amount = 2500, Currency = "eur", Status = "succeeded" }
+                }
+            }
+        };
+        var evt = new Stripe.Event { Id = "evt_ref", Type = "charge.refunded", Data = new Stripe.EventData { Object = charge } };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_ref", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_r", Arg.Any<CancellationToken>()).Returns(payment);
+        _paymentRepo.GetRefundByStripeIdAsync("re_1", Arg.Any<CancellationToken>()).Returns((DeliverTableInfrastructure.Models.Refund?)null);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(25m);
+
+        await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        await _paymentRepo.Received(1).AddRefundAsync(
+            Arg.Is<DeliverTableInfrastructure.Models.Refund>(r => r.StripeRefundId == "re_1" && r.Amount == 25m),
+            Arg.Any<CancellationToken>());
+        Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.PartiallyRefunded));
     }
 }
