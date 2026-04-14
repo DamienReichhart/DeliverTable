@@ -1,4 +1,469 @@
 @page "/paiement"
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableClient.Services.Payment
+@using DeliverTableSharedLibrary.Dtos.Order
+@using DeliverTableSharedLibrary.Dtos.Promotion
+@using DeliverTableSharedLibrary.Dtos.DiscountCode
+@using DeliverTableSharedLibrary.Dtos.Loyalty
+@inject IPaymentApiClient PaymentApi
+@inject IStripeJsInterop StripeJs
+@inject ICartService CartService
+@inject IPromotionService PromotionService
+@inject IDiscountCodeClientService DiscountCodeService
+@inject ILoyaltyClientService LoyaltyService
+@inject NavigationManager Nav
+@implements IAsyncDisposable
 
 <PageTitle>Paiement — DeliverTable</PageTitle>
+
+<div class="checkout-page">
+    <h1>Paiement</h1>
+
+    @if (_loading)
+    {
+        <p class="checkout-page__loading">Préparation du paiement...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+        <div class="checkout-page__back">
+            <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+                Retour au panier
+            </button>
+        </div>
+    }
+    else if (_cart is not null)
+    {
+        <div class="checkout-layout">
+
+            @* ── Order options ── *@
+            <div class="checkout-form">
+                <h2>Votre commande</h2>
+                <p class="checkout-restaurant">@_cart.RestaurantName</p>
+
+                <div class="form-group">
+                    <label>Type de commande</label>
+                    <div class="order-type-selector">
+                        <button type="button"
+                                class="order-type-btn @(_orderType == "Delivery" ? "order-type-btn--active" : "")"
+                                @onclick='() => _orderType = "Delivery"'>
+                            Livraison
+                        </button>
+                        <button type="button"
+                                class="order-type-btn @(_orderType == "DineIn" ? "order-type-btn--active" : "")"
+                                @onclick='() => _orderType = "DineIn"'>
+                            Sur place
+                        </button>
+                    </div>
+                </div>
+
+                @if (_orderType == "Delivery")
+                {
+                    <div class="form-group">
+                        <label for="delivery-address">Adresse de livraison *</label>
+                        <input type="text" id="delivery-address" @bind="_deliveryAddress" class="filter-input"
+                               placeholder="Entrez votre adresse de livraison" />
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label>Nombre de convives</label>
+                        <div class="guest-count-selector">
+                            <button type="button" class="qty-btn" @onclick="DecrementGuests" disabled="@(_guestCount <= 1)">−</button>
+                            <span class="qty-value">@_guestCount</span>
+                            <button type="button" class="qty-btn" @onclick="IncrementGuests" disabled="@(_guestCount >= 50)">+</button>
+                        </div>
+                    </div>
+                }
+
+                <div class="form-group">
+                    <label for="notes">Notes pour le restaurant</label>
+                    <textarea id="notes" @bind="_notes" class="filter-input" rows="2"
+                              placeholder="Instructions, allergies..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="scheduled-at">
+                        Date et heure souhaitée
+                        <span class="optional-label">(optionnel)</span>
+                    </label>
+                    <input type="datetime-local" id="scheduled-at" @bind="_scheduledAt" class="filter-input" />
+                    @if (_scheduledAt.HasValue)
+                    {
+                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" style="margin-top: 0.25rem;"
+                                @onclick="() => _scheduledAt = null">
+                            Retirer la date planifiée
+                        </button>
+                    }
+                </div>
+
+                @* ── Discount codes ── *@
+                <div class="discount-section">
+                    <h3>Codes promo</h3>
+                    @if (_appliedCodes.Count > 0)
+                    {
+                        <div class="applied-codes">
+                            @foreach (var dc in _appliedCodes)
+                            {
+                                <div class="applied-code">
+                                    <div class="applied-code-info">
+                                        <strong>@dc.Code</strong>
+                                        <span>@FormatDiscount(dc.DiscountType, dc.DiscountValue)</span>
+                                    </div>
+                                    <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => RemoveCode(dc)">
+                                        Retirer
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="discount-code-input">
+                        <input type="text" @bind="_discountCodeInput" @bind:event="oninput" class="filter-input"
+                               placeholder="Entrez un code promo" @onkeydown="HandleCodeKeyDown" />
+                        <button type="button" class="app-btn app-btn--primary app-btn--sm" @onclick="ApplyCode"
+                                disabled="@(_applyingCode || string.IsNullOrWhiteSpace(_discountCodeInput))">
+                            @(_applyingCode ? "..." : "Appliquer")
+                        </button>
+                    </div>
+                    @if (_codeError is not null) { <p class="code-error">@_codeError</p> }
+                    @if (_codeSuccess is not null) { <p class="code-success">@_codeSuccess</p> }
+                </div>
+
+                @* ── Loyalty points ── *@
+                @if (_loyaltyAccount is not null && _loyaltyAccount.PointsBalance > 0)
+                {
+                    <div class="discount-section">
+                        <h3>Points de fidélité</h3>
+                        <p class="loyalty-info">
+                            Vous avez <strong>@_loyaltyAccount.PointsBalance points</strong>
+                            (valeur : @_loyaltyAccount.EuroEquivalent.ToString("C", _frCulture))
+                        </p>
+                        <div class="loyalty-redeem">
+                            <label for="loyalty-points">Points à utiliser</label>
+                            <input type="number" id="loyalty-points" @bind="_loyaltyPointsToRedeem" @bind:event="oninput"
+                                   min="0" max="@_loyaltyAccount.PointsBalance" class="filter-input"
+                                   style="max-width: 150px;" />
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* ── Payment panel ── *@
+            <div class="checkout-payment-panel">
+                @* ── Order summary ── *@
+                <div class="checkout-summary">
+                    <h3>Récapitulatif</h3>
+                    @foreach (var item in _cart.Items)
+                    {
+                        <div class="summary-line">
+                            <span>@item.DishName × @item.Quantity</span>
+                            <span>@item.Subtotal.ToString("C", _frCulture)</span>
+                        </div>
+                    }
+                    <div class="summary-line summary-line--total">
+                        <span>Total estimé</span>
+                        <strong>@EstimatedTotal.ToString("C", _frCulture)</strong>
+                    </div>
+                </div>
+
+                @if (!_paymentReady)
+                {
+                    <div class="checkout-pay-actions">
+                        @if (!string.IsNullOrWhiteSpace(_validationError))
+                        {
+                            <div class="error-message"><p>@_validationError</p></div>
+                        }
+                        <button type="button" class="app-btn app-btn--primary app-btn--lg checkout-pay-btn"
+                                @onclick="StartPaymentAsync" disabled="@_initializing">
+                            @(_initializing ? "Initialisation..." : $"Procéder au paiement — {EstimatedTotal.ToString("C", _frCulture)}")
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    @* ── Stripe Payment Element ── *@
+                    <div id="payment-element" class="payment-element"></div>
+
+                    @if (!string.IsNullOrWhiteSpace(_paymentError))
+                    {
+                        <div class="error-message"><p>@_paymentError</p></div>
+                    }
+
+                    <div class="checkout-pay-actions">
+                        <button type="button" class="app-btn app-btn--primary app-btn--lg checkout-pay-btn"
+                                @onclick="ConfirmAsync" disabled="@_submitting">
+                            @(_submitting ? "Traitement..." : $"Payer — {_amount.ToString("C", _frCulture)}")
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "restaurantId")]
+    public int RestaurantId { get; set; }
+
+    private static readonly System.Globalization.CultureInfo _frCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    private CartDto? _cart;
+    private bool _loading = true;
+    private bool _initializing;
+    private bool _submitting;
+    private bool _paymentReady;
+    private string? _error;
+    private string? _validationError;
+    private string? _paymentError;
+    private int _orderId;
+    private decimal _amount;
+
+    private string _orderType = "Delivery";
+    private int _guestCount = 1;
+    private string _deliveryAddress = string.Empty;
+    private string _notes = string.Empty;
+    private DateTime? _scheduledAt;
+    private string _discountCodeInput = string.Empty;
+    private List<DiscountCodeDto> _appliedCodes = [];
+    private bool _applyingCode;
+    private string? _codeError;
+    private string? _codeSuccess;
+    private int _loyaltyPointsToRedeemBacking;
+    private int _loyaltyPointsToRedeem
+    {
+        get => _loyaltyPointsToRedeemBacking;
+        set
+        {
+            var max = _loyaltyAccount?.PointsBalance ?? 0;
+            _loyaltyPointsToRedeemBacking = Math.Clamp(value, 0, max);
+        }
+    }
+    private LoyaltyAccountDto? _loyaltyAccount;
+    private List<PromotionDto>? _activePromotions;
+
+    private decimal EstimatedPromotionDiscount => _activePromotions?.Sum(p => EstimatePromotionDiscount(p)) ?? 0;
+    private decimal EstimatedCodeDiscount => _appliedCodes.Sum(c => EstimateCodeDiscount(c));
+    private decimal EstimatedLoyaltyDiscount =>
+        _loyaltyPointsToRedeem > 0 && _loyaltyAccount is not null
+            ? _loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint
+            : 0;
+    private decimal EstimatedSavings => Math.Min(
+        EstimatedPromotionDiscount + EstimatedCodeDiscount + EstimatedLoyaltyDiscount,
+        _cart?.TotalAmount ?? 0);
+    private decimal EstimatedTotal => Math.Max((_cart?.TotalAmount ?? 0) - EstimatedSavings, 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (RestaurantId <= 0)
+        {
+            _error = "Aucun restaurant sélectionné.";
+            _loading = false;
+            return;
+        }
+
+        await Task.WhenAll(LoadCart(), LoadActivePromotions(), LoadLoyaltyAccount());
+        _loading = false;
+    }
+
+    private async Task LoadCart()
+    {
+        var (cart, error) = await CartService.GetCartAsync(RestaurantId);
+        if (error is not null)
+            _error = error.Error;
+        else if (cart is null || cart.Items.Count == 0)
+            _error = "Votre panier est vide.";
+        else
+            _cart = cart;
+    }
+
+    private async Task LoadActivePromotions()
+    {
+        if (RestaurantId <= 0) return;
+        var (promotions, _) = await PromotionService.GetActiveByRestaurantAsync(RestaurantId);
+        _activePromotions = promotions ?? [];
+    }
+
+    private async Task LoadLoyaltyAccount()
+    {
+        if (RestaurantId <= 0) return;
+        var (account, _) = await LoyaltyService.GetMyAccountAsync(RestaurantId);
+        _loyaltyAccount = account;
+    }
+
+    // ── Stripe initialisation ──
+
+    private async Task StartPaymentAsync()
+    {
+        _validationError = null;
+
+        if (_orderType == "Delivery" && string.IsNullOrWhiteSpace(_deliveryAddress))
+        {
+            _validationError = "L'adresse de livraison est obligatoire pour une commande en livraison.";
+            return;
+        }
+
+        if (_orderType == "DineIn" && (_guestCount < 1 || _guestCount > 50))
+        {
+            _validationError = "Le nombre de convives doit être compris entre 1 et 50.";
+            return;
+        }
+
+        _initializing = true;
+        StateHasChanged();
+
+        var request = BuildOrderRequest();
+        var response = await PaymentApi.CreateOrderAsync(request);
+        if (response is null)
+        {
+            _error = "Impossible de démarrer le paiement.";
+            _initializing = false;
+            StateHasChanged();
+            return;
+        }
+
+        _orderId = response.OrderId;
+        _amount = response.Amount;
+        await StripeJs.InitializeAsync(response.PublishableKey);
+        _paymentReady = true;
+        _initializing = false;
+        StateHasChanged();
+        await StripeJs.MountPaymentElementAsync(response.ClientSecret, "payment-element");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Payment Element mount is triggered by StartPaymentAsync → StateHasChanged → render
+        // No additional work needed here; kept for lifecycle clarity.
+        await Task.CompletedTask;
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _paymentError = null;
+        _submitting = true;
+        StateHasChanged();
+
+        var baseUri = Nav.BaseUri.TrimEnd('/');
+        var result = await StripeJs.ConfirmPaymentAsync($"{baseUri}/paiement/resultat?orderId={_orderId}");
+
+        if (result.Succeeded)
+        {
+            Nav.NavigateTo($"/paiement/resultat?orderId={_orderId}");
+        }
+        else
+        {
+            _paymentError = result.ErrorMessage ?? "Échec du paiement.";
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private CreateOrderRequest BuildOrderRequest() => new()
+    {
+        RestaurantId = RestaurantId,
+        OrderType = _orderType,
+        GuestCount = _guestCount,
+        DeliveryAddress = _deliveryAddress,
+        Notes = _notes,
+        ScheduledAt = _scheduledAt.HasValue ? _scheduledAt.Value.ToUniversalTime() : null,
+        DiscountCodes = _appliedCodes.Select(c => c.Code).ToList(),
+        LoyaltyPointsToRedeem = _loyaltyPointsToRedeem
+    };
+
+    // ── Guest count ──
+    private void IncrementGuests() { if (_guestCount < 50) _guestCount++; }
+    private void DecrementGuests() { if (_guestCount > 1) _guestCount--; }
+
+    // ── Discount codes ──
+    private async Task ApplyCode()
+    {
+        if (string.IsNullOrWhiteSpace(_discountCodeInput)) return;
+        var code = _discountCodeInput.Trim();
+        _codeError = null;
+        _codeSuccess = null;
+
+        if (_appliedCodes.Any(c => c.Code.Equals(code, StringComparison.OrdinalIgnoreCase)))
+        {
+            _codeError = "Ce code est déjà appliqué.";
+            return;
+        }
+
+        _applyingCode = true;
+        StateHasChanged();
+
+        var (result, error) = await DiscountCodeService.ValidateAsync(RestaurantId, code);
+        if (error is not null)
+            _codeError = error.Error;
+        else if (result is not null)
+        {
+            _appliedCodes.Add(result);
+            _codeSuccess = $"Code \"{result.Code}\" appliqué — {FormatDiscount(result.DiscountType, result.DiscountValue)}";
+            _discountCodeInput = string.Empty;
+        }
+
+        _applyingCode = false;
+        StateHasChanged();
+    }
+
+    private void RemoveCode(DiscountCodeDto code)
+    {
+        _appliedCodes.Remove(code);
+        _codeError = null;
+        _codeSuccess = null;
+    }
+
+    private async Task HandleCodeKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await ApplyCode();
+    }
+
+    // ── Discount estimation ──
+    private decimal EstimateCodeDiscount(DiscountCodeDto c)
+    {
+        var subtotal = _cart?.TotalAmount ?? 0;
+        if (c.MinOrderAmount.HasValue && subtotal < c.MinOrderAmount.Value) return 0;
+        return c.DiscountType == "Percentage"
+            ? Math.Round(subtotal * c.DiscountValue / 100, 2)
+            : Math.Min(c.DiscountValue, subtotal);
+    }
+
+    private decimal EstimatePromotionDiscount(PromotionDto promo)
+    {
+        if (_cart is null) return 0;
+        var subtotal = _cart.TotalAmount;
+
+        if (promo.PromotionType == "Threshold" && promo.MinOrderAmount.HasValue && subtotal < promo.MinOrderAmount.Value)
+            return 0;
+
+        if (promo.PromotionType == "ItemBased" && promo.DishIds.Count > 0)
+        {
+            var matchingSubtotal = _cart.Items
+                .Where(i => promo.DishIds.Contains(i.DishId))
+                .Sum(i => i.Subtotal);
+            if (matchingSubtotal == 0) return 0;
+            return promo.DiscountType == "Percentage"
+                ? Math.Round(matchingSubtotal * promo.DiscountValue / 100, 2)
+                : Math.Min(promo.DiscountValue, matchingSubtotal);
+        }
+
+        return promo.DiscountType == "Percentage"
+            ? Math.Round(subtotal * promo.DiscountValue / 100, 2)
+            : Math.Min(promo.DiscountValue, subtotal);
+    }
+
+    private static string FormatDiscount(string discountType, decimal value) => discountType switch
+    {
+        "Percentage" => $"{value}%",
+        "FixedAmount" => $"{value:0.00} €",
+        _ => $"{value}"
+    };
+
+    // ── Navigation ──
+    private void GoBack() => Nav.NavigateTo(RestaurantId > 0 ? $"/panier/{RestaurantId}" : "/restaurants");
+
+    public async ValueTask DisposeAsync() => await StripeJs.UnmountAsync();
+}
