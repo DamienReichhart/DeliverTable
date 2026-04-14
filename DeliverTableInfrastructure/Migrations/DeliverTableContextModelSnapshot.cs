@@ -2999,11 +2999,6 @@ namespace DeliverTableInfrastructure.Migrations
 
                     b.Navigation("Restaurants");
                 });
-
-            modelBuilder.Entity("Reclamation", b =>
-                {
-                    b.Navigation("Items");
-                });
 #pragma warning restore 612, 618
         }
     }

@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace DeliverTableServer.Migrations
+namespace DeliverTableInfrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class AddReclamations : Migration
