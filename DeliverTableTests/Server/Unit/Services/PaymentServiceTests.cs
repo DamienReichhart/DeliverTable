@@ -371,6 +371,50 @@ public class PaymentServiceTests
     }
 
     [Test]
+    public async Task HandleAuthorizationCompletedAsync_HandlerThrowsAfterPartialUpdates_RollsBackEverything()
+    {
+        // Arrange: payment and order exist; cart clearing throws after order status has been mutated.
+        // Because all DB work runs inside BeginTransactionAsync, a real DB would roll everything back.
+        // In this unit test (mocked repos) we verify that:
+        //   - the exception propagates (Stripe can retry),
+        //   - email queuing never fires (publishes are deferred until after commit).
+        var payment = new Payment
+        {
+            Id = 1,
+            OrderId = 10,
+            StripePaymentIntentId = "pi_partial",
+            Status = PaymentGatewayStatus.RequiresConfirmation
+        };
+        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, CustomerId = 2 };
+        var pi = new Stripe.PaymentIntent { Id = "pi_partial" };
+        var evt = new Stripe.Event
+        {
+            Id = "evt_partial",
+            Type = "payment_intent.amount_capturable_updated",
+            Data = new Stripe.EventData { Object = pi }
+        };
+
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_partial", Arg.Any<string>(), Arg.Any<CancellationToken>())
+                    .Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_partial", Arg.Any<CancellationToken>())
+                    .Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>())
+                  .Returns(order);
+        // Loyalty and discount commit succeed, but cart clearing throws.
+        _cartRepo.GetByCustomerAsync(2, Arg.Any<CancellationToken>())
+                 .ThrowsAsync(new InvalidOperationException("cart boom"));
+
+        // The exception must propagate so Stripe retries the webhook.
+        Assert.That(
+            async () => await _sut.HandleStripeEventAsync(evt, CancellationToken.None),
+            Throws.TypeOf<InvalidOperationException>().With.Message.EqualTo("cart boom"));
+
+        // Email queuing must NOT have happened (publish deferred until after commit).
+        await _emailJobService.DidNotReceive()
+            .QueueOrderConfirmationAsync(Arg.Any<Order>(), Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Test]
     public async Task HandleAuthorizationCompletedAsync_IncrementsDiscountCounter()
     {
         // When payment_intent.amount_capturable_updated is handled successfully,
