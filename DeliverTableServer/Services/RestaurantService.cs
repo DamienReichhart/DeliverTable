@@ -9,6 +9,7 @@ using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
 using DeliverTableSharedLibrary.Enums;
+using DeliverTableSharedLibrary.Validation;
 
 namespace DeliverTableServer.Services;
 
@@ -53,6 +54,14 @@ public sealed class RestaurantService(
     public async Task<ServiceResult<RestaurantDto>> CreateAsync(
         CreateRestaurantDto dto, int ownerId, CancellationToken ct = default)
     {
+        if (!SiretValidator.IsValid(dto.Siret))
+            return new ServiceError(ErrorMessages.SiretInvalid);
+
+        if (string.IsNullOrWhiteSpace(dto.LegalName)
+            || string.IsNullOrWhiteSpace(dto.LegalAddress)
+            || string.IsNullOrWhiteSpace(dto.LegalForm))
+            return new ServiceError(ErrorMessages.LegalFieldsRequired);
+
         var coords = await _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode);
         if (coords is null)
             return new ServiceError(ErrorMessages.AddressNotLocatable);
@@ -71,7 +80,12 @@ public sealed class RestaurantService(
             Country = char.ToUpper(dto.Country[0]) + dto.Country[1..],
             OwnerId = ownerId,
             Longitude = coords.Value.lon,
-            Latitude = coords.Value.lat
+            Latitude = coords.Value.lat,
+            Siret = dto.Siret,
+            LegalName = dto.LegalName,
+            LegalAddress = dto.LegalAddress,
+            LegalForm = dto.LegalForm,
+            IsVatRegistered = dto.IsVatRegistered
         };
 
         var created = await _restaurantRepository.CreateAsync(restaurant, ct);
@@ -84,6 +98,14 @@ public sealed class RestaurantService(
         var restaurant = await _restaurantRepository.GetByIdAsync(id, ct);
         if (restaurant is null)
             return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+
+        if (!SiretValidator.IsValid(dto.Siret))
+            return new ServiceError(ErrorMessages.SiretInvalid);
+
+        if (string.IsNullOrWhiteSpace(dto.LegalName)
+            || string.IsNullOrWhiteSpace(dto.LegalAddress)
+            || string.IsNullOrWhiteSpace(dto.LegalForm))
+            return new ServiceError(ErrorMessages.LegalFieldsRequired);
 
         var coords = await _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode);
         if (coords is null)
@@ -102,6 +124,11 @@ public sealed class RestaurantService(
         restaurant.Latitude = coords.Value.lat;
         restaurant.Longitude = coords.Value.lon;
         restaurant.UpdatedAt = DateTime.UtcNow;
+        restaurant.Siret = dto.Siret;
+        restaurant.LegalName = dto.LegalName;
+        restaurant.LegalAddress = dto.LegalAddress;
+        restaurant.LegalForm = dto.LegalForm;
+        restaurant.IsVatRegistered = dto.IsVatRegistered;
 
         var updated = await _restaurantRepository.UpdateAsync(restaurant, ct);
         return updated.ToDetailedDto();
