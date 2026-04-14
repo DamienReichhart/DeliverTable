@@ -19,4 +19,5 @@ public interface IDiscountCodeRepository
 
     Task MarkPendingRedemptionsCommittedForOrderAsync(int orderId, CancellationToken ct = default);
     Task MarkPendingRedemptionsReversedForOrderAsync(int orderId, CancellationToken ct = default);
+    Task IncrementRedemptionCountersForCommittedAsync(int orderId, CancellationToken ct = default);
 }

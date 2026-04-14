@@ -370,8 +370,6 @@ public sealed class OrderService(
     {
         foreach (var dc in appliedCodes)
         {
-            dc.CurrentRedemptions++;
-            await _discountCodeRepository.UpdateAsync(dc, ct);
             await _discountCodeRepository.CreateRedemptionAsync(new DiscountCodeRedemption
             {
                 DiscountCodeId = dc.Id,

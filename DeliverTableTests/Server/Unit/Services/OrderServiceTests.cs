@@ -569,8 +569,6 @@ public class OrderServiceTests
             .Returns(code);
         _discountCodeRepository.GetRedemptionCountByUserAsync(1, CustomerId, Arg.Any<CancellationToken>())
             .Returns(0);
-        _discountCodeRepository.UpdateAsync(Arg.Any<DiscountCode>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => callInfo.Arg<DiscountCode>());
 
         Order? capturedOrder = null;
         _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
@@ -587,7 +585,10 @@ public class OrderServiceTests
         Assert.That(capturedOrder.DiscountAmount, Is.EqualTo(7m)); // 10% of 70
         Assert.That(capturedOrder.TotalAmount, Is.EqualTo(63m));
         Assert.That(capturedOrder.DiscountCodeId, Is.EqualTo(1));
-        Assert.That(code.CurrentRedemptions, Is.EqualTo(1));
+        // CurrentRedemptions is incremented at payment-commit time (not at order creation),
+        // so it stays 0 here.
+        Assert.That(code.CurrentRedemptions, Is.EqualTo(0));
+        await _discountCodeRepository.DidNotReceive().UpdateAsync(Arg.Any<DiscountCode>(), Arg.Any<CancellationToken>());
         await _discountCodeRepository.Received(1).CreateRedemptionAsync(
             Arg.Any<DiscountCodeRedemption>(), Arg.Any<CancellationToken>());
     }
