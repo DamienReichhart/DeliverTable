@@ -48,13 +48,16 @@
 24. [PAYMENT](#24-payment)
 25. [REFUND](#25-refund)
 26. [PROCESSED_STRIPE_EVENT](#26-processed_stripe_event)
-27. [EVENT](#27-event)
-28. [EVENT_MENU_ITEM](#28-event_menu_item)
-29. [EVENT_BOOKING_POLICY](#29-event_booking_policy)
-30. [RESTAURANT_RATING](#30-restaurant_rating)
-31. [CUSTOMER_RATING](#31-customer_rating)
-32. [NOTIFICATION](#32-notification)
-33. [MODERATION_ACTION](#33-moderation_action)
+27. [INVOICE](#27-invoice)
+28. [INVOICE_LINE](#28-invoice_line)
+29. [INVOICE_COUNTER](#29-invoice_counter)
+30. [EVENT](#30-event)
+31. [EVENT_MENU_ITEM](#31-event_menu_item)
+32. [EVENT_BOOKING_POLICY](#32-event_booking_policy)
+33. [RESTAURANT_RATING](#33-restaurant_rating)
+34. [CUSTOMER_RATING](#34-customer_rating)
+35. [NOTIFICATION](#35-notification)
+36. [MODERATION_ACTION](#36-moderation_action)
 
 ---
 
@@ -64,6 +67,10 @@
 - [PaymentStatus](#paymentstatus)
 - [LoyaltyRedemptionStatus](#loyaltyredemptionstatus)
 - [DiscountRedemptionStatus](#discountredemptionstatus)
+- [VatRate](#vatrate)
+- [InvoiceKind](#invoicekind)
+- [InvoiceIssuerType](#invoiceissuertype)
+- [InvoiceStatus](#invoicestatus)
 
 ---
 
@@ -155,6 +162,11 @@ Represents a dining establishment managed by a restaurant owner.
 | `country` | `string` | **NOT NULL** | Country (ISO 3166-1 alpha-2 recommended). |
 | `latitude` | `float` | NULLABLE | Geographic latitude for map display / proximity search. |
 | `longitude` | `float` | NULLABLE | Geographic longitude for map display / proximity search. |
+| `siret` | `string` | NULLABLE, MAX 14 | 14-digit SIRET number identifying the legal business entity. |
+| `legal_name` | `string` | NULLABLE | Official registered company name (may differ from display `name`). |
+| `legal_address` | `string` | NULLABLE | Full registered address used on invoices. |
+| `legal_form` | `string` | NULLABLE | Legal form of the entity (e.g. `SARL`, `SAS`, `EI`, `Auto-entrepreneur`). |
+| `is_vat_registered` | `boolean` | **NOT NULL, DEFAULT false** | Whether the restaurant is registered for VAT and must include VAT on invoices. |
 | `is_active` | `boolean` | **NOT NULL, DEFAULT true** | Soft-delete / visibility flag. |
 | `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
 | `updated_at` | `datetime` | **NOT NULL** | Last update timestamp (UTC). |
@@ -162,6 +174,8 @@ Represents a dining establishment managed by a restaurant owner.
 **Relationships:**
 
 - `N → 1` **USER** — each restaurant is owned by one user (restaurant owner).
+- `1 → 0..*` **INVOICE** — a restaurant can be the issuer of invoices (when `issuer_type = RESTAURANT`).
+- `1 → 0..*` **INVOICE** — a restaurant can be the recipient of invoices (e.g. platform billing).
 - `1 → 0..*` **RESTAURANT_TABLE** — a restaurant has zero or more tables.
 - `1 → 0..*` **MENU_ITEM** — a restaurant offers menu items.
 - `1 → 0..*` **PROMOTION** — a restaurant can configure promotions.
@@ -233,6 +247,7 @@ A dish or beverage offered by a restaurant. Used in orders (via `ORDER_ITEM`) an
 | `description` | `string` | NULLABLE | Description, ingredients, preparation notes. |
 | `type_of_dish` | `string` (enum) | **NOT NULL** | Course category for menu structure and filtering. Allowed values: `STARTER`, `MAIN`, `DESSERT`, `APERITIF`, `BEVERAGE`. |
 | `base_price` | `float` | **NOT NULL** | Standard price. Use `DECIMAL` in the physical schema for precision. |
+| `vat_rate` | `string` (enum) | **NOT NULL, DEFAULT REDUCED5_5** | VAT rate applicable to this dish. Allowed values: `ZERO`, `SPECIAL2_1`, `REDUCED5_5`, `INTERMEDIATE10`, `NORMAL20`. See [`VatRate`](#vatrate). |
 | `is_vegetarian` | `boolean` | **NOT NULL, DEFAULT false** | Whether the item is vegetarian. |
 | `is_vegan` | `boolean` | **NOT NULL, DEFAULT false** | Whether the item is vegan. |
 | `is_gluten_free` | `boolean` | **NOT NULL, DEFAULT false** | Whether the item is gluten-free. |
@@ -533,6 +548,7 @@ A confirmed customer order. Supports two order types: delivery (food brought to 
 - `1 → 0..*` **RESTAURANT_RATING** — an order can yield a restaurant rating.
 - `1 → 0..*` **CUSTOMER_RATING** — an order can yield a customer rating.
 - `1 → 0..*` **RESTAURANT_TRANSACTION** — a delivered order generates a credit transaction.
+- `1 → 0..*` **INVOICE** — a completed order can trigger one or more invoices (original + credit notes).
 
 ---
 
@@ -689,7 +705,91 @@ Idempotency log for Stripe webhook events. Before processing any incoming event,
 
 ---
 
-## 27. EVENT
+## 27. INVOICE
+
+A legal billing document issued after a payment event. An invoice may be issued by the platform (charging the restaurant a commission) or by the restaurant (billing the customer). Credit notes are represented as `INVOICE` rows with `kind = CREDIT_NOTE` that reference the original invoice.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `string` | **PK** | Unique invoice identifier (UUID/ULID). |
+| `invoice_number` | `string` | **NOT NULL, UNIQUE** | Human-readable sequential reference (e.g. `FAC-2025-00042`). Generated via `INVOICE_COUNTER`. |
+| `kind` | `string` (enum) | **NOT NULL** | Document type. Allowed values: `ORDER_INVOICE`, `CREDIT_NOTE`. See [`InvoiceKind`](#invoicekind). |
+| `issuer_type` | `string` (enum) | **NOT NULL** | Whether the platform or a restaurant is the legal issuer. Allowed values: `PLATFORM`, `RESTAURANT`. See [`InvoiceIssuerType`](#invoiceissuertype). |
+| `issuer_restaurant_id` | `string` | **FK → RESTAURANT.id, NULLABLE** | Set when `issuer_type = RESTAURANT`. References the issuing restaurant. |
+| `recipient_user_id` | `string` | **FK → USER.id, NULLABLE** | Set when the invoice recipient is a customer. Mutually exclusive with `recipient_restaurant_id`. |
+| `recipient_restaurant_id` | `string` | **FK → RESTAURANT.id, NULLABLE** | Set when the invoice recipient is a restaurant (e.g. platform billing). Mutually exclusive with `recipient_user_id`. |
+| `order_id` | `integer` | **FK → ORDER.id, NULLABLE** | The order that triggered this invoice. `NULL` for manual invoices. |
+| `related_invoice_id` | `string` | **FK → INVOICE.id, NULLABLE** | For credit notes: references the original invoice being cancelled or corrected. |
+| `status` | `string` (enum) | **NOT NULL, DEFAULT DRAFT** | Invoice lifecycle state. Allowed values: `DRAFT`, `ISSUED`, `CANCELLED`. See [`InvoiceStatus`](#invoicestatus). |
+| `currency` | `string` | **NOT NULL** | ISO 4217 currency code (e.g. `EUR`). |
+| `subtotal_ht` | `decimal(9,2)` | **NOT NULL** | Sum of all line `line_total_ht` values (excl. VAT). |
+| `vat_amount` | `decimal(9,2)` | **NOT NULL** | Total VAT across all lines. |
+| `total_ttc` | `decimal(9,2)` | **NOT NULL** | Grand total inclusive of VAT (`subtotal_ht + vat_amount`). |
+| `notes` | `string` | NULLABLE | Free-text annotations printed on the invoice (payment terms, legal mentions, etc.). |
+| `issued_at` | `datetime` | NULLABLE | Timestamp when the invoice was finalised and sent (UTC). `NULL` while in `DRAFT`. |
+| `due_at` | `datetime` | NULLABLE | Payment due date (UTC). Applicable for B2B invoices. |
+| `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
+| `updated_at` | `datetime` | **NOT NULL** | Last update timestamp (UTC). |
+
+**Constraints:**
+
+- Exactly one of `recipient_user_id` or `recipient_restaurant_id` must be set.
+- `related_invoice_id` must be `NULL` unless `kind = CREDIT_NOTE`.
+- `issuer_restaurant_id` must be set when `issuer_type = RESTAURANT`, and `NULL` when `issuer_type = PLATFORM`.
+
+**Relationships:**
+
+- `N → 0..1` **ORDER** — each invoice may reference one triggering order.
+- `N → 0..1` **RESTAURANT** (issuer) — when issued by a restaurant.
+- `N → 0..1` **USER** (recipient) — when billing a customer.
+- `N → 0..1` **RESTAURANT** (recipient) — when billing a restaurant.
+- `N → 0..1` **INVOICE** — credit note references the original invoice.
+- `1 → 1..*` **INVOICE_LINE** — an invoice contains one or more line items (cascade delete).
+
+---
+
+## 28. INVOICE_LINE
+
+A single billable line item within an invoice. Each line carries its own VAT rate to support mixed-rate invoices (e.g. food at 5.5% and alcohol at 20%).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `integer` | **PK** | Unique line item identifier. |
+| `invoice_id` | `string` | **FK → INVOICE.id, NOT NULL** | The parent invoice. Cascade delete: removing an invoice removes all its lines. |
+| `description` | `string` | **NOT NULL, MAX 500** | Human-readable label for the line (e.g. dish name, delivery fee, commission). |
+| `quantity` | `int` | **NOT NULL, DEFAULT 1** | Number of units. Must be ≥ 1. |
+| `unit_price_ht` | `decimal(9,4)` | **NOT NULL** | Unit price excluding VAT. Four decimal places to avoid rounding loss before aggregation. |
+| `vat_rate` | `string` (enum) | **NOT NULL** | VAT rate for this line. Allowed values: `ZERO`, `SPECIAL2_1`, `REDUCED5_5`, `INTERMEDIATE10`, `NORMAL20`. See [`VatRate`](#vatrate). |
+| `vat_amount` | `decimal(9,2)` | **NOT NULL** | Computed VAT amount for this line (`line_total_ht × rate`). |
+| `line_total_ht` | `decimal(9,2)` | **NOT NULL** | Total excluding VAT (`quantity × unit_price_ht`). |
+| `order_item_id` | `integer` | **FK → ORDER_ITEM.id, NULLABLE** | Source `ORDER_ITEM` if this line was generated from an order line. `NULL` for non-order lines (fees, adjustments). |
+
+**Relationships:**
+
+- `N → 1` **INVOICE** — each line belongs to one invoice.
+- `N → 0..1` **ORDER_ITEM** — optionally traces back to the originating order item.
+
+---
+
+## 29. INVOICE_COUNTER
+
+Lightweight sequence table used to generate monotonically increasing, gap-free invoice numbers per year and prefix. A single row is locked (`SELECT FOR UPDATE`) and incremented atomically at issuance time.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `year` | `integer` | **PK (composite with prefix)** | 4-digit calendar year (e.g. `2025`). |
+| `prefix` | `string` | **PK (composite with year)** | Invoice series prefix (e.g. `FAC` for customer invoices, `AVO` for credit notes). |
+| `last_sequence` | `integer` | **NOT NULL, DEFAULT 0** | The last sequence number issued for this year/prefix combination. Incremented by 1 on each issuance. |
+
+**Notes:**
+
+- The formatted invoice number is assembled as `{prefix}-{year}-{last_sequence:D5}` (e.g. `FAC-2025-00042`).
+- Rows are created on first use (year/prefix pair) and never deleted.
+- No foreign keys: this table is intentionally self-contained.
+
+---
+
+## 30. EVENT
 
 A special dining or social event, optionally hosted at a restaurant. Events reuse the `ORDER` entity for reservations and can have custom menus and booking policies.
 
@@ -718,7 +818,7 @@ A special dining or social event, optionally hosted at a restaurant. Events reus
 
 ---
 
-## 28. EVENT_MENU_ITEM
+## 31. EVENT_MENU_ITEM
 
 Links a menu item to an event with an optional price override (e.g. prix-fixe pricing, event-only specials).
 
@@ -736,7 +836,7 @@ Links a menu item to an event with an optional price override (e.g. prix-fixe pr
 
 ---
 
-## 29. EVENT_BOOKING_POLICY
+## 32. EVENT_BOOKING_POLICY
 
 Defines per-event booking and payment rules (minimum prepayment, custom policy schemas) that override or extend the restaurant's default `ORDER_RULE`.
 
@@ -753,7 +853,7 @@ Defines per-event booking and payment rules (minimum prepayment, custom policy s
 
 ---
 
-## 30. RESTAURANT_RATING
+## 33. RESTAURANT_RATING
 
 A rating left by a customer for a restaurant following a completed order.
 
@@ -775,7 +875,7 @@ A rating left by a customer for a restaurant following a completed order.
 
 ---
 
-## 31. CUSTOMER_RATING
+## 34. CUSTOMER_RATING
 
 A rating left by a restaurant (owner/staff) for a customer following a completed order (e.g. no-show, good guest).
 
@@ -799,7 +899,7 @@ A rating left by a restaurant (owner/staff) for a customer following a completed
 
 ---
 
-## 32. NOTIFICATION
+## 35. NOTIFICATION
 
 A notification delivered to a user (push, email, in-app, etc.) triggered by system events.
 
@@ -818,7 +918,7 @@ A notification delivered to a user (push, email, in-app, etc.) triggered by syst
 
 ---
 
-## 33. MODERATION_ACTION
+## 36. MODERATION_ACTION
 
 Audit log of administrative actions taken on platform content or users (approvals, rejections, bans, warnings).
 
@@ -894,3 +994,51 @@ Lifecycle states for the `status` column on `DISCOUNT_CODE_REDEMPTION`. Mirrors 
 | `PENDING` | Redemption has been reserved (counted against quota tentatively) but not yet finalized. |
 | `COMMITTED` | Payment confirmed; the redemption is permanent and counts against the code's quota. |
 | `REVERSED` | Payment failed or order cancelled; the redemption has been rolled back and the quota slot released. |
+
+---
+
+### VatRate
+
+VAT rates applicable to menu items and invoice lines, reflecting French VAT legislation.
+
+| Value | Decimal rate | Description |
+|---|---|---|
+| `ZERO` | 0 % | Zero-rated supplies (exports, certain social-sector goods). |
+| `SPECIAL2_1` | 2.1 % | Special reduced rate (press publications, certain medicines). |
+| `REDUCED5_5` | 5.5 % | Reduced rate (most food products, non-alcoholic beverages). |
+| `INTERMEDIATE10` | 10 % | Intermediate rate (restaurant meals consumed on premises, take-away hot food, alcoholic beverages in restaurants). |
+| `NORMAL20` | 20 % | Standard rate (alcohol sold off-premises, non-food items, services). |
+
+---
+
+### InvoiceKind
+
+Distinguishes the nature of an `INVOICE` document.
+
+| Value | Description |
+|---|---|
+| `ORDER_INVOICE` | Standard invoice issued following a completed order payment. |
+| `CREDIT_NOTE` | Credit note (avoir) that partially or fully cancels a previous `ORDER_INVOICE`. References the original via `related_invoice_id`. |
+
+---
+
+### InvoiceIssuerType
+
+Identifies the legal entity issuing an `INVOICE`.
+
+| Value | Description |
+|---|---|
+| `PLATFORM` | The DeliverTable platform is the issuer (e.g. commission invoice billed to the restaurant). |
+| `RESTAURANT` | A restaurant is the issuer (e.g. customer invoice for a completed order). |
+
+---
+
+### InvoiceStatus
+
+Lifecycle states for an `INVOICE`.
+
+| Value | Description |
+|---|---|
+| `DRAFT` | Invoice is being prepared and has not yet been sent. `issued_at` is `NULL`. |
+| `ISSUED` | Invoice has been finalised, numbered, and sent to the recipient. `issued_at` is set. |
+| `CANCELLED` | Invoice has been voided (typically superseded by a credit note). |

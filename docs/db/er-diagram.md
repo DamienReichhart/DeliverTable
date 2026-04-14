@@ -66,6 +66,11 @@ erDiagram
         float   latitude
         float   longitude
         float   balance             "credited on delivery, minus commission"
+        string  siret               "14-digit SIRET number (nullable)"
+        string  legal_name          "official registered company name (nullable)"
+        string  legal_address       "full registered address (nullable)"
+        string  legal_form          "e.g. SARL, SAS, EI (nullable)"
+        boolean is_vat_registered   "whether the restaurant charges VAT (default false)"
         boolean is_active
         datetime created_at
         datetime updated_at
@@ -101,6 +106,7 @@ erDiagram
         string  description
         string  type_of_dish       "STARTER | MAIN | DESSERT | APERITIF | BEVERAGE"
         float   base_price
+        string  vat_rate           "ZERO | SPECIAL2_1 | REDUCED5_5 | INTERMEDIATE10 | NORMAL20"
         boolean is_vegetarian
         boolean is_vegan
         boolean is_gluten_free
@@ -265,6 +271,47 @@ erDiagram
         string  special_instructions
     }
 
+    %% Invoicing
+    INVOICE {
+        string  id PK                   "UUID/ULID"
+        string  invoice_number          "formatted number e.g. FAC-2024-00001 (unique)"
+        string  kind                    "ORDER_INVOICE | CREDIT_NOTE"
+        string  issuer_type             "PLATFORM | RESTAURANT"
+        string  issuer_restaurant_id FK "nullable – set when issuer_type = RESTAURANT"
+        string  recipient_user_id FK    "nullable – set when recipient is a customer"
+        string  recipient_restaurant_id FK "nullable – set when recipient is a restaurant"
+        int     order_id FK             "nullable – the triggering order"
+        string  related_invoice_id FK   "nullable – original invoice (credit notes only)"
+        string  status                  "DRAFT | ISSUED | CANCELLED"
+        string  currency                "ISO 4217, e.g. EUR"
+        decimal subtotal_ht             "sum of line amounts excl. VAT"
+        decimal vat_amount              "total VAT"
+        decimal total_ttc               "subtotal_ht + vat_amount"
+        string  notes                   "nullable – free-text annotations"
+        datetime issued_at              "nullable – when the invoice was finalised"
+        datetime due_at                 "nullable – payment due date"
+        datetime created_at
+        datetime updated_at
+    }
+
+    INVOICE_LINE {
+        int     id PK
+        string  invoice_id FK           "parent invoice (cascade delete)"
+        string  description             "NOT NULL – line item label"
+        int     quantity                "NOT NULL, DEFAULT 1"
+        decimal unit_price_ht           "NOT NULL – unit price excl. VAT"
+        string  vat_rate                "ZERO | SPECIAL2_1 | REDUCED5_5 | INTERMEDIATE10 | NORMAL20"
+        decimal vat_amount              "NOT NULL – VAT for this line"
+        decimal line_total_ht           "NOT NULL – quantity × unit_price_ht"
+        int     order_item_id FK        "nullable – source ORDER_ITEM if applicable"
+    }
+
+    INVOICE_COUNTER {
+        int     year PK                 "4-digit year (composite PK with prefix)"
+        string  prefix PK               "e.g. FAC, AVO (composite PK with year)"
+        int     last_sequence           "NOT NULL, DEFAULT 0 – monotonically incrementing"
+    }
+
     %% Scheduling, payments & events (Stripe‑ready)
     ORDER_RULE {
         string  id PK
@@ -408,6 +455,14 @@ erDiagram
     MENU_ITEM ||--o{ ORDER_ITEM : "is ordered in"
     ORDER ||--o{ PAYMENT : "has payments"
     PAYMENT ||--o{ REFUND : "has refunds"
+
+    %% Relationships – Invoicing
+    ORDER ||--o{ INVOICE : "triggers"
+    RESTAURANT ||--o{ INVOICE : "issues (as issuer)"
+    USER ||--o{ INVOICE : "receives (as recipient)"
+    RESTAURANT ||--o{ INVOICE : "receives (as recipient)"
+    INVOICE ||--o{ INVOICE : "credit note references original"
+    INVOICE ||--o{ INVOICE_LINE : "contains (cascade)"
     USER ||--o{ REFUND : "initiated by (optional)"
     ORDER ||--o{ RESTAURANT_RATING : "yields rating"
     ORDER ||--o{ CUSTOMER_RATING : "yields customer rating"
@@ -482,5 +537,8 @@ erDiagram
 
 - **Moderation & audit**
   Per‑entity moderation tables (e.g. `RESTAURANT_MODERATION`, `EVENT_MODERATION`) were considered. A single `MODERATION_ACTION` table is more flexible and easier to extend as new content types appear.
+
+- **Invoicing (INVOICE / INVOICE_LINE / INVOICE_COUNTER)**
+  `INVOICE` is the legal document issued after a payment. `INVOICE_LINE` holds the individual line items (one per `ORDER_ITEM`, or additional charges such as delivery fees), each carrying its own `vat_rate` so mixed-rate invoices are fully supported. `INVOICE_COUNTER` is a lightweight per-year-per-prefix sequence table that generates human-readable, monotonic invoice numbers (e.g. `FAC-2025-00042`) without gaps, using a single locked-row increment per issuance. Credit notes are modeled as `INVOICE` rows with `kind = CREDIT_NOTE` referencing the original via `related_invoice_id`. The `issuer_type` flag distinguishes whether the platform or a restaurant is the legal issuer, and the two nullable recipient FK columns (`recipient_user_id`, `recipient_restaurant_id`) accommodate both B2C and B2B billing.
 
 This ER model is intentionally **extensible** and aligned with upcoming **Stripe integration**.
