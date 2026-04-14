@@ -287,6 +287,28 @@ services:
     tmpfs:
       - /tmp:size=50m
 
+  scheduler:
+    container_name: dt-scheduler-prod
+    build:
+      context: .
+      dockerfile: docker/images/scheduler.prod.dockerfile
+    environment:
+      CONNECTION_STRING_DATABASE: ${CONNECTION_STRING_DATABASE}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      dt-backend-net:
+        ipv4_address: 172.32.0.70
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    restart: always
+    read_only: true
+    tmpfs:
+      - /tmp:size=50m
+
 networks:
   dt-public-net:
     name: dt-public-prod
