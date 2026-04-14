@@ -26,6 +26,6 @@ public class OrderDto
     public List<OrderItemDto> Items { get; set; } = [];
     public DateTime CreatedAt { get; set; }
     public string? GatewayStatus { get; set; }
-    public List<RefundDto> Refunds { get; set; } = new();
+    public List<RefundDto> Refunds { get; set; } = [];
     public decimal TotalRefunded { get; set; }
 }
