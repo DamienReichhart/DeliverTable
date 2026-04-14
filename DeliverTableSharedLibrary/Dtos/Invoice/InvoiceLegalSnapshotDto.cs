@@ -5,4 +5,5 @@ public record InvoiceLegalSnapshotDto(
     string LegalForm,
     string Siret,
     string VatNumber,
-    string Address);
+    string Address,
+    string Email = "");

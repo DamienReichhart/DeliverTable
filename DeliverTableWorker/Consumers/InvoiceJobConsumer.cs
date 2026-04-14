@@ -240,12 +240,16 @@ public sealed class InvoiceJobConsumer(
 
         if (isCustomerKind)
         {
-            // For customer invoices, Address in snapshot holds the email (see InvoiceService.BuildCustomerInvoice)
-            var email = recipient?.Address;
+            // Prefer the dedicated Email field; fall back to Address for pre-existing snapshots,
+            // then to the navigation-property email as a last resort.
+            var snapshotEmail = !string.IsNullOrWhiteSpace(recipient?.Email)
+                ? recipient.Email
+                : recipient?.Address;
+            var email = !string.IsNullOrWhiteSpace(snapshotEmail)
+                ? snapshotEmail
+                : invoice.RecipientUser?.Email;
             var name = recipient?.Name;
-            return (string.IsNullOrWhiteSpace(email) ? invoice.RecipientUser?.Email : email,
-                    name,
-                    EmailJobType.InvoiceReadyCustomer);
+            return (email, name, EmailJobType.InvoiceReadyCustomer);
         }
         else
         {

@@ -74,7 +74,8 @@ public class InvoiceJobConsumerTests
             LegalForm: "",
             Siret: "",
             VatNumber: "",
-            Address: "client@example.fr");
+            Address: "",
+            Email: "client@example.fr");
 
         var invoice = new Invoice
         {
@@ -131,7 +132,7 @@ public class InvoiceJobConsumerTests
     [Test]
     public async Task HandleAsync_RendererThrows_MarksFailedAndRethrows()
     {
-        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "client@example.fr");
+        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "client@example.fr");
 
         var invoice = new Invoice
         {
