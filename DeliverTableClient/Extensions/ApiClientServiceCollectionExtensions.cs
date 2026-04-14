@@ -2,6 +2,7 @@ using DeliverTableClient.Configuration;
 using DeliverTableClient.Configuration.Interfaces;
 using DeliverTableClient.Services;
 using DeliverTableClient.Services.Interfaces;
+using DeliverTableClient.Services.Payment;
 
 namespace DeliverTableClient.Extensions;
 
@@ -46,6 +47,7 @@ public static class ApiClientServiceCollectionExtensions
         RegisterDiscountCodeClientService(services);
         RegisterLoyaltyClientService(services);
         RegisterRatingClientService(services);
+        RegisterPaymentService(services);
         RegisterAdminDomainServices(services);
 
         return services;
@@ -112,6 +114,11 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterRatingClientService(IServiceCollection services)
     {
         services.AddScoped<IRatingClientService, RatingClientService>();
+    }
+
+    private static void RegisterPaymentService(IServiceCollection services)
+    {
+        services.AddScoped<IPaymentApiClient, PaymentApiClient>();
     }
 
     private static void RegisterAdminDomainServices(IServiceCollection services)
