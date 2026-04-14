@@ -1,5 +1,6 @@
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Order;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableInfrastructure.Repositories.Interfaces;
 
@@ -12,4 +13,5 @@ public interface IOrderRepository
     Task<Order> UpdateAsync(Order order, CancellationToken ct = default);
     Task<List<Order>> GetAllUnscopedAsync(CancellationToken ct = default);
     Task<Order?> GetByIdWithFullDetailsAsync(int id, CancellationToken ct = default);
+    Task<List<Order>> GetOrdersOlderThanAsync(OrderStatus status, DateTime threshold, CancellationToken ct = default);
 }

@@ -105,4 +105,9 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
             .Include(o => o.Payments)
             .FirstOrDefaultAsync(o => o.Id == id, ct);
     }
+
+    public Task<List<Order>> GetOrdersOlderThanAsync(OrderStatus status, DateTime threshold, CancellationToken ct = default) =>
+        _dbContext.Orders
+            .Where(o => o.Status == status && o.CreatedAt < threshold)
+            .ToListAsync(ct);
 }
