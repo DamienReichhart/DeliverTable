@@ -971,4 +971,72 @@ public class OrderServiceTests
         Assert.That(result.Value!.OrderId, Is.EqualTo(42));
         Assert.That(result.Value.ClientSecret, Is.EqualTo("pi_secret_42"));
     }
+
+    // ─── Payment integration tests for UpdateStatusAsync ────────────────────
+
+    [Test]
+    public async Task UpdateStatusAsync_PendingToConfirmed_CallsPaymentCapture()
+    {
+        var order = new Order { Id = 10, Status = OrderStatus.Pending, Restaurant = new Restaurant(), Items = [], Discounts = [] };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentService.CaptureAsync(10, Arg.Any<CancellationToken>()).Returns(ServiceResult.Success());
+
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) }, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(order.Status, Is.EqualTo(OrderStatus.Confirmed));
+        await _paymentService.Received(1).CaptureAsync(10, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateStatusAsync_CaptureFails_KeepsOrderPending()
+    {
+        var order = new Order { Id = 10, Status = OrderStatus.Pending, Restaurant = new Restaurant(), Items = [], Discounts = [] };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentService.CaptureAsync(10, Arg.Any<CancellationToken>()).Returns(new ServiceError("fail"));
+
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) }, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(order.Status, Is.EqualTo(OrderStatus.Pending));
+    }
+
+    [Test]
+    public async Task UpdateStatusAsync_PendingToRefused_CancelsAuthorization()
+    {
+        var order = new Order { Id = 10, Status = OrderStatus.Pending, Restaurant = new Restaurant(), Items = [], Discounts = [] };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentService.CancelAuthorizationAsync(10, Arg.Any<CancellationToken>()).Returns(ServiceResult.Success());
+
+        await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Refused) }, CancellationToken.None);
+
+        await _paymentService.Received(1).CancelAuthorizationAsync(10, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateStatusAsync_CancellationAfterCapture_Refunds()
+    {
+        var order = new Order
+        {
+            Id = 10,
+            Status = OrderStatus.Preparing,
+            PaymentStatus = PaymentStatus.Completed,
+            TotalAmount = 20m,
+            Restaurant = new Restaurant(),
+            Items = [],
+            Discounts = []
+        };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentService
+            .RefundAsync(10, 20m, "order_cancelled", null, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<RefundDto>.Success(
+                new RefundDto(1, 20m, "EUR", "order_cancelled", DateTime.UtcNow)));
+
+        await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Cancelled) }, CancellationToken.None);
+
+        await _paymentService.Received(1).RefundAsync(10, 20m, "order_cancelled", null, Arg.Any<CancellationToken>());
+    }
 }

@@ -180,6 +180,22 @@ public sealed class OrderService(
             return new ServiceError(ErrorMessages.InvalidOrderStatus(validValues));
         }
 
+        if (order.Status == OrderStatus.Pending && newStatus == OrderStatus.Confirmed)
+        {
+            var capture = await _paymentService.CaptureAsync(order.Id, ct);
+            if (!capture.IsSuccess) return capture.Error!;
+        }
+        else if (order.Status == OrderStatus.Pending && newStatus == OrderStatus.Refused)
+        {
+            var cancel = await _paymentService.CancelAuthorizationAsync(order.Id, ct);
+            if (!cancel.IsSuccess) return cancel.Error!;
+        }
+        else if (IsLateCancellation(order.Status, newStatus) && order.PaymentStatus == PaymentStatus.Completed)
+        {
+            var refund = await _paymentService.RefundAsync(order.Id, order.TotalAmount, "order_cancelled", null, ct);
+            if (!refund.IsSuccess) return refund.Error!;
+        }
+
         order.Status = newStatus;
         var updated = await _orderRepository.UpdateAsync(order, ct);
 
@@ -425,6 +441,12 @@ public sealed class OrderService(
         order.LoyaltyPointsEarned = pointsEarned;
         await _orderRepository.UpdateAsync(order, ct);
     }
+
+    private static bool IsLateCancellation(OrderStatus from, OrderStatus to)
+        => to == OrderStatus.Cancelled && from is OrderStatus.Confirmed
+            or OrderStatus.Preparing
+            or OrderStatus.Ready
+            or OrderStatus.Delivering;
 
     private static decimal CalculatePromotionDiscount(
         Promotion promotion, decimal originalAmount, ICollection<CartItem> cartItems)
