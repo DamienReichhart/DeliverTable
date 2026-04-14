@@ -1,6 +1,7 @@
 using DeliverTableInfrastructure.Data;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableSharedLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace DeliverTableInfrastructure.Repositories;
@@ -99,5 +100,43 @@ public class LoyaltyRepository(DeliverTableContext dbContext) : ILoyaltyReposito
         _dbContext.LoyaltyPrograms.Remove(program);
         await _dbContext.SaveChangesAsync(ct);
         return true;
+    }
+
+    public async Task MarkPendingRedemptionsCommittedForOrderAsync(int orderId, CancellationToken ct = default)
+    {
+        var rows = await _dbContext.LoyaltyTransactions
+            .Where(lt => lt.OrderId == orderId && lt.Status == LoyaltyRedemptionStatus.Pending)
+            .ToListAsync(ct);
+
+        foreach (var row in rows)
+        {
+            row.Status = LoyaltyRedemptionStatus.Committed;
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task MarkPendingRedemptionsReversedForOrderAsync(int orderId, CancellationToken ct = default)
+    {
+        var rows = await _dbContext.LoyaltyTransactions
+            .Include(lt => lt.LoyaltyAccount)
+            .Where(lt => lt.OrderId == orderId && lt.Status == LoyaltyRedemptionStatus.Pending)
+            .ToListAsync(ct);
+
+        foreach (var row in rows)
+        {
+            row.Status = LoyaltyRedemptionStatus.Reversed;
+
+            if (row.Type == LoyaltyTransactionType.Redeem)
+            {
+                row.LoyaltyAccount.PointsBalance += row.Points;
+            }
+            else if (row.Type == LoyaltyTransactionType.Earn)
+            {
+                row.LoyaltyAccount.PointsBalance -= row.Points;
+            }
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
     }
 }

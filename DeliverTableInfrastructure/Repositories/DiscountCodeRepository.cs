@@ -3,6 +3,7 @@ using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Dtos.DiscountCode;
+using DeliverTableSharedLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace DeliverTableInfrastructure.Repositories;
@@ -96,5 +97,33 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
             .Where(r => r.DiscountCodeId == discountCodeId)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(ct);
+    }
+
+    public async Task MarkPendingRedemptionsCommittedForOrderAsync(int orderId, CancellationToken ct = default)
+    {
+        var rows = await _dbContext.DiscountCodeRedemptions
+            .Where(r => r.OrderId == orderId && r.Status == DiscountRedemptionStatus.Pending)
+            .ToListAsync(ct);
+
+        foreach (var row in rows)
+        {
+            row.Status = DiscountRedemptionStatus.Committed;
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task MarkPendingRedemptionsReversedForOrderAsync(int orderId, CancellationToken ct = default)
+    {
+        var rows = await _dbContext.DiscountCodeRedemptions
+            .Where(r => r.OrderId == orderId && r.Status == DiscountRedemptionStatus.Pending)
+            .ToListAsync(ct);
+
+        foreach (var row in rows)
+        {
+            row.Status = DiscountRedemptionStatus.Reversed;
+        }
+
+        await _dbContext.SaveChangesAsync(ct);
     }
 }
