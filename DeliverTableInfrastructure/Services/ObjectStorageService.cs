@@ -1,12 +1,13 @@
 using System.Net;
 using Amazon.S3;
 using Amazon.S3.Model;
-using DeliverTableServer.Configuration;
-using DeliverTableServer.Services.Interfaces;
+using DeliverTableInfrastructure.Configuration;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace DeliverTableServer.Services;
+namespace DeliverTableInfrastructure.Services;
 
 /// <inheritdoc />
 public sealed class ObjectStorageService(
@@ -46,6 +47,7 @@ public sealed class ObjectStorageService(
             return null;
         }
     }
+
     public async Task<string?> UploadAsync(IFormFile file, string folder = "dish", int? identifier = null, CancellationToken cancellationToken = default)
     {
         if (identifier == null)

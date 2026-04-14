@@ -1,4 +1,6 @@
-namespace DeliverTableServer.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
+
+namespace DeliverTableInfrastructure.Services.Interfaces;
 
 /// <summary>
 ///     Abstraction over S3-compatible object storage for retrieving stored objects.

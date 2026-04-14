@@ -1,3 +1,5 @@
+using DeliverTableInfrastructure.Configuration;
+
 namespace DeliverTableServer.Configuration;
 
 /// <summary>
