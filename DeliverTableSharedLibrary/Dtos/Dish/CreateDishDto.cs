@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableSharedLibrary.Dtos.Dish;
 
@@ -15,4 +16,5 @@ public class CreateDishDto
     public bool IsAllergenHazard { get; set; } = false;
     public bool IsDishOfTheDay { get; set; } = false;
     public bool IsActive { get; set; } = true;
+    public VatRate VatRate { get; set; } = VatRate.Intermediate10;
 }
