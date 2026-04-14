@@ -95,19 +95,21 @@ public class InvoiceServiceTests
 
         int nextId = 100;
         _invoiceRepo
-            .CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+            .CreateBatchAsync(Arg.Any<IEnumerable<Invoice>>(), Arg.Any<CancellationToken>())
             .Returns(ci =>
             {
-                var inv = ci.Arg<Invoice>();
-                inv.Id = nextId++;
-                return inv;
+                foreach (var inv in ci.Arg<IEnumerable<Invoice>>())
+                    inv.Id = nextId++;
+                return Task.CompletedTask;
             });
 
         var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
-        await _invoiceRepo.Received(2).CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>());
+        await _invoiceRepo.Received(1).CreateBatchAsync(
+            Arg.Is<IEnumerable<Invoice>>(invoices => invoices.Count() == 2),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -124,7 +126,8 @@ public class InvoiceServiceTests
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(0));
-        await _invoiceRepo.DidNotReceive().CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>());
+        await _invoiceRepo.DidNotReceive().CreateBatchAsync(
+            Arg.Any<IEnumerable<Invoice>>(), Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -170,14 +173,16 @@ public class InvoiceServiceTests
 
         Invoice? customerInvoice = null;
         _invoiceRepo
-            .CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+            .CreateBatchAsync(Arg.Any<IEnumerable<Invoice>>(), Arg.Any<CancellationToken>())
             .Returns(ci =>
             {
-                var inv = ci.Arg<Invoice>();
-                if (inv.Kind == InvoiceKind.OrderInvoiceToCustomer)
-                    customerInvoice = inv;
-                inv.Id = 1;
-                return inv;
+                foreach (var inv in ci.Arg<IEnumerable<Invoice>>())
+                {
+                    if (inv.Kind == InvoiceKind.OrderInvoiceToCustomer)
+                        customerInvoice = inv;
+                    inv.Id = 1;
+                }
+                return Task.CompletedTask;
             });
 
         await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);

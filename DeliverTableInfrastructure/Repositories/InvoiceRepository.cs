@@ -17,6 +17,12 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
         return invoice;
     }
 
+    public async Task CreateBatchAsync(IEnumerable<Invoice> invoices, CancellationToken ct = default)
+    {
+        _dbContext.Invoices.AddRange(invoices);
+        await _dbContext.SaveChangesAsync(ct);
+    }
+
     public async Task UpdateAsync(Invoice invoice, CancellationToken ct = default)
     {
         invoice.UpdatedAt = DateTime.UtcNow;

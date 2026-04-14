@@ -6,6 +6,7 @@ namespace DeliverTableInfrastructure.Repositories.Interfaces;
 public interface IInvoiceRepository
 {
     Task<Invoice> CreateAsync(Invoice invoice, CancellationToken ct = default);
+    Task CreateBatchAsync(IEnumerable<Invoice> invoices, CancellationToken ct = default);
     Task UpdateAsync(Invoice invoice, CancellationToken ct = default);
     Task<Invoice?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<Invoice?> GetByIdWithLinesAsync(int id, CancellationToken ct = default);
