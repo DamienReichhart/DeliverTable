@@ -1,11 +1,11 @@
-using DeliverTableInfrastructure.Models;
+using DeliverTableServer.Models;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace DeliverTableInfrastructure.Data;
+namespace DeliverTableServer.Data;
 
 public partial class DeliverTableContext(DbContextOptions<DeliverTableContext> options) : IdentityDbContext<User, IdentityRole<int>, int>(options)
 {
@@ -43,11 +43,11 @@ public partial class DeliverTableContext(DbContextOptions<DeliverTableContext> o
 
         builder.ApplyConfigurationsFromAssembly(typeof(DeliverTableContext).Assembly);
     }
-    
+
     public override Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
         var entries = ChangeTracker.Entries()
-            .Where(e => e.Entity is ITrackable && 
+            .Where(e => e.Entity is ITrackable &&
                         (e.State == EntityState.Added || e.State == EntityState.Modified));
 
         foreach (var entry in entries)

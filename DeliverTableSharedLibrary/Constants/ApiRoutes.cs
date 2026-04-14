@@ -7,8 +7,10 @@ namespace DeliverTableSharedLibrary.Constants;
 /// </summary>
 public static class ApiRoutes
 {
+    public const string VersionnedBase = "api/v1";
+
     /// <summary>Health endpoint path (relative to API base). Must match HealthController route.</summary>
-    public const string Health = "api/v1/health";
+    public const string Health = VersionnedBase + "/health";
 
     /// <summary>Storage proxy route patterns that serve objects directly from S3-compatible storage.</summary>
     public const string StorageImages = "images/{**path}";
@@ -21,7 +23,7 @@ public static class ApiRoutes
     public static class Auth
     {
         /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
-        public const string Base = "api/v1/auth";
+        public const string Base = VersionnedBase+ "/auth";
 
         public const string LoginRoute = "login";
         public const string RegisterRoute = "register";
@@ -44,7 +46,7 @@ public static class ApiRoutes
     public static class Restaurant
     {
         /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
-        public const string Base = "api/v1/restaurant";
+        public const string Base = VersionnedBase+ "/restaurant";
 
         public const string ByIdRoute = "{id:int}";
         public const string UserByIdRoute = "user/{id:int}";
@@ -64,7 +66,7 @@ public static class ApiRoutes
         /// <summary>
         ///     Controller base route. Use in <c>[Route(...)]</c>.
         /// </summary>
-        public const string Base = "api/v1/dish";
+        public const string Base = VersionnedBase+ "/dish";
 
         public const string ByIdRoute = "{id:int}";
         public const string DishesByRestaurantIdRoute = "restaurant/{id:int}";
@@ -81,7 +83,7 @@ public static class ApiRoutes
     public static class Admin
     {
         /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
-        public const string Base = "api/v1/admin";
+        public const string Base = VersionnedBase+ "/admin";
 
         public const string UsersRoute = "users";
         public const string UserByIdRoute = "users/{id:int}";
@@ -183,7 +185,7 @@ public static class ApiRoutes
     public static class Cart
     {
         /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
-        public const string Base = "api/v1/cart";
+        public const string Base = VersionnedBase+ "/cart";
 
         public const string ByRestaurantRoute = "restaurant/{id:int}";
         public const string ItemsRoute = "items";
@@ -197,7 +199,7 @@ public static class ApiRoutes
     public static class Order
     {
         /// <summary>Controller base route. Use in <c>[Route(...)]</c>.</summary>
-        public const string Base = "api/v1/order";
+        public const string Base = VersionnedBase+ "/order";
 
         public const string ByIdRoute = "{id:int}";
         public const string StatusRoute = "{id:int}/status";
@@ -208,16 +210,16 @@ public static class ApiRoutes
     /// <summary>Restaurant account and transaction routes.</summary>
     public static class RestaurantAccount
     {
-        public const string BaseRoute = "api/v1/restaurant/{id:int}/account";
+        public const string BaseRoute = VersionnedBase+ "/restaurant/{id:int}/account";
         public const string WithdrawRoute = "withdraw";
     }
 
     /// <summary>Promotion routes (RestaurantOwner).</summary>
     public static class Promotion
     {
-        public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/promotions";
-        public const string ActiveRoute = "api/v1/restaurant/{id:int}/promotions/active";
-        public const string Base = "api/v1/promotion";
+        public const string RestaurantBaseRoute = VersionnedBase+ "/restaurant/{id:int}/promotions";
+        public const string ActiveRoute = VersionnedBase+ "/restaurant/{id:int}/promotions/active";
+        public const string Base = VersionnedBase+ "/promotion";
         public const string ByIdRoute = "{id:int}";
         public const string ById = Base + "/" + ByIdRoute;
     }
@@ -225,9 +227,9 @@ public static class ApiRoutes
     /// <summary>Discount code routes (RestaurantOwner).</summary>
     public static class DiscountCode
     {
-        public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/discount-codes";
-        public const string ValidateRoute = "api/v1/restaurant/{id:int}/discount-codes/validate";
-        public const string Base = "api/v1/discount-code";
+        public const string RestaurantBaseRoute = VersionnedBase+ "/restaurant/{id:int}/discount-codes";
+        public const string ValidateRoute = VersionnedBase+ "/restaurant/{id:int}/discount-codes/validate";
+        public const string Base = VersionnedBase+ "/discount-code";
         public const string ByIdRoute = "{id:int}";
         public const string ById = Base + "/" + ByIdRoute;
     }
@@ -235,7 +237,7 @@ public static class ApiRoutes
     /// <summary>Loyalty program routes.</summary>
     public static class Loyalty
     {
-        public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/loyalty";
+        public const string RestaurantBaseRoute = VersionnedBase+ "/restaurant/{id:int}/loyalty";
         public const string MyAccountRoute = "my-account";
     }
 
@@ -271,5 +273,5 @@ public static class ApiRoutes
     }
 
     /// <summary>Test controller route (development only).</summary>
-    public const string Test = "api/v1/test";
+    public const string Test = VersionnedBase+ "/test";
 }
