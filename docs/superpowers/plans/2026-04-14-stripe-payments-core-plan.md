@@ -85,10 +85,11 @@ New and modified files this plan touches, grouped by responsibility.
 - Create: `DeliverTableScheduler/Jobs/PeriodicSweepJob.cs` (shared base)
 - Create: `DeliverTableScheduler/Jobs/OrderAbandonmentSweep.cs`
 - Create: `DeliverTableScheduler/Jobs/OrderRestaurantTimeoutSweep.cs`
-- Create: `DeliverTableScheduler/Dockerfile`
+- Create: `docker/images/scheduler.dev.dockerfile` (mirrors `worker.dev.dockerfile`)
+- Create: `docker/images/scheduler.prod.dockerfile` (mirrors `worker.prod.dockerfile`)
 - Modify: `DeliverTable.sln`
-- Modify: `docker-dev.yaml`
-- Modify: `docker-prod.yaml`
+- Modify: `docker-dev.yaml` (new `scheduler` service on `dt-backend-net` at 192.168.60.90)
+- Modify: `docker-prod.yaml` (new `scheduler` service on `dt-backend-net` at 172.32.0.70)
 
 ### Scheduler tests (new project)
 - Create: `DeliverTableSchedulerTests/DeliverTableSchedulerTests.csproj`
@@ -2754,10 +2755,15 @@ git commit -m "feat(server): register Stripe services in DI"
 - Create: `DeliverTableScheduler/DeliverTableScheduler.csproj`
 - Create: `DeliverTableScheduler/Program.cs`
 - Create: `DeliverTableScheduler/Configuration/SchedulerEnvironment.cs`
-- Create: `DeliverTableScheduler/Dockerfile`
+- Create: `docker/images/scheduler.dev.dockerfile`
+- Create: `docker/images/scheduler.prod.dockerfile`
 - Modify: `DeliverTable.sln`
 
+Both Dockerfiles live at `docker/images/{name}.{dev|prod}.dockerfile` to follow the repo's convention (see `docker/images/worker.dev.dockerfile` and `worker.prod.dockerfile` as the templates we mirror).
+
 - [ ] **Step 1: Create csproj**
+
+Inspect `DeliverTableWorker/DeliverTableWorker.csproj` and `DeliverTableInfrastructure/DeliverTableInfrastructure.csproj` first to copy the **exact** versions used elsewhere. Then create `DeliverTableScheduler/DeliverTableScheduler.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk.Worker">
@@ -2765,26 +2771,31 @@ git commit -m "feat(server): register Stripe services in DI"
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="DotNetEnv" Version="3.1.1" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
+        <!-- Stripe.net is transitive via Infrastructure once Task 6 has added it there;
+             do NOT add it here unless the build complains it cannot resolve Stripe types. -->
     </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\DeliverTableInfrastructure\DeliverTableInfrastructure.csproj" />
         <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="DeliverTableSchedulerTests" />
+    </ItemGroup>
 </Project>
 ```
 
-Match the exact versions used elsewhere in the repo; check `DeliverTableWorker.csproj` and `DeliverTableInfrastructure.csproj` for reference.
+`Microsoft.EntityFrameworkCore.Design` and `Npgsql.EntityFrameworkCore.PostgreSQL` come transitively from `DeliverTableInfrastructure`.
 
 - [ ] **Step 2: Create `SchedulerEnvironment.cs`**
 
 ```csharp
-using System;
-
 namespace DeliverTableScheduler.Configuration;
 
 public sealed class SchedulerEnvironment
@@ -2842,26 +2853,104 @@ builder.Services.AddScoped<IPaymentLifecycleService, PaymentLifecycleService>();
 await builder.Build().RunAsync();
 ```
 
-- [ ] **Step 4: Create `Dockerfile`**
+- [ ] **Step 4: Create `docker/images/scheduler.dev.dockerfile`**
 
-Mirror `DeliverTableWorker/Dockerfile`. Path to determine by inspecting the worker one:
+Mirror `docker/images/worker.dev.dockerfile` exactly. Verify the worker file first, then write:
 
 ```dockerfile
 FROM mcr.microsoft.com/dotnet/sdk:10.0
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /src
-ENTRYPOINT ["dotnet", "watch", "run", "--project", "DeliverTableScheduler"]
+
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "DeliverTableScheduler", "--non-interactive", "--no-launch-profile"]
 ```
 
-If the worker Dockerfile is elsewhere (`docker/images/worker.dev.dockerfile`), place the scheduler's alongside: `docker/images/scheduler.dev.dockerfile`. Match the repo convention.
+- [ ] **Step 5: Create `docker/images/scheduler.prod.dockerfile`**
 
-- [ ] **Step 5: Add project to solution**
+Mirror `docker/images/worker.prod.dockerfile` exactly, swapping `DeliverTableWorker` → `DeliverTableScheduler` in the COPY/restore/publish/ENTRYPOINT lines:
+
+```dockerfile
+# ── Stage 1: Build Go tools ───────────────────────────────────
+# depcopier scans ELF binaries for shared-lib deps and assembles a rootfs.
+# healthcheck is a static HTTP probe replacing curl in scratch containers.
+FROM golang:1.24-alpine AS tools
+
+WORKDIR /src
+COPY docker/images/tools/ ./
+
+RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/depcopier   ./depcopier   && \
+    CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/healthcheck ./healthcheck
+
+# ── Stage 2: Build the .NET application ───────────────────────
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
+
+WORKDIR /src
+
+COPY DeliverTableScheduler/DeliverTableScheduler.csproj               DeliverTableScheduler/
+COPY DeliverTableInfrastructure/DeliverTableInfrastructure.csproj     DeliverTableInfrastructure/
+COPY DeliverTableSharedLibrary/DeliverTableSharedLibrary.csproj       DeliverTableSharedLibrary/
+
+RUN dotnet restore DeliverTableScheduler/DeliverTableScheduler.csproj \
+    -r linux-musl-x64
+
+COPY DeliverTableScheduler/       DeliverTableScheduler/
+COPY DeliverTableInfrastructure/  DeliverTableInfrastructure/
+COPY DeliverTableSharedLibrary/   DeliverTableSharedLibrary/
+
+RUN dotnet publish DeliverTableScheduler/DeliverTableScheduler.csproj \
+    -c Release \
+    -r linux-musl-x64 \
+    --self-contained \
+    -o /app/publish \
+    --no-restore
+
+# ── Stage 3: Assemble the minimal rootfs ─────────────────────
+FROM alpine:3.21 AS rootfs
+
+RUN apk add --no-cache \
+    ca-certificates \
+    libgcc \
+    libstdc++ \
+    libssl3 \
+    libcrypto3 \
+    zlib
+
+COPY --from=tools /out/depcopier   /tools/depcopier
+COPY --from=tools /out/healthcheck /staging/healthcheck
+COPY --from=build /app/publish     /staging/app
+
+RUN /tools/depcopier \
+    --scan  /staging/app \
+    --copy  /staging/app:/app \
+    --copy  /staging/healthcheck:/healthcheck \
+    --certs \
+    --user  1654:1654:appuser \
+    --mkdir /tmp \
+    --out   /rootfs
+
+# ── Stage 4: Scratch ─────────────────────────────────────────
+FROM scratch
+
+COPY --from=rootfs /rootfs /
+
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
+
+USER 1654:1654
+
+ENTRYPOINT ["/app/DeliverTableScheduler"]
+```
+
+- [ ] **Step 6: Add project to solution**
 
 ```bash
 docker compose -f docker-dev.yaml exec backend dotnet sln /src/DeliverTable.sln add /src/DeliverTableScheduler/DeliverTableScheduler.csproj
 ```
 
-- [ ] **Step 6: Build**
+- [ ] **Step 7: Build**
 
 ```bash
 docker compose -f docker-dev.yaml exec backend dotnet build /src/DeliverTable.sln
@@ -2869,10 +2958,13 @@ docker compose -f docker-dev.yaml exec backend dotnet build /src/DeliverTable.sl
 
 Expected: scheduler compiles (entry point without any hosted services — runs empty but valid).
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add DeliverTableScheduler/ DeliverTable.sln docker/images/scheduler.dev.dockerfile
+git add DeliverTableScheduler/ \
+        DeliverTable.sln \
+        docker/images/scheduler.dev.dockerfile \
+        docker/images/scheduler.prod.dockerfile
 git commit -m "feat(scheduler): add DeliverTableScheduler project scaffold"
 ```
 
@@ -3209,43 +3301,89 @@ git commit -m "feat(scheduler): add OrderRestaurantTimeoutSweep with tests"
 - Modify: `docker-dev.yaml`
 - Modify: `docker-prod.yaml`
 
-- [ ] **Step 1: Add service to `docker-dev.yaml`**
+The scheduler service mirrors the worker service definition exactly, with these differences:
+- Different `container_name`, dockerfile path, and IP address.
+- Different env vars (only needs DB + Stripe; no SMTP/RabbitMQ).
+- Doesn't depend on RabbitMQ.
 
-Match the worker service definition. Example:
+The Dockerfiles were created in Task 22 — this task only wires the services into the compose files.
+
+- [ ] **Step 1: Add `scheduler` service to `docker-dev.yaml`**
+
+Open `docker-dev.yaml` and insert the new service block immediately after the existing `worker:` service block (and before the `networks:` section). The new IP `192.168.60.90` is the next free address on `dt-backend-net` (dev range 192.168.60.x; worker is .80).
 
 ```yaml
-scheduler:
-  build:
-    context: .
-    dockerfile: docker/images/scheduler.dev.dockerfile
-  volumes:
-    - .:/src
-  env_file: .env
-  networks:
-    - dt-private-net
-  depends_on:
-    - db
+  # ── Background Scheduler ─────────────────────────────────────
+  scheduler:
+    container_name: dt-scheduler-dev
+    build:
+      context: .
+      dockerfile: docker/images/scheduler.dev.dockerfile
+    volumes:
+      - .:/src
+      - nuget-cache:/root/.nuget/packages
+    environment:
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      CONNECTION_STRING_DATABASE: ${CONNECTION_STRING_DATABASE}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      dt-backend-net:
+        ipv4_address: 192.168.60.90
+    restart: unless-stopped
 ```
 
-Adjust the block to match surrounding style (volumes, healthchecks, etc. as used by worker).
+- [ ] **Step 2: Add `scheduler` service to `docker-prod.yaml`**
 
-- [ ] **Step 2: Add the same to `docker-prod.yaml`**
+Insert the new service block immediately after the existing `worker:` service block (and before the `networks:` section). New IP `172.32.0.70` is the next free address on `dt-backend-net` (prod range 172.32.0.x; worker is .60).
 
-Use the prod Dockerfile variant (e.g., `docker/images/scheduler.prod.dockerfile`). Create this file mirroring the worker's prod Dockerfile.
+```yaml
+  scheduler:
+    container_name: dt-scheduler-prod
+    build:
+      context: .
+      dockerfile: docker/images/scheduler.prod.dockerfile
+    environment:
+      CONNECTION_STRING_DATABASE: ${CONNECTION_STRING_DATABASE}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      dt-backend-net:
+        ipv4_address: 172.32.0.70
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    restart: always
+    read_only: true
+    tmpfs:
+      - /tmp:size=50m
+```
 
-- [ ] **Step 3: Rebuild stack and verify scheduler starts**
+- [ ] **Step 3: Rebuild dev stack and verify scheduler starts**
 
 ```bash
-make dev
+docker compose -f docker-dev.yaml up -d --build scheduler
 docker compose -f docker-dev.yaml logs scheduler --tail=50
 ```
 
-Expected: scheduler container starts and logs "Application started" or similar.
+Expected: scheduler container builds, starts, and logs `Application started` (or equivalent .NET host startup messages) without crash. If `STRIPE_SECRET_KEY` is missing in `.env`, the container will exit with the env var validation error — set it (test mode key from Stripe Dashboard) and retry.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Optionally validate prod compose syntax**
 
 ```bash
-git add docker-dev.yaml docker-prod.yaml docker/images/
+docker compose -f docker-prod.yaml config > /dev/null
+```
+
+Expected: no errors. Does not actually start anything.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add docker-dev.yaml docker-prod.yaml
 git commit -m "feat(docker): add scheduler service to dev and prod compose files"
 ```
 
