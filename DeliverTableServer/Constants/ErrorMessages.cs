@@ -111,4 +111,17 @@ public static class ErrorMessages
 
     // Restaurant Table
     public const string RestaurantTableNotFound = "Table de restaurant introuvable";
+
+    // Stripe / Payments
+    public const string PaymentIntentCreationFailed  = "Impossible de créer l'intention de paiement.";
+    public const string PaymentCaptureFailed         = "Le prélèvement du paiement a échoué.";
+    public const string PaymentCancelFailed          = "L'annulation du paiement a échoué.";
+    public const string PaymentRefundFailed          = "Le remboursement a échoué.";
+    public const string PaymentAlreadyRefunded       = "Ce paiement a déjà été intégralement remboursé.";
+    public const string PaymentRefundExceedsAmount   = "Le montant demandé dépasse le solde remboursable.";
+    public const string PaymentNotFound              = "Paiement introuvable.";
+    public const string OrderPaymentRequired         = "Cette commande est en attente de paiement.";
+    public const string OrderPaymentAlreadyProcessed = "Le paiement de cette commande est déjà traité.";
+    public const string StripeCustomerCreationFailed = "Impossible de créer le client Stripe.";
+    public const string WebhookSignatureInvalid      = "Signature Stripe invalide.";
 }

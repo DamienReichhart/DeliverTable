@@ -15,6 +15,8 @@ builder.Services.AddSingleton(env);
 builder.Services.AddSingleton(env.Jwt);
 builder.Services.AddSingleton(env.ObjectStorage);
 
+Stripe.StripeConfiguration.ApiKey = env.StripeSecretKey;
+
 // RabbitMQ
 var rabbitMqConfig = new RabbitMqConfig
 {
