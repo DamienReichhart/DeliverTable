@@ -17,7 +17,10 @@ public static class AppEnvironmentTestHelper
         ["PLATFORM_COMMISSION_RATE"] = "0.10",
         ["RABBITMQ_HOST"] = "localhost",
         ["RABBITMQ_USER"] = "guest",
-        ["RABBITMQ_PASSWORD"] = "guest"
+        ["RABBITMQ_PASSWORD"] = "guest",
+        ["STRIPE_PUBLISHABLE_KEY"] = "pk_test_stripe",
+        ["STRIPE_SECRET_KEY"] = "sk_test_stripe",
+        ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_stripe"
     };
 
     public static AppEnvironment SetupEnvironment()
