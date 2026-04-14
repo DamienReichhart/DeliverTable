@@ -1518,7 +1518,50 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Refunds");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.ReclamationItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Reclamation", b =>
+                {
+                    b.Property<int>("ReclamationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ReclamationId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReclamationId"));
+
+                    b.Property<DateTime>("Created")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("RefundAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Updated")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("ReclamationId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("Reclamation");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.ReclamationItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1544,7 +1587,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("ReclamationItems");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Restaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Restaurant", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -2614,15 +2657,26 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Payment");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.ReclamationItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Reclamation", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.OrderItem", "OrderItem")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
+                        .WithMany("Reclamations")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.ReclamationItem", b =>
+                {
+                    b.HasOne("DeliverTableInfrastructure.Models.OrderItem", "OrderItem")
                         .WithMany()
                         .HasForeignKey("OrderItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Reclamation", "Reclamation")
+                    b.HasOne("DeliverTableInfrastructure.Models.Reclamation", "Reclamation")
                         .WithMany("Items")
                         .HasForeignKey("ReclamationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2633,7 +2687,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Reclamation");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Restaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Restaurant", b =>
                 {
                     b.HasOne("DeliverTableInfrastructure.Models.User", "Owner")
                         .WithMany("Restaurants")
@@ -2826,6 +2880,11 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("PromotionDishes");
                 });
 
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Reclamation", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("DeliverTableInfrastructure.Models.Restaurant", b =>
                 {
                     b.Navigation("Dishes");
@@ -2840,11 +2899,6 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("RestaurantOwner");
 
                     b.Navigation("Restaurants");
-                });
-
-            modelBuilder.Entity("Reclamation", b =>
-                {
-                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

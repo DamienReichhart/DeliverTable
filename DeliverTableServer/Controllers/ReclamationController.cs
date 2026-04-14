@@ -1,5 +1,4 @@
 ﻿using DeliverTableServer.Extensions;
-using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Constants.Enums;
@@ -12,7 +11,7 @@ namespace DeliverTableServer.Controllers;
 
 // [Authorize]
 [ApiController]
-[Route(ApiRoutes.Order.Base)]
+[Route(ApiRoutes.Reclamation.Base)]
 public class ReclamationController(
     IReclamationService reclamationService
     ) : ControllerBase

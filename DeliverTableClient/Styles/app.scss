@@ -142,7 +142,7 @@ textarea {
   }
 }
 
-@for $i from 1 through 20 {
+@for $i from 0 through 20 {
   .m-#{$i} {
     margin: #{$i}rem;
   }

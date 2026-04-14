@@ -1,14 +1,14 @@
 ﻿using DeliverTableServer.Services.Interfaces;
-using DeliverTableServer.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Reclamation;
 using DeliverTableServer.Configuration;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Enums;
 using System.Text.RegularExpressions;
+using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Mappers;
-using DeliverTableServer.Models;
+using DeliverTableInfrastructure.Models;
 
 namespace DeliverTableServer.Services;
 
@@ -26,7 +26,8 @@ public class ReclamationService(
 
     public async Task<ServiceResult<List<ReclamationDto>>> GetAllReclamations(ReclamationQuery query)
     {
-        return await reclamationRepository.GetAllReclamations(query);
+        List<Reclamation> reclamations = await reclamationRepository.GetAllReclamations(query);
+        return reclamations.Select(r => r.ToDto()).ToList();
     }
 
     public async Task<ServiceResult<List<ReclamationDto>>> GetReclamationsByUser(int userId)
