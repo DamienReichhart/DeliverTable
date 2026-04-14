@@ -279,13 +279,18 @@ public class InvoiceService(
 
         if (isCustomerKind)
         {
-            recipientEmail = recipient?.Address;
+            // Prefer the dedicated Email field; fall back to Address for pre-existing snapshots.
+            recipientEmail = !string.IsNullOrWhiteSpace(recipient?.Email)
+                ? recipient.Email
+                : recipient?.Address;
             recipientName = recipient?.Name;
             jobType = EmailJobType.InvoiceReadyCustomer;
         }
         else
         {
-            recipientEmail = recipient?.Address;
+            recipientEmail = !string.IsNullOrWhiteSpace(recipient?.Email)
+                ? recipient.Email
+                : recipient?.Address;
             recipientName = recipient?.Name;
             jobType = EmailJobType.InvoiceReadyRestaurant;
         }
@@ -452,7 +457,8 @@ public class InvoiceService(
             LegalForm: string.Empty,
             Siret: string.Empty,
             VatNumber: string.Empty,
-            Address: customer.Email ?? string.Empty);
+            Address: string.Empty,
+            Email: customer.Email ?? string.Empty);
 
         var invoice = new Invoice
         {

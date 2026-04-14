@@ -14,10 +14,10 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
     {
         var issuer =
             JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.IssuerLegalSnapshotJson)
-            ?? new InvoiceLegalSnapshotDto("", "", "", "", "");
+            ?? new InvoiceLegalSnapshotDto("", "", "", "", "", "");
         var recipient =
             JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson)
-            ?? new InvoiceLegalSnapshotDto("", "", "", "", "");
+            ?? new InvoiceLegalSnapshotDto("", "", "", "", "", "");
 
         var isCreditNote =
             invoice.Kind == InvoiceKind.CreditNoteToCustomer
@@ -70,6 +70,8 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
                             col.Item().Text($"SIRET {recipient.Siret}");
                         if (!string.IsNullOrEmpty(recipient.Address))
                             col.Item().Text(recipient.Address);
+                        if (!string.IsNullOrEmpty(recipient.Email))
+                            col.Item().Text(recipient.Email);
 
                         col.Item()
                             .PaddingTop(15)

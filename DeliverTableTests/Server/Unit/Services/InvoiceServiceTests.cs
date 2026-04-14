@@ -675,7 +675,7 @@ public class InvoiceServiceTests
     public async Task AdminListAsync_FiltersByYear_ReturnsMatchingRows()
     {
         var issuerSnapshot = new InvoiceLegalSnapshotDto("Restaurant SAS", "SAS", "12345", "", "1 rue");
-        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "jean@example.fr");
+        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "jean@example.fr");
         var invoices = new List<Invoice>
         {
             new()
@@ -797,7 +797,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task AdminResendEmailAsync_Generated_RepublishesJob()
     {
-        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "jean@example.fr");
+        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "jean@example.fr");
         var invoice = new Invoice
         {
             Id = 1,
