@@ -2,6 +2,7 @@ using System.Text.Json;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Invoice;
 using DeliverTableSharedLibrary.Enums;
+using DeliverTableWorker.Constants;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -133,7 +134,7 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
                         {
                             col.Item()
                                 .PaddingTop(10)
-                                .Text("TVA non applicable, art. 293 B du CGI")
+                                .Text(PdfStrings.VatExemptClause)
                                 .Italic();
                         }
 
@@ -150,7 +151,7 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
 
                 page.Footer()
                     .AlignCenter()
-                    .Text("Paiement prélevé par Stripe.")
+                    .Text(PdfStrings.InvoiceFooterStripe)
                     .FontSize(8);
             });
         });
