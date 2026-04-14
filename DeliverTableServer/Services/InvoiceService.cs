@@ -3,10 +3,12 @@ using DeliverTableInfrastructure.Invoicing;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Invoice;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Extensions;
@@ -18,6 +20,8 @@ public class InvoiceService(
     IOrderRepository orderRepository,
     IInvoiceNumberingService numbering,
     IPaymentRepository paymentRepository,
+    IRestaurantRepository restaurantRepository,
+    IObjectStorageService objectStorage,
     AppEnvironment env) : IInvoiceService
 {
     public async Task<ServiceResult<List<InvoiceJobMessage>>> CreatePendingInvoicesForCapturedOrderAsync(
@@ -108,6 +112,99 @@ public class InvoiceService(
 
         return ServiceResult<List<InvoiceJobMessage>>.Success(messages);
     }
+
+    public async Task<ServiceResult<PaginatedResult<InvoiceListItemDto>>> ListForMeAsync(
+        int userId,
+        int page,
+        int pageSize,
+        CancellationToken ct)
+    {
+        var (items, total) = await invoiceRepository.ListForRecipientUserAsync(userId, page, pageSize, ct);
+        return ServiceResult<PaginatedResult<InvoiceListItemDto>>.Success(new PaginatedResult<InvoiceListItemDto>
+        {
+            Items = items.Select(MapToListItemDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize,
+        });
+    }
+
+    public async Task<ServiceResult<PaginatedResult<InvoiceListItemDto>>> ListForRestaurantAsync(
+        int restaurantId,
+        int userId,
+        bool isAdmin,
+        int page,
+        int pageSize,
+        CancellationToken ct)
+    {
+        if (!isAdmin)
+        {
+            var restaurant = await restaurantRepository.GetByIdAsync(restaurantId, ct);
+            if (restaurant is null || restaurant.OwnerId != userId)
+                return new ServiceError(ErrorMessages.InvoiceAccessDenied, 403);
+        }
+
+        var (items, total) = await invoiceRepository.ListForRecipientRestaurantAsync(restaurantId, page, pageSize, ct);
+        return ServiceResult<PaginatedResult<InvoiceListItemDto>>.Success(new PaginatedResult<InvoiceListItemDto>
+        {
+            Items = items.Select(MapToListItemDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize,
+        });
+    }
+
+    public async Task<ServiceResult<InvoicePdfStreamResult>> GetPdfStreamAsync(
+        int invoiceId,
+        int userId,
+        bool isAdmin,
+        bool isRestaurantOwner,
+        CancellationToken ct)
+    {
+        var invoice = await invoiceRepository.GetByIdAsync(invoiceId, ct);
+        if (invoice is null)
+            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+
+        if (invoice.Status != InvoiceStatus.Generated || string.IsNullOrEmpty(invoice.StoragePath))
+            return new ServiceError(ErrorMessages.InvoiceNotGeneratedYet, 409);
+
+        if (!isAdmin)
+        {
+            bool authorized = false;
+
+            if (invoice.RecipientUserId.HasValue && invoice.RecipientUserId == userId)
+                authorized = true;
+
+            if (!authorized && isRestaurantOwner && invoice.RecipientRestaurantId.HasValue)
+            {
+                var restaurant = await restaurantRepository.GetByIdAsync(invoice.RecipientRestaurantId.Value, ct);
+                if (restaurant is not null && restaurant.OwnerId == userId)
+                    authorized = true;
+            }
+
+            if (!authorized)
+                return new ServiceError(ErrorMessages.InvoiceAccessDenied, 403);
+        }
+
+        var storageResult = await objectStorage.GetObjectAsync(invoice.StoragePath, ct);
+        if (storageResult is null)
+            return new ServiceError(ErrorMessages.InvoiceNotGeneratedYet, 409);
+
+        var fileName = $"{invoice.Number}.pdf";
+        return ServiceResult<InvoicePdfStreamResult>.Success(
+            new InvoicePdfStreamResult(storageResult.Content, fileName, storageResult.ContentType));
+    }
+
+    private static InvoiceListItemDto MapToListItemDto(Invoice invoice) =>
+        new(
+            invoice.Id,
+            invoice.Number,
+            invoice.Kind,
+            invoice.OrderId,
+            invoice.IssuedAt,
+            invoice.TotalTtc,
+            invoice.Currency,
+            invoice.Status);
 
     private async Task<Invoice> BuildCreditNoteAsync(
         Invoice original,

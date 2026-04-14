@@ -112,6 +112,11 @@ public static class ErrorMessages
     // Restaurant Table
     public const string RestaurantTableNotFound = "Table de restaurant introuvable";
 
+    // Invoices
+    public const string InvoiceNotFound = "Facture introuvable";
+    public const string InvoiceNotGeneratedYet = "La facture est en cours de génération, réessayez dans quelques instants";
+    public const string InvoiceAccessDenied = "Vous n'êtes pas autorisé à consulter cette facture";
+
     // Stripe / Payments
     public const string OrderAccessDenied = "Vous n'êtes pas autorisé à modifier cette commande";
     public const string PaymentIntentCreationFailed = "Impossible de créer l'intention de paiement";
