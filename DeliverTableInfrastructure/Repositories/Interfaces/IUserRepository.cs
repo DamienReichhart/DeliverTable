@@ -23,5 +23,6 @@ public interface IUserRepository
     Task<string?> GetPrimaryRoleAsync(User user);
     Task<bool> CheckPasswordAsync(User user, string password);
     Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(User user, string currentPassword, string newPassword);
+    Task UpdateAsync(User user, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }
