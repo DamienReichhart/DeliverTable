@@ -260,7 +260,7 @@ public class InvoiceServiceTests
         _paymentRepo.GetRefundByIdAsync(7, Arg.Any<CancellationToken>()).Returns(refund);
         _paymentRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(payment);
         _invoiceRepo
-            .ListByOrderIdAsync(42, Arg.Any<CancellationToken>())
+            .ListOriginalsByOrderIdAsync(42, Arg.Any<CancellationToken>())
             .Returns(new List<Invoice> { originalCustomer, originalCommission });
         _numbering
             .IssueNumberAsync(
@@ -332,7 +332,7 @@ public class InvoiceServiceTests
         _paymentRepo.GetRefundByIdAsync(7, Arg.Any<CancellationToken>()).Returns(refund);
         _paymentRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(payment);
         _invoiceRepo
-            .ListByOrderIdAsync(42, Arg.Any<CancellationToken>())
+            .ListOriginalsByOrderIdAsync(42, Arg.Any<CancellationToken>())
             .Returns(new List<Invoice> { originalCustomer });
         _numbering
             .IssueNumberAsync(
@@ -400,7 +400,7 @@ public class InvoiceServiceTests
         _paymentRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(payment);
         // No customer original — only the commission invoice is returned.
         _invoiceRepo
-            .ListByOrderIdAsync(42, Arg.Any<CancellationToken>())
+            .ListOriginalsByOrderIdAsync(42, Arg.Any<CancellationToken>())
             .Returns(new List<Invoice> { commissionOriginal });
         _numbering
             .IssueNumberAsync(

@@ -49,6 +49,13 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
     public Task<List<Invoice>> ListByOrderIdAsync(int orderId, CancellationToken ct = default) =>
         _dbContext.Invoices.Where(i => i.OrderId == orderId).ToListAsync(ct);
 
+    public Task<List<Invoice>> ListOriginalsByOrderIdAsync(int orderId, CancellationToken ct = default) =>
+        _dbContext.Invoices
+            .Where(i => i.OrderId == orderId
+                     && (i.Kind == InvoiceKind.OrderInvoiceToCustomer
+                         || i.Kind == InvoiceKind.CommissionInvoiceToRestaurant))
+            .ToListAsync(ct);
+
     public async Task<(List<Invoice> Items, int Total)> ListForRecipientUserAsync(int userId, int page, int pageSize, CancellationToken ct = default)
     {
         var query = _dbContext.Invoices.Where(i => i.RecipientUserId == userId);
