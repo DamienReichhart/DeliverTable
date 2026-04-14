@@ -3,10 +3,11 @@ using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Invoice;
 using DeliverTableSharedLibrary.Enums;
+using Microsoft.JSInterop;
 
 namespace DeliverTableClient.Services.Invoice;
 
-public class InvoiceApiClient(HttpClient http) : IInvoiceApiClient
+public class InvoiceApiClient(HttpClient http, IJSRuntime js) : IInvoiceApiClient
 {
     public async Task<PaginatedResult<InvoiceListItemDto>?> GetMineAsync(int page, int pageSize)
     {
@@ -61,5 +62,20 @@ public class InvoiceApiClient(HttpClient http) : IInvoiceApiClient
     public async Task AdminResendEmailAsync(int id)
     {
         await http.PostAsync($"{ApiRoutes.Admin.Base}/invoices/{id}/resend-email", null);
+    }
+
+    public async Task DownloadPdfAsync(int id)
+    {
+        var url = $"{ApiRoutes.Invoice.Base}/{id}/pdf";
+        var response = await http.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return;
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? $"facture-{id}.pdf";
+
+        await js.InvokeVoidAsync("downloadFileFromBase64", fileName, contentType, Convert.ToBase64String(bytes));
     }
 }

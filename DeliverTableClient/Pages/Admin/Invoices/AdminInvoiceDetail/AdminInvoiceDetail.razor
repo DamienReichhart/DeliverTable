@@ -70,7 +70,7 @@
         }
 
         <div class="detail-actions">
-            <a class="app-btn app-btn--primary" href="@($"/api/v1/invoice/{_detail.Header.Id}/pdf")" target="_blank">Télécharger le PDF</a>
+            <button type="button" class="app-btn app-btn--primary" @onclick="DownloadPdf">Télécharger le PDF</button>
             <button class="app-btn app-btn--secondary" @onclick="ResendEmail">Renvoyer l'email</button>
         </div>
 
@@ -98,4 +98,6 @@
         await InvoiceApi.AdminResendEmailAsync(Id);
         _emailSent = true;
     }
+
+    private Task DownloadPdf() => InvoiceApi.DownloadPdfAsync(Id);
 }

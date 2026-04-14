@@ -123,7 +123,7 @@
                                     <td>
                                         @if (inv.Status == InvoiceStatus.Generated)
                                         {
-                                            <a href="@($"/api/v1/invoice/{inv.Id}/pdf")" target="_blank" class="app-btn app-btn--secondary app-btn--sm">Télécharger</a>
+                                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => DownloadInvoice(inv.Id)">Télécharger</button>
                                         }
                                     </td>
                                 </tr>
@@ -234,6 +234,8 @@
         _invoices = result?.Items.ToList() ?? new();
         _invoicesLoading = false;
     }
+
+    private Task DownloadInvoice(int id) => InvoiceApi.DownloadPdfAsync(id);
 
     private async Task LoadAccount()
     {
