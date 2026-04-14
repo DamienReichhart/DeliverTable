@@ -9,5 +9,6 @@ public enum OrderStatus
     Ready,
     Delivering,
     Delivered,
-    Cancelled
+    Cancelled,
+    AwaitingPayment = 100,
 }

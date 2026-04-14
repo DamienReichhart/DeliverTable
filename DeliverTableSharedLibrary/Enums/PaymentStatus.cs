@@ -5,5 +5,7 @@ public enum PaymentStatus
     Pending,
     Completed,
     Failed,
-    Refunded
+    Refunded,
+    Authorized = 100,
+    PartiallyRefunded = 101,
 }
