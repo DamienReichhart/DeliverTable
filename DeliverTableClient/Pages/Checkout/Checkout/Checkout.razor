@@ -1,6 +1,7 @@
 @page "/paiement"
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
 @using DeliverTableClient.Services.Payment
+@using DeliverTableClient.State
 @using DeliverTableSharedLibrary.Dtos.Order
 @using DeliverTableSharedLibrary.Dtos.Promotion
 @using DeliverTableSharedLibrary.Dtos.DiscountCode
@@ -9,9 +10,8 @@
 @inject IStripeJsInterop StripeJs
 @inject ICartService CartService
 @inject IPromotionService PromotionService
-@inject IDiscountCodeClientService DiscountCodeService
-@inject ILoyaltyClientService LoyaltyService
 @inject NavigationManager Nav
+@inject CheckoutState CheckoutState
 @implements IAsyncDisposable
 
 <PageTitle>Paiement — DeliverTable</PageTitle>
@@ -38,124 +38,62 @@
     {
         <div class="checkout-layout">
 
-            @* ── Order options ── *@
+            @* ── Read-only order summary ── *@
             <div class="checkout-form">
                 <h2>Votre commande</h2>
                 <p class="checkout-restaurant">@_cart.RestaurantName</p>
 
-                <div class="form-group">
-                    <label>Type de commande</label>
-                    <div class="order-type-selector">
-                        <button type="button"
-                                class="order-type-btn @(_orderType == "Delivery" ? "order-type-btn--active" : "")"
-                                @onclick='() => _orderType = "Delivery"'>
-                            Livraison
-                        </button>
-                        <button type="button"
-                                class="order-type-btn @(_orderType == "DineIn" ? "order-type-btn--active" : "")"
-                                @onclick='() => _orderType = "DineIn"'>
-                            Sur place
-                        </button>
+                <dl class="checkout-readonly">
+                    <div class="checkout-readonly__row">
+                        <dt>Type de commande</dt>
+                        <dd>@(CheckoutState.OrderType == "Delivery" ? "Livraison" : "Sur place")</dd>
                     </div>
-                </div>
 
-                @if (_orderType == "Delivery")
-                {
-                    <div class="form-group">
-                        <label for="delivery-address">Adresse de livraison *</label>
-                        <input type="text" id="delivery-address" @bind="_deliveryAddress" class="filter-input"
-                               placeholder="Entrez votre adresse de livraison" />
-                    </div>
-                }
-                else
-                {
-                    <div class="form-group">
-                        <label>Nombre de convives</label>
-                        <div class="guest-count-selector">
-                            <button type="button" class="qty-btn" @onclick="DecrementGuests" disabled="@(_guestCount <= 1)">−</button>
-                            <span class="qty-value">@_guestCount</span>
-                            <button type="button" class="qty-btn" @onclick="IncrementGuests" disabled="@(_guestCount >= 50)">+</button>
-                        </div>
-                    </div>
-                }
-
-                <div class="form-group">
-                    <label for="notes">Notes pour le restaurant</label>
-                    <textarea id="notes" @bind="_notes" class="filter-input" rows="2"
-                              placeholder="Instructions, allergies..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="scheduled-at">
-                        Date et heure souhaitée
-                        <span class="optional-label">(optionnel)</span>
-                    </label>
-                    <input type="datetime-local" id="scheduled-at" @bind="_scheduledAt" class="filter-input" />
-                    @if (_scheduledAt.HasValue)
+                    @if (CheckoutState.OrderType == "Delivery")
                     {
-                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" style="margin-top: 0.25rem;"
-                                @onclick="() => _scheduledAt = null">
-                            Retirer la date planifiée
-                        </button>
-                    }
-                </div>
-
-                @* ── Discount codes ── *@
-                <div class="discount-section">
-                    <h3>Codes promo</h3>
-                    @if (_appliedCodes.Count > 0)
-                    {
-                        <div class="applied-codes">
-                            @foreach (var dc in _appliedCodes)
-                            {
-                                <div class="applied-code">
-                                    <div class="applied-code-info">
-                                        <strong>@dc.Code</strong>
-                                        <span>@FormatDiscount(dc.DiscountType, dc.DiscountValue)</span>
-                                    </div>
-                                    <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => RemoveCode(dc)">
-                                        Retirer
-                                    </button>
-                                </div>
-                            }
+                        <div class="checkout-readonly__row">
+                            <dt>Adresse de livraison</dt>
+                            <dd>@CheckoutState.DeliveryAddress</dd>
                         </div>
                     }
-                    <div class="discount-code-input">
-                        <input type="text" @bind="_discountCodeInput" @bind:event="oninput" class="filter-input"
-                               placeholder="Entrez un code promo" @onkeydown="HandleCodeKeyDown" />
-                        <button type="button" class="app-btn app-btn--primary app-btn--sm" @onclick="ApplyCode"
-                                disabled="@(_applyingCode || string.IsNullOrWhiteSpace(_discountCodeInput))">
-                            @(_applyingCode ? "..." : "Appliquer")
-                        </button>
-                    </div>
-                    @if (_codeError is not null) { <p class="code-error">@_codeError</p> }
-                    @if (_codeSuccess is not null) { <p class="code-success">@_codeSuccess</p> }
-                </div>
-
-                @* ── Loyalty points ── *@
-                @if (_loyaltyAccount is not null && _loyaltyAccount.PointsBalance > 0)
-                {
-                    <div class="discount-section">
-                        <h3>Points de fidélité</h3>
-                        <p class="loyalty-info">
-                            Vous avez <strong>@_loyaltyAccount.PointsBalance points</strong>
-                            (valeur : @_loyaltyAccount.EuroEquivalent.ToString("C", _frCulture))
-                        </p>
-                        <div class="loyalty-redeem">
-                            <label for="loyalty-points">Points à utiliser</label>
-                            <input type="number" id="loyalty-points" @bind="_loyaltyPointsToRedeem" @bind:event="oninput"
-                                   min="0" max="@_loyaltyAccount.PointsBalance" class="filter-input"
-                                   style="max-width: 150px;" />
+                    else
+                    {
+                        <div class="checkout-readonly__row">
+                            <dt>Nombre de convives</dt>
+                            <dd>@CheckoutState.GuestCount</dd>
                         </div>
-                    </div>
-                }
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(CheckoutState.Notes))
+                    {
+                        <div class="checkout-readonly__row">
+                            <dt>Notes</dt>
+                            <dd>@CheckoutState.Notes</dd>
+                        </div>
+                    }
+
+                    @if (CheckoutState.ScheduledAt.HasValue)
+                    {
+                        <div class="checkout-readonly__row">
+                            <dt>@(CheckoutState.OrderType == "DineIn" ? "Date de réservation" : "Date de livraison")</dt>
+                            <dd>@CheckoutState.ScheduledAt.Value.ToString("dddd d MMMM yyyy HH:mm", _frCulture)</dd>
+                        </div>
+                    }
+                </dl>
+
+                <div class="checkout-edit-link">
+                    <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="GoBack" disabled="@_paymentReady">
+                        Modifier la commande
+                    </button>
+                </div>
             </div>
 
             @* ── Payment panel ── *@
             <div class="checkout-payment-panel">
-                @* ── Order summary ── *@
+                @* ── Order breakdown with all reductions ── *@
                 <div class="checkout-summary">
                     <h3>Récapitulatif</h3>
+
                     @foreach (var item in _cart.Items)
                     {
                         <div class="summary-line">
@@ -163,10 +101,56 @@
                             <span>@item.Subtotal.ToString("C", _frCulture)</span>
                         </div>
                     }
+
+                    <div class="summary-line summary-line--subtotal">
+                        <span>Sous-total</span>
+                        <span>@_cart.TotalAmount.ToString("C", _frCulture)</span>
+                    </div>
+
+                    @if (_activePromotions is not null)
+                    {
+                        @foreach (var promo in _activePromotions)
+                        {
+                            var promoDiscount = EstimatePromotionDiscount(promo);
+                            if (promoDiscount > 0)
+                            {
+                                <div class="summary-line summary-line--discount">
+                                    <span>@promo.Name</span>
+                                    <span>-@promoDiscount.ToString("C", _frCulture)</span>
+                                </div>
+                            }
+                        }
+                    }
+
+                    @foreach (var appliedCode in CheckoutState.AppliedCodes)
+                    {
+                        var discount = EstimateCodeDiscount(appliedCode);
+                        if (discount > 0)
+                        {
+                            <div class="summary-line summary-line--discount">
+                                <span>Code : @appliedCode.Code</span>
+                                <span>-@discount.ToString("C", _frCulture)</span>
+                            </div>
+                        }
+                    }
+
+                    @if (CheckoutState.LoyaltyPointsToRedeem > 0 && CheckoutState.LoyaltyAccount is not null)
+                    {
+                        <div class="summary-line summary-line--discount">
+                            <span>Points de fidélité (@CheckoutState.LoyaltyPointsToRedeem pts)</span>
+                            <span>-@((CheckoutState.LoyaltyPointsToRedeem * CheckoutState.LoyaltyAccount.EurosPerPoint).ToString("C", _frCulture))</span>
+                        </div>
+                    }
+
                     <div class="summary-line summary-line--total">
                         <span>Total estimé</span>
                         <strong>@EstimatedTotal.ToString("C", _frCulture)</strong>
                     </div>
+
+                    @if (EstimatedSavings > 0)
+                    {
+                        <p class="savings-message">Vous économisez @EstimatedSavings.ToString("C", _frCulture) !</p>
+                    }
                 </div>
 
                 @if (!_paymentReady)
@@ -221,35 +205,13 @@
     private string? _paymentError;
     private int _orderId;
     private decimal _amount;
-
-    private string _orderType = "Delivery";
-    private int _guestCount = 1;
-    private string _deliveryAddress = string.Empty;
-    private string _notes = string.Empty;
-    private DateTime? _scheduledAt;
-    private string _discountCodeInput = string.Empty;
-    private List<DiscountCodeDto> _appliedCodes = [];
-    private bool _applyingCode;
-    private string? _codeError;
-    private string? _codeSuccess;
-    private int _loyaltyPointsToRedeemBacking;
-    private int _loyaltyPointsToRedeem
-    {
-        get => _loyaltyPointsToRedeemBacking;
-        set
-        {
-            var max = _loyaltyAccount?.PointsBalance ?? 0;
-            _loyaltyPointsToRedeemBacking = Math.Clamp(value, 0, max);
-        }
-    }
-    private LoyaltyAccountDto? _loyaltyAccount;
     private List<PromotionDto>? _activePromotions;
 
     private decimal EstimatedPromotionDiscount => _activePromotions?.Sum(p => EstimatePromotionDiscount(p)) ?? 0;
-    private decimal EstimatedCodeDiscount => _appliedCodes.Sum(c => EstimateCodeDiscount(c));
+    private decimal EstimatedCodeDiscount => CheckoutState.AppliedCodes.Sum(c => EstimateCodeDiscount(c));
     private decimal EstimatedLoyaltyDiscount =>
-        _loyaltyPointsToRedeem > 0 && _loyaltyAccount is not null
-            ? _loyaltyPointsToRedeem * _loyaltyAccount.EurosPerPoint
+        CheckoutState.LoyaltyPointsToRedeem > 0 && CheckoutState.LoyaltyAccount is not null
+            ? CheckoutState.LoyaltyPointsToRedeem * CheckoutState.LoyaltyAccount.EurosPerPoint
             : 0;
     private decimal EstimatedSavings => Math.Min(
         EstimatedPromotionDiscount + EstimatedCodeDiscount + EstimatedLoyaltyDiscount,
@@ -265,7 +227,13 @@
             return;
         }
 
-        await Task.WhenAll(LoadCart(), LoadActivePromotions(), LoadLoyaltyAccount());
+        if (!CheckoutState.IsReady || CheckoutState.RestaurantId != RestaurantId)
+        {
+            Nav.NavigateTo($"/panier/{RestaurantId}");
+            return;
+        }
+
+        await Task.WhenAll(LoadCart(), LoadActivePromotions());
         _loading = false;
     }
 
@@ -287,31 +255,11 @@
         _activePromotions = promotions ?? [];
     }
 
-    private async Task LoadLoyaltyAccount()
-    {
-        if (RestaurantId <= 0) return;
-        var (account, _) = await LoyaltyService.GetMyAccountAsync(RestaurantId);
-        _loyaltyAccount = account;
-    }
-
     // ── Stripe initialisation ──
 
     private async Task StartPaymentAsync()
     {
         _validationError = null;
-
-        if (_orderType == "Delivery" && string.IsNullOrWhiteSpace(_deliveryAddress))
-        {
-            _validationError = "L'adresse de livraison est obligatoire pour une commande en livraison.";
-            return;
-        }
-
-        if (_orderType == "DineIn" && (_guestCount < 1 || _guestCount > 50))
-        {
-            _validationError = "Le nombre de convives doit être compris entre 1 et 50.";
-            return;
-        }
-
         _initializing = true;
         StateHasChanged();
 
@@ -334,13 +282,6 @@
         await StripeJs.MountPaymentElementAsync(response.ClientSecret, "payment-element");
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        // Payment Element mount is triggered by StartPaymentAsync → StateHasChanged → render
-        // No additional work needed here; kept for lifecycle clarity.
-        await Task.CompletedTask;
-    }
-
     private async Task ConfirmAsync()
     {
         _paymentError = null;
@@ -352,6 +293,7 @@
 
         if (result.Succeeded)
         {
+            CheckoutState.Clear();
             Nav.NavigateTo($"/paiement/resultat?orderId={_orderId}");
         }
         else
@@ -365,61 +307,14 @@
     private CreateOrderRequest BuildOrderRequest() => new()
     {
         RestaurantId = RestaurantId,
-        OrderType = _orderType,
-        GuestCount = _guestCount,
-        DeliveryAddress = _deliveryAddress,
-        Notes = _notes,
-        ScheduledAt = _scheduledAt.HasValue ? _scheduledAt.Value.ToUniversalTime() : null,
-        DiscountCodes = _appliedCodes.Select(c => c.Code).ToList(),
-        LoyaltyPointsToRedeem = _loyaltyPointsToRedeem
+        OrderType = CheckoutState.OrderType,
+        GuestCount = CheckoutState.GuestCount,
+        DeliveryAddress = CheckoutState.DeliveryAddress,
+        Notes = CheckoutState.Notes,
+        ScheduledAt = CheckoutState.ScheduledAt.HasValue ? CheckoutState.ScheduledAt.Value.ToUniversalTime() : null,
+        DiscountCodes = CheckoutState.AppliedCodes.Select(c => c.Code).ToList(),
+        LoyaltyPointsToRedeem = CheckoutState.LoyaltyPointsToRedeem
     };
-
-    // ── Guest count ──
-    private void IncrementGuests() { if (_guestCount < 50) _guestCount++; }
-    private void DecrementGuests() { if (_guestCount > 1) _guestCount--; }
-
-    // ── Discount codes ──
-    private async Task ApplyCode()
-    {
-        if (string.IsNullOrWhiteSpace(_discountCodeInput)) return;
-        var code = _discountCodeInput.Trim();
-        _codeError = null;
-        _codeSuccess = null;
-
-        if (_appliedCodes.Any(c => c.Code.Equals(code, StringComparison.OrdinalIgnoreCase)))
-        {
-            _codeError = "Ce code est déjà appliqué.";
-            return;
-        }
-
-        _applyingCode = true;
-        StateHasChanged();
-
-        var (result, error) = await DiscountCodeService.ValidateAsync(RestaurantId, code);
-        if (error is not null)
-            _codeError = error.Error;
-        else if (result is not null)
-        {
-            _appliedCodes.Add(result);
-            _codeSuccess = $"Code \"{result.Code}\" appliqué — {FormatDiscount(result.DiscountType, result.DiscountValue)}";
-            _discountCodeInput = string.Empty;
-        }
-
-        _applyingCode = false;
-        StateHasChanged();
-    }
-
-    private void RemoveCode(DiscountCodeDto code)
-    {
-        _appliedCodes.Remove(code);
-        _codeError = null;
-        _codeSuccess = null;
-    }
-
-    private async Task HandleCodeKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter") await ApplyCode();
-    }
 
     // ── Discount estimation ──
     private decimal EstimateCodeDiscount(DiscountCodeDto c)
@@ -454,13 +349,6 @@
             ? Math.Round(subtotal * promo.DiscountValue / 100, 2)
             : Math.Min(promo.DiscountValue, subtotal);
     }
-
-    private static string FormatDiscount(string discountType, decimal value) => discountType switch
-    {
-        "Percentage" => $"{value}%",
-        "FixedAmount" => $"{value:0.00} €",
-        _ => $"{value}"
-    };
 
     // ── Navigation ──
     private void GoBack() => Nav.NavigateTo(RestaurantId > 0 ? $"/panier/{RestaurantId}" : "/restaurants");

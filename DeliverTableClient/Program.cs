@@ -4,6 +4,7 @@ using DeliverTableClient.Configuration.Interfaces;
 using DeliverTableClient.Extensions;
 using DeliverTableClient.Services.Auth;
 using DeliverTableClient.Services.Payment;
+using DeliverTableClient.State;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -21,6 +22,7 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddAppConfiguration(builder.HostEnvironment);
 builder.Services.AddApiClients();
 builder.Services.AddScoped<IStripeJsInterop, StripeJsInterop>();
+builder.Services.AddScoped<CheckoutState>();
 
 var host = builder.Build();
 

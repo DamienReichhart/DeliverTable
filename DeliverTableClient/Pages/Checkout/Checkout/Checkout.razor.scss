@@ -240,6 +240,17 @@
   color: $color-text-muted;
   padding: $spacing-xs 0;
 
+  &--subtotal {
+    border-top: 1px solid $color-border;
+    padding-top: $spacing-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
+
+  &--discount {
+    color: $color-success;
+  }
+
   &--total {
     border-top: 2px solid $color-border;
     padding-top: $spacing-sm;
@@ -253,6 +264,53 @@
       color: $color-text;
     }
   }
+}
+
+.savings-message {
+  margin: $spacing-sm 0 0;
+  color: $color-success;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  text-align: center;
+}
+
+// ── Read-only order summary ──
+.checkout-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin: 0;
+}
+
+.checkout-readonly__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: $spacing-md;
+  padding: $spacing-xs 0;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child { border-bottom: none; }
+
+  dt {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    font-weight: $font-weight-normal;
+    margin: 0;
+  }
+
+  dd {
+    font-size: $font-size-base;
+    color: $color-text;
+    font-weight: $font-weight-semibold;
+    margin: 0;
+    text-align: right;
+  }
+}
+
+.checkout-edit-link {
+  display: flex;
+  justify-content: flex-end;
 }
 
 // ── Stripe payment element ──

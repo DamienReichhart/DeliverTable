@@ -5,6 +5,7 @@
 @inject IDiscountCodeClientService DiscountCodeService
 @inject ILoyaltyClientService LoyaltyService
 @inject NavigationManager Nav
+@inject DeliverTableClient.State.CheckoutState CheckoutState
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
 @using DeliverTableSharedLibrary.Dtos.Cart
 @using DeliverTableSharedLibrary.Dtos.Restaurant
@@ -544,7 +545,34 @@
     }
 
     // ── Checkout ──
-    private void GoToCheckout() => Nav.NavigateTo($"/paiement?restaurantId={RestaurantId}");
+    private void GoToCheckout()
+    {
+        _validationError = null;
+
+        if (_orderType == "Delivery" && string.IsNullOrWhiteSpace(_deliveryAddress))
+        {
+            _validationError = "L'adresse de livraison est obligatoire pour une commande en livraison.";
+            return;
+        }
+
+        if (_orderType == "DineIn" && (_guestCount < 1 || _guestCount > 50))
+        {
+            _validationError = "Le nombre de convives doit être compris entre 1 et 50.";
+            return;
+        }
+
+        CheckoutState.RestaurantId = RestaurantId;
+        CheckoutState.OrderType = _orderType;
+        CheckoutState.GuestCount = _guestCount;
+        CheckoutState.DeliveryAddress = _deliveryAddress;
+        CheckoutState.Notes = _notes;
+        CheckoutState.ScheduledAt = _scheduledAt;
+        CheckoutState.AppliedCodes = [.. _appliedCodes];
+        CheckoutState.LoyaltyPointsToRedeem = _loyaltyPointsToRedeem;
+        CheckoutState.LoyaltyAccount = _loyaltyAccount;
+
+        Nav.NavigateTo($"/paiement?restaurantId={RestaurantId}");
+    }
 
     // ── Helpers ──
     private static string FormatDiscount(string discountType, decimal value) => discountType switch
