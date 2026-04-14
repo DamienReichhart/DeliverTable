@@ -1,7 +1,10 @@
 using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Messaging;
+using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Services;
@@ -28,6 +31,8 @@ public class PaymentServiceTests
     private IDiscountCodeRepository _discountRepo = null!;
     private ICartRepository _cartRepo = null!;
     private IEmailJobService _emailJobService = null!;
+    private IInvoiceService _invoiceService = null!;
+    private IMessagePublisher _publisher = null!;
     private AppEnvironment _env = null!;
     private TestDatabase _testDb = null!;
     private PaymentService _sut = null!;
@@ -43,12 +48,14 @@ public class PaymentServiceTests
         _discountRepo = Substitute.For<IDiscountCodeRepository>();
         _cartRepo = Substitute.For<ICartRepository>();
         _emailJobService = Substitute.For<IEmailJobService>();
+        _invoiceService = Substitute.For<IInvoiceService>();
+        _publisher = Substitute.For<IMessagePublisher>();
         _env = TestEnvironmentFactory.Create();
         _testDb = new TestDatabase();
         _sut = new PaymentService(
             _stripe, _paymentRepo, _orderRepo, _userRepo,
-            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _testDb.Context, _env,
-            NullLogger<PaymentService>.Instance);
+            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _invoiceService, _publisher,
+            _testDb.Context, _env, NullLogger<PaymentService>.Instance);
     }
 
     [TearDown]
@@ -465,5 +472,65 @@ public class PaymentServiceTests
         // No handler should have been invoked — no payment lookup.
         await _paymentRepo.DidNotReceive()
             .GetByStripePaymentIntentIdAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleAuthorizationCompletedAsync_QueuesInvoiceCreation()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_x" };
+        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, PaymentStatus = PaymentStatus.Pending, CustomerId = 2 };
+        var pi = new Stripe.PaymentIntent { Id = "pi_x" };
+        var evt = new Stripe.Event { Id = "evt_auth", Type = "payment_intent.amount_capturable_updated", Data = new Stripe.EventData { Object = pi } };
+
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_auth", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_x", Arg.Any<CancellationToken>()).Returns(payment);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _cartRepo.GetByCustomerAsync(2, Arg.Any<CancellationToken>()).Returns(new List<Cart>());
+        // GetByIdWithFullDetailsAsync needed for email queue path
+        _orderRepo.GetByIdWithFullDetailsAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _invoiceService.CreatePendingInvoicesForCapturedOrderAsync(10, Arg.Any<CancellationToken>())
+                       .Returns(ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage> { new(100), new(101) }));
+
+        await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        await _invoiceService.Received(1).CreatePendingInvoicesForCapturedOrderAsync(10, Arg.Any<CancellationToken>());
+        // Verify the two invoice-queue publishes were issued after commit
+        await _publisher.Received(1).PublishAsync("invoice", Arg.Is<InvoiceJobMessage>(m => m.InvoiceId == 100), Arg.Any<CancellationToken>());
+        await _publisher.Received(1).PublishAsync("invoice", Arg.Is<InvoiceJobMessage>(m => m.InvoiceId == 101), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleChargeRefundedAsync_QueuesCreditNoteCreation()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 100m };
+        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        var charge = new Stripe.Charge
+        {
+            Id = "ch_1",
+            PaymentIntentId = "pi_r",
+            Refunds = new Stripe.StripeList<Stripe.Refund>
+            {
+                Data = new List<Stripe.Refund>
+                {
+                    new() { Id = "re_new", Amount = 2500, Currency = "eur", Status = "succeeded" },
+                },
+            },
+        };
+        var evt = new Stripe.Event { Id = "evt_ref2", Type = "charge.refunded", Data = new Stripe.EventData { Object = charge } };
+
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_ref2", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_r", Arg.Any<CancellationToken>()).Returns(payment);
+        _paymentRepo.GetRefundByStripeIdAsync("re_new", Arg.Any<CancellationToken>()).Returns((Refund?)null);
+        _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>()).Returns(ci => { var r = ci.Arg<Refund>(); r.Id = 555; return r; });
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(25m);
+        _invoiceService.CreateCreditNotesForRefundAsync(555, Arg.Any<CancellationToken>())
+                       .Returns(ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage> { new(200), new(201) }));
+
+        await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        await _invoiceService.Received(1).CreateCreditNotesForRefundAsync(555, Arg.Any<CancellationToken>());
+        await _publisher.Received(1).PublishAsync("invoice", Arg.Is<InvoiceJobMessage>(m => m.InvoiceId == 200), Arg.Any<CancellationToken>());
+        await _publisher.Received(1).PublishAsync("invoice", Arg.Is<InvoiceJobMessage>(m => m.InvoiceId == 201), Arg.Any<CancellationToken>());
     }
 }
