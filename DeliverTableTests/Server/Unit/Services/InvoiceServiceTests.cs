@@ -1,10 +1,12 @@
 using DeliverTableInfrastructure.Invoicing;
+using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Services;
+using DeliverTableSharedLibrary.Dtos.Invoice;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
 using NSubstitute;
@@ -21,6 +23,8 @@ public class InvoiceServiceTests
     private IPaymentRepository _paymentRepo = null!;
     private IRestaurantRepository _restaurantRepo = null!;
     private IObjectStorageService _objectStorage = null!;
+    private IEmailJobRepository _emailJobRepo = null!;
+    private IMessagePublisher _publisher = null!;
     private AppEnvironment _env = null!;
     private InvoiceService _sut = null!;
 
@@ -33,8 +37,19 @@ public class InvoiceServiceTests
         _paymentRepo = Substitute.For<IPaymentRepository>();
         _restaurantRepo = Substitute.For<IRestaurantRepository>();
         _objectStorage = Substitute.For<IObjectStorageService>();
+        _emailJobRepo = Substitute.For<IEmailJobRepository>();
+        _publisher = Substitute.For<IMessagePublisher>();
         _env = TestEnvironmentFactory.Create();
-        _sut = new InvoiceService(_invoiceRepo, _orderRepo, _numbering, _paymentRepo, _restaurantRepo, _objectStorage, _env);
+        _sut = new InvoiceService(
+            _invoiceRepo,
+            _orderRepo,
+            _numbering,
+            _paymentRepo,
+            _restaurantRepo,
+            _objectStorage,
+            _emailJobRepo,
+            _publisher,
+            _env);
     }
 
     [Test]
@@ -578,5 +593,158 @@ public class InvoiceServiceTests
         var result = await _sut.GetPdfStreamAsync(1, 7, false, true, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
+    }
+
+    // ─── AdminListAsync ───────────────────────────────────────────────────
+
+    [Test]
+    public async Task AdminListAsync_FiltersByYear_ReturnsMatchingRows()
+    {
+        var issuerSnapshot = new InvoiceLegalSnapshotDto("Restaurant SAS", "SAS", "12345", "", "1 rue");
+        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "jean@example.fr");
+        var invoices = new List<Invoice>
+        {
+            new()
+            {
+                Id = 1,
+                Number = "R0005-2026-000001",
+                Kind = InvoiceKind.OrderInvoiceToCustomer,
+                IssuerType = InvoiceIssuerType.Restaurant,
+                IssuedAt = new DateTime(2026, 1, 15),
+                TotalTtc = 20m,
+                Status = InvoiceStatus.Generated,
+                IssuerLegalSnapshotJson = System.Text.Json.JsonSerializer.Serialize(issuerSnapshot),
+                RecipientSnapshotJson = System.Text.Json.JsonSerializer.Serialize(recipientSnapshot),
+            },
+        };
+
+        _invoiceRepo
+            .AdminListAsync(2026, null, null, null, null, 1, 20, Arg.Any<CancellationToken>())
+            .Returns((invoices, 1));
+
+        var query = new InvoiceAdminQuery { Year = 2026, Page = 1, PageSize = 20 };
+        var result = await _sut.AdminListAsync(query, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Items, Has.Count.EqualTo(1));
+        Assert.That(result.Value.Items[0].IssuerName, Is.EqualTo("Restaurant SAS"));
+        Assert.That(result.Value.Items[0].RecipientName, Is.EqualTo("Jean Dupont"));
+        Assert.That(result.Value.TotalCount, Is.EqualTo(1));
+    }
+
+    // ─── AdminGetDetailAsync ──────────────────────────────────────────────
+
+    [Test]
+    public async Task AdminGetDetailAsync_Existing_ReturnsDetailWithSnapshots()
+    {
+        var issuerSnapshot = new InvoiceLegalSnapshotDto("Platform", "SAS", "99999", "FR12345", "10 rue");
+        var recipientSnapshot = new InvoiceLegalSnapshotDto("Restaurant XYZ", "SARL", "11111", "", "2 avenue");
+        var invoice = new Invoice
+        {
+            Id = 10,
+            Number = "DT-2026-000001",
+            Kind = InvoiceKind.CommissionInvoiceToRestaurant,
+            IssuerType = InvoiceIssuerType.Platform,
+            OrderId = 42,
+            IssuedAt = new DateTime(2026, 3, 1),
+            TotalTtc = 2.40m,
+            Currency = "EUR",
+            Status = InvoiceStatus.Generated,
+            RelatedInvoiceId = null,
+            IssuerLegalSnapshotJson = System.Text.Json.JsonSerializer.Serialize(issuerSnapshot),
+            RecipientSnapshotJson = System.Text.Json.JsonSerializer.Serialize(recipientSnapshot),
+            Lines =
+            [
+                new InvoiceLine
+                {
+                    Description = "Commission",
+                    Quantity = 1m,
+                    UnitPriceHt = 2m,
+                    UnitPriceTtc = 2.40m,
+                    VatRate = 20m,
+                    LineHt = 2m,
+                    LineVat = 0.40m,
+                    LineTtc = 2.40m,
+                    SortOrder = 0,
+                },
+            ],
+        };
+
+        _invoiceRepo
+            .GetByIdWithLinesAsync(10, Arg.Any<CancellationToken>())
+            .Returns(invoice);
+
+        var result = await _sut.AdminGetDetailAsync(10, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Header.Id, Is.EqualTo(10));
+        Assert.That(result.Value.Issuer.Name, Is.EqualTo("Platform"));
+        Assert.That(result.Value.Recipient.Name, Is.EqualTo("Restaurant XYZ"));
+        Assert.That(result.Value.Lines, Has.Count.EqualTo(1));
+        Assert.That(result.Value.RelatedInvoiceId, Is.Null);
+    }
+
+    [Test]
+    public async Task AdminGetDetailAsync_NotFound_Returns404()
+    {
+        _invoiceRepo
+            .GetByIdWithLinesAsync(99, Arg.Any<CancellationToken>())
+            .Returns((Invoice?)null);
+
+        var result = await _sut.AdminGetDetailAsync(99, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
+    }
+
+    // ─── AdminResendEmailAsync ────────────────────────────────────────────
+
+    [Test]
+    public async Task AdminResendEmailAsync_NotGenerated_ReturnsError()
+    {
+        var invoice = new Invoice
+        {
+            Id = 1,
+            Number = "R0005-2026-000001",
+            Status = InvoiceStatus.Queued,
+            StoragePath = null,
+            Kind = InvoiceKind.OrderInvoiceToCustomer,
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = "{}",
+        };
+        _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
+
+        var result = await _sut.AdminResendEmailAsync(1, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(409));
+    }
+
+    [Test]
+    public async Task AdminResendEmailAsync_Generated_RepublishesJob()
+    {
+        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "jean@example.fr");
+        var invoice = new Invoice
+        {
+            Id = 1,
+            Number = "R0005-2026-000001",
+            Kind = InvoiceKind.OrderInvoiceToCustomer,
+            IssuerType = InvoiceIssuerType.Restaurant,
+            Status = InvoiceStatus.Generated,
+            StoragePath = "invoices/2026/01/R0005-2026-000001.pdf",
+            IssuedAt = new DateTime(2026, 1, 15),
+            OrderId = 42,
+            TotalTtc = 20m,
+            Currency = "EUR",
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = System.Text.Json.JsonSerializer.Serialize(recipientSnapshot),
+        };
+        _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
+
+        var result = await _sut.AdminResendEmailAsync(1, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _emailJobRepo.Received(1).CreateAsync(Arg.Any<EmailJob>(), Arg.Any<CancellationToken>());
+        await _publisher.Received(1).PublishAsync("email", Arg.Any<EmailJobMessage>(), Arg.Any<CancellationToken>());
     }
 }

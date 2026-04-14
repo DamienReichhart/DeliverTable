@@ -37,4 +37,12 @@ public interface IInvoiceService
         bool isAdmin,
         bool isRestaurantOwner,
         CancellationToken ct);
+
+    Task<ServiceResult<PaginatedResult<AdminInvoiceRowDto>>> AdminListAsync(
+        InvoiceAdminQuery query,
+        CancellationToken ct);
+
+    Task<ServiceResult<AdminInvoiceDetailDto>> AdminGetDetailAsync(int id, CancellationToken ct);
+
+    Task<ServiceResult> AdminResendEmailAsync(int id, CancellationToken ct);
 }

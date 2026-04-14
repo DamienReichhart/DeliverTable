@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DeliverTableInfrastructure.Invoicing;
+using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
@@ -22,6 +23,8 @@ public class InvoiceService(
     IPaymentRepository paymentRepository,
     IRestaurantRepository restaurantRepository,
     IObjectStorageService objectStorage,
+    IEmailJobRepository emailJobRepository,
+    IMessagePublisher messagePublisher,
     AppEnvironment env) : IInvoiceService
 {
     public async Task<ServiceResult<List<InvoiceJobMessage>>> CreatePendingInvoicesForCapturedOrderAsync(
@@ -195,6 +198,138 @@ public class InvoiceService(
             new InvoicePdfStreamResult(storageResult.Content, fileName, storageResult.ContentType));
     }
 
+    public async Task<ServiceResult<PaginatedResult<AdminInvoiceRowDto>>> AdminListAsync(
+        InvoiceAdminQuery query,
+        CancellationToken ct)
+    {
+        var (items, total) = await invoiceRepository.AdminListAsync(
+            query.Year,
+            query.Kind,
+            query.IssuerType,
+            query.RestaurantId,
+            query.CustomerEmail,
+            query.Page,
+            query.PageSize,
+            ct);
+
+        return ServiceResult<PaginatedResult<AdminInvoiceRowDto>>.Success(
+            new PaginatedResult<AdminInvoiceRowDto>
+            {
+                Items = items.Select(MapToAdminRowDto).ToList(),
+                TotalCount = total,
+                Page = query.Page,
+                PageSize = query.PageSize,
+            });
+    }
+
+    public async Task<ServiceResult<AdminInvoiceDetailDto>> AdminGetDetailAsync(int id, CancellationToken ct)
+    {
+        var invoice = await invoiceRepository.GetByIdWithLinesAsync(id, ct);
+        if (invoice is null)
+            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+
+        var issuer = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.IssuerLegalSnapshotJson)
+                     ?? new InvoiceLegalSnapshotDto(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+        var recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson)
+                        ?? new InvoiceLegalSnapshotDto(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+
+        var lines = invoice.Lines.OrderBy(l => l.SortOrder).Select(l => new InvoiceLineDto(
+            l.Description,
+            l.Quantity,
+            l.UnitPriceHt,
+            l.UnitPriceTtc,
+            l.VatRate,
+            l.LineHt,
+            l.LineVat,
+            l.LineTtc)).ToList();
+
+        var header = MapToListItemDto(invoice);
+        return ServiceResult<AdminInvoiceDetailDto>.Success(
+            new AdminInvoiceDetailDto(header, lines, issuer, recipient, invoice.RelatedInvoiceId));
+    }
+
+    public async Task<ServiceResult> AdminResendEmailAsync(int id, CancellationToken ct)
+    {
+        var invoice = await invoiceRepository.GetByIdAsync(id, ct);
+        if (invoice is null)
+            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+
+        if (invoice.Status != InvoiceStatus.Generated || string.IsNullOrEmpty(invoice.StoragePath))
+            return new ServiceError(ErrorMessages.InvoiceNotGeneratedYet, 409);
+
+        var recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson);
+
+        var isCustomerKind = invoice.Kind == InvoiceKind.OrderInvoiceToCustomer
+                             || invoice.Kind == InvoiceKind.CreditNoteToCustomer;
+
+        string? recipientEmail;
+        string? recipientName;
+        EmailJobType jobType;
+
+        if (isCustomerKind)
+        {
+            recipientEmail = recipient?.Address;
+            recipientName = recipient?.Name;
+            jobType = EmailJobType.InvoiceReadyCustomer;
+        }
+        else
+        {
+            recipientEmail = recipient?.Address;
+            recipientName = recipient?.Name;
+            jobType = EmailJobType.InvoiceReadyRestaurant;
+        }
+
+        if (string.IsNullOrWhiteSpace(recipientEmail))
+            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+
+        var fileName = $"{invoice.Number}.pdf";
+        bool isCreditNote = invoice.Kind == InvoiceKind.CreditNoteToCustomer
+                            || invoice.Kind == InvoiceKind.CommissionCreditNoteToRestaurant;
+        var subject = isCreditNote
+            ? $"Votre avoir {invoice.Number} est disponible"
+            : $"Votre facture {invoice.Number} est disponible";
+
+        var templateData = jobType == EmailJobType.InvoiceReadyCustomer
+            ? (object)new DeliverTableInfrastructure.TemplateData.InvoiceReadyCustomerData(
+                invoice.Number,
+                invoice.OrderId.ToString(),
+                invoice.IssuedAt.ToString("dd/MM/yyyy"),
+                invoice.TotalTtc.ToString("0.00"),
+                invoice.Currency)
+            : new DeliverTableInfrastructure.TemplateData.InvoiceReadyRestaurantData(
+                invoice.Number,
+                invoice.OrderId.ToString(),
+                invoice.IssuedAt.ToString("dd/MM/yyyy"),
+                invoice.TotalTtc.ToString("0.00"),
+                invoice.Currency);
+
+        var emailJob = new EmailJob
+        {
+            Type = jobType,
+            Status = EmailJobStatus.Pending,
+            RecipientEmail = recipientEmail,
+            RecipientName = recipientName,
+            Subject = subject,
+            TemplateData = JsonSerializer.Serialize(templateData),
+            MaxRetries = 3,
+            AttachmentStoragePath = invoice.StoragePath,
+            AttachmentFilename = fileName,
+        };
+
+        await emailJobRepository.CreateAsync(emailJob, ct);
+
+        try
+        {
+            await messagePublisher.PublishAsync("email", new EmailJobMessage(emailJob.Id), ct);
+        }
+        catch
+        {
+            // best-effort: sweep will retry
+        }
+
+        return ServiceResult.Success();
+    }
+
     private static InvoiceListItemDto MapToListItemDto(Invoice invoice) =>
         new(
             invoice.Id,
@@ -205,6 +340,34 @@ public class InvoiceService(
             invoice.TotalTtc,
             invoice.Currency,
             invoice.Status);
+
+    private static AdminInvoiceRowDto MapToAdminRowDto(Invoice invoice)
+    {
+        var issuer = DeserializeSnapshot(invoice.IssuerLegalSnapshotJson);
+        var recipient = DeserializeSnapshot(invoice.RecipientSnapshotJson);
+        return new AdminInvoiceRowDto(
+            invoice.Id,
+            invoice.Number,
+            invoice.Kind,
+            invoice.IssuerType,
+            issuer?.Name ?? string.Empty,
+            recipient?.Name ?? string.Empty,
+            invoice.IssuedAt,
+            invoice.TotalTtc,
+            invoice.Status);
+    }
+
+    private static InvoiceLegalSnapshotDto? DeserializeSnapshot(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
     private async Task<Invoice> BuildCreditNoteAsync(
         Invoice original,
