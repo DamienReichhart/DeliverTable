@@ -44,7 +44,12 @@ public static class RestaurantMappers
             Country = restaurantModel.Country,
             Latitude = restaurantModel.Latitude,
             Longitude = restaurantModel.Longitude,
-            IsActive = restaurantModel.IsActive
+            IsActive = restaurantModel.IsActive,
+            Siret = restaurantModel.Siret,
+            LegalName = restaurantModel.LegalName,
+            LegalAddress = restaurantModel.LegalAddress,
+            LegalForm = restaurantModel.LegalForm,
+            IsVatRegistered = restaurantModel.IsVatRegistered,
         };
     }
 }

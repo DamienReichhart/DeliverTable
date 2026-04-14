@@ -14,4 +14,9 @@ public class DetailedRestaurantDto
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public bool IsActive { get; set; } = true;
+    public string Siret { get; set; } = string.Empty;
+    public string LegalName { get; set; } = string.Empty;
+    public string LegalAddress { get; set; } = string.Empty;
+    public string LegalForm { get; set; } = string.Empty;
+    public bool IsVatRegistered { get; set; } = true;
 }
