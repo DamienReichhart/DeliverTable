@@ -11,7 +11,8 @@ public class AppEnvironmentTests
         "JWT_KEY", "JWT_ISSUER", "JWT_AUDIENCE",
         "OBJECT_STORAGE_SERVICE_URL", "OBJECT_STORAGE_ACCESS_KEY",
         "OBJECT_STORAGE_SECRET_KEY", "OBJECT_STORAGE_BUCKET_NAME",
-        "RABBITMQ_HOST", "RABBITMQ_USER", "RABBITMQ_PASSWORD"
+        "RABBITMQ_HOST", "RABBITMQ_USER", "RABBITMQ_PASSWORD",
+        "STRIPE_PUBLISHABLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"
     ];
 
     private static readonly string[] AllOptionalVars =
@@ -54,6 +55,9 @@ public class AppEnvironmentTests
             Assert.That(env.RabbitMqHost, Is.EqualTo("localhost"));
             Assert.That(env.RabbitMqUser, Is.EqualTo("guest"));
             Assert.That(env.RabbitMqPassword, Is.EqualTo("guest"));
+            Assert.That(env.StripePublishableKey, Is.EqualTo("pk_test_stripe"));
+            Assert.That(env.StripeSecretKey, Is.EqualTo("sk_test_stripe"));
+            Assert.That(env.StripeWebhookSecret, Is.EqualTo("whsec_test_stripe"));
         });
     }
 
@@ -121,6 +125,9 @@ public class AppEnvironmentTests
     [TestCase("RABBITMQ_HOST")]
     [TestCase("RABBITMQ_USER")]
     [TestCase("RABBITMQ_PASSWORD")]
+    [TestCase("STRIPE_PUBLISHABLE_KEY")]
+    [TestCase("STRIPE_SECRET_KEY")]
+    [TestCase("STRIPE_WEBHOOK_SECRET")]
     public void Load_Throws_WhenSingleRequiredVarIsMissing(string missingVar)
     {
         SetAllRequired();
@@ -169,5 +176,8 @@ public class AppEnvironmentTests
         Environment.SetEnvironmentVariable("RABBITMQ_HOST", "localhost");
         Environment.SetEnvironmentVariable("RABBITMQ_USER", "guest");
         Environment.SetEnvironmentVariable("RABBITMQ_PASSWORD", "guest");
+        Environment.SetEnvironmentVariable("STRIPE_PUBLISHABLE_KEY", "pk_test_stripe");
+        Environment.SetEnvironmentVariable("STRIPE_SECRET_KEY", "sk_test_stripe");
+        Environment.SetEnvironmentVariable("STRIPE_WEBHOOK_SECRET", "whsec_test_stripe");
     }
 }
