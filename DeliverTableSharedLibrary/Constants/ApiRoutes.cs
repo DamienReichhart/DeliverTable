@@ -105,6 +105,7 @@ public static class ApiRoutes
         public const string OrdersRoute = "orders";
         public const string OrderByIdRoute = "orders/{id:int}";
         public const string OrderStatusRoute = "orders/{id:int}/status";
+        public const string OrderRefundRoute = "orders/{id:int}/refund";
         public const string Orders = Base + "/" + OrdersRoute;
 
         // ── Promotions ──
@@ -225,6 +226,21 @@ public static class ApiRoutes
     {
         public const string RestaurantBaseRoute = "api/v1/restaurant/{id:int}/loyalty";
         public const string MyAccountRoute = "my-account";
+    }
+
+    /// <summary>Payment routes (Customer role required).</summary>
+    public static class Payment
+    {
+        public const string Base = "api/v1/payment";
+        public const string CancelRoute = "{orderId:int}/cancel";
+    }
+
+    /// <summary>Stripe webhook routes.</summary>
+    public static class StripeWebhook
+    {
+        public const string Base = "api/v1/stripe";
+        public const string WebhookRoute = "webhook";
+        public const string Webhook = Base + "/" + WebhookRoute;
     }
 
     /// <summary>Test controller route (development only).</summary>
