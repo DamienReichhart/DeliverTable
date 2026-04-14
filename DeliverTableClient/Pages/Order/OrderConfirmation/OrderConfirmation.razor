@@ -2,7 +2,11 @@
 @inject IOrderService OrderService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.Customer))]
+@using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.Invoice
 @using DeliverTableSharedLibrary.Dtos.Order
+@using DeliverTableSharedLibrary.Enums
+@inject IInvoiceApiClient InvoiceApi
 
 <PageTitle>Commande confirmée — DeliverTable</PageTitle>
 
@@ -142,6 +146,12 @@
                     &#9733; Noter cette commande
                 </button>
             }
+            @if (_invoice is not null)
+            {
+                <a class="app-btn app-btn--secondary" href="@($"/api/v1/invoice/{_invoice.Id}/pdf")" target="_blank">
+                    Télécharger la facture
+                </a>
+            }
             <button type="button" class="app-btn app-btn--primary" @onclick="GoToOrders">
                 Voir mes commandes
             </button>
@@ -174,10 +184,16 @@
     private bool _loading = true;
     private string? _error;
     private string? _toast;
+    private InvoiceListItemDto? _invoice;
 
     protected override async Task OnInitializedAsync()
     {
-        var (order, error) = await OrderService.GetOrderByIdAsync(Id);
+        var orderTask = OrderService.GetOrderByIdAsync(Id);
+        var invoicesTask = InvoiceApi.GetMineAsync(1, 100);
+
+        await Task.WhenAll(orderTask, invoicesTask);
+
+        var (order, error) = await orderTask;
         if (error is not null)
         {
             _error = error.Error;
@@ -186,6 +202,13 @@
         {
             _order = order;
         }
+
+        var invoices = await invoicesTask;
+        _invoice = invoices?.Items.FirstOrDefault(i =>
+            i.OrderId == Id
+            && i.Kind == InvoiceKind.OrderInvoiceToCustomer
+            && i.Status == InvoiceStatus.Generated);
+
         _loading = false;
 
         if (Rated == true)
