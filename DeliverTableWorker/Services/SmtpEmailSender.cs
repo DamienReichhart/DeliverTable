@@ -12,6 +12,7 @@ public class SmtpEmailSender(WorkerEnvironment env, ILogger<SmtpEmailSender> log
         string? toName,
         string subject,
         string htmlBody,
+        AttachmentPayload? attachment = null,
         CancellationToken ct = default
     )
     {
@@ -19,7 +20,26 @@ public class SmtpEmailSender(WorkerEnvironment env, ILogger<SmtpEmailSender> log
         message.From.Add(new MailboxAddress(env.SmtpFromName, env.SmtpFromEmail));
         message.To.Add(new MailboxAddress(toName ?? to, to));
         message.Subject = subject;
-        message.Body = new TextPart("html") { Text = htmlBody };
+
+        var htmlPart = new TextPart("html") { Text = htmlBody };
+
+        if (attachment is not null)
+        {
+            var multipart = new Multipart("mixed");
+            multipart.Add(htmlPart);
+            multipart.Add(new MimePart("application", "pdf")
+            {
+                Content = new MimeContent(new MemoryStream(attachment.Bytes)),
+                ContentDisposition = new ContentDisposition(ContentDisposition.Attachment) { FileName = attachment.Filename },
+                ContentTransferEncoding = ContentEncoding.Base64,
+                FileName = attachment.Filename,
+            });
+            message.Body = multipart;
+        }
+        else
+        {
+            message.Body = htmlPart;
+        }
 
         using var client = new SmtpClient();
         await client.ConnectAsync(env.SmtpHost, env.SmtpPort, SecureSocketOptions.SslOnConnect, ct);

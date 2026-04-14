@@ -33,6 +33,12 @@ public class EmailJob
     [MaxLength(2000)]
     public string? ErrorMessage { get; set; }
 
+    [MaxLength(400)]
+    public string? AttachmentStoragePath { get; set; }
+
+    [MaxLength(200)]
+    public string? AttachmentFilename { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? ProcessedAt { get; set; }
