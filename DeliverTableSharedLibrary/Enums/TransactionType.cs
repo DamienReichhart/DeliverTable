@@ -3,5 +3,7 @@ namespace DeliverTableSharedLibrary.Enums;
 public enum TransactionType
 {
     Credit,
-    Withdrawal
+    Withdrawal,
+    DisputeReversal = 100,
+    DisputeRestored = 101,
 }
