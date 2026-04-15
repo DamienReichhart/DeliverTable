@@ -14,6 +14,7 @@ public interface IUserRepository
     Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct = default);
     Task<bool> EmailExistsExceptAsync(string normalizedEmail, int excludeUserId, CancellationToken ct = default);
     Task<List<User>> GetAllAsync(CancellationToken ct = default);
+    Task<List<User>> ListByRoleAsync(string roleName, CancellationToken ct = default);
 
     Task<(bool Succeeded, IEnumerable<string> Errors)> CreateAsync(User user, string password);
     Task<(bool Succeeded, IEnumerable<string> Errors)> DeleteAsync(User user);

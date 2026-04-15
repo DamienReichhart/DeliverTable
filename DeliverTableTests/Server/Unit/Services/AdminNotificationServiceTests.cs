@@ -12,13 +12,15 @@ namespace DeliverTableTests.Server.Unit.Services;
 public class AdminNotificationServiceTests
 {
     private INotificationRepository _notificationRepository = null!;
+    private IUserRepository _userRepository = null!;
     private AdminNotificationService _sut = null!;
 
     [SetUp]
     public void SetUp()
     {
         _notificationRepository = Substitute.For<INotificationRepository>();
-        _sut = new AdminNotificationService(_notificationRepository);
+        _userRepository = Substitute.For<IUserRepository>();
+        _sut = new AdminNotificationService(_notificationRepository, _userRepository);
     }
 
     #region GetAllAsync
