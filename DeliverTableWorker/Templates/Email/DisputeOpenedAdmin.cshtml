@@ -1,0 +1,20 @@
+@model DeliverTableInfrastructure.TemplateData.DisputeEmailData
+
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #c0392b;">Nouveau litige</h2>
+    <p>Un litige a été ouvert par le client sur la commande <strong>#@Model.OrderId</strong>.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr><td style="padding: 8px; color: #666;">Restaurant :</td><td style="padding: 8px;"><strong>@Model.RestaurantName</strong> (ID @Model.RestaurantId)</td></tr>
+        <tr><td style="padding: 8px; color: #666;">Montant contesté :</td><td style="padding: 8px;"><strong>@Model.Amount @Model.Currency</strong></td></tr>
+        <tr><td style="padding: 8px; color: #666;">Motif Stripe :</td><td style="padding: 8px;"><strong>@Model.Reason</strong></td></tr>
+        <tr><td style="padding: 8px; color: #666;">Date d'échéance Stripe :</td><td style="padding: 8px;"><strong>@(Model.DueBy ?? "—")</strong></td></tr>
+        <tr><td style="padding: 8px; color: #666;">Identifiant Stripe :</td><td style="padding: 8px;"><code>@Model.StripeDisputeId</code></td></tr>
+    </table>
+    <p><strong>Action requise :</strong> soumettez les preuves dans le tableau de bord Stripe avant la date d'échéance.</p>
+    <p><a href="@Model.StripeDashboardUrl" style="display: inline-block; background: #635bff; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 4px;">Ouvrir dans Stripe</a></p>
+    <p style="color: #666; font-size: 12px;">Consulter le détail dans l'espace admin : <a href="@Model.AdminDetailUrl">@Model.AdminDetailUrl</a></p>
+</body>
+</html>
