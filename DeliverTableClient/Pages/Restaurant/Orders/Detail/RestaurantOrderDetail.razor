@@ -1,8 +1,12 @@
 @page "/restaurant/{RestaurantId:int}/commande/{OrderId:int}"
 @inject IOrderService OrderService
 @inject NavigationManager Nav
-@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner) + "," + nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Dispute
+@using DeliverTableSharedLibrary.Dtos.Dispute
 @using DeliverTableSharedLibrary.Dtos.Order
+@using DeliverTableSharedLibrary.Enums
+@inject IDisputeApiClient DisputeApi
 
 <PageTitle>Commande #@OrderId — DeliverTable</PageTitle>
 
@@ -26,6 +30,14 @@
     }
     else if (_order is not null)
     {
+        @if (_activeDispute is not null)
+        {
+            <div class="dispute-banner">
+                <span class="dispute-banner__icon">⚠</span>
+                <span>Litige en cours sur cette commande (@_activeDispute.ReasonCode).</span>
+                <a href="@($"/admin/litiges/{_activeDispute.Id}")">Voir le détail</a>
+            </div>
+        }
         <div class="order-detail-grid">
             <div class="order-info-card">
                 <h2>Informations</h2>
@@ -188,10 +200,19 @@
     private OrderDto? _order;
     private bool _loading = true;
     private string? _error;
+    private AdminDisputeRowDto? _activeDispute;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadOrder();
+        await LoadDisputeBanner();
+    }
+
+    private async Task LoadDisputeBanner()
+    {
+        var result = await DisputeApi.AdminListAsync(null, null, null, OrderId, 1, 1);
+        _activeDispute = result?.Items.FirstOrDefault();
+        StateHasChanged();
     }
 
     private async Task LoadOrder()
