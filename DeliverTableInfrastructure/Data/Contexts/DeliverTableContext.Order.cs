@@ -15,5 +15,6 @@ namespace DeliverTableInfrastructure.Data
         public DbSet<Invoice> Invoices => Set<Invoice>();
         public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
         public DbSet<InvoiceCounter> InvoiceCounters => Set<InvoiceCounter>();
+        public DbSet<Dispute> Disputes => Set<Dispute>();
     }
 }
