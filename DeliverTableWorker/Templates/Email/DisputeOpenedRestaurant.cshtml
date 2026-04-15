@@ -1,0 +1,18 @@
+@model DeliverTableInfrastructure.TemplateData.DisputeEmailData
+
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #c0392b;">Un litige a été ouvert sur votre commande</h2>
+    <p>Bonjour,</p>
+    <p>Un litige a été ouvert par le client sur la commande <strong>#@Model.OrderId</strong>.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr><td style="padding: 8px; color: #666;">Montant contesté :</td><td style="padding: 8px;"><strong>@Model.Amount @Model.Currency</strong></td></tr>
+        <tr><td style="padding: 8px; color: #666;">Motif :</td><td style="padding: 8px;"><strong>@Model.Reason</strong></td></tr>
+    </table>
+    <p>Le montant a été temporairement retenu sur votre compte restaurateur. Il vous sera recrédité automatiquement si le litige est résolu en notre faveur.</p>
+    <p><strong>Nous gérons la défense du litige avec Stripe. Vous serez notifié du résultat.</strong></p>
+    <p style="color: #666; font-size: 12px;">— L'équipe DeliverTable</p>
+</body>
+</html>
