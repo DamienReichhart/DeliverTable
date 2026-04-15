@@ -170,6 +170,11 @@ public static class ApiRoutes
         // ── Invoices ──
         public const string InvoicesRoute = "invoices";
         public const string InvoiceByIdRoute = "invoices/{id:int}";
+
+        // ── Disputes ──
+        public const string DisputesRoute = "disputes";
+        public const string DisputeByIdRoute = "disputes/{id:int}";
+        public const string Disputes = Base + "/" + DisputesRoute;
     }
 
     /// <summary>Cart routes (Customer role required).</summary>
@@ -239,6 +244,13 @@ public static class ApiRoutes
         public const string MyListRoute = "me";
         public const string RestaurantListRoute = "restaurant/{id:int}";
         public const string DownloadRoute = "{id:int}/pdf";
+    }
+
+    /// <summary>Dispute routes.</summary>
+    public static class Dispute
+    {
+        public const string Base = "api/v1/dispute";
+        public const string RestaurantListRoute = "restaurant/{id:int}";
     }
 
     /// <summary>Payment routes (Customer role required).</summary>
