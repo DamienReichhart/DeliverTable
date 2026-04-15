@@ -32,6 +32,7 @@ public class PaymentServiceTests
     private ICartRepository _cartRepo = null!;
     private IEmailJobService _emailJobService = null!;
     private IInvoiceService _invoiceService = null!;
+    private IDisputeService _disputeService = null!;
     private IMessagePublisher _publisher = null!;
     private AppEnvironment _env = null!;
     private TestDatabase _testDb = null!;
@@ -49,12 +50,13 @@ public class PaymentServiceTests
         _cartRepo = Substitute.For<ICartRepository>();
         _emailJobService = Substitute.For<IEmailJobService>();
         _invoiceService = Substitute.For<IInvoiceService>();
+        _disputeService = Substitute.For<IDisputeService>();
         _publisher = Substitute.For<IMessagePublisher>();
         _env = TestEnvironmentFactory.Create();
         _testDb = new TestDatabase();
         _sut = new PaymentService(
             _stripe, _paymentRepo, _orderRepo, _userRepo,
-            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _invoiceService, _publisher,
+            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _invoiceService, _disputeService, _publisher,
             _testDb.Context, _env, NullLogger<PaymentService>.Instance);
     }
 
@@ -533,4 +535,94 @@ public class PaymentServiceTests
         await _publisher.Received(1).PublishAsync("invoice", Arg.Is<InvoiceJobMessage>(m => m.InvoiceId == 200), Arg.Any<CancellationToken>());
         await _publisher.Received(1).PublishAsync("invoice", Arg.Is<InvoiceJobMessage>(m => m.InvoiceId == 201), Arg.Any<CancellationToken>());
     }
+
+    #region Dispute webhook dispatch
+
+    [Test]
+    public async Task HandleStripeEventAsync_ChargeDisputeCreated_DispatchesToDisputeService()
+    {
+        var stripeDispute = new Stripe.Dispute
+        {
+            Id = "dp_1", ChargeId = "ch_1", Amount = 1000, Currency = "eur",
+            Reason = "fraudulent", Created = DateTime.UtcNow,
+        };
+        var evt = new Stripe.Event
+        {
+            Id = "evt_disp_c",
+            Type = "charge.dispute.created",
+            Data = new Stripe.EventData { Object = stripeDispute },
+        };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_disp_c", "charge.dispute.created", Arg.Any<CancellationToken>())
+            .Returns(true);
+        _disputeService.HandleCreatedAsync(stripeDispute, Arg.Any<List<Func<Task>>>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult<Dispute>.Success(new Dispute { Id = 1 }));
+
+        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _disputeService.Received(1).HandleCreatedAsync(
+            stripeDispute, Arg.Any<List<Func<Task>>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_ChargeDisputeUpdated_DispatchesToHandleUpdated()
+    {
+        var stripeDispute = new Stripe.Dispute { Id = "dp_2" };
+        var evt = new Stripe.Event
+        {
+            Id = "evt_disp_u",
+            Type = "charge.dispute.updated",
+            Data = new Stripe.EventData { Object = stripeDispute },
+        };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_disp_u", "charge.dispute.updated", Arg.Any<CancellationToken>())
+            .Returns(true);
+        _disputeService.HandleUpdatedAsync(stripeDispute, Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Success());
+
+        await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        await _disputeService.Received(1).HandleUpdatedAsync(stripeDispute, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_ChargeDisputeClosed_DispatchesToHandleClosed()
+    {
+        var stripeDispute = new Stripe.Dispute { Id = "dp_3", Status = "won" };
+        var evt = new Stripe.Event
+        {
+            Id = "evt_disp_cl",
+            Type = "charge.dispute.closed",
+            Data = new Stripe.EventData { Object = stripeDispute },
+        };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_disp_cl", "charge.dispute.closed", Arg.Any<CancellationToken>())
+            .Returns(true);
+        _disputeService.HandleClosedAsync(stripeDispute, Arg.Any<List<Func<Task>>>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Success());
+
+        await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        await _disputeService.Received(1).HandleClosedAsync(
+            stripeDispute, Arg.Any<List<Func<Task>>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task HandleStripeEventAsync_ChargeDisputeWarning_AcksWithoutDispatch()
+    {
+        var evt = new Stripe.Event
+        {
+            Id = "evt_w",
+            Type = "charge.dispute.warning_needs_response",
+            Data = new Stripe.EventData { Object = new Stripe.Dispute() },
+        };
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_w", "charge.dispute.warning_needs_response", Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _disputeService.DidNotReceive().HandleCreatedAsync(
+            Arg.Any<Stripe.Dispute>(), Arg.Any<List<Func<Task>>>(), Arg.Any<CancellationToken>());
+    }
+
+    #endregion
 }

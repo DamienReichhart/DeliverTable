@@ -23,6 +23,7 @@ public class PaymentService(
     ICartRepository cartRepository,
     IEmailJobService emailJobService,
     IInvoiceService invoiceService,
+    IDisputeService disputeService,
     IMessagePublisher publisher,
     DeliverTableContext dbContext,
     AppEnvironment env,
@@ -254,6 +255,28 @@ public class PaymentService(
                 break;
             case "charge.refunded":
                 await HandleChargeRefundedAsync((Stripe.Charge)evt.Data.Object, deferredPublishes, ct);
+                break;
+            case "charge.dispute.created":
+                await disputeService.HandleCreatedAsync(
+                    (Stripe.Dispute)evt.Data.Object, deferredPublishes, ct);
+                break;
+            case "charge.dispute.updated":
+                await disputeService.HandleUpdatedAsync((Stripe.Dispute)evt.Data.Object, ct);
+                break;
+            case "charge.dispute.closed":
+                await disputeService.HandleClosedAsync(
+                    (Stripe.Dispute)evt.Data.Object, deferredPublishes, ct);
+                break;
+            case "charge.dispute.funds_withdrawn":
+            case "charge.dispute.funds_reinstated":
+                _logger.LogInformation(
+                    "Dispute funds event {Type} acknowledged (state derived from created/closed)", evt.Type);
+                break;
+            case "charge.dispute.warning_needs_response":
+            case "charge.dispute.warning_under_review":
+            case "charge.dispute.warning_closed":
+                _logger.LogInformation(
+                    "Dispute warning event {Type} acknowledged (out of scope)", evt.Type);
                 break;
             default:
                 _logger.LogInformation("Stripe event {EventId} of type {EventType} not handled", evt.Id, evt.Type);
