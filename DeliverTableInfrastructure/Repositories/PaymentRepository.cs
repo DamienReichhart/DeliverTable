@@ -25,6 +25,9 @@ public class PaymentRepository(DeliverTableContext dbContext) : IPaymentReposito
     public Task<Payment?> GetByStripePaymentIntentIdAsync(string paymentIntentId, CancellationToken ct = default) =>
         _dbContext.Payments.Include(p => p.Refunds).FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, ct);
 
+    public Task<Payment?> GetByStripeChargeIdAsync(string stripeChargeId, CancellationToken ct = default) =>
+        _dbContext.Payments.Include(p => p.Refunds).FirstOrDefaultAsync(p => p.StripeChargeId == stripeChargeId, ct);
+
     public async Task UpdateAsync(Payment payment, CancellationToken ct = default)
     {
         payment.UpdatedAt = DateTime.UtcNow;

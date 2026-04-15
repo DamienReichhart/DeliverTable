@@ -29,6 +29,19 @@ public class UserRepository(
     public async Task<List<User>> GetAllAsync(CancellationToken ct = default)
         => await _dbContext.Users.OrderBy(u => u.Id).ToListAsync(ct);
 
+    public async Task<List<User>> ListByRoleAsync(string roleName, CancellationToken ct = default)
+    {
+        var normalizedRole = roleName.ToUpperInvariant();
+        var query =
+            from user in _dbContext.Users
+            join userRole in _dbContext.UserRoles on user.Id equals userRole.UserId
+            join role in _dbContext.Roles on userRole.RoleId equals role.Id
+            where role.NormalizedName == normalizedRole
+            select user;
+
+        return await query.OrderBy(u => u.Id).ToListAsync(ct);
+    }
+
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> CreateAsync(User user, string password)
     {
         var result = await _userManager.CreateAsync(user, password);

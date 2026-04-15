@@ -8,6 +8,7 @@ public interface IPaymentRepository
     Task<Payment?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<Payment?> GetByOrderIdAsync(int orderId, CancellationToken ct = default);
     Task<Payment?> GetByStripePaymentIntentIdAsync(string paymentIntentId, CancellationToken ct = default);
+    Task<Payment?> GetByStripeChargeIdAsync(string stripeChargeId, CancellationToken ct = default);
     Task UpdateAsync(Payment payment, CancellationToken ct = default);
 
     Task<Refund> AddRefundAsync(Refund refund, CancellationToken ct = default);

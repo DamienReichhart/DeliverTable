@@ -25,4 +25,16 @@ public class NotificationRepository(DeliverTableContext dbContext) : INotificati
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task CreateAsync(Notification notification, CancellationToken ct = default)
+    {
+        _dbContext.Notifications.Add(notification);
+        await _dbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task CreateManyAsync(IEnumerable<Notification> notifications, CancellationToken ct = default)
+    {
+        await _dbContext.Notifications.AddRangeAsync(notifications, ct);
+        await _dbContext.SaveChangesAsync(ct);
+    }
 }
