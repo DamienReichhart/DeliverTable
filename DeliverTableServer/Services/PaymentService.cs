@@ -171,6 +171,9 @@ public class PaymentService(
         var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
         if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
 
+        if (await disputeService.HasOpenDisputeForOrderAsync(orderId, ct))
+            return new ServiceError(ErrorMessages.RefundBlockedByOpenDispute);
+
         var alreadyRefunded = await paymentRepository.GetTotalRefundedAsync(payment.Id, ct);
         var remaining = payment.Amount - alreadyRefunded;
         if (remaining <= 0m) return new ServiceError(ErrorMessages.PaymentAlreadyRefunded);
