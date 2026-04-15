@@ -13,4 +13,10 @@ public enum EmailJobType
     WelcomeEmail,
     InvoiceReadyCustomer,
     InvoiceReadyRestaurant,
+    DisputeOpenedAdmin,
+    DisputeOpenedRestaurant,
+    DisputeWonAdmin,
+    DisputeWonRestaurant,
+    DisputeLostAdmin,
+    DisputeLostRestaurant,
 }
