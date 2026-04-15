@@ -30,6 +30,7 @@ public sealed class AppEnvironment
     public string PlatformVatNumber { get; }
     public string PlatformAddress { get; }
     public bool PlatformVatApplicable { get; }
+    public string AdminDisputeEmail { get; }
 
     private AppEnvironment(
         string databaseConnectionString,
@@ -52,7 +53,8 @@ public sealed class AppEnvironment
         string platformSiret,
         string platformVatNumber,
         string platformAddress,
-        bool platformVatApplicable)
+        bool platformVatApplicable,
+        string adminDisputeEmail)
     {
         DatabaseConnectionString = databaseConnectionString;
         RedisConnectionString = redisConnectionString;
@@ -75,6 +77,7 @@ public sealed class AppEnvironment
         PlatformVatNumber = platformVatNumber;
         PlatformAddress = platformAddress;
         PlatformVatApplicable = platformVatApplicable;
+        AdminDisputeEmail = adminDisputeEmail;
     }
 
     /// <summary>
@@ -127,6 +130,8 @@ public sealed class AppEnvironment
         var platformAddress = RequireVar("PLATFORM_ADDRESS", errors);
         var platformVatApplicable = ParseBool("PLATFORM_VAT_APPLICABLE", defaultValue: true);
 
+        var adminDisputeEmail = RequireVar("ADMIN_DISPUTE_EMAIL", errors);
+
         if (errors.Count > 0)
         {
             throw new InvalidOperationException(
@@ -160,7 +165,8 @@ public sealed class AppEnvironment
             platformSiret!,
             platformVatNumber!,
             platformAddress!,
-            platformVatApplicable);
+            platformVatApplicable,
+            adminDisputeEmail!);
     }
 
     private static string? GetVar(string name)

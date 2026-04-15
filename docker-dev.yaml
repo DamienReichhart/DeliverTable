@@ -95,6 +95,7 @@ services:
       PLATFORM_VAT_NUMBER: ${PLATFORM_VAT_NUMBER}
       PLATFORM_ADDRESS: ${PLATFORM_ADDRESS}
       PLATFORM_VAT_APPLICABLE: ${PLATFORM_VAT_APPLICABLE:-true}
+      ADMIN_DISPUTE_EMAIL: ${ADMIN_DISPUTE_EMAIL}
     depends_on:
       database:
         condition: service_healthy

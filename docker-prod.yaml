@@ -115,6 +115,7 @@ services:
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      ADMIN_DISPUTE_EMAIL: ${ADMIN_DISPUTE_EMAIL}
     depends_on:
       database:
         condition: service_healthy

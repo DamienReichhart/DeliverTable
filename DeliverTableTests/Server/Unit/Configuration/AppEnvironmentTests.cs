@@ -14,7 +14,8 @@ public class AppEnvironmentTests
         "RABBITMQ_HOST", "RABBITMQ_USER", "RABBITMQ_PASSWORD",
         "STRIPE_PUBLISHABLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
         "PLATFORM_LEGAL_NAME", "PLATFORM_LEGAL_FORM", "PLATFORM_SIRET",
-        "PLATFORM_VAT_NUMBER", "PLATFORM_ADDRESS"
+        "PLATFORM_VAT_NUMBER", "PLATFORM_ADDRESS",
+        "ADMIN_DISPUTE_EMAIL"
     ];
 
     private static readonly string[] AllOptionalVars =
@@ -67,6 +68,7 @@ public class AppEnvironmentTests
             Assert.That(env.PlatformVatNumber, Is.EqualTo("FR12345678900"));
             Assert.That(env.PlatformAddress, Is.EqualTo("1 rue Test, 75001 Paris"));
             Assert.That(env.PlatformVatApplicable, Is.True);
+            Assert.That(env.AdminDisputeEmail, Is.EqualTo("disputes@test.local"));
         });
     }
 
@@ -142,6 +144,7 @@ public class AppEnvironmentTests
     [TestCase("PLATFORM_SIRET")]
     [TestCase("PLATFORM_VAT_NUMBER")]
     [TestCase("PLATFORM_ADDRESS")]
+    [TestCase("ADMIN_DISPUTE_EMAIL")]
     public void Load_Throws_WhenSingleRequiredVarIsMissing(string missingVar)
     {
         SetAllRequired();
@@ -199,5 +202,6 @@ public class AppEnvironmentTests
         Environment.SetEnvironmentVariable("PLATFORM_VAT_NUMBER", "FR12345678900");
         Environment.SetEnvironmentVariable("PLATFORM_ADDRESS", "1 rue Test, 75001 Paris");
         Environment.SetEnvironmentVariable("PLATFORM_VAT_APPLICABLE", "true");
+        Environment.SetEnvironmentVariable("ADMIN_DISPUTE_EMAIL", "disputes@test.local");
     }
 }
