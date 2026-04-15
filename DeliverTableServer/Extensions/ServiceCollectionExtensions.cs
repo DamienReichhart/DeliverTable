@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailJobRepository, EmailJobRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<IDisputeRepository, DisputeRepository>();
     }
 
     private static void RegisterServices(IServiceCollection services)
@@ -76,6 +77,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRatingService, RatingService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
+        services.AddScoped<IDisputeService, DisputeService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
