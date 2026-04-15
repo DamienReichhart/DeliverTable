@@ -271,6 +271,21 @@ public class PaymentServiceTests
     }
 
     [Test]
+    public async Task RefundAsync_WithOpenDispute_ReturnsBlockedError()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_d", Amount = 50m };
+        _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
+        _disputeService.HasOpenDisputeForOrderAsync(10, Arg.Any<CancellationToken>()).Returns(true);
+
+        var result = await _sut.RefundAsync(10, 10m, "test", adminUserId: 99, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.RefundBlockedByOpenDispute));
+        await _stripe.DidNotReceive().CreateRefundAsync(
+            Arg.Any<string>(), Arg.Any<long>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task HandleStripeEventAsync_DuplicateEvent_ReturnsSuccessWithoutWork()
     {
         var evt = new Stripe.Event { Id = "evt_dup", Type = "payment_intent.succeeded" };
