@@ -184,3 +184,27 @@
     font-size: $font-size-h3;
   }
 }
+
+.dispute-banner {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  margin-bottom: $spacing-md;
+  background: #fde8d4;
+  border: 1px solid #c0392b;
+  border-radius: $radius-md;
+  color: #c0392b;
+  font-size: $font-size-sm;
+  font-weight: 500;
+
+  &__icon {
+    font-size: $font-size-lg;
+  }
+
+  a {
+    margin-left: auto;
+    color: #c0392b;
+    text-decoration: underline;
+  }
+}
