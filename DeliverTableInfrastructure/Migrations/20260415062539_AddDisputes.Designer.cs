@@ -3,6 +3,7 @@ using System;
 using DeliverTableInfrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DeliverTableInfrastructure.Migrations
 {
     [DbContext(typeof(DeliverTableContext))]
-    partial class DeliverTableContextModelSnapshot : ModelSnapshot
+    [Migration("20260415062539_AddDisputes")]
+    partial class AddDisputes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
