@@ -105,6 +105,15 @@
   }
 }
 
+.info-banner {
+  background: lighten($color-garden-sage, 40%);
+  border: 1px solid $color-garden-sage;
+  color: $color-garden-sage;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+}
+
 .transactions-table-container {
   overflow-x: auto;
   border: 1px solid $color-border;
