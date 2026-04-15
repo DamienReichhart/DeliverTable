@@ -48,6 +48,7 @@
 24. [PAYMENT](#24-payment)
 25. [REFUND](#25-refund)
 26. [PROCESSED_STRIPE_EVENT](#26-processed_stripe_event)
+26b. [DISPUTE](#26b-dispute)
 27. [INVOICE](#27-invoice)
 28. [INVOICE_LINE](#28-invoice_line)
 29. [INVOICE_COUNTER](#29-invoice_counter)
@@ -71,6 +72,9 @@
 - [InvoiceKind](#invoicekind)
 - [InvoiceIssuerType](#invoiceissuertype)
 - [InvoiceStatus](#invoicestatus)
+- [DisputeState](#disputestate)
+- [TransactionType](#transactiontype)
+- [NotificationType](#notificationtype)
 
 ---
 
@@ -221,7 +225,7 @@ Records financial transactions for a restaurant, including credits from delivere
 | `id` | `integer` | **PK** | Unique transaction identifier. |
 | `restaurant_id` | `integer` | **FK → RESTAURANT.id, NOT NULL** | The restaurant this transaction belongs to. |
 | `order_id` | `integer` | **FK → ORDER.id, NULLABLE** | The order that generated this transaction. `NULL` for manual adjustments or withdrawals. |
-| `type` | `string` (enum) | **NOT NULL** | Transaction type. Allowed values: `CREDIT`, `WITHDRAWAL`. |
+| `type` | `string` (enum) | **NOT NULL** | Transaction type. Allowed values: `CREDIT`, `WITHDRAWAL`, `DISPUTE_REVERSAL` (100), `DISPUTE_RESTORED` (101). See [`TransactionType`](#transactiontype). |
 | `gross_amount` | `decimal(9,2)` | **NOT NULL** | Gross amount before commission. |
 | `commission_amount` | `decimal(9,2)` | **NOT NULL** | Platform commission deducted. |
 | `net_amount` | `decimal(9,2)` | **NOT NULL** | Net amount credited or debited (`gross_amount - commission_amount`). |
@@ -705,6 +709,43 @@ Idempotency log for Stripe webhook events. Before processing any incoming event,
 
 ---
 
+## 26b. DISPUTE
+
+Tracks Stripe disputes (chargebacks) end-to-end. Rows are upserted by `stripe_dispute_id` from `charge.dispute.*` webhook events. When a dispute opens, the platform immediately debits the restaurant balance via a `RESTAURANT_TRANSACTION` of type `DISPUTE_REVERSAL`; a won dispute restores the balance via `DISPUTE_RESTORED`, a lost dispute leaves the reversal in place. Evidence submission remains out-of-band in the Stripe dashboard.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `integer` | **PK** | Unique dispute identifier. |
+| `stripe_dispute_id` | `string(200)` | **NOT NULL, UNIQUE** | Stripe Dispute object ID (`dp_...`). Natural idempotency key for webhook handling. |
+| `payment_id` | `integer` | **FK → PAYMENT.id, NOT NULL** | The payment being disputed. `ON DELETE RESTRICT`. |
+| `order_id` | `integer` | **FK → ORDER.id, NOT NULL** | Denormalized from `PAYMENT` for direct lookup by order. `ON DELETE RESTRICT`. |
+| `restaurant_id` | `integer` | **FK → RESTAURANT.id, NOT NULL** | Denormalized from `ORDER` for fast restaurant-scoped queries. `ON DELETE RESTRICT`. |
+| `amount` | `decimal(9,2)` | **NOT NULL** | Disputed amount (may be partial vs. the underlying payment). |
+| `currency` | `string(3)` | **NOT NULL, DEFAULT `EUR`** | ISO 4217 currency code. |
+| `reason_code` | `string(60)` | **NOT NULL** | Raw Stripe reason string (`fraudulent`, `product_not_received`, etc.). |
+| `state` | `string` (enum) | **NOT NULL, DEFAULT `OPEN`** | Dispute lifecycle state. Allowed values: `OPEN`, `WON`, `LOST`. See [`DisputeState`](#disputestate). |
+| `due_by` | `datetime` | NULLABLE | Stripe evidence submission deadline (UTC). |
+| `opened_at` | `datetime` | **NOT NULL** | Stripe `created` timestamp (UTC). |
+| `closed_at` | `datetime` | NULLABLE | Timestamp when the dispute reached `WON` or `LOST` (UTC). |
+| `stripe_payload` | `string(8000)` | NOT NULL | Last-known JSON snapshot of the Stripe dispute object (debug / audit). |
+| `created_at` | `datetime` | **NOT NULL** | Row creation timestamp (UTC). |
+| `updated_at` | `datetime` | **NOT NULL** | Last update timestamp (UTC). |
+
+**Indexes:**
+
+- `UNIQUE (stripe_dispute_id)` — idempotency key for webhook upsert.
+- `(payment_id)`, `(order_id)`, `(restaurant_id)` — direct-lookup indexes.
+- `(restaurant_id, state)` — composite index powering the open-dispute refund guard and restaurant-scoped filters.
+
+**Relationships:**
+
+- `N → 1` **PAYMENT** — each dispute targets exactly one payment.
+- `N → 1` **ORDER** — denormalized; matches `payment.order_id`.
+- `N → 1` **RESTAURANT** — denormalized; matches `order.restaurant_id`.
+- Dispute lifecycle events emit `RESTAURANT_TRANSACTION` rows with type `DISPUTE_REVERSAL` (on open) and `DISPUTE_RESTORED` (on win); no direct FK is stored on `RESTAURANT_TRANSACTION`.
+
+---
+
 ## 27. INVOICE
 
 A legal billing document issued after a payment event. An invoice may be issued by the platform (charging the restaurant a commission) or by the restaurant (billing the customer). Credit notes are represented as `INVOICE` rows with `kind = CREDIT_NOTE` that reference the original invoice.
@@ -907,7 +948,7 @@ A notification delivered to a user (push, email, in-app, etc.) triggered by syst
 |---|---|---|---|
 | `id` | `string` | **PK** | Unique notification identifier (UUID/ULID). |
 | `user_id` | `string` | **FK → USER.id, NOT NULL** | The recipient user. |
-| `type` | `string` (enum) | **NOT NULL** | Notification category. Allowed values: `ORDER_STATUS`, `PAYMENT_STATUS`, `EVENT_UPDATE`, `SYSTEM`. |
+| `type` | `string` (enum) | **NOT NULL** | Notification category. Allowed values: `ORDER_STATUS`, `PAYMENT_STATUS`, `EVENT_UPDATE`, `SYSTEM`, `DISPUTE` (100). See [`NotificationType`](#notificationtype). |
 | `payload` | `string` (JSON) | **NOT NULL** | JSON object carrying contextual data (order ID, amounts, messages, etc.). |
 | `is_read` | `boolean` | **NOT NULL, DEFAULT false** | Whether the user has acknowledged/read the notification. |
 | `created_at` | `datetime` | **NOT NULL** | Notification creation timestamp (UTC). |
@@ -1042,3 +1083,42 @@ Lifecycle states for an `INVOICE`.
 | `DRAFT` | Invoice is being prepared and has not yet been sent. `issued_at` is `NULL`. |
 | `ISSUED` | Invoice has been finalised, numbered, and sent to the recipient. `issued_at` is set. |
 | `CANCELLED` | Invoice has been voided (typically superseded by a credit note). |
+
+---
+
+### DisputeState
+
+Lifecycle states for a `DISPUTE`.
+
+| Value | Description |
+|---|---|
+| `OPEN` | Dispute has been opened by Stripe (maps to Stripe `needs_response` / `under_review`). Restaurant balance has been debited via a `DISPUTE_REVERSAL` transaction. |
+| `WON` | Dispute was resolved in the platform's favour. The balance is restored via a `DISPUTE_RESTORED` transaction. |
+| `LOST` | Dispute was resolved against the platform. The reversal remains in place and (optionally) credit notes are generated via the invoicing service. |
+
+---
+
+### TransactionType
+
+Transaction categories for `RESTAURANT_TRANSACTION.type`. Disputes extend the enum with reserved explicit values (100+) to leave room for future transaction kinds.
+
+| Value | Numeric | Description |
+|---|---|---|
+| `CREDIT` | 0 | Credit from a successfully delivered order. |
+| `WITHDRAWAL` | 1 | Funds withdrawn by the restaurant. |
+| `DISPUTE_REVERSAL` | 100 | Debit applied when a Stripe dispute opens on an order. `net_amount` is negative (`-dispute.amount`). |
+| `DISPUTE_RESTORED` | 101 | Credit applied when a Stripe dispute is won. `net_amount` mirrors the reversal with the opposite sign. |
+
+---
+
+### NotificationType
+
+Categories for `NOTIFICATION.type`. Dispute notifications use an explicit value (100) to leave room for future notification kinds.
+
+| Value | Numeric | Description |
+|---|---|---|
+| `ORDER_STATUS` | 0 | Order lifecycle changes. |
+| `PAYMENT_STATUS` | 1 | Payment authorisation/capture/refund events. |
+| `EVENT_UPDATE` | 2 | Updates to `EVENT` bookings. |
+| `SYSTEM` | 3 | Generic system notifications. |
+| `DISPUTE` | 100 | Stripe dispute events (open/won/lost). Raised for all admins and the restaurant owner. |

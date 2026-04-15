@@ -372,6 +372,24 @@ erDiagram
         datetime processed_at
     }
 
+    DISPUTE {
+        int     id PK
+        string  stripe_dispute_id  "Stripe Dispute object ID (dp_...) – unique"
+        int     payment_id FK
+        int     order_id FK        "denormalized for direct lookup"
+        int     restaurant_id FK   "denormalized; composite index with state"
+        float   amount             "disputed amount (may be partial)"
+        string  currency           "EUR"
+        string  reason_code        "raw Stripe reason (fraudulent, product_not_received, ...)"
+        string  state              "OPEN | WON | LOST"
+        datetime due_by            "Stripe evidence deadline"
+        datetime opened_at         "Stripe created timestamp"
+        datetime closed_at         "set on Won/Lost"
+        string  stripe_payload     "last-known JSON snapshot (debug)"
+        datetime created_at
+        datetime updated_at
+    }
+
     %% Events, ratings, notifications & moderation
     EVENT {
         string  id PK
@@ -426,7 +444,7 @@ erDiagram
     NOTIFICATION {
         string  id PK
         string  user_id FK
-        string  type               "ORDER_STATUS | PAYMENT_STATUS | EVENT_UPDATE | SYSTEM"
+        string  type               "ORDER_STATUS | PAYMENT_STATUS | EVENT_UPDATE | SYSTEM | DISPUTE"
         string  payload            "JSON with contextual data"
         boolean is_read
         datetime created_at
@@ -455,6 +473,9 @@ erDiagram
     MENU_ITEM ||--o{ ORDER_ITEM : "is ordered in"
     ORDER ||--o{ PAYMENT : "has payments"
     PAYMENT ||--o{ REFUND : "has refunds"
+    PAYMENT ||--o{ DISPUTE : "has disputes"
+    ORDER ||--o{ DISPUTE : "may be disputed"
+    RESTAURANT ||--o{ DISPUTE : "bears reversal on dispute"
 
     %% Relationships – Invoicing
     ORDER ||--o{ INVOICE : "triggers"
@@ -540,5 +561,11 @@ erDiagram
 
 - **Invoicing (INVOICE / INVOICE_LINE / INVOICE_COUNTER)**
   `INVOICE` is the legal document issued after a payment. `INVOICE_LINE` holds the individual line items (one per `ORDER_ITEM`, or additional charges such as delivery fees), each carrying its own `vat_rate` so mixed-rate invoices are fully supported. `INVOICE_COUNTER` is a lightweight per-year-per-prefix sequence table that generates human-readable, monotonic invoice numbers (e.g. `FAC-2025-00042`) without gaps, using a single locked-row increment per issuance. Credit notes are modeled as `INVOICE` rows with `kind = CREDIT_NOTE` referencing the original via `related_invoice_id`. The `issuer_type` flag distinguishes whether the platform or a restaurant is the legal issuer, and the two nullable recipient FK columns (`recipient_user_id`, `recipient_restaurant_id`) accommodate both B2C and B2B billing.
+
+- **Disputes (DISPUTE)**
+  `DISPUTE` mirrors Stripe chargebacks and is upserted by `stripe_dispute_id`. Each row links to the underlying `PAYMENT`, `ORDER` and `RESTAURANT` triad. The lifecycle is `Open → Won | Lost`: on creation the platform immediately debits the restaurant balance via a `RESTAURANT_TRANSACTION` of type `DisputeReversal`; if the dispute is ultimately won the balance is restored via a `DisputeRestored` transaction, while a lost dispute leaves the reversal in place. Evidence submission remains out-of-band through the Stripe dashboard — the platform surfaces the `stripe_dispute_id` and a deep link only. Composite index `(restaurant_id, state)` supports fast open-dispute lookups used by the refund guard.
+
+- **Enumerations (augmented)**
+  `TRANSACTION_TYPE` now includes `DisputeReversal` (100) and `DisputeRestored` (101) alongside the existing `Credit` / `Withdrawal` values. `NOTIFICATION_TYPE` gains `Dispute` (100) for dispute-related in-app alerts. A new `DISPUTE_STATE` enum (`Open`, `Won`, `Lost`) captures the dispute lifecycle.
 
 This ER model is intentionally **extensible** and aligned with upcoming **Stripe integration**.
