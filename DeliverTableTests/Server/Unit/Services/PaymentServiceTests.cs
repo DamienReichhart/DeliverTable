@@ -558,8 +558,12 @@ public class PaymentServiceTests
     {
         var stripeDispute = new Stripe.Dispute
         {
-            Id = "dp_1", ChargeId = "ch_1", Amount = 1000, Currency = "eur",
-            Reason = "fraudulent", Created = DateTime.UtcNow,
+            Id = "dp_1",
+            ChargeId = "ch_1",
+            Amount = 1000,
+            Currency = "eur",
+            Reason = "fraudulent",
+            Created = DateTime.UtcNow,
         };
         var evt = new Stripe.Event
         {
