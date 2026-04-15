@@ -5,5 +5,6 @@ public enum NotificationType
     OrderStatus,
     PaymentStatus,
     EventUpdate,
-    System
+    System,
+    Dispute = 100,
 }
