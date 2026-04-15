@@ -1,0 +1,103 @@
+@use "../../../../Styles/abstracts/variables" as *;
+@use "../../../../Styles/abstracts/mixins" as *;
+
+.admin-dispute-detail {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h1 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0;
+  }
+}
+
+.dispute-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  background: $color-bg-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+
+  h2 {
+    font-size: $font-size-h3;
+    margin: 0;
+  }
+
+  .meta {
+    color: $color-text-muted;
+    font-size: $font-size-sm;
+    margin: 0;
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-bg-white;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+
+  .label {
+    display: block;
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.linked-tx {
+  width: 100%;
+  border-collapse: collapse;
+  background: $color-bg-white;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+
+  th,
+  td {
+    padding: $spacing-sm;
+    text-align: left;
+    border-bottom: 1px solid $color-border;
+  }
+}
+
+.state-badge {
+  padding: 4px 10px;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: 600;
+
+  &--open {
+    background: #fde8d4;
+    color: #c0392b;
+  }
+
+  &--won {
+    background: #d4fde4;
+    color: #27ae60;
+  }
+
+  &--lost {
+    background: #eee;
+    color: #555;
+  }
+}

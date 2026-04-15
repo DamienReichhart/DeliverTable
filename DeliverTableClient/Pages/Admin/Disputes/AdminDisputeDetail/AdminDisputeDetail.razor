@@ -1,0 +1,118 @@
+@page "/admin/litiges/{Id:int}"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Dispute
+@using DeliverTableSharedLibrary.Dtos.Dispute
+@using DeliverTableSharedLibrary.Enums
+@inject IDisputeApiClient DisputeApi
+@inject NavigationManager Nav
+
+<PageTitle>Litige #@Id — Administration</PageTitle>
+
+<section class="admin-dispute-detail">
+    <div class="page-header">
+        <h1>Litige #@Id</h1>
+        <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">Retour</button>
+    </div>
+
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_detail is null)
+    {
+        <p>Litige introuvable.</p>
+    }
+    else
+    {
+        var h = _detail.Header;
+        <div class="dispute-header">
+            <div>
+                <h2>Commande #@h.OrderId</h2>
+                <p class="meta">@h.RestaurantName (#@h.RestaurantId) — client : @h.CustomerEmail</p>
+            </div>
+            <span class="state-badge state-badge--@h.State.ToString().ToLower()">@Translate(h.State)</span>
+        </div>
+
+        <div class="info-grid">
+            <div><span class="label">Stripe Dispute ID</span><code>@h.StripeDisputeId</code></div>
+            <div><span class="label">Stripe Charge ID</span><code>@_detail.StripeChargeId</code></div>
+            <div><span class="label">Montant contesté</span>@h.Amount.ToString("0.00") @h.Currency</div>
+            <div><span class="label">Montant paiement</span>@_detail.PaymentAmount.ToString("0.00") @h.Currency</div>
+            <div><span class="label">Motif</span>@h.ReasonCode</div>
+            <div><span class="label">Ouvert le</span>@h.OpenedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+            <div><span class="label">Fermé le</span>@(h.ClosedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")</div>
+            <div><span class="label">Échéance Stripe</span>@(h.DueBy?.ToLocalTime().ToString("dd/MM/yyyy") ?? "—") @(_countdown is not null ? $" ({_countdown})" : string.Empty)</div>
+        </div>
+
+        <div class="actions">
+            <a href="@_detail.StripeDashboardUrl" target="_blank" class="app-btn app-btn--primary">
+                Soumettre des preuves sur Stripe →
+            </a>
+        </div>
+
+        <h3>Transactions liées</h3>
+        @if (_detail.LinkedTransactions.Count == 0)
+        {
+            <p>Aucune transaction liée.</p>
+        }
+        else
+        {
+            <table class="linked-tx">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Montant net</th>
+                        <th>Solde après</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tx in _detail.LinkedTransactions)
+                    {
+                        <tr>
+                            <td>@tx.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@tx.Type</td>
+                            <td>@tx.NetAmount.ToString("0.00")</td>
+                            <td>@tx.BalanceAfter.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+</section>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private AdminDisputeDetailDto? _detail;
+    private bool _loading = true;
+    private string? _countdown;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _detail = await DisputeApi.AdminGetAsync(Id);
+        _loading = false;
+
+        if (_detail?.Header.DueBy is not null && _detail.Header.State == DisputeState.Open)
+        {
+            var days = (_detail.Header.DueBy.Value.Date - DateTime.UtcNow.Date).Days;
+            _countdown = days switch
+            {
+                < 0 => "échéance dépassée",
+                0 => "aujourd'hui",
+                _ => $"J-{days}"
+            };
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/admin/litiges");
+
+    private static string Translate(DisputeState state) => state switch
+    {
+        DisputeState.Open => "Ouvert",
+        DisputeState.Won => "Gagné",
+        DisputeState.Lost => "Perdu",
+        _ => state.ToString()
+    };
+}
