@@ -1,0 +1,99 @@
+@page "/admin/litiges"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.Dispute
+@using DeliverTableSharedLibrary.Dtos.Dispute
+@using DeliverTableSharedLibrary.Enums
+@inject IDisputeApiClient DisputeApi
+@inject NavigationManager Nav
+
+<PageTitle>Litiges — Administration</PageTitle>
+
+<section class="admin-disputes">
+    <h1>Litiges (admin)</h1>
+
+    <form class="filters" @onsubmit="ApplyFilters">
+        <select @bind="_state">
+            <option value="">Tous états</option>
+            @foreach (var st in Enum.GetValues<DisputeState>())
+            {
+                <option value="@st">@Translate(st)</option>
+            }
+        </select>
+        <input type="number" @bind="_year" placeholder="Année" />
+        <input type="number" @bind="_restaurantId" placeholder="Restaurant ID" />
+        <button type="submit">Filtrer</button>
+    </form>
+
+    @if (_loading)
+    {
+        <p>Chargement...</p>
+    }
+    else if (_items is null || _items.Count == 0)
+    {
+        <p>Aucun litige à ce jour.</p>
+    }
+    else
+    {
+        <table class="disputes-table">
+            <thead>
+                <tr>
+                    <th>Ouvert</th>
+                    <th>Stripe ID</th>
+                    <th>Commande</th>
+                    <th>Restaurant</th>
+                    <th>Client</th>
+                    <th>Montant</th>
+                    <th>Motif</th>
+                    <th>Échéance</th>
+                    <th>État</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in _items)
+                {
+                    <tr>
+                        <td>@d.OpenedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td><code>@d.StripeDisputeId</code></td>
+                        <td>#@d.OrderId</td>
+                        <td>@d.RestaurantName (#@d.RestaurantId)</td>
+                        <td>@d.CustomerEmail</td>
+                        <td>@d.Amount.ToString("0.00") @d.Currency</td>
+                        <td>@d.ReasonCode</td>
+                        <td>@(d.DueBy?.ToLocalTime().ToString("dd/MM/yyyy") ?? "—")</td>
+                        <td><span class="state-badge state-badge--@d.State.ToString().ToLower()">@Translate(d.State)</span></td>
+                        <td><a href="@($"/admin/litiges/{d.Id}")">Détails</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    private bool _loading = true;
+    private List<AdminDisputeRowDto>? _items;
+    private DisputeState? _state;
+    private int? _year;
+    private int? _restaurantId;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task ApplyFilters() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        var result = await DisputeApi.AdminListAsync(_state, _year, _restaurantId, null, 1, 50);
+        _items = result?.Items.ToList() ?? new();
+        _loading = false;
+    }
+
+    private static string Translate(DisputeState state) => state switch
+    {
+        DisputeState.Open => "Ouvert",
+        DisputeState.Won => "Gagné",
+        DisputeState.Lost => "Perdu",
+        _ => state.ToString()
+    };
+}

@@ -1,0 +1,85 @@
+@use "../../../../Styles/abstracts/variables" as *;
+@use "../../../../Styles/abstracts/mixins" as *;
+
+.admin-disputes {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+
+  h1 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+
+  select,
+  input {
+    padding: $spacing-xs $spacing-sm;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+  }
+
+  button {
+    padding: $spacing-xs $spacing-md;
+    background: $color-garden-sage;
+    color: $color-bg-white;
+    border: none;
+    border-radius: $radius-md;
+    cursor: pointer;
+  }
+}
+
+.disputes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+  background: $color-bg-white;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+
+  thead tr {
+    background: lighten($color-garden-sage, 45%);
+  }
+
+  th,
+  td {
+    padding: $spacing-sm;
+    text-align: left;
+    border-bottom: 1px solid $color-border;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.state-badge {
+  padding: 2px 8px;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: 600;
+
+  &--open {
+    background: #fde8d4;
+    color: #c0392b;
+  }
+
+  &--won {
+    background: #d4fde4;
+    color: #27ae60;
+  }
+
+  &--lost {
+    background: #eee;
+    color: #555;
+  }
+}
