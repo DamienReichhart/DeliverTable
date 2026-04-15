@@ -3,11 +3,14 @@
 @inject IRestaurantService RestaurantService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableClient.Services.Dispute
 @using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.Dispute
 @using DeliverTableSharedLibrary.Dtos.Invoice
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 @using DeliverTableSharedLibrary.Enums
 @inject IInvoiceApiClient InvoiceApi
+@inject IDisputeApiClient DisputeApi
 
 <PageTitle>Compte — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
 
@@ -135,6 +138,54 @@
         </div>
 
         <div class="transactions-section">
+            <h2>Litiges</h2>
+
+            @if (_disputesLoading)
+            {
+                <p>Chargement des litiges...</p>
+            }
+            else if (_disputes is null || _disputes.Count == 0)
+            {
+                <div class="empty-state">
+                    <p>Aucun litige à ce jour.</p>
+                </div>
+            }
+            else
+            {
+                <div class="info-banner">
+                    Nous gérons la défense du litige avec Stripe. Vous serez notifié du résultat.
+                </div>
+                <div class="transactions-table-container">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Commande</th>
+                                <th>Montant</th>
+                                <th>Motif</th>
+                                <th>État</th>
+                                <th>Échéance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in _disputes)
+                            {
+                                <tr>
+                                    <td>@d.OpenedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                    <td>#@d.OrderId</td>
+                                    <td>@d.Amount.ToString("C", _frCulture)</td>
+                                    <td>@d.ReasonCode</td>
+                                    <td><span class="tx-type-badge tx-type--@d.State.ToString().ToLower()">@TranslateDisputeState(d.State)</span></td>
+                                    <td>@(d.DueBy?.ToLocalTime().ToString("dd/MM/yyyy") ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="transactions-section">
             <h2>Historique des transactions</h2>
 
             @if (_account.Transactions.Items.Count == 0)
@@ -214,6 +265,9 @@
     private List<InvoiceListItemDto>? _invoices;
     private bool _invoicesLoading = true;
 
+    private List<DisputeRowDto>? _disputes;
+    private bool _disputesLoading = true;
+
     private bool _showWithdraw;
     private bool _withdrawing;
     private string? _withdrawError;
@@ -224,7 +278,7 @@
     {
         var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
         _restaurantName = restaurant?.Name;
-        await Task.WhenAll(LoadAccount(), LoadInvoices());
+        await Task.WhenAll(LoadAccount(), LoadInvoices(), LoadDisputes());
     }
 
     private async Task LoadInvoices()
@@ -233,6 +287,14 @@
         var result = await InvoiceApi.GetForRestaurantAsync(RestaurantId, 1, 50);
         _invoices = result?.Items.ToList() ?? new();
         _invoicesLoading = false;
+    }
+
+    private async Task LoadDisputes()
+    {
+        _disputesLoading = true;
+        var result = await DisputeApi.GetForRestaurantAsync(RestaurantId, 1, 50);
+        _disputes = result?.Items.ToList() ?? new();
+        _disputesLoading = false;
     }
 
     private Task DownloadInvoice(int id) => InvoiceApi.DownloadPdfAsync(id);
@@ -312,7 +374,17 @@
     {
         "Credit" => "Crédit",
         "Withdrawal" => "Retrait",
+        "DisputeReversal" => "Débit litige",
+        "DisputeRestored" => "Crédit litige gagné",
         _ => type
+    };
+
+    private static string TranslateDisputeState(DisputeState state) => state switch
+    {
+        DisputeState.Open => "Ouvert",
+        DisputeState.Won => "Gagné",
+        DisputeState.Lost => "Perdu",
+        _ => state.ToString()
     };
 
     private string FormatSignedAmount(RestaurantTransactionDto tx) => tx.Type switch

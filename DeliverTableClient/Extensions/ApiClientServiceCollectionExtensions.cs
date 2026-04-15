@@ -1,6 +1,7 @@
 using DeliverTableClient.Configuration;
 using DeliverTableClient.Configuration.Interfaces;
 using DeliverTableClient.Services;
+using DeliverTableClient.Services.Dispute;
 using DeliverTableClient.Services.Interfaces;
 using DeliverTableClient.Services.Invoice;
 using DeliverTableClient.Services.Payment;
@@ -50,6 +51,7 @@ public static class ApiClientServiceCollectionExtensions
         RegisterRatingClientService(services);
         RegisterPaymentService(services);
         RegisterInvoiceService(services);
+        RegisterDisputeService(services);
         RegisterAdminDomainServices(services);
 
         return services;
@@ -126,6 +128,11 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterInvoiceService(IServiceCollection services)
     {
         services.AddScoped<IInvoiceApiClient, InvoiceApiClient>();
+    }
+
+    private static void RegisterDisputeService(IServiceCollection services)
+    {
+        services.AddScoped<IDisputeApiClient, DisputeApiClient>();
     }
 
     private static void RegisterAdminDomainServices(IServiceCollection services)
