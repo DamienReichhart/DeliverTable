@@ -26,7 +26,8 @@ public static class AppEnvironmentTestHelper
         ["PLATFORM_SIRET"] = "73282932000074",
         ["PLATFORM_VAT_NUMBER"] = "FR12345678900",
         ["PLATFORM_ADDRESS"] = "1 rue Test, 75001 Paris",
-        ["PLATFORM_VAT_APPLICABLE"] = "true"
+        ["PLATFORM_VAT_APPLICABLE"] = "true",
+        ["ADMIN_DISPUTE_EMAIL"] = "disputes@test.local"
     };
 
     public static AppEnvironment SetupEnvironment()

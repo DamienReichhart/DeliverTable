@@ -121,6 +121,12 @@ public static class ErrorMessages
     public const string SiretInvalid = "Le numéro SIRET est invalide";
     public const string LegalFieldsRequired = "Les informations légales (SIRET, raison sociale, adresse, forme juridique) sont obligatoires";
 
+    // Disputes
+    public const string DisputeNotFound = "Litige introuvable";
+    public const string DisputeAccessDenied = "Vous n'êtes pas autorisé à consulter ce litige";
+    public const string RefundBlockedByOpenDispute = "Impossible de rembourser : un litige est ouvert sur cette commande";
+    public const string DisputePaymentNotFound = "Aucun paiement correspondant à ce litige n'a été trouvé";
+
     // Stripe / Payments
     public const string OrderAccessDenied = "Vous n'êtes pas autorisé à modifier cette commande";
     public const string PaymentIntentCreationFailed = "Impossible de créer l'intention de paiement";
