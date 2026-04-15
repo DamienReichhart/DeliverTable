@@ -183,8 +183,11 @@ public class DisputeServiceTests
     {
         var existing = new Dispute
         {
-            Id = 42, StripeDisputeId = "dp_1", State = DisputeState.Open,
-            DueBy = DateTime.UtcNow, StripePayload = "{}",
+            Id = 42,
+            StripeDisputeId = "dp_1",
+            State = DisputeState.Open,
+            DueBy = DateTime.UtcNow,
+            StripePayload = "{}",
         };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns(existing);
         var newDueBy = DateTime.UtcNow.AddDays(14);
@@ -218,8 +221,12 @@ public class DisputeServiceTests
     {
         var dispute = new Dispute
         {
-            Id = 42, StripeDisputeId = "dp_1",
-            OrderId = 10, RestaurantId = 5, Amount = 25m, State = DisputeState.Open,
+            Id = 42,
+            StripeDisputeId = "dp_1",
+            OrderId = 10,
+            RestaurantId = 5,
+            Amount = 25m,
+            State = DisputeState.Open,
         };
         var owner = new User { Id = 99, Email = "o@r.fr" };
         var restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 75m, OwnerId = 99, Owner = owner };
@@ -248,8 +255,12 @@ public class DisputeServiceTests
     {
         var dispute = new Dispute
         {
-            Id = 42, StripeDisputeId = "dp_1",
-            OrderId = 10, RestaurantId = 5, Amount = 25m, State = DisputeState.Open,
+            Id = 42,
+            StripeDisputeId = "dp_1",
+            OrderId = 10,
+            RestaurantId = 5,
+            Amount = 25m,
+            State = DisputeState.Open,
         };
         var owner = new User { Id = 99, Email = "o@r.fr" };
         var restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 75m, OwnerId = 99, Owner = owner };
@@ -270,8 +281,12 @@ public class DisputeServiceTests
     {
         var dispute = new Dispute
         {
-            Id = 42, StripeDisputeId = "dp_1",
-            OrderId = 10, RestaurantId = 5, Amount = 25m, State = DisputeState.Won,
+            Id = 42,
+            StripeDisputeId = "dp_1",
+            OrderId = 10,
+            RestaurantId = 5,
+            Amount = 25m,
+            State = DisputeState.Won,
         };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns(dispute);
 
