@@ -341,7 +341,7 @@ public class InvoiceService(
 
         try
         {
-            await messagePublisher.PublishAsync("email", new EmailJobMessage(emailJob.Id), ct);
+            await messagePublisher.PublishAsync(MessagingExchanges.Email, new EmailJobMessage(emailJob.Id), ct);
         }
         catch
         {

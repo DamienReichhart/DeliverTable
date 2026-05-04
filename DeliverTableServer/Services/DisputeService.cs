@@ -356,7 +356,7 @@ public class DisputeService(
         {
             try
             {
-                await publisher.PublishAsync("email", new EmailJobMessage(jobId), ct);
+                await publisher.PublishAsync(MessagingExchanges.Email, new EmailJobMessage(jobId), ct);
             }
             catch (Exception ex)
             {

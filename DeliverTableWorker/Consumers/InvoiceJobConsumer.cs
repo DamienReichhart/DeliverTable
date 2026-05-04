@@ -24,7 +24,7 @@ public sealed class InvoiceJobConsumer(
 {
     private const string MainExchange = "delivertable.jobs";
     private const string MainQueue = "delivertable.jobs.invoice";
-    private const string RoutingKey = "invoice";
+    private const string RoutingKey = MessagingExchanges.Invoice;
 
     private IConnection? _connection;
     private IChannel? _channel;
@@ -206,7 +206,7 @@ public sealed class InvoiceJobConsumer(
             };
 
             await emailJobRepo.CreateAsync(emailJob, ct);
-            await publisher.PublishAsync("email", new EmailJobMessage(emailJob.Id), ct);
+            await publisher.PublishAsync(MessagingExchanges.Email, new EmailJobMessage(emailJob.Id), ct);
 
             logger.LogInformation(
                 "Invoice {Id} generated and email job {JobId} queued for {Email}",

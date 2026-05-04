@@ -161,7 +161,7 @@ public class EmailJobService(
 
         try
         {
-            await messagePublisher.PublishAsync("email", new EmailJobMessage(job.Id));
+            await messagePublisher.PublishAsync(MessagingExchanges.Email, new EmailJobMessage(job.Id));
         }
         catch (Exception ex)
         {

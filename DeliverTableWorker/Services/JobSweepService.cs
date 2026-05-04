@@ -48,7 +48,7 @@ public class JobSweepService(
         {
             try
             {
-                await publisher.PublishAsync("email", new EmailJobMessage(job.Id));
+                await publisher.PublishAsync(MessagingExchanges.Email, new EmailJobMessage(job.Id));
                 logger.LogWarning("Re-published stale Pending email job {JobId}", job.Id);
             }
             catch (Exception ex)
