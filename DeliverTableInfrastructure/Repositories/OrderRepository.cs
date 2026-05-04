@@ -22,12 +22,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
     public async Task<Order?> GetByIdAsync(int orderId, CancellationToken ct = default)
     {
         return await _dbContext.Orders
-            .Include(o => o.Items)
-            .Include(o => o.Restaurant)
-            .Include(o => o.Discounts)
-            .Include(o => o.Payments)
-            .Include(o => o.RestaurantTable)
-            .Include(o => o.Event)
+            .IncludeOrderAggregate()
             .FirstOrDefaultAsync(o => o.Id == orderId, ct);
     }
 
@@ -35,12 +30,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         int customerId, OrderQuery query, CancellationToken ct = default)
     {
         var q = _dbContext.Orders
-            .Include(o => o.Items)
-            .Include(o => o.Restaurant)
-            .Include(o => o.Discounts)
-            .Include(o => o.Payments)
-            .Include(o => o.RestaurantTable)
-            .Include(o => o.Event)
+            .IncludeOrderAggregate()
             .Where(o => o.CustomerId == customerId);
 
         if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))
@@ -57,12 +47,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         int restaurantId, OrderQuery query, CancellationToken ct = default)
     {
         var q = _dbContext.Orders
-            .Include(o => o.Items)
-            .Include(o => o.Restaurant)
-            .Include(o => o.Discounts)
-            .Include(o => o.Payments)
-            .Include(o => o.RestaurantTable)
-            .Include(o => o.Event)
+            .IncludeOrderAggregate()
             .Where(o => o.RestaurantId == restaurantId);
 
         if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))
