@@ -66,10 +66,10 @@ erDiagram
         float   latitude
         float   longitude
         float   balance             "credited on delivery, minus commission"
-        string  siret               "14-digit SIRET number (nullable)"
-        string  legal_name          "official registered company name (nullable)"
-        string  legal_address       "full registered address (nullable)"
-        string  legal_form          "e.g. SARL, SAS, EI (nullable)"
+        string  siret               "14-digit SIRET number"
+        string  legal_name          "official registered company name"
+        string  legal_address       "full registered address"
+        string  legal_form          "e.g. SARL, SAS, EI "
         boolean is_vat_registered   "whether the restaurant charges VAT (default false)"
         boolean is_active
         datetime created_at
