@@ -56,38 +56,10 @@ namespace DeliverTableClient.Services
         {
             try
             {
-                using var content = new MultipartFormDataContent();
-
-                content.Add(new StringContent(createDto.Name ?? string.Empty), nameof(CreateDishDto.Name));
-                content.Add(new StringContent(createDto.Description ?? string.Empty), nameof(CreateDishDto.Description));
-                content.Add(new StringContent(createDto.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)), nameof(CreateDishDto.BasePrice));
-                content.Add(new StringContent(createDto.IsVegetarian.ToString()), nameof(CreateDishDto.IsVegetarian));
-                content.Add(new StringContent(createDto.IsVegan.ToString()), nameof(CreateDishDto.IsVegan));
-                content.Add(new StringContent(createDto.IsGlutenFree.ToString()), nameof(CreateDishDto.IsGlutenFree));
-                content.Add(new StringContent(createDto.IsAllergenHazard.ToString()), nameof(CreateDishDto.IsAllergenHazard));
-                content.Add(new StringContent(createDto.IsDishOfTheDay.ToString()), nameof(CreateDishDto.IsDishOfTheDay));
-                content.Add(new StringContent(((int)createDto.VatRate).ToString()), nameof(CreateDishDto.VatRate));
-
-                if (image is not null)
-                {
-                    var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: MaxUploadBytes));
-                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(image.ContentType);
-                    content.Add(fileContent, "image", image.Name);
-                }
-
+                using var content = BuildDishFormContent(createDto, image);
                 string url = ApiRoutes.Dish.DishesByRestaurantId.Replace("{id:int}", restaurantId.ToString());
                 var response = await _httpClient.PostAsync(url, content, cancellationToken);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<DishDto>(cancellationToken: cancellationToken);
-                    return (result, null);
-                }
-                else
-                {
-                    var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
-                    return (null, error ?? new ErrorResponse { Error = "Unknown error occurred" });
-                }
+                return await ReadDishResponse(response, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -99,43 +71,52 @@ namespace DeliverTableClient.Services
         {
             try
             {
-                using var content = new MultipartFormDataContent();
-
-                content.Add(new StringContent(updateDto.Name ?? string.Empty), nameof(CreateDishDto.Name));
-                content.Add(new StringContent(updateDto.Description ?? string.Empty), nameof(CreateDishDto.Description));
-                content.Add(new StringContent(updateDto.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)), nameof(CreateDishDto.BasePrice));
-                content.Add(new StringContent(updateDto.IsVegetarian.ToString()), nameof(CreateDishDto.IsVegetarian));
-                content.Add(new StringContent(updateDto.IsVegan.ToString()), nameof(CreateDishDto.IsVegan));
-                content.Add(new StringContent(updateDto.IsGlutenFree.ToString()), nameof(CreateDishDto.IsGlutenFree));
-                content.Add(new StringContent(updateDto.IsAllergenHazard.ToString()), nameof(CreateDishDto.IsAllergenHazard));
-                content.Add(new StringContent(updateDto.IsDishOfTheDay.ToString()), nameof(CreateDishDto.IsDishOfTheDay));
-                content.Add(new StringContent(((int)updateDto.VatRate).ToString()), nameof(CreateDishDto.VatRate));
-
-                if (image is not null)
-                {
-                    var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: MaxUploadBytes));
-                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(image.ContentType);
-                    content.Add(fileContent, "image", image.Name);
-                }
-
+                using var content = BuildDishFormContent(updateDto, image);
                 string url = $"{ApiRoutes.Dish.Base}/{dishId}";
                 var response = await _httpClient.PutAsync(url, content, cancellationToken);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<DishDto>(cancellationToken: cancellationToken);
-                    return (result, null);
-                }
-                else
-                {
-                    var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
-                    return (null, error ?? new ErrorResponse { Error = "Unknown error occurred" });
-                }
+                return await ReadDishResponse(response, cancellationToken);
             }
             catch (Exception ex)
             {
                 return (null, new ErrorResponse { Error = ex.Message });
             }
+        }
+
+        private static MultipartFormDataContent BuildDishFormContent(CreateDishDto dto, IBrowserFile? image)
+        {
+            var content = new MultipartFormDataContent
+            {
+                { new StringContent(dto.Name ?? string.Empty), nameof(CreateDishDto.Name) },
+                { new StringContent(dto.Description ?? string.Empty), nameof(CreateDishDto.Description) },
+                { new StringContent(dto.BasePrice.ToString(System.Globalization.CultureInfo.InvariantCulture)), nameof(CreateDishDto.BasePrice) },
+                { new StringContent(dto.IsVegetarian.ToString()), nameof(CreateDishDto.IsVegetarian) },
+                { new StringContent(dto.IsVegan.ToString()), nameof(CreateDishDto.IsVegan) },
+                { new StringContent(dto.IsGlutenFree.ToString()), nameof(CreateDishDto.IsGlutenFree) },
+                { new StringContent(dto.IsAllergenHazard.ToString()), nameof(CreateDishDto.IsAllergenHazard) },
+                { new StringContent(dto.IsDishOfTheDay.ToString()), nameof(CreateDishDto.IsDishOfTheDay) },
+                { new StringContent(((int)dto.VatRate).ToString()), nameof(CreateDishDto.VatRate) },
+            };
+
+            if (image is not null)
+            {
+                var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: MaxUploadBytes));
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(image.ContentType);
+                content.Add(fileContent, "image", image.Name);
+            }
+
+            return content;
+        }
+
+        private static async Task<(DishDto?, ErrorResponse?)> ReadDishResponse(HttpResponseMessage response, CancellationToken cancellationToken)
+        {
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<DishDto>(cancellationToken: cancellationToken);
+                return (result, null);
+            }
+
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
+            return (null, error ?? new ErrorResponse { Error = "Unknown error occurred" });
         }
 
         public async Task<ErrorResponse?> DeleteDish(int dishId, CancellationToken cancellationToken = default)
