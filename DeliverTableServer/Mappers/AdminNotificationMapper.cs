@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -13,9 +14,7 @@ public static class AdminNotificationMapper
             Type = notification.Type.ToString(),
             Payload = notification.Payload,
             IsRead = notification.IsRead,
-            UserName = notification.User is not null
-                ? $"{notification.User.FirstName} {notification.User.LastName}"
-                : "",
+            UserName = notification.User?.GetFullName() ?? "",
             UserId = notification.UserId,
             CreatedAt = notification.CreatedAt
         };

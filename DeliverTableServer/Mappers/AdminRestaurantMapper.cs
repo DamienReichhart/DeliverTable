@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -23,9 +24,7 @@ public static class AdminRestaurantMapper
             IsActive = restaurant.IsActive,
             Balance = restaurant.Balance,
             OwnerId = restaurant.OwnerId,
-            OwnerName = restaurant.Owner is not null
-                ? $"{restaurant.Owner.FirstName} {restaurant.Owner.LastName}"
-                : "",
+            OwnerName = restaurant.Owner?.GetFullName() ?? "",
             CreatedAt = restaurant.CreatedAt,
             UpdatedAt = restaurant.UpdatedAt
         };

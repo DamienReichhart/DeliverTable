@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -15,9 +16,7 @@ public static class AdminRatingMapper
             RestaurantName = rating.Restaurant is not null
                 ? rating.Restaurant.Name
                 : "",
-            CustomerName = rating.CustomerUser is not null
-                ? $"{rating.CustomerUser.FirstName} {rating.CustomerUser.LastName}"
-                : "",
+            CustomerName = rating.CustomerUser?.GetFullName() ?? "",
             OrderId = rating.OrderId,
             CreatedAt = rating.CreatedAt
         };

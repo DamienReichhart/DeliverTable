@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -36,9 +37,7 @@ public static class AdminDiscountCodeMapper
         return new AdminRedemptionResponse
         {
             Id = redemption.Id,
-            CustomerName = redemption.Customer is not null
-                ? $"{redemption.Customer.FirstName} {redemption.Customer.LastName}"
-                : "",
+            CustomerName = redemption.Customer?.GetFullName() ?? "",
             OrderId = redemption.OrderId,
             CreatedAt = redemption.CreatedAt
         };
