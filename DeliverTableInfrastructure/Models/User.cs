@@ -27,6 +27,21 @@ public class User : IdentityUser<int>
     [MaxLength(200)]
     public string? StripeCustomerId { get; set; }
 
+    [MaxLength(200)]
+    public string BillingAddressLine1 { get; set; } = string.Empty;
+
+    [MaxLength(200)]
+    public string BillingAddressLine2 { get; set; } = string.Empty;
+
+    [MaxLength(10)]
+    public string BillingPostalCode { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string BillingCity { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string BillingCountry { get; set; } = string.Empty;
+
     public RestaurantOwner? RestaurantOwner { get; set; }
     public Customer? Customer { get; set; }
 
