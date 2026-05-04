@@ -11,6 +11,7 @@ namespace DeliverTableServer.Services;
 public sealed class AdminOrderService(IOrderRepository orderRepository) : IAdminOrderService
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
+    private static readonly string OrderStatusNames = string.Join(", ", Enum.GetNames<OrderStatus>());
 
     public async Task<ServiceResult<List<AdminOrderResponse>>> GetAllAsync(CancellationToken ct = default)
     {
@@ -32,10 +33,7 @@ public sealed class AdminOrderService(IOrderRepository orderRepository) : IAdmin
         int id, AdminUpdateOrderStatusRequest request, CancellationToken ct = default)
     {
         if (!Enum.TryParse<OrderStatus>(request.Status, out var newStatus))
-        {
-            var validValues = string.Join(", ", Enum.GetNames<OrderStatus>());
-            return ServiceError.BadRequest(ErrorMessages.InvalidOrderStatus(validValues));
-        }
+            return ServiceError.BadRequest(ErrorMessages.InvalidOrderStatus(OrderStatusNames));
 
         var order = await _orderRepository.GetByIdWithFullDetailsAsync(id, ct);
         if (order is null)
