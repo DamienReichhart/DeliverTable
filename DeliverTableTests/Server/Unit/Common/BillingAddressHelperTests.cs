@@ -12,16 +12,16 @@ public class BillingAddressHelperTests
         string postal = "75002",
         string city = "Paris",
         string country = "France") => new()
-    {
-        FirstName = "Jean",
-        LastName = "Dupont",
-        Email = "jean@example.fr",
-        BillingAddressLine1 = line1,
-        BillingAddressLine2 = line2,
-        BillingPostalCode = postal,
-        BillingCity = city,
-        BillingCountry = country,
-    };
+        {
+            FirstName = "Jean",
+            LastName = "Dupont",
+            Email = "jean@example.fr",
+            BillingAddressLine1 = line1,
+            BillingAddressLine2 = line2,
+            BillingPostalCode = postal,
+            BillingCity = city,
+            BillingCountry = country,
+        };
 
     [Test]
     public void HasCompleteBillingAddress_AllRequiredPresent_ReturnsTrue()
