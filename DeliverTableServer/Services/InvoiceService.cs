@@ -462,7 +462,7 @@ public class InvoiceService(
             LegalForm: string.Empty,
             Siret: string.Empty,
             VatNumber: string.Empty,
-            Address: string.Empty,
+            Address: BillingAddressHelper.FormatBillingAddressForSnapshot(customer),
             Email: customer.Email ?? string.Empty);
 
         var invoice = new Invoice

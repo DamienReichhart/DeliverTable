@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DeliverTableInfrastructure.Invoicing;
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
@@ -343,6 +344,36 @@ public class InvoiceServiceTests
         Assert.That(result.IsSuccess, Is.True);
         var lines = CustomerInvoiceLines(captured);
         Assert.That(lines.All(l => l.Kind == InvoiceLineKind.Item), Is.True);
+    }
+
+    [Test]
+    public async Task BuildCustomerInvoice_WithCustomerAddress_PopulatesRecipientSnapshot()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var customer = Cust();
+        customer.BillingAddressLine1 = "12 rue de la Paix";
+        customer.BillingAddressLine2 = "Bât. B";
+        customer.BillingPostalCode = "75002";
+        customer.BillingCity = "Paris";
+        customer.BillingCountry = "France";
+
+        var order = BuildOrder(
+            orderId: 100,
+            resto,
+            customer,
+            items: new() { Item("Plat", 50m, 1, VatRate.Normal20) },
+            discounts: new());
+        ArrangeDefaultMocks(100, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(100, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        var snapshot = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(customerInvoice.RecipientSnapshotJson);
+        Assert.That(snapshot, Is.Not.Null);
+        Assert.That(snapshot!.Address,
+            Is.EqualTo("12 rue de la Paix\nBât. B\n75002 Paris\nFrance"));
     }
 
     [Test]
