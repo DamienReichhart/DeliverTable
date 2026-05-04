@@ -47,7 +47,7 @@ public sealed class OrderService(
     {
         var customer = await _userRepository.GetByIdAsync(customerId, ct);
         if (customer is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (!BillingAddressHelper.HasCompleteBillingAddress(customer))
             return new ServiceError(ErrorMessages.BillingAddressIncomplete);
@@ -69,7 +69,7 @@ public sealed class OrderService(
 
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         if (!restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotActive);
@@ -163,10 +163,10 @@ public sealed class OrderService(
     {
         var order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         if (order.CustomerId != userId && order.Restaurant.OwnerId != userId)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         return order.ToDto();
     }
@@ -195,7 +195,7 @@ public sealed class OrderService(
     {
         var order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         if (!Enum.TryParse<OrderStatus>(request.Status, out var newStatus))
         {
@@ -235,10 +235,10 @@ public sealed class OrderService(
     {
         var order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         if (order.CustomerId != customerId)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         if (order.Status is OrderStatus.Delivering or OrderStatus.Delivered or OrderStatus.Cancelled or OrderStatus.Refused)
             return new ServiceError(ErrorMessages.OrderCannotBeCancelled);

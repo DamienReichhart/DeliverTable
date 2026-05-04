@@ -85,7 +85,7 @@ public sealed class PromotionService(
     {
         var promotion = await _promotionRepository.GetByIdAsync(promotionId, ct);
         if (promotion is null)
-            return new ServiceError(ErrorMessages.PromotionNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
         var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, promotion.RestaurantId, ownerId, ct);
@@ -131,7 +131,7 @@ public sealed class PromotionService(
     {
         var promotion = await _promotionRepository.GetByIdAsync(promotionId, ct);
         if (promotion is null)
-            return new ServiceError(ErrorMessages.PromotionNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
         var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, promotion.RestaurantId, ownerId, ct);

@@ -26,7 +26,7 @@ public sealed class AdminModerationService(IModerationRepository moderationRepos
     {
         var action = await _moderationRepository.GetByIdAsync(id, ct);
         if (action is null)
-            return new ServiceError(ErrorMessages.ModerationActionNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.ModerationActionNotFound);
 
         return action.ToAdminDto();
     }

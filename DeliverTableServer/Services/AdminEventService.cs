@@ -29,7 +29,7 @@ public sealed class AdminEventService(
     {
         var evt = await _eventRepository.GetByIdAsync(id, ct);
         if (evt is null)
-            return new ServiceError(ErrorMessages.EventNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.EventNotFound);
 
         return evt.ToAdminDto();
     }
@@ -39,16 +39,16 @@ public sealed class AdminEventService(
     {
         var user = await _userRepository.GetByIdAsync(request.CreatedByUserId, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (request.EndsAt <= request.StartsAt)
-            return new ServiceError(ErrorMessages.InvalidEventDates, 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidEventDates);
 
         if (request.RestaurantId is not null)
         {
             var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId.Value, ct);
             if (restaurant is null)
-                return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+                return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
         }
 
         var evt = new Event
@@ -73,16 +73,16 @@ public sealed class AdminEventService(
     {
         var evt = await _eventRepository.GetByIdAsync(id, ct);
         if (evt is null)
-            return new ServiceError(ErrorMessages.EventNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.EventNotFound);
 
         if (request.EndsAt <= request.StartsAt)
-            return new ServiceError(ErrorMessages.InvalidEventDates, 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidEventDates);
 
         if (request.RestaurantId is not null)
         {
             var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId.Value, ct);
             if (restaurant is null)
-                return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+                return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
         }
 
         evt.Name = request.Name;
@@ -103,7 +103,7 @@ public sealed class AdminEventService(
     {
         var deleted = await _eventRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.EventNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.EventNotFound);
 
         return ServiceResult.Success();
     }

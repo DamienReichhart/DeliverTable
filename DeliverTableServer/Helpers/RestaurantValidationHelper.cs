@@ -12,7 +12,7 @@ public static class RestaurantValidationHelper
     {
         var restaurant = await repository.GetByIdAsync(restaurantId, ct);
         if (restaurant is null || restaurant.OwnerId != ownerId)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
         return restaurant;
     }
 }

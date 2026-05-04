@@ -75,7 +75,7 @@ public sealed class DiscountCodeService(
     {
         var code = await _discountCodeRepository.GetByIdAsync(discountCodeId, ct);
         if (code is null)
-            return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
         var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, code.RestaurantId, ownerId, ct);
@@ -107,7 +107,7 @@ public sealed class DiscountCodeService(
     {
         var code = await _discountCodeRepository.GetByIdAsync(discountCodeId, ct);
         if (code is null)
-            return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
         var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, code.RestaurantId, ownerId, ct);

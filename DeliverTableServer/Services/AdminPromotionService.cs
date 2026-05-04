@@ -26,7 +26,7 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
     {
         var promotion = await _promotionRepository.GetByIdWithRestaurantAsync(id, ct);
         if (promotion is null)
-            return new ServiceError(ErrorMessages.PromotionNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
         return promotion.ToAdminDto();
     }
@@ -36,13 +36,13 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         if (request.EndsAt <= request.StartsAt)
-            return new ServiceError(ErrorMessages.InvalidPromotionDates, 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidPromotionDates);
 
         if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh, 400);
+            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
 
         var promotion = new Promotion
         {
@@ -67,13 +67,13 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
     {
         var promotion = await _promotionRepository.GetByIdWithRestaurantAsync(id, ct);
         if (promotion is null)
-            return new ServiceError(ErrorMessages.PromotionNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
         if (request.EndsAt <= request.StartsAt)
-            return new ServiceError(ErrorMessages.InvalidPromotionDates, 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidPromotionDates);
 
         if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh, 400);
+            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
 
         promotion.Name = request.Name;
         promotion.Description = request.Description ?? "";
@@ -94,7 +94,7 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
     {
         var deleted = await _promotionRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.PromotionNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
         return ServiceResult.Success();
     }

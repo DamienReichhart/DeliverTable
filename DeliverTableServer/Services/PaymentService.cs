@@ -135,7 +135,7 @@ public class PaymentService(
     {
         var order = await orderRepository.GetByIdAsync(orderId, ct);
         if (order is null) return new ServiceError(ErrorMessages.PaymentNotFound);
-        if (order.CustomerId != customerId) return new ServiceError(ErrorMessages.OrderAccessDenied, 403);
+        if (order.CustomerId != customerId) return ServiceError.Forbidden(ErrorMessages.OrderAccessDenied);
         return await CancelAuthorizationAsync(orderId, ct);
     }
 

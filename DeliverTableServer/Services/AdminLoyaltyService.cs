@@ -25,7 +25,7 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
     {
         var program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(id, ct);
         if (program is null)
-            return new ServiceError(ErrorMessages.LoyaltyProgramNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
         return program.ToAdminDto();
     }
@@ -35,11 +35,11 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         var existing = await _loyaltyRepository.GetByRestaurantAsync(request.RestaurantId, ct);
         if (existing is not null)
-            return new ServiceError(ErrorMessages.LoyaltyProgramAlreadyExists, 400);
+            return ServiceError.BadRequest(ErrorMessages.LoyaltyProgramAlreadyExists);
 
         var program = new LoyaltyProgram
         {
@@ -58,7 +58,7 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
     {
         var program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(id, ct);
         if (program is null)
-            return new ServiceError(ErrorMessages.LoyaltyProgramNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
         program.PointsPerEuro = request.PointsPerEuro;
         program.EurosPerPoint = request.EurosPerPoint;
@@ -72,7 +72,7 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
     {
         var deleted = await _loyaltyRepository.DeleteProgramAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.LoyaltyProgramNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
         return ServiceResult.Success();
     }
@@ -81,7 +81,7 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
     {
         var program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(programId, ct);
         if (program is null)
-            return new ServiceError(ErrorMessages.LoyaltyProgramNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
         var accounts = await _loyaltyRepository.GetAccountsByProgramIdAsync(programId, ct);
         var result = accounts.Select(a => a.ToAdminDto()).ToList();

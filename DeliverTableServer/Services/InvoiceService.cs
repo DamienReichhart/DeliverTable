@@ -158,7 +158,7 @@ public class InvoiceService(
         {
             var restaurant = await restaurantRepository.GetByIdAsync(restaurantId, ct);
             if (restaurant is null || restaurant.OwnerId != userId)
-                return new ServiceError(ErrorMessages.InvoiceAccessDenied, 403);
+                return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
         }
 
         var (items, total) = await invoiceRepository.ListForRecipientRestaurantAsync(restaurantId, page, pageSize, ct);
@@ -180,10 +180,10 @@ public class InvoiceService(
     {
         var invoice = await invoiceRepository.GetByIdAsync(invoiceId, ct);
         if (invoice is null)
-            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
         if (invoice.Status != InvoiceStatus.Generated || string.IsNullOrEmpty(invoice.StoragePath))
-            return new ServiceError(ErrorMessages.InvoiceNotGeneratedYet, 409);
+            return ServiceError.Conflict(ErrorMessages.InvoiceNotGeneratedYet);
 
         if (!isAdmin)
         {
@@ -200,12 +200,12 @@ public class InvoiceService(
             }
 
             if (!authorized)
-                return new ServiceError(ErrorMessages.InvoiceAccessDenied, 403);
+                return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
         }
 
         var storageResult = await objectStorage.GetObjectAsync(invoice.StoragePath, ct);
         if (storageResult is null)
-            return new ServiceError(ErrorMessages.InvoiceNotGeneratedYet, 409);
+            return ServiceError.Conflict(ErrorMessages.InvoiceNotGeneratedYet);
 
         var fileName = $"{invoice.Number}.pdf";
         return ServiceResult<InvoicePdfStreamResult>.Success(
@@ -240,7 +240,7 @@ public class InvoiceService(
     {
         var invoice = await invoiceRepository.GetByIdWithLinesAsync(id, ct);
         if (invoice is null)
-            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
         var issuer = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.IssuerLegalSnapshotJson)
                      ?? new InvoiceLegalSnapshotDto(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
@@ -267,10 +267,10 @@ public class InvoiceService(
     {
         var invoice = await invoiceRepository.GetByIdAsync(id, ct);
         if (invoice is null)
-            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
         if (invoice.Status != InvoiceStatus.Generated || string.IsNullOrEmpty(invoice.StoragePath))
-            return new ServiceError(ErrorMessages.InvoiceNotGeneratedYet, 409);
+            return ServiceError.Conflict(ErrorMessages.InvoiceNotGeneratedYet);
 
         var recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson);
 
@@ -300,7 +300,7 @@ public class InvoiceService(
         }
 
         if (string.IsNullOrWhiteSpace(recipientEmail))
-            return new ServiceError(ErrorMessages.InvoiceNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
         var fileName = $"{invoice.Number}.pdf";
         bool isCreditNote = invoice.Kind == InvoiceKind.CreditNoteToCustomer

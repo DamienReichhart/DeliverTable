@@ -53,7 +53,7 @@ public sealed class LoyaltyService(
     {
         var program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
         if (program is null)
-            return new ServiceError(ErrorMessages.LoyaltyProgramNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
         return program.ToDto();
     }
@@ -63,7 +63,7 @@ public sealed class LoyaltyService(
     {
         var program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
         if (program is null)
-            return new ServiceError(ErrorMessages.LoyaltyProgramNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
         var account = await _loyaltyRepository.GetAccountAsync(program.Id, customerId, ct);
 

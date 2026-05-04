@@ -29,7 +29,7 @@ public sealed class AdminNotificationService(
     {
         var deleted = await _notificationRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.NotificationNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.NotificationNotFound);
 
         return ServiceResult.Success();
     }

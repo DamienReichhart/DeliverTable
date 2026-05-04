@@ -23,7 +23,7 @@ public sealed class AdminOrderService(IOrderRepository orderRepository) : IAdmin
     {
         var order = await _orderRepository.GetByIdWithFullDetailsAsync(id, ct);
         if (order is null)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         return order.ToAdminDto();
     }
@@ -34,12 +34,12 @@ public sealed class AdminOrderService(IOrderRepository orderRepository) : IAdmin
         if (!Enum.TryParse<OrderStatus>(request.Status, out var newStatus))
         {
             var validValues = string.Join(", ", Enum.GetNames<OrderStatus>());
-            return new ServiceError(ErrorMessages.InvalidOrderStatus(validValues), 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidOrderStatus(validValues));
         }
 
         var order = await _orderRepository.GetByIdWithFullDetailsAsync(id, ct);
         if (order is null)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         order.Status = newStatus;
         order.UpdatedAt = DateTime.UtcNow;

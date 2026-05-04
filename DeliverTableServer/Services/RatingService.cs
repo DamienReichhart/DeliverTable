@@ -17,18 +17,18 @@ public sealed class RatingService(IRatingRepository ratingRepository, IOrderRepo
     public async Task<ServiceResult<RatingDto>> CreateAsync(int orderId, int customerId, CreateRatingRequest request, CancellationToken ct = default)
     {
         if (request.Rating < 1 || request.Rating > 5)
-            return new ServiceError(ErrorMessages.RatingOutOfRange, 400);
+            return ServiceError.BadRequest(ErrorMessages.RatingOutOfRange);
 
         var order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null || order.CustomerId != customerId)
-            return new ServiceError(ErrorMessages.OrderNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         if (order.Status != OrderStatus.Delivered)
-            return new ServiceError(ErrorMessages.OrderNotDelivered, 400);
+            return ServiceError.BadRequest(ErrorMessages.OrderNotDelivered);
 
         var existing = await _ratingRepository.GetByOrderAndCustomerAsync(orderId, customerId, ct);
         if (existing is not null)
-            return new ServiceError(ErrorMessages.RatingAlreadyExists, 409);
+            return ServiceError.Conflict(ErrorMessages.RatingAlreadyExists);
 
         var rating = new RestaurantRating
         {
@@ -47,7 +47,7 @@ public sealed class RatingService(IRatingRepository ratingRepository, IOrderRepo
     {
         var rating = await _ratingRepository.GetByOrderAndCustomerAsync(orderId, customerId, ct);
         if (rating is null)
-            return new ServiceError(ErrorMessages.RatingNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RatingNotFound);
 
         return rating.ToDto();
     }
@@ -55,11 +55,11 @@ public sealed class RatingService(IRatingRepository ratingRepository, IOrderRepo
     public async Task<ServiceResult<RatingDto>> UpdateAsync(int orderId, int customerId, UpdateRatingRequest request, CancellationToken ct = default)
     {
         if (request.Rating < 1 || request.Rating > 5)
-            return new ServiceError(ErrorMessages.RatingOutOfRange, 400);
+            return ServiceError.BadRequest(ErrorMessages.RatingOutOfRange);
 
         var rating = await _ratingRepository.GetByOrderAndCustomerAsync(orderId, customerId, ct);
         if (rating is null)
-            return new ServiceError(ErrorMessages.RatingNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RatingNotFound);
 
         rating.Rating = request.Rating;
         rating.Comment = request.Comment ?? string.Empty;
@@ -72,7 +72,7 @@ public sealed class RatingService(IRatingRepository ratingRepository, IOrderRepo
     {
         var rating = await _ratingRepository.GetByOrderAndCustomerAsync(orderId, customerId, ct);
         if (rating is null)
-            return new ServiceError(ErrorMessages.RatingNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RatingNotFound);
 
         await _ratingRepository.DeleteAsync(rating, ct);
         return ServiceResult.Success();

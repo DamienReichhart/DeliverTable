@@ -220,7 +220,7 @@ public class DisputeService(
             if (resto is null)
                 return new ServiceError(ErrorMessages.RestaurantNotFound);
             if (resto.OwnerId != userId)
-                return new ServiceError(ErrorMessages.DisputeAccessDenied, 403);
+                return ServiceError.Forbidden(ErrorMessages.DisputeAccessDenied);
         }
 
         var (items, total) = await disputeRepository.ListForRestaurantAsync(restaurantId, page, pageSize, ct);
@@ -250,7 +250,7 @@ public class DisputeService(
     {
         var dispute = await disputeRepository.GetByIdAsync(disputeId, ct);
         if (dispute is null)
-            return new ServiceError(ErrorMessages.DisputeNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DisputeNotFound);
 
         var payment = await paymentRepository.GetByIdAsync(dispute.PaymentId, ct);
         string stripeChargeId = payment?.StripeChargeId ?? string.Empty;

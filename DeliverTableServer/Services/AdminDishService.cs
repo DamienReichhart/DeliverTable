@@ -25,7 +25,7 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
     {
         var dish = await _dishRepository.GetByIdWithRestaurantAsync(id, ct);
         if (dish is null)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         return dish.ToAdminDto();
     }
@@ -35,7 +35,7 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         var dish = new Dish
         {
@@ -60,7 +60,7 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
     {
         var dish = await _dishRepository.GetByIdWithRestaurantAsync(id, ct);
         if (dish is null)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         dish.Name = request.Name;
         dish.Description = request.Description ?? "";
@@ -81,7 +81,7 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
     {
         var deleted = await _dishRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         return ServiceResult.Success();
     }

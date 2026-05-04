@@ -25,10 +25,10 @@ public sealed class AuthService(
     {
         var user = await _userRepository.GetByEmailAsync(request.Email, ct);
         if (user is null || !await _userRepository.CheckPasswordAsync(user, request.Password))
-            return new ServiceError(ErrorMessages.InvalidCredentials, 401);
+            return ServiceError.Unauthorized(ErrorMessages.InvalidCredentials);
 
         if (user.Status == UserStatus.Suspended || user.Status == UserStatus.Banned)
-            return new ServiceError(ErrorMessages.AccountSuspendedOrBanned, 401);
+            return ServiceError.Unauthorized(ErrorMessages.AccountSuspendedOrBanned);
 
         return await BuildConnectionResponse(user);
     }
@@ -101,7 +101,7 @@ public sealed class AuthService(
     {
         var user = await _userRepository.GetByIdAsync(userId, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         var role = await _userRepository.GetPrimaryRoleAsync(user) ?? _defaultRole;
         return user.ToDto(role);
@@ -112,7 +112,7 @@ public sealed class AuthService(
     {
         var user = await _userRepository.GetByIdAsync(userId, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         var normalizedEmail = request.Email?.ToUpperInvariant();
         if (user.NormalizedEmail != normalizedEmail
@@ -143,7 +143,7 @@ public sealed class AuthService(
     {
         var user = await _userRepository.GetByIdAsync(userId, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (!await _userRepository.CheckPasswordAsync(user, request.CurrentPassword))
             return new ServiceError(ErrorMessages.CurrentPasswordIncorrect);

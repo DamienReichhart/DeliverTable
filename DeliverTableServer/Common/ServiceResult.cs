@@ -4,7 +4,18 @@ namespace DeliverTableServer.Common;
 ///     Represents a typed error returned by a service operation.
 ///     Carries a user-facing message and the HTTP status code the controller should return.
 /// </summary>
-public sealed record ServiceError(string Message, int StatusCode = 400);
+public sealed record ServiceError(string Message, int StatusCode = 400)
+{
+    public static ServiceError BadRequest(string message) => new(message, 400);
+
+    public static ServiceError Unauthorized(string message) => new(message, 401);
+
+    public static ServiceError Forbidden(string message) => new(message, 403);
+
+    public static ServiceError NotFound(string message) => new(message, 404);
+
+    public static ServiceError Conflict(string message) => new(message, 409);
+}
 
 /// <summary>
 ///     Discriminated result for service operations that produce no value.

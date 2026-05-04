@@ -29,7 +29,7 @@ public sealed class AdminOrderConfigService(
     {
         var rule = await _orderConfigRepository.GetRuleByIdAsync(id, ct);
         if (rule is null)
-            return new ServiceError(ErrorMessages.OrderRuleNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderRuleNotFound);
 
         return rule.ToAdminDto();
     }
@@ -39,7 +39,7 @@ public sealed class AdminOrderConfigService(
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         var rule = new OrderRule
         {
@@ -62,7 +62,7 @@ public sealed class AdminOrderConfigService(
     {
         var rule = await _orderConfigRepository.GetRuleByIdAsync(id, ct);
         if (rule is null)
-            return new ServiceError(ErrorMessages.OrderRuleNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderRuleNotFound);
 
         rule.MinConfirmAmount = request.MinConfirmAmount;
         rule.MinLeadTimeHours = request.MinLeadTimeHours;
@@ -81,7 +81,7 @@ public sealed class AdminOrderConfigService(
     {
         var deleted = await _orderConfigRepository.DeleteRuleAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.OrderRuleNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.OrderRuleNotFound);
 
         return ServiceResult.Success();
     }
@@ -101,7 +101,7 @@ public sealed class AdminOrderConfigService(
     {
         var slot = await _orderConfigRepository.GetBlockedSlotByIdAsync(id, ct);
         if (slot is null)
-            return new ServiceError(ErrorMessages.BlockedSlotNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.BlockedSlotNotFound);
 
         return slot.ToAdminDto();
     }
@@ -110,11 +110,11 @@ public sealed class AdminOrderConfigService(
         AdminCreateBlockedSlotRequest request, CancellationToken ct = default)
     {
         if (request.EndsAt <= request.StartsAt)
-            return new ServiceError(ErrorMessages.InvalidBlockedSlotDates, 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidBlockedSlotDates);
 
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         var slot = new OrderBlockedSlot
         {
@@ -133,7 +133,7 @@ public sealed class AdminOrderConfigService(
     {
         var deleted = await _orderConfigRepository.DeleteBlockedSlotAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.BlockedSlotNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.BlockedSlotNotFound);
 
         return ServiceResult.Success();
     }
