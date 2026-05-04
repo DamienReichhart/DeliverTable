@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableInfrastructure.Models;
 
@@ -39,4 +40,6 @@ public class InvoiceLine
     public decimal LineTtc { get; set; }
 
     public int SortOrder { get; set; }
+
+    public InvoiceLineKind Kind { get; set; } = InvoiceLineKind.Item;
 }
