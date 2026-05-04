@@ -1,6 +1,7 @@
 @page "/restaurant/update/{Id:int}"
 @using DeliverTableClient.Components.Dish
 @using DeliverTableSharedLibrary.Dtos.Restaurant
+@using DeliverTableSharedLibrary.Validation
 @inject IRestaurantService RestaurantService
 @inject NavigationManager NavigationManager
 
@@ -127,7 +128,7 @@
         submitError = null;
         siretError = null;
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(form.Siret, @"^\d{14}$"))
+        if (!SiretValidator.IsValid(form.Siret))
         {
             siretError = "Le numéro SIRET est invalide.";
             submitting = false;

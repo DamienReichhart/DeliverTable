@@ -122,17 +122,19 @@
 
     private async Task HandleCreation()
     {
-        _isSubmitting = false;
         _errorMessage = null;
+        _isSubmitting = true;
 
-        try{
-            _isSubmitting = true;
+        try
+        {
             bool response = await RestaurantService.CreateRestaurant(_creationDto);
-            if(response)
+            if (response)
             {
-                Nav.NavigateTo(uri: "/profil"); 
+                Nav.NavigateTo(uri: "/profil");
             }
-        } catch(System.Exception exception) {
+        }
+        catch (System.Exception exception)
+        {
             _errorMessage = exception.Message;
             _isSubmitting = false;
         }
