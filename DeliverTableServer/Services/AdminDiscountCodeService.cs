@@ -1,11 +1,11 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
-using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableServer.Services;
 
@@ -38,11 +38,11 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
-        if (request.ValidUntil <= request.ValidFrom)
-            return ServiceError.BadRequest(ErrorMessages.InvalidDiscountCodeDates);
+        if (DiscountValidationHelper.ValidateDateRange(request.ValidFrom, request.ValidUntil, ErrorMessages.InvalidDiscountCodeDates) is { } dateError)
+            return dateError;
 
-        if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
+        if (DiscountValidationHelper.ValidatePercentageDiscount(request.DiscountType, request.DiscountValue) is { } pctError)
+            return pctError;
 
         var existing = await _discountCodeRepository.GetByCodeAndRestaurantAsync(request.Code, request.RestaurantId, ct);
         if (existing is not null)
@@ -76,11 +76,11 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
         if (code is null)
             return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
-        if (request.ValidUntil <= request.ValidFrom)
-            return ServiceError.BadRequest(ErrorMessages.InvalidDiscountCodeDates);
+        if (DiscountValidationHelper.ValidateDateRange(request.ValidFrom, request.ValidUntil, ErrorMessages.InvalidDiscountCodeDates) is { } dateError)
+            return dateError;
 
-        if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
+        if (DiscountValidationHelper.ValidatePercentageDiscount(request.DiscountType, request.DiscountValue) is { } pctError)
+            return pctError;
 
         code.Description = request.Description ?? "";
         code.DiscountType = request.DiscountType;
