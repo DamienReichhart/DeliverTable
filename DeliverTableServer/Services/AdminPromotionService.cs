@@ -1,11 +1,11 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Helpers;
 using DeliverTableServer.Mappers;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
-using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableServer.Services;
 
@@ -38,11 +38,11 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
-        if (request.EndsAt <= request.StartsAt)
-            return ServiceError.BadRequest(ErrorMessages.InvalidPromotionDates);
+        if (DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt) is { } dateError)
+            return dateError;
 
-        if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
+        if (DiscountValidationHelper.ValidatePercentageDiscount(request.DiscountType, request.DiscountValue) is { } pctError)
+            return pctError;
 
         var promotion = new Promotion
         {
@@ -69,11 +69,11 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
         if (promotion is null)
             return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
-        if (request.EndsAt <= request.StartsAt)
-            return ServiceError.BadRequest(ErrorMessages.InvalidPromotionDates);
+        if (DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt) is { } dateError)
+            return dateError;
 
-        if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
+        if (DiscountValidationHelper.ValidatePercentageDiscount(request.DiscountType, request.DiscountValue) is { } pctError)
+            return pctError;
 
         promotion.Name = request.Name;
         promotion.Description = request.Description ?? "";

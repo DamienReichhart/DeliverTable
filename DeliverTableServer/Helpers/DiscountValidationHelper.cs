@@ -20,10 +20,21 @@ public static class DiscountValidationHelper
         return null;
     }
 
-    public static ServiceError? ValidateDateRange(DateTime startsAt, DateTime endsAt)
+    public static ServiceError? ValidateDateRange(DateTime startsAt, DateTime endsAt) =>
+        ValidateDateRange(startsAt, endsAt, ErrorMessages.InvalidPromotionDates);
+
+    public static ServiceError? ValidateDateRange(DateTime startsAt, DateTime endsAt, string invalidDatesMessage)
     {
         if (endsAt <= startsAt)
-            return new ServiceError(ErrorMessages.InvalidPromotionDates);
+            return new ServiceError(invalidDatesMessage);
+
+        return null;
+    }
+
+    public static ServiceError? ValidatePercentageDiscount(DiscountType discountType, decimal discountValue)
+    {
+        if (discountType == DiscountType.Percentage && discountValue > 100)
+            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh);
 
         return null;
     }
