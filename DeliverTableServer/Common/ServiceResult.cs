@@ -15,6 +15,9 @@ public sealed record ServiceError(string Message, int StatusCode = 400)
     public static ServiceError NotFound(string message) => new(message, 404);
 
     public static ServiceError Conflict(string message) => new(message, 409);
+
+    public static ServiceError FromIdentityErrors(IEnumerable<string> errors) =>
+        new(string.Join(", ", errors));
 }
 
 /// <summary>
