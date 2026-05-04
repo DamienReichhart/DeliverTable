@@ -2,7 +2,6 @@
 @attribute [Authorize(Roles = nameof(UserRole.Administrator))]
 @using DeliverTableClient.Services.Dispute
 @using DeliverTableSharedLibrary.Dtos.Dispute
-@using DeliverTableSharedLibrary.Enums
 @inject IDisputeApiClient DisputeApi
 @inject NavigationManager Nav
 

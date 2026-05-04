@@ -2,7 +2,6 @@
 @attribute [Authorize(Roles = nameof(UserRole.Administrator))]
 @using DeliverTableClient.Services.Interfaces
 @using DeliverTableSharedLibrary.Dtos.Admin
-@using DeliverTableSharedLibrary.Enums
 @using Microsoft.AspNetCore.Authorization
 @inject IAdminEventClientService EventService
 
