@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using DeliverTableClient.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Promotion;
 
@@ -19,7 +20,7 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
                 $"PageSize={query.PageSize}"
             };
 
-            var url = $"api/v1/restaurant/{restaurantId}/promotions?{string.Join("&", queryParams)}";
+            var url = $"{ApiRoutes.Promotion.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
             var result = await _httpClient.GetFromJsonAsync<PaginatedResult<PromotionDto>>(url, ct);
             return (result, null);
         }
@@ -31,7 +32,8 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
 
     public async Task<(PromotionDto?, ErrorResponse?)> CreateAsync(int restaurantId, CreatePromotionRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync($"api/v1/restaurant/{restaurantId}/promotions", request, ct);
+        var response = await _httpClient.PostAsJsonAsync(
+            ApiRoutes.Promotion.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
@@ -44,7 +46,7 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
 
     public async Task<(PromotionDto?, ErrorResponse?)> UpdateAsync(int promotionId, UpdatePromotionRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"api/v1/promotion/{promotionId}", request, ct);
+        var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Promotion.Base}/{promotionId}", request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
@@ -57,7 +59,7 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
 
     public async Task<(bool, ErrorResponse?)> DeleteAsync(int promotionId, CancellationToken ct = default)
     {
-        var response = await _httpClient.DeleteAsync($"api/v1/promotion/{promotionId}", ct);
+        var response = await _httpClient.DeleteAsync($"{ApiRoutes.Promotion.Base}/{promotionId}", ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
@@ -72,7 +74,7 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
         try
         {
             var result = await _httpClient.GetFromJsonAsync<List<PromotionDto>>(
-                $"api/v1/restaurant/{restaurantId}/promotions/active", ct);
+                ApiRoutes.Promotion.ActiveRoute.Replace("{id:int}", restaurantId.ToString()), ct);
             return (result, null);
         }
         catch (Exception ex)
