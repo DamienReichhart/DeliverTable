@@ -97,7 +97,23 @@ public sealed class OrderService(
             return loyaltyResult.Error!;
         var loyaltyPointsUsed = loyaltyResult.Value!;
 
-        var discountAmount = Math.Min(orderDiscounts.Sum(d => d.Amount), originalAmount);
+        var rawDiscountSum = orderDiscounts.Sum(d => d.Amount);
+        if (rawDiscountSum > originalAmount && rawDiscountSum > 0m)
+        {
+            var scale = originalAmount / rawDiscountSum;
+            foreach (var d in orderDiscounts)
+                d.Amount = Math.Round(d.Amount * scale, 2, MidpointRounding.AwayFromZero);
+            var rounded = orderDiscounts.Sum(d => d.Amount);
+            var drift = originalAmount - rounded;
+            if (drift != 0m)
+            {
+                var largest = orderDiscounts
+                    .OrderByDescending(d => Math.Abs(d.Amount))
+                    .First();
+                largest.Amount += drift;
+            }
+        }
+        var discountAmount = orderDiscounts.Sum(d => d.Amount);
         var totalAmount = originalAmount - discountAmount;
 
         var order = new Order
