@@ -103,22 +103,7 @@ public sealed class OrderService(
             return loyaltyResult.Error!;
         var loyaltyPointsUsed = loyaltyResult.Value!;
 
-        var rawDiscountSum = orderDiscounts.Sum(d => d.Amount);
-        if (rawDiscountSum > originalAmount && rawDiscountSum > 0m)
-        {
-            var scale = originalAmount / rawDiscountSum;
-            foreach (var d in orderDiscounts)
-                d.Amount = Math.Round(d.Amount * scale, 2, MidpointRounding.AwayFromZero);
-            var rounded = orderDiscounts.Sum(d => d.Amount);
-            var drift = originalAmount - rounded;
-            if (drift != 0m)
-            {
-                var largest = orderDiscounts
-                    .OrderByDescending(d => Math.Abs(d.Amount))
-                    .First();
-                largest.Amount += drift;
-            }
-        }
+        CapDiscountsAtOrderTotal(orderDiscounts, originalAmount);
         var discountAmount = orderDiscounts.Sum(d => d.Amount);
         var totalAmount = originalAmount - discountAmount;
 
@@ -382,6 +367,24 @@ public sealed class OrderService(
         });
 
         return actualPointsUsed;
+    }
+
+    private static void CapDiscountsAtOrderTotal(List<OrderDiscount> orderDiscounts, decimal originalAmount)
+    {
+        var rawDiscountSum = orderDiscounts.Sum(d => d.Amount);
+        if (rawDiscountSum <= originalAmount || rawDiscountSum <= 0m) return;
+
+        var scale = originalAmount / rawDiscountSum;
+        foreach (var d in orderDiscounts)
+            d.Amount = Math.Round(d.Amount * scale, 2, MidpointRounding.AwayFromZero);
+
+        var drift = originalAmount - orderDiscounts.Sum(d => d.Amount);
+        if (drift == 0m) return;
+
+        var largest = orderDiscounts
+            .OrderByDescending(d => Math.Abs(d.Amount))
+            .First();
+        largest.Amount += drift;
     }
 
     private async Task TrackDiscountCodeRedemptionsAsync(
