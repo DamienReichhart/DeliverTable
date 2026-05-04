@@ -98,7 +98,11 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
                                     h.Cell().AlignRight().Text("Total HT").Bold();
                                     h.Cell().AlignRight().Text("Total TTC").Bold();
                                 });
-                                foreach (var line in invoice.Lines.OrderBy(l => l.SortOrder))
+                                foreach (
+                                    var line in invoice
+                                        .Lines.Where(l => l.Kind == InvoiceLineKind.Item)
+                                        .OrderBy(l => l.SortOrder)
+                                )
                                 {
                                     table.Cell().Text(line.Description);
                                     table.Cell()
@@ -119,6 +123,49 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
                                         .Text(line.LineTtc.ToString("0.00 €"));
                                 }
                             });
+
+                        var discountLines = invoice
+                            .Lines.Where(l => l.Kind == InvoiceLineKind.Discount)
+                            .OrderBy(l => l.SortOrder)
+                            .ToList();
+                        if (discountLines.Count > 0)
+                        {
+                            col.Item().PaddingTop(10).Text("Réductions").Bold();
+                            col.Item()
+                                .Table(table =>
+                                {
+                                    table.ColumnsDefinition(cd =>
+                                    {
+                                        cd.RelativeColumn(4);
+                                        cd.RelativeColumn(1);
+                                        cd.RelativeColumn(2);
+                                        if (!isVatExempt)
+                                            cd.RelativeColumn(1);
+                                        cd.RelativeColumn(2);
+                                        cd.RelativeColumn(2);
+                                    });
+                                    foreach (var line in discountLines)
+                                    {
+                                        table.Cell().Text(line.Description);
+                                        table.Cell()
+                                            .AlignRight()
+                                            .Text(line.Quantity.ToString("0.###"));
+                                        table.Cell()
+                                            .AlignRight()
+                                            .Text(line.UnitPriceHt.ToString("0.00 €"));
+                                        if (!isVatExempt)
+                                            table.Cell()
+                                                .AlignRight()
+                                                .Text($"{line.VatRate:0.#} %");
+                                        table.Cell()
+                                            .AlignRight()
+                                            .Text(line.LineHt.ToString("0.00 €"));
+                                        table.Cell()
+                                            .AlignRight()
+                                            .Text(line.LineTtc.ToString("0.00 €"));
+                                    }
+                                });
+                        }
 
                         col.Item()
                             .PaddingTop(15)

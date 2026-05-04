@@ -125,6 +125,50 @@ public class InvoicePdfRendererTests
         Assert.That(pdf.Length, Is.GreaterThan(1000));
     }
 
+    [Test]
+    public void Render_InvoiceWithDiscountLines_ProducesValidPdf()
+    {
+        var invoice = new Invoice
+        {
+            Number = "TEST-DISC-000001",
+            Kind = InvoiceKind.OrderInvoiceToCustomer,
+            OrderId = 99,
+            IssuedAt = DateTime.UtcNow,
+            Currency = "EUR",
+            IssuerLegalSnapshotJson =
+                """{"Name":"Resto","LegalForm":"SAS","Siret":"73282932000074","VatNumber":"","Address":"1 rue"}""",
+            RecipientSnapshotJson =
+                """{"Name":"Client","LegalForm":"","Siret":"","VatNumber":"","Address":""}""",
+            Lines = new List<InvoiceLine>
+            {
+                new() { Kind = InvoiceLineKind.Item, Description = "Plat", Quantity = 1m,
+                        UnitPriceHt = 50m, UnitPriceTtc = 60m, VatRate = 20m,
+                        LineHt = 50m, LineVat = 10m, LineTtc = 60m, SortOrder = 0 },
+                new() { Kind = InvoiceLineKind.Item, Description = "Boisson", Quantity = 1m,
+                        UnitPriceHt = 36.36m, UnitPriceTtc = 40m, VatRate = 10m,
+                        LineHt = 36.36m, LineVat = 3.64m, LineTtc = 40m, SortOrder = 1 },
+                new() { Kind = InvoiceLineKind.Discount, Description = "SUMMER10 (TVA 20%)", Quantity = 1m,
+                        UnitPriceHt = -5m, UnitPriceTtc = -6m, VatRate = 20m,
+                        LineHt = -5m, LineVat = -1m, LineTtc = -6m, SortOrder = 2 },
+                new() { Kind = InvoiceLineKind.Discount, Description = "SUMMER10 (TVA 10%)", Quantity = 1m,
+                        UnitPriceHt = -3.64m, UnitPriceTtc = -4m, VatRate = 10m,
+                        LineHt = -3.64m, LineVat = -0.36m, LineTtc = -4m, SortOrder = 3 },
+            },
+        };
+        invoice.TotalHt = invoice.Lines.Sum(l => l.LineHt);
+        invoice.TotalVat = invoice.Lines.Sum(l => l.LineVat);
+        invoice.TotalTtc = invoice.Lines.Sum(l => l.LineTtc);
+
+        var pdf = new InvoicePdfRenderer().Render(invoice);
+
+        Assert.That(pdf, Is.Not.Null);
+        Assert.That(pdf.Length, Is.GreaterThan(1000));
+        Assert.That(pdf[0], Is.EqualTo((byte)'%'));
+        Assert.That(pdf[1], Is.EqualTo((byte)'P'));
+        Assert.That(pdf[2], Is.EqualTo((byte)'D'));
+        Assert.That(pdf[3], Is.EqualTo((byte)'F'));
+    }
+
     private static Invoice BuildSampleInvoice(decimal vatRate)
     {
         const decimal unitHt = 10m;
