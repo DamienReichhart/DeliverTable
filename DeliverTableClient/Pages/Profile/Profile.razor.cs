@@ -1,4 +1,5 @@
-﻿using DeliverTableSharedLibrary.Dtos.Auth;
+﻿using DeliverTableClient.Helpers;
+using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.JSInterop;
 
 namespace DeliverTableClient.Pages.Profile;
@@ -53,7 +54,7 @@ public partial class Profile
             if (string.IsNullOrWhiteSpace(_profileModel.BillingCountry))
                 _profileModel.BillingCountry = "France";
 
-            _initials = BuildInitials(user.FirstName, user.LastName);
+            _initials = DisplayHelpers.GetInitials(user.FirstName, user.LastName);
         }
         else
         {
@@ -99,7 +100,7 @@ public partial class Profile
                     connection.User.FirstName
                 );
 
-                _initials = BuildInitials(connection.User.FirstName, connection.User.LastName);
+                _initials = DisplayHelpers.GetInitials(connection.User.FirstName, connection.User.LastName);
                 _isEditingProfile = false;
                 _profileSuccess = "Profil mis à jour avec succès";
                 _originalProfile = null;
@@ -165,10 +166,4 @@ public partial class Profile
         }
     }
 
-    private static string BuildInitials(string firstName, string lastName)
-    {
-        var first = string.IsNullOrEmpty(firstName) ? "" : firstName[..1].ToUpperInvariant();
-        var last = string.IsNullOrEmpty(lastName) ? "" : lastName[..1].ToUpperInvariant();
-        return $"{first}{last}";
-    }
 }
