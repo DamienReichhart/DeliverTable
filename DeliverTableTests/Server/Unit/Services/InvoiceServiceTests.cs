@@ -617,6 +617,112 @@ public class InvoiceServiceTests
         Assert.That(result.Value, Has.Count.EqualTo(0));
     }
 
+    [Test]
+    public async Task CreditNote_WhenOriginalHasDiscountLines_PreservesKind()
+    {
+        // Full refund of an order whose customer invoice has 2 item lines + 1 discount line.
+        // The credit note must preserve InvoiceLineKind on each copied line so the PDF
+        // renderer can still classify discount lines correctly.
+        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 30m };
+        var payment = new Payment { Id = 1, OrderId = 42, Amount = 30m };
+        var originalCustomer = new Invoice
+        {
+            Id = 100,
+            OrderId = 42,
+            Kind = InvoiceKind.OrderInvoiceToCustomer,
+            Number = "R0005-2026-000001",
+            TotalTtc = 30m,
+            TotalHt = 27.27m,
+            TotalVat = 2.73m,
+            IssuerType = InvoiceIssuerType.Restaurant,
+            IssuerRestaurantId = 5,
+            RecipientUserId = 1,
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = "{}",
+            Lines = new List<InvoiceLine>
+            {
+                new()
+                {
+                    Kind = InvoiceLineKind.Item,
+                    Description = "Plat A",
+                    Quantity = 2m,
+                    UnitPriceTtc = 10m,
+                    UnitPriceHt = 9.09m,
+                    VatRate = 10m,
+                    LineHt = 18.18m,
+                    LineVat = 1.82m,
+                    LineTtc = 20m,
+                    SortOrder = 0,
+                },
+                new()
+                {
+                    Kind = InvoiceLineKind.Item,
+                    Description = "Plat B",
+                    Quantity = 1m,
+                    UnitPriceTtc = 15m,
+                    UnitPriceHt = 13.64m,
+                    VatRate = 10m,
+                    LineHt = 13.64m,
+                    LineVat = 1.36m,
+                    LineTtc = 15m,
+                    SortOrder = 1,
+                },
+                new()
+                {
+                    Kind = InvoiceLineKind.Discount,
+                    Description = "Promo (TVA 10%)",
+                    Quantity = 1m,
+                    UnitPriceTtc = -5m,
+                    UnitPriceHt = -4.55m,
+                    VatRate = 10m,
+                    LineHt = -4.55m,
+                    LineVat = -0.45m,
+                    LineTtc = -5m,
+                    SortOrder = 2,
+                },
+            },
+        };
+
+        _paymentRepo.GetRefundByIdAsync(7, Arg.Any<CancellationToken>()).Returns(refund);
+        _paymentRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(payment);
+        _invoiceRepo
+            .ListOriginalsByOrderIdAsync(42, Arg.Any<CancellationToken>())
+            .Returns(new List<Invoice> { originalCustomer });
+        _numbering
+            .IssueNumberAsync(
+                Arg.Any<InvoiceIssuerType>(),
+                Arg.Any<int?>(),
+                Arg.Any<int>(),
+                true,
+                Arg.Any<CancellationToken>())
+            .Returns("AV-TEST-000004");
+
+        Invoice? creditNote = null;
+        _invoiceRepo
+            .CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                creditNote = ci.Arg<Invoice>();
+                creditNote.Id = 203;
+                return creditNote;
+            });
+
+        var result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(creditNote, Is.Not.Null);
+        Assert.That(creditNote!.Lines, Has.Count.EqualTo(3));
+        var byOrder = creditNote.Lines.OrderBy(l => l.SortOrder).ToList();
+        // Kinds preserved
+        Assert.That(byOrder[0].Kind, Is.EqualTo(InvoiceLineKind.Item));
+        Assert.That(byOrder[1].Kind, Is.EqualTo(InvoiceLineKind.Item));
+        Assert.That(byOrder[2].Kind, Is.EqualTo(InvoiceLineKind.Discount));
+        // Amounts inverted (full refund => ratio = -1)
+        Assert.That(byOrder[0].LineTtc, Is.EqualTo(-20m));
+        Assert.That(byOrder[1].LineTtc, Is.EqualTo(-15m));
+        Assert.That(byOrder[2].LineTtc, Is.EqualTo(5m)); // -1 * -5 = 5
+    }
+
     // ─── ListForMeAsync ───────────────────────────────────────────────────
 
     [Test]
