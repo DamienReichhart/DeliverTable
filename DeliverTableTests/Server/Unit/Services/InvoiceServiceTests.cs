@@ -193,6 +193,179 @@ public class InvoiceServiceTests
     }
 
     [Test]
+    public async Task BuildCustomerInvoice_WithSingleRateDiscount_EmitsOneDiscountLine()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 42,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 50m, 2, VatRate.Normal20) },
+            discounts: new() { new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "Promo Midi", Amount = 10m } });
+        ArrangeDefaultMocks(42, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var lines = CustomerInvoiceLines(captured);
+        Assert.That(lines, Has.Length.EqualTo(2));
+        Assert.That(lines[0].Kind, Is.EqualTo(InvoiceLineKind.Item));
+        Assert.That(lines[1].Kind, Is.EqualTo(InvoiceLineKind.Discount));
+        Assert.That(lines[1].Description, Is.EqualTo("Promo Midi"));
+        Assert.That(lines[1].LineTtc, Is.EqualTo(-10m));
+        Assert.That(lines[1].VatRate, Is.EqualTo(20m));
+        Assert.That(lines[1].LineHt + lines[1].LineVat, Is.EqualTo(lines[1].LineTtc));
+        var customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        Assert.That(customerInvoice.TotalTtc, Is.EqualTo(90m));
+    }
+
+    [Test]
+    public async Task BuildCustomerInvoice_WithMultiRateDiscount_SplitsAcrossRates()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 43,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 60m, 1, VatRate.Normal20), Item("Boisson", 40m, 1, VatRate.Intermediate10) },
+            discounts: new() { new OrderDiscount { Source = OrderDiscountSource.DiscountCode, Description = "SUMMER10", Amount = 10m } });
+        ArrangeDefaultMocks(43, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(43, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
+        Assert.That(discountLines, Has.Length.EqualTo(2));
+        Assert.That(discountLines.Select(l => l.LineTtc), Is.EquivalentTo(new[] { -6m, -4m }));
+        Assert.That(discountLines.Sum(l => l.LineTtc), Is.EqualTo(-10m));
+        Assert.That(discountLines.All(l => l.Description.StartsWith("SUMMER10")), Is.True);
+        Assert.That(discountLines.Any(l => l.Description.Contains("TVA 20")), Is.True);
+        Assert.That(discountLines.Any(l => l.Description.Contains("TVA 10")), Is.True);
+    }
+
+    [Test]
+    public async Task BuildCustomerInvoice_WithThreeDiscountSources_RendersAllLabels()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 44,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 100m, 1, VatRate.Normal20) },
+            discounts: new()
+            {
+                new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "Promotion: Menu midi", Amount = 5m },
+                new OrderDiscount { Source = OrderDiscountSource.DiscountCode, Description = "WELCOME — Bienvenue", Amount = 3m },
+                new OrderDiscount { Source = OrderDiscountSource.LoyaltyPoints, Description = "Points fidélité (20 pts)", Amount = 2m },
+            });
+        ArrangeDefaultMocks(44, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(44, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var lines = CustomerInvoiceLines(captured);
+        Assert.That(lines.Count(l => l.Kind == InvoiceLineKind.Discount), Is.EqualTo(3));
+        var descriptions = lines.Where(l => l.Kind == InvoiceLineKind.Discount).Select(l => l.Description).ToArray();
+        Assert.That(descriptions, Does.Contain("Promotion: Menu midi"));
+        Assert.That(descriptions, Does.Contain("WELCOME — Bienvenue"));
+        Assert.That(descriptions, Does.Contain("Points fidélité (20 pts)"));
+        var customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        Assert.That(customerInvoice.TotalTtc, Is.EqualTo(90m));
+    }
+
+    [Test]
+    public async Task BuildCustomerInvoice_WithVatExemptRestaurant_EmitsZeroVatDiscountLine()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto(vatRegistered: false);
+        var order = BuildOrder(
+            orderId: 45,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 50m, 2, VatRate.Normal20) },
+            discounts: new() { new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "Promo", Amount = 10m } });
+        ArrangeDefaultMocks(45, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(45, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
+        Assert.That(discountLines, Has.Length.EqualTo(1));
+        Assert.That(discountLines[0].VatRate, Is.EqualTo(0m));
+        Assert.That(discountLines[0].LineVat, Is.EqualTo(0m));
+        Assert.That(discountLines[0].LineHt, Is.EqualTo(-10m));
+        Assert.That(discountLines[0].LineTtc, Is.EqualTo(-10m));
+    }
+
+    [Test]
+    public async Task BuildCustomerInvoice_WithRoundingDrift_ReconcilesToExactDiscountTotal()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 46,
+            resto,
+            Cust(),
+            items: new() { Item("A", 10m, 1, VatRate.Normal20), Item("B", 10m, 1, VatRate.Intermediate10) },
+            discounts: new() { new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "Tiny", Amount = 0.03m } });
+        ArrangeDefaultMocks(46, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(46, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
+        Assert.That(discountLines, Has.Length.EqualTo(2));
+        Assert.That(discountLines.Sum(l => l.LineTtc), Is.EqualTo(-0.03m));
+        var line20 = discountLines.Single(l => l.VatRate == 20m);
+        var line10 = discountLines.Single(l => l.VatRate == 10m);
+        Assert.That(line20.LineTtc, Is.EqualTo(-0.01m));
+        Assert.That(line10.LineTtc, Is.EqualTo(-0.02m));
+    }
+
+    [Test]
+    public async Task BuildCustomerInvoice_WithNoDiscounts_EmitsNoDiscountLines()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 47,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 10m, 2, VatRate.Intermediate10) },
+            discounts: new());
+        ArrangeDefaultMocks(47, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(47, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var lines = CustomerInvoiceLines(captured);
+        Assert.That(lines.All(l => l.Kind == InvoiceLineKind.Item), Is.True);
+    }
+
+    [Test]
+    public async Task BuildCustomerInvoice_DiscountLinesContinueSortOrderAfterItems()
+    {
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 48,
+            resto,
+            Cust(),
+            items: new() { Item("A", 50m, 1, VatRate.Normal20), Item("B", 50m, 1, VatRate.Normal20) },
+            discounts: new() { new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "P", Amount = 10m } });
+        ArrangeDefaultMocks(48, order, resto.Id);
+
+        await _sut.CreatePendingInvoicesForCapturedOrderAsync(48, CancellationToken.None);
+
+        var lines = CustomerInvoiceLines(captured);
+        Assert.That(lines.Select(l => l.SortOrder), Is.EqualTo(new[] { 0, 1, 2 }));
+        Assert.That(lines[2].Kind, Is.EqualTo(InvoiceLineKind.Discount));
+    }
+
+    [Test]
     public async Task CreateCreditNotes_FullRefund_MirrorsOriginalLinesNegatively()
     {
         var refund = new Refund { Id = 7, PaymentId = 1, Amount = 20m };
@@ -826,4 +999,90 @@ public class InvoiceServiceTests
         await _emailJobRepo.Received(1).CreateAsync(Arg.Any<EmailJob>(), Arg.Any<CancellationToken>());
         await _publisher.Received(1).PublishAsync("email", Arg.Any<EmailJobMessage>(), Arg.Any<CancellationToken>());
     }
+
+    // ─── Helpers for BuildCustomerInvoice discount tests ─────────────────
+
+    private List<Invoice> ArrangeCapture()
+    {
+        var captured = new List<Invoice>();
+        _invoiceRepo
+            .CreateBatchAsync(Arg.Any<IEnumerable<Invoice>>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                int id = 100;
+                captured.Clear();
+                foreach (var inv in ci.Arg<IEnumerable<Invoice>>())
+                {
+                    inv.Id = id++;
+                    captured.Add(inv);
+                }
+                return Task.CompletedTask;
+            });
+        return captured;
+    }
+
+    private static Order BuildOrder(
+        int orderId,
+        Restaurant restaurant,
+        User customer,
+        List<OrderItem> items,
+        List<OrderDiscount> discounts)
+    {
+        var totalDiscount = discounts.Sum(d => d.Amount);
+        var original = items.Sum(i => i.UnitPrice * i.Quantity);
+        return new Order
+        {
+            Id = orderId,
+            CustomerId = customer.Id,
+            RestaurantId = restaurant.Id,
+            OrderType = OrderType.Delivery,
+            Status = OrderStatus.Pending,
+            PaymentStatus = PaymentStatus.Pending,
+            OriginalAmount = original,
+            DiscountAmount = totalDiscount,
+            TotalAmount = original - totalDiscount,
+            Source = BookingSource.CustomerApp,
+            Customer = customer,
+            Restaurant = restaurant,
+            Items = items,
+            Discounts = discounts,
+        };
+    }
+
+    private void ArrangeDefaultMocks(int orderId, Order order, int restaurantId)
+    {
+        _orderRepo.GetByIdWithFullDetailsAsync(orderId, Arg.Any<CancellationToken>()).Returns(order);
+        _numbering
+            .IssueNumberAsync(InvoiceIssuerType.Restaurant, restaurantId, Arg.Any<int>(), false, Arg.Any<CancellationToken>())
+            .Returns($"R{restaurantId:0000}-2026-000001");
+        _numbering
+            .IssueNumberAsync(InvoiceIssuerType.Platform, null, Arg.Any<int>(), false, Arg.Any<CancellationToken>())
+            .Returns("DT-2026-000123");
+    }
+
+    private static Restaurant Resto(bool vatRegistered = true) => new()
+    {
+        Id = 5,
+        Name = "Resto",
+        Siret = "73282932000074",
+        LegalName = "Resto SAS",
+        LegalAddress = "1 rue",
+        LegalForm = "SAS",
+        IsVatRegistered = vatRegistered,
+    };
+
+    private static User Cust() => new() { Id = 1, Email = "c@example.fr", FirstName = "Jean", LastName = "Dupont" };
+
+    private static OrderItem Item(string name, decimal unitPrice, int qty, VatRate rate) => new()
+    {
+        DishId = 10,
+        Dish = new Dish { Id = 10, VatRate = rate },
+        DishName = name,
+        Quantity = qty,
+        UnitPrice = unitPrice,
+    };
+
+    private static InvoiceLine[] CustomerInvoiceLines(IEnumerable<Invoice> captured) =>
+        captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer)
+            .Lines.OrderBy(l => l.SortOrder).ToArray();
 }
