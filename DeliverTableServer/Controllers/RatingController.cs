@@ -22,21 +22,16 @@ public class RatingController(IRatingService ratingService) : ControllerBase
         CancellationToken ct
     )
     {
-        if (!this.TryGetUserId(out int userId))
-            return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _ratingService.CreateAsync(orderId, userId, request, ct);
-        if (result.IsSuccess)
-            return CreatedAtAction(nameof(GetByOrder), new { orderId }, result.Value);
-
-        return result.Error!.ToErrorResult();
+        return result.ToCreatedResult(nameof(GetByOrder), _ => new { orderId });
     }
 
     [HttpGet(ApiRoutes.Order.RatingRoute)]
     public async Task<IActionResult> GetByOrder([FromRoute] int orderId, CancellationToken ct)
     {
-        if (!this.TryGetUserId(out int userId))
-            return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _ratingService.GetByOrderAsync(orderId, userId, ct);
         return result.ToOkResult();
@@ -49,8 +44,7 @@ public class RatingController(IRatingService ratingService) : ControllerBase
         CancellationToken ct
     )
     {
-        if (!this.TryGetUserId(out int userId))
-            return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _ratingService.UpdateAsync(orderId, userId, request, ct);
         return result.ToOkResult();
@@ -59,8 +53,7 @@ public class RatingController(IRatingService ratingService) : ControllerBase
     [HttpDelete(ApiRoutes.Order.RatingRoute)]
     public async Task<IActionResult> Delete([FromRoute] int orderId, CancellationToken ct)
     {
-        if (!this.TryGetUserId(out int userId))
-            return Unauthorized();
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _ratingService.DeleteAsync(orderId, userId, ct);
         return result.ToNoContentResult();

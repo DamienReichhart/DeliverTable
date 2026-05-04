@@ -39,11 +39,10 @@ public class AdminOrderController(IAdminOrderService adminOrderService, IPayment
     }
 
     [HttpPost(ApiRoutes.Admin.OrderRefundRoute)]
-    [Authorize(Roles = nameof(UserRole.Administrator))]
     public async Task<IActionResult> RefundOrder(int id, [FromBody] AdminRefundRequest request, CancellationToken ct)
     {
         if (!this.TryGetUserId(out int adminId)) return Unauthorized();
         var result = await _paymentService.RefundAsync(id, request.Amount, request.Reason, adminId, ct);
-        return result.IsSuccess ? Ok(result.Value) : result.Error!.ToErrorResult();
+        return result.ToOkResult();
     }
 }

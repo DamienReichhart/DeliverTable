@@ -33,10 +33,7 @@ public class AdminDishController(IAdminDishService adminDishService) : Controlle
     public async Task<IActionResult> Create([FromBody] AdminCreateDishRequest request, CancellationToken ct)
     {
         var result = await _adminDishService.CreateAsync(request, ct);
-        if (!result.IsSuccess)
-            return result.Error!.ToErrorResult();
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return result.ToCreatedResult(nameof(GetById), v => new { id = v.Id });
     }
 
     [HttpPut(ApiRoutes.Admin.DishByIdRoute)]

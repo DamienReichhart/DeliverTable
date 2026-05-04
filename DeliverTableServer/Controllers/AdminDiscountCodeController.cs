@@ -33,10 +33,7 @@ public class AdminDiscountCodeController(IAdminDiscountCodeService adminDiscount
     public async Task<IActionResult> Create([FromBody] AdminCreateDiscountCodeRequest request, CancellationToken ct)
     {
         var result = await _adminDiscountCodeService.CreateAsync(request, ct);
-        if (!result.IsSuccess)
-            return result.Error!.ToErrorResult();
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return result.ToCreatedResult(nameof(GetById), v => new { id = v.Id });
     }
 
     [HttpPut(ApiRoutes.Admin.DiscountCodeByIdRoute)]

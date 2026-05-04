@@ -36,9 +36,6 @@ public class AdminModerationController(IAdminModerationService adminModerationSe
         if (!this.TryGetUserId(out int adminUserId)) return Unauthorized();
 
         var result = await _adminModerationService.CreateAsync(request, adminUserId, ct);
-        if (!result.IsSuccess)
-            return result.Error!.ToErrorResult();
-
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return result.ToCreatedResult(nameof(GetById), v => new { id = v.Id });
     }
 }
