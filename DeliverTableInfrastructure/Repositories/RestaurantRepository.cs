@@ -49,17 +49,14 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
                 .ToList();
 
             var totalCount = filtered.Count;
-            var (offset, size) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
-            var items = filtered.Skip(offset).Take(size).ToList();
+            var items = filtered.Paginate(query.PageNumber, query.PageSize).ToList();
             return (items, totalCount);
         }
 
         q = q.OrderBy(r => r.Id);
 
         var total = await q.CountAsync(ct);
-
-        var (skip, take) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
-        var result = await q.Skip(skip).Take(take).ToListAsync(ct);
+        var result = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (result, total);
     }
 
@@ -135,9 +132,7 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
         q = q.OrderBy(r => r.Id);
 
         var totalCount = await q.CountAsync(ct);
-
-        var (skip, take) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
-        var items = await q.Skip(skip).Take(take).ToListAsync(ct);
+        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 

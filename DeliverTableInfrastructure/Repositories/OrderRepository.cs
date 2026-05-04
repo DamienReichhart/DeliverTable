@@ -49,9 +49,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         q = q.OrderByDescending(o => o.CreatedAt);
 
         var totalCount = await q.CountAsync(ct);
-
-        var (skip, take) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
-        var items = await q.Skip(skip).Take(take).ToListAsync(ct);
+        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
@@ -73,9 +71,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         q = q.OrderByDescending(o => o.CreatedAt);
 
         var totalCount = await q.CountAsync(ct);
-
-        var (skip, take) = PaginationExtensions.GetPaginationOffsets(query.PageNumber, query.PageSize);
-        var items = await q.Skip(skip).Take(take).ToListAsync(ct);
+        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
