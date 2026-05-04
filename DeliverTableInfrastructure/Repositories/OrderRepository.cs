@@ -102,7 +102,9 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
             .Include(o => o.Customer)
             .Include(o => o.Restaurant)
             .Include(o => o.Items)
+                .ThenInclude(i => i.Dish)
             .Include(o => o.Payments)
+            .Include(o => o.Discounts)
             .FirstOrDefaultAsync(o => o.Id == id, ct);
     }
 
