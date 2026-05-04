@@ -2,7 +2,6 @@
 @attribute [Authorize(Roles = nameof(UserRole.Administrator))]
 @using DeliverTableClient.Services.Invoice
 @using DeliverTableSharedLibrary.Dtos.Invoice
-@using DeliverTableSharedLibrary.Enums
 @inject IInvoiceApiClient InvoiceApi
 @inject NavigationManager Nav
 
