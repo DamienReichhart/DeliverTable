@@ -255,7 +255,8 @@ public class InvoiceService(
             l.VatRate,
             l.LineHt,
             l.LineVat,
-            l.LineTtc)).ToList();
+            l.LineTtc,
+            l.Kind)).ToList();
 
         var header = MapToListItemDto(invoice);
         return ServiceResult<AdminInvoiceDetailDto>.Success(
@@ -489,6 +490,7 @@ public class InvoiceService(
 
             invoice.Lines.Add(new InvoiceLine
             {
+                Kind = InvoiceLineKind.Item,
                 Description = item.DishName,
                 Quantity = item.Quantity,
                 UnitPriceTtc = item.UnitPrice,
@@ -501,11 +503,83 @@ public class InvoiceService(
             });
         }
 
+        foreach (var discountLine in BuildDiscountLines(invoice.Lines.ToList(), order.Discounts, sort))
+        {
+            invoice.Lines.Add(discountLine);
+            sort++;
+        }
+
         invoice.TotalTtc = invoice.Lines.Sum(l => l.LineTtc);
         invoice.TotalHt = invoice.Lines.Sum(l => l.LineHt);
         invoice.TotalVat = invoice.Lines.Sum(l => l.LineVat);
 
         return invoice;
+    }
+
+    private static List<InvoiceLine> BuildDiscountLines(
+        IReadOnlyList<InvoiceLine> itemLines,
+        IReadOnlyList<OrderDiscount> discounts,
+        int startSortOrder)
+    {
+        var result = new List<InvoiceLine>();
+        if (discounts.Count == 0) return result;
+
+        var subtotalByRate = itemLines
+            .GroupBy(l => l.VatRate)
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.LineTtc));
+        var subtotalTtc = subtotalByRate.Values.Sum();
+        if (subtotalTtc <= 0m) return result;
+
+        int sort = startSortOrder;
+        foreach (var d in discounts)
+        {
+            var slices = new List<(decimal Rate, decimal Slice)>();
+            foreach (var (rate, rateSubtotal) in subtotalByRate)
+            {
+                if (rateSubtotal <= 0m) continue;
+                var share = rateSubtotal / subtotalTtc;
+                var slice = Math.Round(d.Amount * share, 2, MidpointRounding.AwayFromZero);
+                if (slice > 0m)
+                    slices.Add((rate, slice));
+            }
+            if (slices.Count == 0) continue;
+
+            var drift = d.Amount - slices.Sum(s => s.Slice);
+            if (drift != 0m)
+            {
+                var idx = slices
+                    .Select((s, i) => (s, i))
+                    .OrderByDescending(t => Math.Abs(t.s.Slice))
+                    .ThenByDescending(t => t.s.Rate)
+                    .First().i;
+                var (r, sl) = slices[idx];
+                slices[idx] = (r, sl + drift);
+            }
+
+            var multiRate = slices.Count > 1;
+            foreach (var (rate, slice) in slices)
+            {
+                var lineTtc = -slice;
+                var lineHt = Math.Round(lineTtc / (1 + rate / 100m), 2, MidpointRounding.AwayFromZero);
+                var lineVat = lineTtc - lineHt;
+                var description = multiRate ? $"{d.Description} (TVA {rate:0.#}%)" : d.Description;
+                result.Add(new InvoiceLine
+                {
+                    Kind = InvoiceLineKind.Discount,
+                    Description = description,
+                    Quantity = 1m,
+                    UnitPriceTtc = lineTtc,
+                    UnitPriceHt = lineHt,
+                    VatRate = rate,
+                    LineHt = lineHt,
+                    LineVat = lineVat,
+                    LineTtc = lineTtc,
+                    SortOrder = sort++,
+                });
+            }
+        }
+
+        return result;
     }
 
     private Invoice BuildCommissionInvoice(Order order, Restaurant restaurant, string number)
