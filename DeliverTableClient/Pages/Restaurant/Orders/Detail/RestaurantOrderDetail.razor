@@ -44,7 +44,7 @@
                     <div class="info-item">
                         <span class="info-label">Type</span>
                         <span class="order-type-badge order-type--@_order.OrderType.ToLower()">
-                            @TranslateOrderType(_order.OrderType)
+                            @DisplayHelpers.TranslateOrderType(_order.OrderType)
                         </span>
                     </div>
                     <div class="info-item">
@@ -65,7 +65,7 @@
                     <div class="info-item">
                         <span class="info-label">Paiement</span>
                         <span class="status-badge status--@_order.PaymentStatus.ToLower()">
-                            @TranslatePaymentStatus(_order.PaymentStatus)
+                            @DisplayHelpers.TranslatePaymentStatus(_order.PaymentStatus)
                         </span>
                     </div>
                     @if (!string.IsNullOrWhiteSpace(_order.DeliveryAddress))
@@ -89,7 +89,7 @@
                 <h2>Statut</h2>
                 <div class="current-status">
                     <span class="status-badge status-badge--lg status--@_order.Status.ToLower()">
-                        @TranslateStatus(_order.Status)
+                        @DisplayHelpers.TranslateStatus(_order.Status)
                     </span>
                 </div>
 
@@ -161,7 +161,7 @@
                     @foreach (var discount in _order.Discounts)
                     {
                         <div class="discount-line">
-                            <span class="discount-source">@TranslateDiscountSource(discount.Source)</span>
+                            <span class="discount-source">@DisplayHelpers.TranslateDiscountSource(discount.Source)</span>
                             <span class="discount-desc">@discount.Description</span>
                             <span class="discount-amount">-@discount.Amount.ToString("C", _frCulture)</span>
                         </div>
@@ -261,40 +261,4 @@
         _ => []
     };
 
-    private static string TranslateOrderType(string orderType) => orderType switch
-    {
-        "Delivery" => "Livraison",
-        "DineIn" => "Sur place",
-        _ => orderType
-    };
-
-    private static string TranslateStatus(string status) => status switch
-    {
-        "Pending" => "En attente",
-        "Confirmed" => "Confirmée",
-        "Refused" => "Refusée",
-        "Preparing" => "En préparation",
-        "Ready" => "Prête",
-        "Delivering" => "En livraison",
-        "Delivered" => "Livrée",
-        "Cancelled" => "Annulée",
-        _ => status
-    };
-
-    private static string TranslatePaymentStatus(string status) => status switch
-    {
-        "Pending" => "En attente",
-        "Completed" => "Payé",
-        "Failed" => "Échoué",
-        "Refunded" => "Remboursé",
-        _ => status
-    };
-
-    private static string TranslateDiscountSource(string source) => source switch
-    {
-        "Promotion" => "Promotion",
-        "DiscountCode" => "Code promo",
-        "LoyaltyPoints" => "Fidélité",
-        _ => source
-    };
 }

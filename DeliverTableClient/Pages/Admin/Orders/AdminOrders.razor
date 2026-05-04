@@ -44,13 +44,13 @@
                     <td>@order.CustomerName</td>
                     <td>@order.RestaurantName</td>
                     <td>
-                        <AdminBadge Text="@TranslateOrderType(order.OrderType)" Variant="info" />
+                        <AdminBadge Text="@DisplayHelpers.TranslateOrderType(order.OrderType)" Variant="info" />
                     </td>
                     <td>
-                        <AdminBadge Text="@TranslateOrderStatus(order.Status)" Variant="@OrderStatusBadgeVariant(order.Status)" ShowDot />
+                        <AdminBadge Text="@DisplayHelpers.TranslateStatus(order.Status)" Variant="@DisplayHelpers.OrderStatusBadgeVariant(order.Status)" ShowDot />
                     </td>
                     <td>
-                        <AdminBadge Text="@TranslatePaymentStatus(order.PaymentStatus)" Variant="@PaymentStatusBadgeVariant(order.PaymentStatus)" />
+                        <AdminBadge Text="@DisplayHelpers.TranslatePaymentStatus(order.PaymentStatus)" Variant="@DisplayHelpers.PaymentStatusBadgeVariant(order.PaymentStatus)" />
                     </td>
                     <td class="adm-cell-mono">@order.TotalAmount.ToString("0.00") &euro;</td>
                     <td class="adm-cell-mono">@order.CreatedAt.ToString("dd/MM/yyyy")</td>
@@ -84,7 +84,7 @@
                         <select id="edit-status" class="adm-form-select" @bind="_statusModel.Status">
                             @foreach (var status in AvailableOrderStatuses)
                             {
-                                <option value="@status">@TranslateOrderStatus(status)</option>
+                                <option value="@status">@DisplayHelpers.TranslateStatus(status)</option>
                             }
                         </select>
                     </div>
@@ -196,54 +196,4 @@
         _actionError = null;
     }
 
-    private static string TranslateOrderStatus(string status) => status switch
-    {
-        nameof(OrderStatus.Pending) => "En attente",
-        nameof(OrderStatus.Confirmed) => "Confirmée",
-        nameof(OrderStatus.Refused) => "Refusée",
-        nameof(OrderStatus.Preparing) => "En préparation",
-        nameof(OrderStatus.Ready) => "Prête",
-        nameof(OrderStatus.Delivering) => "En livraison",
-        nameof(OrderStatus.Delivered) => "Livrée",
-        nameof(OrderStatus.Cancelled) => "Annulée",
-        _ => status
-    };
-
-    private static string OrderStatusBadgeVariant(string status) => status switch
-    {
-        nameof(OrderStatus.Pending) => "warning",
-        nameof(OrderStatus.Confirmed) => "info",
-        nameof(OrderStatus.Preparing) => "info",
-        nameof(OrderStatus.Ready) => "success",
-        nameof(OrderStatus.Delivering) => "info",
-        nameof(OrderStatus.Delivered) => "success",
-        nameof(OrderStatus.Cancelled) => "danger",
-        nameof(OrderStatus.Refused) => "danger",
-        _ => "info"
-    };
-
-    private static string TranslatePaymentStatus(string status) => status switch
-    {
-        nameof(PaymentStatus.Pending) => "En attente",
-        nameof(PaymentStatus.Completed) => "Payé",
-        nameof(PaymentStatus.Failed) => "Échoué",
-        nameof(PaymentStatus.Refunded) => "Remboursé",
-        _ => status
-    };
-
-    private static string PaymentStatusBadgeVariant(string status) => status switch
-    {
-        nameof(PaymentStatus.Pending) => "warning",
-        nameof(PaymentStatus.Completed) => "success",
-        nameof(PaymentStatus.Failed) => "danger",
-        nameof(PaymentStatus.Refunded) => "info",
-        _ => "info"
-    };
-
-    private static string TranslateOrderType(string orderType) => orderType switch
-    {
-        nameof(OrderType.Delivery) => "Livraison",
-        nameof(OrderType.DineIn) => "Sur place",
-        _ => orderType
-    };
 }
