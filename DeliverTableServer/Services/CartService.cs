@@ -45,14 +45,14 @@ public sealed class CartService(
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         if (!restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotActive);
 
         var dish = await _dishRepository.GetByIdAsync(request.DishId, ct);
         if (dish is null)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         if (!dish.IsActive)
             return new ServiceError(ErrorMessages.DishNotAvailable);
@@ -102,10 +102,10 @@ public sealed class CartService(
     {
         var cartItem = await _cartRepository.GetCartItemByIdAsync(cartItemId, ct);
         if (cartItem is null)
-            return new ServiceError(ErrorMessages.CartItemNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.CartItemNotFound);
 
         if (cartItem.Cart.CustomerId != customerId)
-            return new ServiceError(ErrorMessages.CartItemNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.CartItemNotFound);
 
         cartItem.Quantity = request.Quantity;
         cartItem.SpecialInstructions = request.SpecialInstructions;
@@ -118,10 +118,10 @@ public sealed class CartService(
     {
         var cartItem = await _cartRepository.GetCartItemByIdAsync(cartItemId, ct);
         if (cartItem is null)
-            return new ServiceError(ErrorMessages.CartItemNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.CartItemNotFound);
 
         if (cartItem.Cart.CustomerId != customerId)
-            return new ServiceError(ErrorMessages.CartItemNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.CartItemNotFound);
 
         await _cartRepository.RemoveItemAsync(cartItemId, ct);
         return ServiceResult.Success();
@@ -131,7 +131,7 @@ public sealed class CartService(
     {
         var cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, restaurantId, ct);
         if (cart is null)
-            return new ServiceError(ErrorMessages.CartNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.CartNotFound);
 
         await _cartRepository.DeleteAsync(cart.Id, ct);
         return ServiceResult.Success();

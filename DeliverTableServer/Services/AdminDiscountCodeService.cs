@@ -26,7 +26,7 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
     {
         var code = await _discountCodeRepository.GetByIdWithRestaurantAsync(id, ct);
         if (code is null)
-            return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
         return code.ToAdminDto();
     }
@@ -36,17 +36,17 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         if (request.ValidUntil <= request.ValidFrom)
-            return new ServiceError(ErrorMessages.InvalidDiscountCodeDates, 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidDiscountCodeDates);
 
         if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh, 400);
+            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
 
         var existing = await _discountCodeRepository.GetByCodeAndRestaurantAsync(request.Code, request.RestaurantId, ct);
         if (existing is not null)
-            return new ServiceError(ErrorMessages.DiscountCodeAlreadyExists, 400);
+            return ServiceError.BadRequest(ErrorMessages.DiscountCodeAlreadyExists);
 
         var discountCode = new DiscountCode
         {
@@ -74,13 +74,13 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
     {
         var code = await _discountCodeRepository.GetByIdWithRestaurantAsync(id, ct);
         if (code is null)
-            return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
         if (request.ValidUntil <= request.ValidFrom)
-            return new ServiceError(ErrorMessages.InvalidDiscountCodeDates, 400);
+            return ServiceError.BadRequest(ErrorMessages.InvalidDiscountCodeDates);
 
         if (request.DiscountType == DiscountType.Percentage && request.DiscountValue > 100)
-            return new ServiceError(ErrorMessages.PercentageDiscountTooHigh, 400);
+            return ServiceError.BadRequest(ErrorMessages.PercentageDiscountTooHigh);
 
         code.Description = request.Description ?? "";
         code.DiscountType = request.DiscountType;
@@ -101,7 +101,7 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
     {
         var deleted = await _discountCodeRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
         return ServiceResult.Success();
     }
@@ -110,7 +110,7 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
     {
         var code = await _discountCodeRepository.GetByIdAsync(discountCodeId, ct);
         if (code is null)
-            return new ServiceError(ErrorMessages.DiscountCodeNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
         var redemptions = await _discountCodeRepository.GetRedemptionsByCodeIdAsync(discountCodeId, ct);
         var result = redemptions.Select(r => r.ToAdminDto()).ToList();

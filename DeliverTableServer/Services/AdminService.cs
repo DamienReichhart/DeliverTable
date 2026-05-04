@@ -31,7 +31,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     {
         var user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         var role = await _userRepository.GetPrimaryRoleAsync(user);
         return user.ToAdminDto(role);
@@ -70,7 +70,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     {
         var user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (!ValidRoles.Contains(request.Role))
             return new ServiceError(ErrorMessages.InvalidRole(string.Join(", ", ValidRoles)));
@@ -108,7 +108,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     {
         var user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         var (succeeded, errors) = await _userRepository.DeleteAsync(user);
         if (!succeeded)
@@ -122,7 +122,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     {
         var user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (!ValidRoles.Contains(request.Role))
             return new ServiceError(ErrorMessages.InvalidRole(string.Join(", ", ValidRoles)));
@@ -148,7 +148,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
         var user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
-            return new ServiceError(ErrorMessages.UserNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         user.Status = newStatus;
         user.UpdatedAt = DateTime.UtcNow;

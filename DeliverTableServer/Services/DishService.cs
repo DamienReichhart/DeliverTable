@@ -36,7 +36,7 @@ public sealed class DishService(
     {
         var dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         return dish.ToDto();
     }
@@ -83,7 +83,7 @@ public sealed class DishService(
 
         var dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         if (image is not null)
         {
@@ -108,12 +108,12 @@ public sealed class DishService(
     {
         var dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         await _objectStorage.DeleteAsync($"{DishImageFolder}/{dish.Id}");
         var deleted = await _dishRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.DishNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         return ServiceResult.Success();
     }

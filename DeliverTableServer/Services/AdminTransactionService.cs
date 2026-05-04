@@ -22,7 +22,7 @@ public sealed class AdminTransactionService(ITransactionRepository transactionRe
     {
         var transaction = await _transactionRepository.GetByIdAsync(id, ct);
         if (transaction is null)
-            return new ServiceError(ErrorMessages.TransactionNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.TransactionNotFound);
 
         return transaction.ToAdminDto();
     }

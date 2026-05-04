@@ -22,7 +22,7 @@ public sealed class AdminRestaurantService(IRestaurantRepository restaurantRepos
     {
         var restaurant = await _restaurantRepository.GetByIdWithOwnerAsync(id, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         return restaurant.ToAdminDto();
     }
@@ -32,7 +32,7 @@ public sealed class AdminRestaurantService(IRestaurantRepository restaurantRepos
     {
         var restaurant = await _restaurantRepository.GetByIdWithOwnerAsync(id, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         restaurant.Name = request.Name;
         restaurant.Description = request.Description ?? "";
@@ -52,7 +52,7 @@ public sealed class AdminRestaurantService(IRestaurantRepository restaurantRepos
     {
         var deleted = await _restaurantRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         return ServiceResult.Success();
     }

@@ -25,6 +25,6 @@ public sealed class AdminRatingService(IRatingRepository ratingRepository) : IAd
         if (deleted)
             return ServiceResult.Success();
 
-        return new ServiceError(ErrorMessages.RatingNotFound, 404);
+        return ServiceError.NotFound(ErrorMessages.RatingNotFound);
     }
 }

@@ -46,7 +46,7 @@ public sealed class RestaurantService(
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(id, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         return restaurant.ToDetailedDto();
     }
@@ -97,7 +97,7 @@ public sealed class RestaurantService(
     {
         var restaurant = await _restaurantRepository.GetByIdAsync(id, ct);
         if (restaurant is null)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         if (!SiretValidator.IsValid(dto.Siret))
             return new ServiceError(ErrorMessages.SiretInvalid);
@@ -138,7 +138,7 @@ public sealed class RestaurantService(
     {
         var deleted = await _restaurantRepository.DeleteAsync(id, ct);
         if (!deleted)
-            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
+            return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         return ServiceResult.Success();
     }
