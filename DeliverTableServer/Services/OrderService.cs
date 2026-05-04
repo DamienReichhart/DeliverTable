@@ -41,6 +41,8 @@ public sealed class OrderService(
     private readonly IPaymentService _paymentService = paymentService;
     private readonly decimal _commissionRate = appEnvironment.PlatformCommissionRate;
     private readonly string _stripePublishableKey = appEnvironment.StripePublishableKey;
+    private static readonly string OrderTypeNames = string.Join(", ", Enum.GetNames<OrderType>());
+    private static readonly string OrderStatusNames = string.Join(", ", Enum.GetNames<OrderStatus>());
 
     public async Task<ServiceResult<CreateOrderResponse>> CreateFromCartAsync(
         int customerId, CreateOrderRequest request, CancellationToken ct = default)
@@ -53,10 +55,7 @@ public sealed class OrderService(
             return new ServiceError(ErrorMessages.BillingAddressIncomplete);
 
         if (!Enum.TryParse<OrderType>(request.OrderType, out var orderType))
-        {
-            var validValues = string.Join(", ", Enum.GetNames<OrderType>());
-            return new ServiceError(ErrorMessages.InvalidOrderType(validValues));
-        }
+            return new ServiceError(ErrorMessages.InvalidOrderType(OrderTypeNames));
 
         if (orderType == OrderType.DineIn && (request.GuestCount < 1 || request.GuestCount > 50))
             return new ServiceError(ErrorMessages.GuestCountRequired);
@@ -198,10 +197,7 @@ public sealed class OrderService(
             return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
         if (!Enum.TryParse<OrderStatus>(request.Status, out var newStatus))
-        {
-            var validValues = string.Join(", ", Enum.GetNames<OrderStatus>());
-            return new ServiceError(ErrorMessages.InvalidOrderStatus(validValues));
-        }
+            return new ServiceError(ErrorMessages.InvalidOrderStatus(OrderStatusNames));
 
         if (order.Status == OrderStatus.Pending && newStatus == OrderStatus.Confirmed)
         {
