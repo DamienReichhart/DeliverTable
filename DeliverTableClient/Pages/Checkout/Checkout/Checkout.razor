@@ -29,6 +29,12 @@
             <p>@_error</p>
         </div>
         <div class="checkout-page__back">
+            @if (_isBillingIncomplete)
+            {
+                <a class="app-btn app-btn--primary" href="/profil">
+                    Compléter mon profil
+                </a>
+            }
             <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
                 Retour au panier
             </button>
@@ -195,12 +201,16 @@
     private static readonly System.Globalization.CultureInfo _frCulture =
         System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
 
+    private const string BillingIncompleteMessage =
+        "Veuillez compléter votre adresse de facturation dans votre profil avant de commander.";
+
     private CartDto? _cart;
     private bool _loading = true;
     private bool _initializing;
     private bool _submitting;
     private bool _paymentReady;
     private string? _error;
+    private bool _isBillingIncomplete;
     private string? _validationError;
     private string? _paymentError;
     private int _orderId;
@@ -260,14 +270,16 @@
     private async Task StartPaymentAsync()
     {
         _validationError = null;
+        _isBillingIncomplete = false;
         _initializing = true;
         StateHasChanged();
 
         var request = BuildOrderRequest();
-        var response = await PaymentApi.CreateOrderAsync(request);
+        var (response, errorResponse) = await PaymentApi.CreateOrderAsync(request);
         if (response is null)
         {
-            _error = "Impossible de démarrer le paiement.";
+            _error = errorResponse?.Error ?? "Impossible de démarrer le paiement.";
+            _isBillingIncomplete = _error == BillingIncompleteMessage;
             _initializing = false;
             StateHasChanged();
             return;
