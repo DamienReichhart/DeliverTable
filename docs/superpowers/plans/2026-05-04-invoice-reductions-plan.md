@@ -299,7 +299,7 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
         builder.HasKey(l => l.Id);
 
         builder.Property(l => l.Kind)
-            .HasConversion<int>()
+            .HasConversion<string>()
             .HasDefaultValue(InvoiceLineKind.Item)
             .IsRequired();
     }
