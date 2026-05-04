@@ -43,6 +43,8 @@ public static class ErrorMessages
     public const string OrderCannotBeCancelled = "Cette commande ne peut pas être annulée";
     public const string DeliveryAddressRequired = "L'adresse de livraison est obligatoire pour une commande en livraison";
     public const string GuestCountRequired = "Le nombre de convives doit être compris entre 1 et 50";
+    public const string BillingAddressIncomplete =
+        "Veuillez compléter votre adresse de facturation dans votre profil avant de commander.";
 
     public static string InvalidOrderStatus(string validValues) =>
         $"Statut de commande invalide. Valeurs possibles : {validValues}";

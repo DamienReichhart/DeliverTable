@@ -128,6 +128,11 @@ public sealed class AuthService(
         user.NormalizedEmail = normalizedEmail;
         user.NormalizedUserName = normalizedEmail;
         user.UpdatedAt = DateTime.UtcNow;
+        user.BillingAddressLine1 = (request.BillingAddressLine1 ?? string.Empty).Trim();
+        user.BillingAddressLine2 = (request.BillingAddressLine2 ?? string.Empty).Trim();
+        user.BillingPostalCode = (request.BillingPostalCode ?? string.Empty).Trim();
+        user.BillingCity = (request.BillingCity ?? string.Empty).Trim();
+        user.BillingCountry = (request.BillingCountry ?? string.Empty).Trim();
 
         await _userRepository.SaveChangesAsync(ct);
         return await BuildConnectionResponse(user);
