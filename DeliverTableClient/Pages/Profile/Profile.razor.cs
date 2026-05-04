@@ -67,33 +67,14 @@ public partial class Profile
     {
         _profileSuccess = null;
         _profileError = null;
-        _originalProfile = new UpdateProfileRequest
-        {
-            FirstName = _profileModel.FirstName,
-            LastName = _profileModel.LastName,
-            Email = _profileModel.Email,
-            BillingAddressLine1 = _profileModel.BillingAddressLine1,
-            BillingAddressLine2 = _profileModel.BillingAddressLine2,
-            BillingPostalCode = _profileModel.BillingPostalCode,
-            BillingCity = _profileModel.BillingCity,
-            BillingCountry = _profileModel.BillingCountry
-        };
+        _originalProfile = _profileModel.Clone();
         _isEditingProfile = true;
     }
 
     private void CancelEditProfile()
     {
         if (_originalProfile != null)
-        {
-            _profileModel.FirstName = _originalProfile.FirstName;
-            _profileModel.LastName = _originalProfile.LastName;
-            _profileModel.Email = _originalProfile.Email;
-            _profileModel.BillingAddressLine1 = _originalProfile.BillingAddressLine1;
-            _profileModel.BillingAddressLine2 = _originalProfile.BillingAddressLine2;
-            _profileModel.BillingPostalCode = _originalProfile.BillingPostalCode;
-            _profileModel.BillingCity = _originalProfile.BillingCity;
-            _profileModel.BillingCountry = _originalProfile.BillingCountry;
-        }
+            _profileModel.CopyFrom(_originalProfile);
         _profileError = null;
         _isEditingProfile = false;
     }

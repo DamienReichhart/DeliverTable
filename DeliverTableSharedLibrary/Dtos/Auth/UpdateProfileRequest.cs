@@ -31,4 +31,18 @@ public class UpdateProfileRequest
 
     [MaxLength(100, ErrorMessage = "Le pays ne peut pas dépasser 100 caractères")]
     public string BillingCountry { get; set; } = "";
+
+    public UpdateProfileRequest Clone() => (UpdateProfileRequest)MemberwiseClone();
+
+    public void CopyFrom(UpdateProfileRequest source)
+    {
+        FirstName = source.FirstName;
+        LastName = source.LastName;
+        Email = source.Email;
+        BillingAddressLine1 = source.BillingAddressLine1;
+        BillingAddressLine2 = source.BillingAddressLine2;
+        BillingPostalCode = source.BillingPostalCode;
+        BillingCity = source.BillingCity;
+        BillingCountry = source.BillingCountry;
+    }
 }
