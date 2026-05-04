@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using DeliverTableClient.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Loyalty;
 
@@ -14,7 +15,7 @@ public sealed class LoyaltyClientService(HttpClient httpClient) : ILoyaltyClient
         try
         {
             var result = await _httpClient.GetFromJsonAsync<LoyaltyProgramDto>(
-                $"api/v1/restaurant/{restaurantId}/loyalty", ct);
+                ApiRoutes.Loyalty.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), ct);
             return (result, null);
         }
         catch (Exception ex)
@@ -25,7 +26,8 @@ public sealed class LoyaltyClientService(HttpClient httpClient) : ILoyaltyClient
 
     public async Task<(LoyaltyProgramDto?, ErrorResponse?)> CreateOrUpdateAsync(int restaurantId, CreateLoyaltyProgramRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync($"api/v1/restaurant/{restaurantId}/loyalty", request, ct);
+        var response = await _httpClient.PostAsJsonAsync(
+            ApiRoutes.Loyalty.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
@@ -40,8 +42,8 @@ public sealed class LoyaltyClientService(HttpClient httpClient) : ILoyaltyClient
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<LoyaltyAccountDto>(
-                $"api/v1/restaurant/{restaurantId}/loyalty/my-account", ct);
+            var myAccountUrl = $"{ApiRoutes.Loyalty.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}/{ApiRoutes.Loyalty.MyAccountRoute}";
+            var result = await _httpClient.GetFromJsonAsync<LoyaltyAccountDto>(myAccountUrl, ct);
             return (result, null);
         }
         catch (Exception ex)

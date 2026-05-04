@@ -21,7 +21,7 @@ public sealed class RestaurantAccountService(HttpClient httpClient) : IRestauran
                 $"PageSize={query.PageSize}"
             };
 
-            var url = $"api/v1/restaurant/{restaurantId}/account?{string.Join("&", queryParams)}";
+            var url = $"{ApiRoutes.RestaurantAccount.BaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
             var result = await _httpClient.GetFromJsonAsync<RestaurantAccountDto>(url, ct);
             return (result, null);
         }
@@ -34,8 +34,8 @@ public sealed class RestaurantAccountService(HttpClient httpClient) : IRestauran
     public async Task<(RestaurantAccountDto?, ErrorResponse?)> WithdrawAsync(
         int restaurantId, WithdrawRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync(
-            $"api/v1/restaurant/{restaurantId}/account/withdraw", request, ct);
+        var withdrawUrl = $"{ApiRoutes.RestaurantAccount.BaseRoute.Replace("{id:int}", restaurantId.ToString())}/{ApiRoutes.RestaurantAccount.WithdrawRoute}";
+        var response = await _httpClient.PostAsJsonAsync(withdrawUrl, request, ct);
 
         if (!response.IsSuccessStatusCode)
         {

@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using DeliverTableClient.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.DiscountCode;
 
@@ -19,7 +20,7 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
                 $"PageSize={query.PageSize}"
             };
 
-            var url = $"api/v1/restaurant/{restaurantId}/discount-codes?{string.Join("&", queryParams)}";
+            var url = $"{ApiRoutes.DiscountCode.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
             var result = await _httpClient.GetFromJsonAsync<PaginatedResult<DiscountCodeDto>>(url, ct);
             return (result, null);
         }
@@ -31,7 +32,8 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
 
     public async Task<(DiscountCodeDto?, ErrorResponse?)> CreateAsync(int restaurantId, CreateDiscountCodeRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync($"api/v1/restaurant/{restaurantId}/discount-codes", request, ct);
+        var response = await _httpClient.PostAsJsonAsync(
+            ApiRoutes.DiscountCode.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
@@ -44,7 +46,7 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
 
     public async Task<(DiscountCodeDto?, ErrorResponse?)> UpdateAsync(int discountCodeId, UpdateDiscountCodeRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"api/v1/discount-code/{discountCodeId}", request, ct);
+        var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.DiscountCode.Base}/{discountCodeId}", request, ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
@@ -57,7 +59,7 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
 
     public async Task<(bool, ErrorResponse?)> DeleteAsync(int discountCodeId, CancellationToken ct = default)
     {
-        var response = await _httpClient.DeleteAsync($"api/v1/discount-code/{discountCodeId}", ct);
+        var response = await _httpClient.DeleteAsync($"{ApiRoutes.DiscountCode.Base}/{discountCodeId}", ct);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
@@ -71,7 +73,7 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
     {
         var request = new ValidateDiscountCodeRequest { Code = code };
         var response = await _httpClient.PostAsJsonAsync(
-            $"api/v1/restaurant/{restaurantId}/discount-codes/validate", request, ct);
+            ApiRoutes.DiscountCode.ValidateRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
