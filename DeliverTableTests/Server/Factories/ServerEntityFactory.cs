@@ -26,7 +26,12 @@ public static class ServerEntityFactory
             FirstName = "Test",
             LastName = "User",
             Status = UserStatus.Active,
-            SecurityStamp = Guid.NewGuid().ToString()
+            SecurityStamp = Guid.NewGuid().ToString(),
+            BillingAddressLine1 = "12 rue de la Paix",
+            BillingAddressLine2 = string.Empty,
+            BillingPostalCode = "75002",
+            BillingCity = "Paris",
+            BillingCountry = "France",
         };
     }
 

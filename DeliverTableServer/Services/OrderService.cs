@@ -45,6 +45,13 @@ public sealed class OrderService(
     public async Task<ServiceResult<CreateOrderResponse>> CreateFromCartAsync(
         int customerId, CreateOrderRequest request, CancellationToken ct = default)
     {
+        var customer = await _userRepository.GetByIdAsync(customerId, ct);
+        if (customer is null)
+            return new ServiceError(ErrorMessages.UserNotFound, 404);
+
+        if (!BillingAddressHelper.HasCompleteBillingAddress(customer))
+            return new ServiceError(ErrorMessages.BillingAddressIncomplete);
+
         if (!Enum.TryParse<OrderType>(request.OrderType, out var orderType))
         {
             var validValues = string.Join(", ", Enum.GetNames<OrderType>());

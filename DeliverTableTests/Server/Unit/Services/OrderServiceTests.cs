@@ -53,6 +53,12 @@ public class OrderServiceTests
             .Returns(ServiceResult<CreateIntentResult>.Success(
                 new CreateIntentResult("pi_test_secret", "pi_test_id", 70m, "EUR")));
 
+        // Default: any customerId resolves to a user with a complete billing address
+        // so the CreateFromCartAsync billing-address guard passes. Tests that need
+        // to exercise the guard's failure path override this mock explicitly.
+        _userRepository.GetByIdAsync(CustomerId, Arg.Any<CancellationToken>())
+            .Returns(CreateValidUser());
+
         _sut = new OrderService(
             _orderRepository, _cartRepository, _restaurantRepository,
             _transactionRepository, _promotionRepository, _discountCodeRepository,
@@ -1028,6 +1034,56 @@ public class OrderServiceTests
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.OrderId, Is.EqualTo(42));
         Assert.That(result.Value.ClientSecret, Is.EqualTo("pi_secret_42"));
+    }
+
+    // ─── Billing-address guard tests ───────────────────────────────────────
+
+    [Test]
+    public async Task CreateFromCart_WhenBillingAddressIncomplete_ReturnsBillingError()
+    {
+        var customer = CreateValidUser("c@example.fr");
+        customer.Id = 1;
+        customer.BillingAddressLine1 = string.Empty; // wipe one required field
+
+        _userRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(customer);
+
+        var request = new CreateOrderRequest
+        {
+            RestaurantId = 5,
+            OrderType = nameof(OrderType.Delivery),
+            DeliveryAddress = "1 av des Champs-Élysées",
+        };
+
+        var result = await _sut.CreateFromCartAsync(1, request, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.BillingAddressIncomplete));
+        await _restaurantRepository.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+    }
+
+    [Test]
+    public async Task CreateFromCart_WhenBillingAddressComplete_PassesGuard()
+    {
+        var customer = CreateValidUser("c@example.fr");
+        customer.Id = 1;
+        // CreateValidUser already seeds a complete billing address.
+
+        _userRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(customer);
+
+        var request = new CreateOrderRequest
+        {
+            RestaurantId = 5,
+            OrderType = nameof(OrderType.Delivery),
+            DeliveryAddress = "1 av des Champs-Élysées",
+        };
+
+        var result = await _sut.CreateFromCartAsync(1, request, CancellationToken.None);
+
+        // Guard MUST pass; downstream failures (RestaurantNotFound, etc.) are acceptable.
+        Assert.That(result.IsSuccess
+            || result.Error!.Message != ErrorMessages.BillingAddressIncomplete,
+            Is.True);
+        await _restaurantRepository.Received().GetByIdAsync(5, Arg.Any<CancellationToken>());
     }
 
     // ─── Payment integration tests for UpdateStatusAsync ────────────────────
