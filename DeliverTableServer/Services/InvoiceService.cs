@@ -429,6 +429,7 @@ public class InvoiceService(
 
             creditNote.Lines.Add(new InvoiceLine
             {
+                Kind = origLine.Kind,
                 Description = origLine.Description,
                 Quantity = qty,
                 UnitPriceTtc = origLine.UnitPriceTtc,
