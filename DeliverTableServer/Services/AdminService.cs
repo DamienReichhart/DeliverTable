@@ -42,7 +42,8 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
         if (!ValidRoles.Contains(request.Role))
             return new ServiceError(ErrorMessages.InvalidRole(string.Join(", ", ValidRoles)));
 
-        if (await _userRepository.EmailExistsAsync(request.Email.ToUpperInvariant(), ct))
+        var normalizedEmail = request.Email.ToUpperInvariant();
+        if (await _userRepository.EmailExistsAsync(normalizedEmail, ct))
             return new ServiceError(ErrorMessages.EmailAlreadyUsed);
 
         var user = new User
@@ -78,15 +79,16 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
         if (!Enum.TryParse<UserStatus>(request.Status, ignoreCase: true, out var newStatus))
             return new ServiceError(ErrorMessages.InvalidStatus(string.Join(", ", Enum.GetNames<UserStatus>())));
 
-        if (await _userRepository.EmailExistsExceptAsync(request.Email.ToUpperInvariant(), id, ct))
+        var normalizedEmail = request.Email.ToUpperInvariant();
+        if (await _userRepository.EmailExistsExceptAsync(normalizedEmail, id, ct))
             return new ServiceError(ErrorMessages.EmailAlreadyUsed);
 
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;
         user.Email = request.Email;
         user.UserName = request.Email;
-        user.NormalizedEmail = request.Email.ToUpperInvariant();
-        user.NormalizedUserName = request.Email.ToUpperInvariant();
+        user.NormalizedEmail = normalizedEmail;
+        user.NormalizedUserName = normalizedEmail;
         user.Status = newStatus;
         user.UpdatedAt = DateTime.UtcNow;
 
