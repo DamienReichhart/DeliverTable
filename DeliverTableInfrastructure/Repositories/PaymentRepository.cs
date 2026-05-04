@@ -17,16 +17,18 @@ public class PaymentRepository(DeliverTableContext dbContext) : IPaymentReposito
     }
 
     public Task<Payment?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        _dbContext.Payments.Include(p => p.Refunds).FirstOrDefaultAsync(p => p.Id == id, ct);
+        PaymentsWithRefunds.FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public Task<Payment?> GetByOrderIdAsync(int orderId, CancellationToken ct = default) =>
-        _dbContext.Payments.Include(p => p.Refunds).FirstOrDefaultAsync(p => p.OrderId == orderId, ct);
+        PaymentsWithRefunds.FirstOrDefaultAsync(p => p.OrderId == orderId, ct);
 
     public Task<Payment?> GetByStripePaymentIntentIdAsync(string paymentIntentId, CancellationToken ct = default) =>
-        _dbContext.Payments.Include(p => p.Refunds).FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, ct);
+        PaymentsWithRefunds.FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, ct);
 
     public Task<Payment?> GetByStripeChargeIdAsync(string stripeChargeId, CancellationToken ct = default) =>
-        _dbContext.Payments.Include(p => p.Refunds).FirstOrDefaultAsync(p => p.StripeChargeId == stripeChargeId, ct);
+        PaymentsWithRefunds.FirstOrDefaultAsync(p => p.StripeChargeId == stripeChargeId, ct);
+
+    private IQueryable<Payment> PaymentsWithRefunds => _dbContext.Payments.Include(p => p.Refunds);
 
     public async Task UpdateAsync(Payment payment, CancellationToken ct = default)
     {
