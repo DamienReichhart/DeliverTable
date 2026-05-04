@@ -1,5 +1,6 @@
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableServer.Mappers;
 using DeliverTableInfrastructure.Repositories.Interfaces;
@@ -56,7 +57,7 @@ public sealed class AuthService(
         if (!roleOk)
             return new ServiceError(ErrorMessages.InternalError, 500);
 
-        var userName = $"{user.FirstName} {user.LastName}".Trim();
+        var userName = user.GetFullName();
         await _emailJobService.QueueWelcomeEmailAsync(user.Email!, userName);
 
         return await BuildConnectionResponse(user);
@@ -91,7 +92,7 @@ public sealed class AuthService(
         if (!roleOk)
             return new ServiceError(ErrorMessages.InternalError, 500);
 
-        var ownerName = $"{user.FirstName} {user.LastName}".Trim();
+        var ownerName = user.GetFullName();
         await _emailJobService.QueueWelcomeEmailAsync(user.Email!, ownerName);
 
         return await BuildConnectionResponse(user);
@@ -155,7 +156,7 @@ public sealed class AuthService(
         user.UpdatedAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync(ct);
 
-        var userName = $"{user.FirstName} {user.LastName}".Trim();
+        var userName = user.GetFullName();
         await _emailJobService.QueuePasswordChangedAsync(user.Email!, userName);
 
         return ServiceResult.Success();

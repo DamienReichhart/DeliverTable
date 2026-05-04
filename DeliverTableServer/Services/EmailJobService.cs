@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
@@ -88,9 +89,7 @@ public class EmailJobService(
     public async Task<ServiceResult> QueueNewOrderForRestaurantAsync(
         Order order, string ownerEmail, string restaurantName)
     {
-        var customerName = order.Customer is not null
-            ? $"{order.Customer.FirstName} {order.Customer.LastName}".Trim()
-            : "Client";
+        var customerName = order.Customer?.GetFullName() ?? "Client";
 
         var templateData = new NewOrderForRestaurantData(
             order.Id,

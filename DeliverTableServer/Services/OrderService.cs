@@ -255,7 +255,7 @@ public sealed class OrderService(
         if (customer is null || string.IsNullOrWhiteSpace(customer.Email))
             return;
 
-        var customerName = $"{customer.FirstName} {customer.LastName}".Trim();
+        var customerName = customer.GetFullName();
 
         switch (status)
         {

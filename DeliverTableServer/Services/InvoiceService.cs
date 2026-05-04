@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Invoicing;
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
@@ -458,7 +459,7 @@ public class InvoiceService(
             Address: restaurant.LegalAddress);
 
         var recipientSnapshot = new InvoiceLegalSnapshotDto(
-            Name: $"{customer.FirstName} {customer.LastName}".Trim(),
+            Name: customer.GetFullName(),
             LegalForm: string.Empty,
             Siret: string.Empty,
             VatNumber: string.Empty,
