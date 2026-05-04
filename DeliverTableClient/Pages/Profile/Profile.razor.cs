@@ -44,6 +44,10 @@ public partial class Profile
                 LastName = user.LastName,
                 Email = user.Email
             };
+
+            if (string.IsNullOrWhiteSpace(_profileModel.BillingCountry))
+                _profileModel.BillingCountry = "France";
+
             _initials = BuildInitials(user.FirstName, user.LastName);
         }
         else
@@ -62,7 +66,12 @@ public partial class Profile
         {
             FirstName = _profileModel.FirstName,
             LastName = _profileModel.LastName,
-            Email = _profileModel.Email
+            Email = _profileModel.Email,
+            BillingAddressLine1 = _profileModel.BillingAddressLine1,
+            BillingAddressLine2 = _profileModel.BillingAddressLine2,
+            BillingPostalCode = _profileModel.BillingPostalCode,
+            BillingCity = _profileModel.BillingCity,
+            BillingCountry = _profileModel.BillingCountry
         };
         _isEditingProfile = true;
     }
@@ -74,6 +83,11 @@ public partial class Profile
             _profileModel.FirstName = _originalProfile.FirstName;
             _profileModel.LastName = _originalProfile.LastName;
             _profileModel.Email = _originalProfile.Email;
+            _profileModel.BillingAddressLine1 = _originalProfile.BillingAddressLine1;
+            _profileModel.BillingAddressLine2 = _originalProfile.BillingAddressLine2;
+            _profileModel.BillingPostalCode = _originalProfile.BillingPostalCode;
+            _profileModel.BillingCity = _originalProfile.BillingCity;
+            _profileModel.BillingCountry = _originalProfile.BillingCountry;
         }
         _profileError = null;
         _isEditingProfile = false;
