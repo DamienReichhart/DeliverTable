@@ -159,6 +159,28 @@
   margin-top: $spacing-lg;
 }
 
+// ── Billing address section (within profile edit form) ──
+
+.profile-billing-section {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-border;
+}
+
+.profile-billing-title {
+  margin: 0 0 $spacing-xs;
+  font-family: $font-family-display;
+  font-size: 1.05rem;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.profile-billing-help {
+  margin: 0 0 $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}
+
 .profile-btn-cancel {
   background-color: transparent;
   color: $color-text-muted;

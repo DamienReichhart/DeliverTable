@@ -107,6 +107,60 @@
                                 <ValidationMessage For="@(() => _profileModel.Email)" class="validation-message" />
                             </div>
 
+                            <div class="profile-billing-section">
+                                <h4 class="profile-billing-title">Adresse de facturation</h4>
+                                <p class="profile-billing-help">
+                                    Ces informations apparaissent sur vos factures et sont requises pour passer commande.
+                                </p>
+
+                                <div class="col mb-1">
+                                    <label class="form-label" for="billing-line1">Adresse</label>
+                                    <InputText id="billing-line1"
+                                               @bind-Value="_profileModel.BillingAddressLine1"
+                                               class="form-control app-input"
+                                               placeholder="12 rue de la Paix" />
+                                    <ValidationMessage For="@(() => _profileModel.BillingAddressLine1)" class="validation-message" />
+                                </div>
+
+                                <div class="col mb-1">
+                                    <label class="form-label" for="billing-line2">Complément d'adresse (optionnel)</label>
+                                    <InputText id="billing-line2"
+                                               @bind-Value="_profileModel.BillingAddressLine2"
+                                               class="form-control app-input"
+                                               placeholder="Bât. B, 3ᵉ étage" />
+                                    <ValidationMessage For="@(() => _profileModel.BillingAddressLine2)" class="validation-message" />
+                                </div>
+
+                                <div class="profile-form-grid">
+                                    <div class="col">
+                                        <label class="form-label" for="billing-postal">Code postal</label>
+                                        <InputText id="billing-postal"
+                                                   @bind-Value="_profileModel.BillingPostalCode"
+                                                   class="form-control app-input"
+                                                   placeholder="75002" />
+                                        <ValidationMessage For="@(() => _profileModel.BillingPostalCode)" class="validation-message" />
+                                    </div>
+
+                                    <div class="col">
+                                        <label class="form-label" for="billing-city">Ville</label>
+                                        <InputText id="billing-city"
+                                                   @bind-Value="_profileModel.BillingCity"
+                                                   class="form-control app-input"
+                                                   placeholder="Paris" />
+                                        <ValidationMessage For="@(() => _profileModel.BillingCity)" class="validation-message" />
+                                    </div>
+                                </div>
+
+                                <div class="col mt-1">
+                                    <label class="form-label" for="billing-country">Pays</label>
+                                    <InputText id="billing-country"
+                                               @bind-Value="_profileModel.BillingCountry"
+                                               class="form-control app-input"
+                                               placeholder="France" />
+                                    <ValidationMessage For="@(() => _profileModel.BillingCountry)" class="validation-message" />
+                                </div>
+                            </div>
+
                             @if (!string.IsNullOrEmpty(_profileError))
                             {
                                 <div class="alert alert-danger mt-1">@_profileError</div>
