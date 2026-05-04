@@ -13,7 +13,17 @@ namespace DeliverTableServer.Services;
 public sealed class AdminService(IUserRepository userRepository) : IAdminService
 {
     private static readonly string[] ValidRoles = Enum.GetNames<UserRole>();
+    private static readonly string ValidRolesList = string.Join(", ", ValidRoles);
+    private static readonly string ValidStatusesList = string.Join(", ", Enum.GetNames<UserStatus>());
     private readonly IUserRepository _userRepository = userRepository;
+
+    private static ServiceError? ValidateRole(string role) =>
+        ValidRoles.Contains(role) ? null : new ServiceError(ErrorMessages.InvalidRole(ValidRolesList));
+
+    private static ServiceError? TryParseStatus(string status, out UserStatus parsed) =>
+        Enum.TryParse(status, ignoreCase: true, out parsed)
+            ? null
+            : new ServiceError(ErrorMessages.InvalidStatus(ValidStatusesList));
 
     public async Task<ServiceResult<List<AdminUserResponse>>> GetAllUsersAsync(CancellationToken ct = default)
     {
@@ -39,8 +49,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
     public async Task<ServiceResult<AdminUserResponse>> CreateUserAsync(AdminCreateUserRequest request, CancellationToken ct = default)
     {
-        if (!ValidRoles.Contains(request.Role))
-            return new ServiceError(ErrorMessages.InvalidRole(string.Join(", ", ValidRoles)));
+        if (ValidateRole(request.Role) is { } roleError) return roleError;
 
         var normalizedEmail = request.Email.ToUpperInvariant();
         if (await _userRepository.EmailExistsAsync(normalizedEmail, ct))
@@ -73,11 +82,8 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
-        if (!ValidRoles.Contains(request.Role))
-            return new ServiceError(ErrorMessages.InvalidRole(string.Join(", ", ValidRoles)));
-
-        if (!Enum.TryParse<UserStatus>(request.Status, ignoreCase: true, out var newStatus))
-            return new ServiceError(ErrorMessages.InvalidStatus(string.Join(", ", Enum.GetNames<UserStatus>())));
+        if (ValidateRole(request.Role) is { } roleError) return roleError;
+        if (TryParseStatus(request.Status, out var newStatus) is { } statusError) return statusError;
 
         var normalizedEmail = request.Email.ToUpperInvariant();
         if (await _userRepository.EmailExistsExceptAsync(normalizedEmail, id, ct))
@@ -126,8 +132,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
-        if (!ValidRoles.Contains(request.Role))
-            return new ServiceError(ErrorMessages.InvalidRole(string.Join(", ", ValidRoles)));
+        if (ValidateRole(request.Role) is { } roleError) return roleError;
 
         var currentRoles = await _userRepository.GetRolesAsync(user);
         if (currentRoles.Count > 0)
@@ -145,8 +150,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     public async Task<ServiceResult<AdminUserResponse>> UpdateUserStatusAsync(
         int id, UpdateUserStatusRequest request, CancellationToken ct = default)
     {
-        if (!Enum.TryParse<UserStatus>(request.Status, ignoreCase: true, out var newStatus))
-            return new ServiceError(ErrorMessages.InvalidStatus(string.Join(", ", Enum.GetNames<UserStatus>())));
+        if (TryParseStatus(request.Status, out var newStatus) is { } statusError) return statusError;
 
         var user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
