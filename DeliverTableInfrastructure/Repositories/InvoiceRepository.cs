@@ -1,4 +1,5 @@
 using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Enums;
@@ -61,7 +62,7 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
         var query = _dbContext.Invoices.Where(i => i.RecipientUserId == userId);
         var total = await query.CountAsync(ct);
         var items = await query.OrderByDescending(i => i.IssuedAt)
-                               .Skip((page - 1) * pageSize).Take(pageSize)
+                               .Paginate(page, pageSize)
                                .ToListAsync(ct);
         return (items, total);
     }
@@ -71,7 +72,7 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
         var query = _dbContext.Invoices.Where(i => i.RecipientRestaurantId == restaurantId);
         var total = await query.CountAsync(ct);
         var items = await query.OrderByDescending(i => i.IssuedAt)
-                               .Skip((page - 1) * pageSize).Take(pageSize)
+                               .Paginate(page, pageSize)
                                .ToListAsync(ct);
         return (items, total);
     }
@@ -88,7 +89,7 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
 
         var total = await query.CountAsync(ct);
         var items = await query.OrderByDescending(i => i.IssuedAt)
-                               .Skip((page - 1) * pageSize).Take(pageSize)
+                               .Paginate(page, pageSize)
                                .ToListAsync(ct);
         return (items, total);
     }
