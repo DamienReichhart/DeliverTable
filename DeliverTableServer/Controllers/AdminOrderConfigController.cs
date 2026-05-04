@@ -35,10 +35,7 @@ public class AdminOrderConfigController(IAdminOrderConfigService adminOrderConfi
     public async Task<IActionResult> CreateRule([FromBody] AdminCreateOrderRuleRequest request, CancellationToken ct)
     {
         var result = await _adminOrderConfigService.CreateRuleAsync(request, ct);
-        if (!result.IsSuccess)
-            return result.Error!.ToErrorResult();
-
-        return CreatedAtAction(nameof(GetRuleById), new { id = result.Value!.Id }, result.Value);
+        return result.ToCreatedResult(nameof(GetRuleById), v => new { id = v.Id });
     }
 
     [HttpPut(ApiRoutes.Admin.OrderRuleByIdRoute)]
@@ -77,10 +74,7 @@ public class AdminOrderConfigController(IAdminOrderConfigService adminOrderConfi
         CancellationToken ct)
     {
         var result = await _adminOrderConfigService.CreateBlockedSlotAsync(request, ct);
-        if (!result.IsSuccess)
-            return result.Error!.ToErrorResult();
-
-        return CreatedAtAction(nameof(GetBlockedSlotById), new { id = result.Value!.Id }, result.Value);
+        return result.ToCreatedResult(nameof(GetBlockedSlotById), v => new { id = v.Id });
     }
 
     [HttpDelete(ApiRoutes.Admin.BlockedSlotByIdRoute)]

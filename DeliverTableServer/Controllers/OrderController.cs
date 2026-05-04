@@ -23,10 +23,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
         if (!this.TryGetUserId(out int userId)) return Unauthorized();
 
         var result = await _orderService.CreateFromCartAsync(userId, request, ct);
-        if (result.IsSuccess)
-            return Ok(result.Value);
-
-        return result.Error!.ToErrorResult();
+        return result.ToOkResult();
     }
 
     [HttpGet(ApiRoutes.Order.ByIdRoute)]

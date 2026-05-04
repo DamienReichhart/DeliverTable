@@ -33,9 +33,7 @@ public class AdminController(IAdminService adminService) : ControllerBase
     public async Task<IActionResult> CreateUser([FromBody] AdminCreateUserRequest request, CancellationToken ct)
     {
         var result = await _adminService.CreateUserAsync(request, ct);
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetUserById), new { id = result.Value!.Id }, result.Value)
-            : result.Error!.ToErrorResult();
+        return result.ToCreatedResult(nameof(GetUserById), v => new { id = v.Id });
     }
 
     [HttpPut(ApiRoutes.Admin.UserByIdRoute)]

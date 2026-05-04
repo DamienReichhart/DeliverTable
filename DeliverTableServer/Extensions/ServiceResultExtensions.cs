@@ -41,6 +41,21 @@ public static class ServiceResultExtensions
     }
 
     /// <summary>
+    ///     Returns 201 Created with the value on success (pointing at <paramref name="actionName"/>),
+    ///     or the appropriate error status code.
+    /// </summary>
+    public static IActionResult ToCreatedResult<T>(
+        this ServiceResult<T> result,
+        string actionName,
+        Func<T, object> routeValues
+    )
+    {
+        return result.IsSuccess
+            ? new CreatedAtActionResult(actionName, controllerName: null, routeValues(result.Value!), result.Value)
+            : ToErrorResult(result.Error!);
+    }
+
+    /// <summary>
     ///     Returns the appropriate error status code with a consistent error body.
     ///     Use when the success path requires a different response shape (e.g. CreatedAtAction).
     /// </summary>

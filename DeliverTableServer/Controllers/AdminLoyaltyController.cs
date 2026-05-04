@@ -33,10 +33,7 @@ public class AdminLoyaltyController(IAdminLoyaltyService adminLoyaltyService) : 
     public async Task<IActionResult> CreateProgram([FromBody] AdminCreateLoyaltyProgramRequest request, CancellationToken ct)
     {
         var result = await _adminLoyaltyService.CreateProgramAsync(request, ct);
-        if (!result.IsSuccess)
-            return result.Error!.ToErrorResult();
-
-        return CreatedAtAction(nameof(GetProgramById), new { id = result.Value!.Id }, result.Value);
+        return result.ToCreatedResult(nameof(GetProgramById), v => new { id = v.Id });
     }
 
     [HttpPut(ApiRoutes.Admin.LoyaltyByIdRoute)]

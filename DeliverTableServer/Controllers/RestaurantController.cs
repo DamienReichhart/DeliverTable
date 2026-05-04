@@ -81,8 +81,6 @@ public class RestaurantController(IRestaurantService restaurantService) : Contro
         if (!this.TryGetUserId(out int ownerId)) return Unauthorized();
 
         var result = await _restaurantService.CreateAsync(creationDto, ownerId, ct);
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value)
-            : result.Error!.ToErrorResult();
+        return result.ToCreatedResult(nameof(GetById), v => new { id = v.Id });
     }
 }
