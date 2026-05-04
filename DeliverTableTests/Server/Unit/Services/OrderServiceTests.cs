@@ -776,6 +776,63 @@ public class OrderServiceTests
     }
 
     [Test]
+    public async Task CreateFromCart_WhenDiscountsExceedSubtotal_ScalesIndividualDiscountAmounts()
+    {
+        // Cart subtotal = 2*1 + 1*1 = 3. Promotion adds 2 (FixedAmount), DiscountCode adds 5 (FixedAmount).
+        // Raw sum = 7 > 3, so each row must be proportionally scaled to land at exactly 3 in aggregate.
+        var cart = CreateCartWithItems(price1: 1m, price2: 1m);
+        SetupBaseCreateMocks(cart: cart);
+
+        _promotionRepository.GetActiveByRestaurantAsync(RestaurantId, Arg.Any<CancellationToken>())
+            .Returns(new List<Promotion>
+            {
+                new()
+                {
+                    Id = 1, Name = "2 off", PromotionType = PromotionType.Automatic,
+                    DiscountType = DiscountType.FixedAmount, DiscountValue = 2m,
+                    IsActive = true, PromotionDishes = []
+                }
+            });
+
+        var code = new DiscountCode
+        {
+            Id = 9,
+            Code = "SAVE5",
+            RestaurantId = RestaurantId,
+            DiscountType = DiscountType.FixedAmount,
+            DiscountValue = 5m,
+            IsActive = true,
+            ValidFrom = DateTime.UtcNow.AddDays(-1),
+            ValidUntil = DateTime.UtcNow.AddDays(1),
+            MaxRedemptions = 100,
+            CurrentRedemptions = 0,
+            PerUserLimit = 1
+        };
+        _discountCodeRepository.GetByCodeAndRestaurantAsync("SAVE5", RestaurantId, Arg.Any<CancellationToken>())
+            .Returns(code);
+        _discountCodeRepository.GetRedemptionCountByUserAsync(9, CustomerId, Arg.Any<CancellationToken>())
+            .Returns(0);
+
+        Order? capturedOrder = null;
+        _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                capturedOrder = callInfo.Arg<Order>();
+                return capturedOrder;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest(discountCode: "SAVE5"));
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(capturedOrder!.OriginalAmount, Is.EqualTo(3m));
+        // Individual rows are scaled so the sum lands at exactly originalAmount.
+        Assert.That(capturedOrder.Discounts.Sum(d => d.Amount), Is.EqualTo(capturedOrder.OriginalAmount));
+        // DiscountAmount equals originalAmount (full coverage), TotalAmount falls to zero.
+        Assert.That(capturedOrder.DiscountAmount, Is.EqualTo(capturedOrder.OriginalAmount));
+        Assert.That(capturedOrder.TotalAmount, Is.EqualTo(0m));
+    }
+
+    [Test]
     public async Task CreateFromCartAsync_DiscountCannotExceedOriginalAmount()
     {
         // Use low-priced items: total = 2*1 + 1*1 = 3
