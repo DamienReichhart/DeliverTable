@@ -1,3 +1,5 @@
+using DeliverTableSharedLibrary.Enums;
+
 namespace DeliverTableSharedLibrary.Dtos.Invoice;
 
 public record InvoiceLineDto(
@@ -8,4 +10,5 @@ public record InvoiceLineDto(
     decimal VatRate,
     decimal LineHt,
     decimal LineVat,
-    decimal LineTtc);
+    decimal LineTtc,
+    InvoiceLineKind Kind = InvoiceLineKind.Item);
