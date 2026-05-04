@@ -66,11 +66,11 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
         var (created, errors) = await _userRepository.CreateAsync(user, request.Password);
         if (!created)
-            return new ServiceError(string.Join(", ", errors));
+            return ServiceError.FromIdentityErrors(errors);
 
         var (roleOk, roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
         if (!roleOk)
-            return new ServiceError(string.Join(", ", roleErrors));
+            return ServiceError.FromIdentityErrors(roleErrors);
 
         return user.ToAdminDto(request.Role);
     }
@@ -105,7 +105,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
                 await _userRepository.RemoveFromRolesAsync(user, currentRoles);
             var (roleOk, roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
             if (!roleOk)
-                return new ServiceError(string.Join(", ", roleErrors));
+                return ServiceError.FromIdentityErrors(roleErrors);
         }
 
         await _userRepository.SaveChangesAsync(ct);
@@ -120,7 +120,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
         var (succeeded, errors) = await _userRepository.DeleteAsync(user);
         if (!succeeded)
-            return new ServiceError(string.Join(", ", errors));
+            return ServiceError.FromIdentityErrors(errors);
 
         return ServiceResult.Success();
     }
@@ -140,7 +140,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
         var (roleOk, roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
         if (!roleOk)
-            return new ServiceError(string.Join(", ", roleErrors));
+            return ServiceError.FromIdentityErrors(roleErrors);
 
         user.UpdatedAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync(ct);

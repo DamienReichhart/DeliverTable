@@ -51,7 +51,7 @@ public sealed class AuthService(
 
         var (created, errors) = await _userRepository.CreateAsync(user, request.Password);
         if (!created)
-            return new ServiceError(string.Join(", ", errors));
+            return ServiceError.FromIdentityErrors(errors);
 
         var (roleOk, _) = await _userRepository.AddToRoleAsync(user, _defaultRole);
         if (!roleOk)
@@ -86,7 +86,7 @@ public sealed class AuthService(
 
         var (created, errors) = await _userRepository.CreateAsync(user, request.Password);
         if (!created)
-            return new ServiceError(string.Join(", ", errors));
+            return ServiceError.FromIdentityErrors(errors);
 
         var (roleOk, _) = await _userRepository.AddToRoleAsync(user, nameof(UserRole.RestaurantOwner));
         if (!roleOk)
@@ -151,7 +151,7 @@ public sealed class AuthService(
 
         var (succeeded, errors) = await _userRepository.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!succeeded)
-            return new ServiceError(string.Join(", ", errors));
+            return ServiceError.FromIdentityErrors(errors);
 
         user.UpdatedAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync(ct);
