@@ -54,17 +54,11 @@ public sealed class RestaurantService(
     public async Task<ServiceResult<RestaurantDto>> CreateAsync(
         CreateRestaurantDto dto, int ownerId, CancellationToken ct = default)
     {
-        if (!SiretValidator.IsValid(dto.Siret))
-            return new ServiceError(ErrorMessages.SiretInvalid);
-
-        if (string.IsNullOrWhiteSpace(dto.LegalName)
-            || string.IsNullOrWhiteSpace(dto.LegalAddress)
-            || string.IsNullOrWhiteSpace(dto.LegalForm))
-            return new ServiceError(ErrorMessages.LegalFieldsRequired);
-
-        var coords = await _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode);
-        if (coords is null)
-            return new ServiceError(ErrorMessages.AddressNotLocatable);
+        var legalAndCoords = await ValidateLegalAndLocateAsync(
+            dto.Siret, dto.LegalName, dto.LegalAddress, dto.LegalForm,
+            dto.AdressLine1, dto.City, dto.ZipCode);
+        if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
+        var coords = legalAndCoords.Value;
 
         _ = Enum.TryParse<RestaurantType>(dto.Type, out var restaurantType);
 
@@ -79,8 +73,8 @@ public sealed class RestaurantService(
             Type = restaurantType,
             Country = char.ToUpper(dto.Country[0]) + dto.Country[1..],
             OwnerId = ownerId,
-            Longitude = coords.Value.lon,
-            Latitude = coords.Value.lat,
+            Longitude = coords.lon,
+            Latitude = coords.lat,
             Siret = dto.Siret,
             LegalName = dto.LegalName,
             LegalAddress = dto.LegalAddress,
@@ -99,17 +93,11 @@ public sealed class RestaurantService(
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
-        if (!SiretValidator.IsValid(dto.Siret))
-            return new ServiceError(ErrorMessages.SiretInvalid);
-
-        if (string.IsNullOrWhiteSpace(dto.LegalName)
-            || string.IsNullOrWhiteSpace(dto.LegalAddress)
-            || string.IsNullOrWhiteSpace(dto.LegalForm))
-            return new ServiceError(ErrorMessages.LegalFieldsRequired);
-
-        var coords = await _geoLocationService.GetCoordinatesAsync(dto.AdressLine1, dto.City, dto.ZipCode);
-        if (coords is null)
-            return new ServiceError(ErrorMessages.AddressNotLocatable);
+        var legalAndCoords = await ValidateLegalAndLocateAsync(
+            dto.Siret, dto.LegalName, dto.LegalAddress, dto.LegalForm,
+            dto.AdressLine1, dto.City, dto.ZipCode);
+        if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
+        var coords = legalAndCoords.Value;
 
         var isValid = Enum.TryParse<RestaurantType>(dto.Type, out var restaurantType);
         if (!isValid) restaurantType = RestaurantType.Autre;
@@ -121,8 +109,8 @@ public sealed class RestaurantService(
         restaurant.AdressLine2 = dto.AdressLine2;
         restaurant.City = dto.City;
         restaurant.ZipCode = dto.ZipCode;
-        restaurant.Latitude = coords.Value.lat;
-        restaurant.Longitude = coords.Value.lon;
+        restaurant.Latitude = coords.lat;
+        restaurant.Longitude = coords.lon;
         restaurant.UpdatedAt = DateTime.UtcNow;
         restaurant.Siret = dto.Siret;
         restaurant.LegalName = dto.LegalName;
@@ -143,4 +131,22 @@ public sealed class RestaurantService(
         return ServiceResult.Success();
     }
 
+    private async Task<ServiceResult<(double lat, double lon)>> ValidateLegalAndLocateAsync(
+        string siret, string? legalName, string? legalAddress, string? legalForm,
+        string addressLine1, string city, string zipCode)
+    {
+        if (!SiretValidator.IsValid(siret))
+            return new ServiceError(ErrorMessages.SiretInvalid);
+
+        if (string.IsNullOrWhiteSpace(legalName)
+            || string.IsNullOrWhiteSpace(legalAddress)
+            || string.IsNullOrWhiteSpace(legalForm))
+            return new ServiceError(ErrorMessages.LegalFieldsRequired);
+
+        var coords = await _geoLocationService.GetCoordinatesAsync(addressLine1, city, zipCode);
+        if (coords is null)
+            return new ServiceError(ErrorMessages.AddressNotLocatable);
+
+        return coords.Value;
+    }
 }
