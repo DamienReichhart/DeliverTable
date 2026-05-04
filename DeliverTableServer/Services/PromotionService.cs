@@ -42,13 +42,8 @@ public sealed class PromotionService(
         var dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
         if (dateError is not null) return dateError;
 
-        if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
-        {
-            var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurantId, ct);
-            var restaurantDishIds = restaurantDishes.Select(d => d.Id).ToHashSet();
-            if (request.DishIds.Any(id => !restaurantDishIds.Contains(id)))
-                return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
-        }
+        if (await ValidateItemBasedDishesAsync(promotionType, restaurantId, request.DishIds, ct) is { } itemError)
+            return itemError;
 
         var promotion = new Promotion
         {
@@ -103,13 +98,8 @@ public sealed class PromotionService(
         var dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
         if (dateError is not null) return dateError;
 
-        if (promotionType == PromotionType.ItemBased && request.DishIds.Count > 0)
-        {
-            var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurant.Id, ct);
-            var restaurantDishIds = restaurantDishes.Select(d => d.Id).ToHashSet();
-            if (request.DishIds.Any(id => !restaurantDishIds.Contains(id)))
-                return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
-        }
+        if (await ValidateItemBasedDishesAsync(promotionType, restaurant.Id, request.DishIds, ct) is { } itemError)
+            return itemError;
 
         promotion.Name = request.Name;
         promotion.Description = request.Description;
@@ -147,5 +137,19 @@ public sealed class PromotionService(
     {
         var promotions = await _promotionRepository.GetActiveByRestaurantAsync(restaurantId, ct);
         return promotions.Select(p => p.ToDto()).ToList();
+    }
+
+    private async Task<ServiceError?> ValidateItemBasedDishesAsync(
+        PromotionType promotionType, int restaurantId, IReadOnlyList<int> dishIds, CancellationToken ct)
+    {
+        if (promotionType != PromotionType.ItemBased || dishIds.Count == 0)
+            return null;
+
+        var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurantId, ct);
+        var restaurantDishIds = restaurantDishes.Select(d => d.Id).ToHashSet();
+        if (dishIds.Any(id => !restaurantDishIds.Contains(id)))
+            return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
+
+        return null;
     }
 }
