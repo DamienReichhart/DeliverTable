@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
@@ -255,9 +256,7 @@ public sealed class InvoiceJobConsumer(
         {
             // For restaurant invoices, use the owner's email from navigation property
             var ownerEmail = invoice.RecipientRestaurant?.Owner?.Email;
-            var name = invoice.RecipientRestaurant?.Owner is not null
-                ? $"{invoice.RecipientRestaurant.Owner.FirstName} {invoice.RecipientRestaurant.Owner.LastName}".Trim()
-                : recipient?.Name;
+            var name = invoice.RecipientRestaurant?.Owner?.GetFullName() ?? recipient?.Name;
             return (ownerEmail, name, EmailJobType.InvoiceReadyRestaurant);
         }
     }

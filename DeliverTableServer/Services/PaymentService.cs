@@ -1,4 +1,5 @@
 using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
@@ -50,7 +51,7 @@ public class PaymentService(
         {
             var customerResult = await stripe.CreateCustomerAsync(
                 email: user.Email ?? string.Empty,
-                fullName: $"{user.FirstName} {user.LastName}".Trim(),
+                fullName: user.GetFullName(),
                 metadata: new Dictionary<string, string> { ["userId"] = user.Id.ToString() },
                 ct);
             stripeCustomerId = customerResult.CustomerId;
@@ -323,7 +324,7 @@ public class PaymentService(
         var fullOrder = await orderRepository.GetByIdWithFullDetailsAsync(order.Id, ct);
         if (fullOrder?.Customer is not null && !string.IsNullOrWhiteSpace(fullOrder.Customer.Email))
         {
-            var customerName = $"{fullOrder.Customer.FirstName} {fullOrder.Customer.LastName}".Trim();
+            var customerName = fullOrder.Customer.GetFullName();
             var email = fullOrder.Customer.Email;
             var orderSnapshot = fullOrder;
             deferredPublishes.Add(() => emailJobService.QueueOrderConfirmationAsync(orderSnapshot, email, customerName));
