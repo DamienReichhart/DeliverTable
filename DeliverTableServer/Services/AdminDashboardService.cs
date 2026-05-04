@@ -72,44 +72,9 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
         var allOrders = await _dbContext.Orders.ToListAsync(ct);
         var totalOrderCount = allOrders.Count;
 
-        var ordersByStatus = allOrders
-            .GroupBy(o => o.Status)
-            .Select(g => new StatusBreakdownItem
-            {
-                Label = g.Key.ToString(),
-                Count = g.Count(),
-                Percentage = totalOrderCount > 0
-                    ? Math.Round((decimal)g.Count() / totalOrderCount * 100, 1)
-                    : 0
-            })
-            .OrderByDescending(s => s.Count)
-            .ToList();
-
-        var ordersByType = allOrders
-            .GroupBy(o => o.OrderType)
-            .Select(g => new StatusBreakdownItem
-            {
-                Label = g.Key.ToString(),
-                Count = g.Count(),
-                Percentage = totalOrderCount > 0
-                    ? Math.Round((decimal)g.Count() / totalOrderCount * 100, 1)
-                    : 0
-            })
-            .OrderByDescending(s => s.Count)
-            .ToList();
-
-        var paymentsByStatus = allOrders
-            .GroupBy(o => o.PaymentStatus)
-            .Select(g => new StatusBreakdownItem
-            {
-                Label = g.Key.ToString(),
-                Count = g.Count(),
-                Percentage = totalOrderCount > 0
-                    ? Math.Round((decimal)g.Count() / totalOrderCount * 100, 1)
-                    : 0
-            })
-            .OrderByDescending(s => s.Count)
-            .ToList();
+        var ordersByStatus = Breakdown(allOrders, o => o.Status, totalOrderCount);
+        var ordersByType = Breakdown(allOrders, o => o.OrderType, totalOrderCount);
+        var paymentsByStatus = Breakdown(allOrders, o => o.PaymentStatus, totalOrderCount);
 
         var topRestaurants = await _dbContext.Orders
             .Include(o => o.Restaurant)
@@ -166,5 +131,22 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
         };
 
         return analytics;
+    }
+
+    private static List<StatusBreakdownItem> Breakdown<TKey>(
+        IReadOnlyCollection<DeliverTableInfrastructure.Models.Order> orders,
+        Func<DeliverTableInfrastructure.Models.Order, TKey> key,
+        int total) where TKey : notnull
+    {
+        return orders
+            .GroupBy(key)
+            .Select(g => new StatusBreakdownItem
+            {
+                Label = g.Key.ToString() ?? string.Empty,
+                Count = g.Count(),
+                Percentage = total > 0 ? Math.Round((decimal)g.Count() / total * 100, 1) : 0
+            })
+            .OrderByDescending(s => s.Count)
+            .ToList();
     }
 }
