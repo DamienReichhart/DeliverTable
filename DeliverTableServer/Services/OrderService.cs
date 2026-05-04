@@ -261,15 +261,7 @@ public sealed class OrderService(
         {
             var discount = CalculatePromotionDiscount(promotion, originalAmount, cartItems);
             if (discount > 0)
-            {
-                orderDiscounts.Add(new OrderDiscount
-                {
-                    Source = OrderDiscountSource.Promotion,
-                    SourceId = promotion.Id,
-                    Description = promotion.Name,
-                    Amount = discount
-                });
-            }
+                orderDiscounts.Add(BuildOrderDiscount(OrderDiscountSource.Promotion, promotion.Id, promotion.Name, discount));
         }
     }
 
@@ -304,13 +296,11 @@ public sealed class OrderService(
                 ? originalAmount * (discountCode.DiscountValue / 100)
                 : discountCode.DiscountValue;
 
-            orderDiscounts.Add(new OrderDiscount
-            {
-                Source = OrderDiscountSource.DiscountCode,
-                SourceId = discountCode.Id,
-                Description = $"{discountCode.Code} — {discountCode.Description}",
-                Amount = codeDiscount
-            });
+            orderDiscounts.Add(BuildOrderDiscount(
+                OrderDiscountSource.DiscountCode,
+                discountCode.Id,
+                $"{discountCode.Code} — {discountCode.Description}",
+                codeDiscount));
 
             appliedCodes.Add(discountCode);
         }
@@ -358,16 +348,24 @@ public sealed class OrderService(
             Points = -actualPointsUsed
         }, ct);
 
-        orderDiscounts.Add(new OrderDiscount
-        {
-            Source = OrderDiscountSource.LoyaltyPoints,
-            SourceId = program.Id,
-            Description = $"Points fidélité ({actualPointsUsed} pts)",
-            Amount = pointsEuroValue
-        });
+        orderDiscounts.Add(BuildOrderDiscount(
+            OrderDiscountSource.LoyaltyPoints,
+            program.Id,
+            $"Points fidélité ({actualPointsUsed} pts)",
+            pointsEuroValue));
 
         return actualPointsUsed;
     }
+
+    private static OrderDiscount BuildOrderDiscount(
+        OrderDiscountSource source, int sourceId, string description, decimal amount) =>
+        new()
+        {
+            Source = source,
+            SourceId = sourceId,
+            Description = description,
+            Amount = amount
+        };
 
     private static void CapDiscountsAtOrderTotal(List<OrderDiscount> orderDiscounts, decimal originalAmount)
     {
