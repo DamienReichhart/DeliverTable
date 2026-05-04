@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -14,9 +15,7 @@ public static class AdminModerationMapper
             TargetId = action.TargetId,
             ActionType = action.ActionType.ToString(),
             Reason = action.Reason,
-            AdminUserName = action.AdminUser is not null
-                ? $"{action.AdminUser.FirstName} {action.AdminUser.LastName}"
-                : "",
+            AdminUserName = action.AdminUser?.GetFullName() ?? "",
             AdminUserId = action.AdminUserId,
             CreatedAt = action.CreatedAt
         };

@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -22,9 +23,7 @@ public static class AdminEventMapper
                 ? evt.Restaurant.Name
                 : "",
             CreatedByUserId = evt.CreatedByUserId,
-            CreatedByUserName = evt.CreatedByUser is not null
-                ? $"{evt.CreatedByUser.FirstName} {evt.CreatedByUser.LastName}"
-                : "",
+            CreatedByUserName = evt.CreatedByUser?.GetFullName() ?? "",
             CreatedAt = evt.CreatedAt,
             UpdatedAt = evt.UpdatedAt
         };

@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -25,9 +26,7 @@ public static class AdminOrderMapper
             IsEventBooking = order.IsEventBooking,
             Source = order.Source.ToString(),
             CustomerId = order.CustomerId,
-            CustomerName = order.Customer is not null
-                ? $"{order.Customer.FirstName} {order.Customer.LastName}"
-                : "",
+            CustomerName = order.Customer?.GetFullName() ?? "",
             RestaurantId = order.RestaurantId,
             RestaurantName = order.Restaurant is not null
                 ? order.Restaurant.Name

@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Dtos.Admin;
 
@@ -29,9 +30,7 @@ public static class AdminLoyaltyMapper
         {
             Id = account.Id,
             PointsBalance = account.PointsBalance,
-            CustomerName = account.Customer is not null
-                ? $"{account.Customer.FirstName} {account.Customer.LastName}"
-                : "",
+            CustomerName = account.Customer?.GetFullName() ?? "",
             ProgramId = account.LoyaltyProgramId,
             CreatedAt = account.CreatedAt
         };
