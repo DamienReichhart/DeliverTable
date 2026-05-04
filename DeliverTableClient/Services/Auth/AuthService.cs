@@ -1,8 +1,8 @@
 using System.Net.Http.Json;
 using DeliverTableSharedLibrary.Constants;
-using Microsoft.JSInterop;
-using Microsoft.AspNetCore.Components.Authorization;
+using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
+using Microsoft.JSInterop;
 
 namespace DeliverTableClient.Services.Auth;
 
@@ -11,11 +11,6 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
     private readonly HttpClient _httpClient = httpClient;
     private readonly ApiAuthStateProvider _authStateProvider = authStateProvider;
     private readonly IJSRuntime _js = js;
-
-    private sealed class ApiErrorResponse
-    {
-        public string Error { get; set; } = "";
-    }
 
     public async Task<AuthResponse> Login(LoginRequest loginRequest)
     {
@@ -41,11 +36,7 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
         {
             try
             {
-                // On tente de lire le message d'erreur envoyé par l'API
-                var errorContent = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
-
-                // Si ton API renvoie juste du texte, utilise errorContent.
-                // Si elle renvoie un objet JSON { "message": "..." }, il faudra le désérialiser.
+                var errorContent = await response.Content.ReadFromJsonAsync<ErrorResponse>();
                 return new AuthResponse
                 {
                     Success = false,
@@ -74,10 +65,8 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
 
         if (result?.User != null && !string.IsNullOrEmpty(result.Token))
         {
-            // Stockage
             await _js.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
 
-            // Notification du Provider
             _authStateProvider.NotifyUserAuthentication(
                 result.Token,
                 result.User.Role,
@@ -91,21 +80,9 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
         return new AuthResponse { Success = false, Error = "Une erreur est survenue." };
     }
 
-    public async Task GetAuthenticatedUser()
-    {
-        string? token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return;
-        }
-    }
-
     public async Task Logout()
     {
-        // Nettoyage local
         await _js.InvokeVoidAsync("localStorage.removeItem", "authToken");
-
-        // Notification de l'état déconnecté
         _authStateProvider.NotifyUserLogout();
     }
 }
