@@ -1,5 +1,6 @@
 @page "/admin/users"
 @attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Helpers
 @using DeliverTableClient.Services.Interfaces
 @using DeliverTableSharedLibrary.Dtos.Admin
 @using Microsoft.AspNetCore.Authorization
@@ -45,7 +46,7 @@
                 <tr class="@(user.Status != nameof(UserStatus.Active) ? "adm-table-row--muted" : "")">
                     <td>
                         <div class="adm-cell-name">
-                            <div class="adm-avatar">@GetInitials(user.FirstName, user.LastName)</div>
+                            <div class="adm-avatar">@DisplayHelpers.GetInitials(user.FirstName, user.LastName)</div>
                             <span>@user.FirstName @user.LastName</span>
                         </div>
                     </td>
@@ -373,13 +374,6 @@
     {
         _actionSuccess = null;
         _actionError = null;
-    }
-
-    private static string GetInitials(string firstName, string lastName)
-    {
-        var f = string.IsNullOrEmpty(firstName) ? "" : firstName[..1].ToUpperInvariant();
-        var l = string.IsNullOrEmpty(lastName) ? "" : lastName[..1].ToUpperInvariant();
-        return $"{f}{l}";
     }
 
     private static string RoleBadgeVariant(string role) => role switch

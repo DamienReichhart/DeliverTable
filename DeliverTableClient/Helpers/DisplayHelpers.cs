@@ -49,4 +49,11 @@ public static class DisplayHelpers
         "FixedAmount" => $"{value:0.00} €",
         _ => $"{value}"
     };
+
+    public static string GetInitials(string firstName, string lastName)
+    {
+        var first = string.IsNullOrEmpty(firstName) ? "" : firstName[..1].ToUpperInvariant();
+        var last = string.IsNullOrEmpty(lastName) ? "" : lastName[..1].ToUpperInvariant();
+        return $"{first}{last}";
+    }
 }
