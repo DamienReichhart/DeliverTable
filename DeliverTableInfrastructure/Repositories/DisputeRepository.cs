@@ -1,4 +1,5 @@
 using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Enums;
@@ -44,8 +45,7 @@ public class DisputeRepository(DeliverTableContext dbContext) : IDisputeReposito
         var total = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(d => d.OpenedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Paginate(page, pageSize)
             .ToListAsync(ct);
         return (items, total);
     }
@@ -76,8 +76,7 @@ public class DisputeRepository(DeliverTableContext dbContext) : IDisputeReposito
         var total = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(d => d.OpenedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Paginate(page, pageSize)
             .ToListAsync(ct);
         return (items, total);
     }
