@@ -14,7 +14,12 @@ public static class UserMappers
             FirstName = userModel.FirstName,
             LastName = userModel.LastName,
             Email = userModel.Email ?? "",
-            Role = role ?? "Non défini"
+            Role = role ?? "Non défini",
+            BillingAddressLine1 = userModel.BillingAddressLine1,
+            BillingAddressLine2 = userModel.BillingAddressLine2,
+            BillingPostalCode = userModel.BillingPostalCode,
+            BillingCity = userModel.BillingCity,
+            BillingCountry = userModel.BillingCountry
         };
     }
 

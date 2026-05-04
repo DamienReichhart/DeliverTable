@@ -42,7 +42,12 @@ public partial class Profile
             {
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Email = user.Email
+                Email = user.Email,
+                BillingAddressLine1 = user.BillingAddressLine1,
+                BillingAddressLine2 = user.BillingAddressLine2,
+                BillingPostalCode = user.BillingPostalCode,
+                BillingCity = user.BillingCity,
+                BillingCountry = user.BillingCountry
             };
 
             if (string.IsNullOrWhiteSpace(_profileModel.BillingCountry))
