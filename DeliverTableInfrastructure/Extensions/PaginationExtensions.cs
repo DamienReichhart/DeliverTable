@@ -11,6 +11,12 @@ public static class PaginationExtensions
         return (skip, pageSize);
     }
 
+    public static IQueryable<T> Paginate<T>(this IQueryable<T> query, int pageNumber, int pageSize)
+    {
+        var (skip, take) = GetPaginationOffsets(pageNumber, pageSize);
+        return query.Skip(skip).Take(take);
+    }
+
     public static PaginatedResult<TDto> ToPaginatedResult<TEntity, TDto>(
         this (List<TEntity> Items, int TotalCount) data,
         Func<TEntity, TDto> mapper,
