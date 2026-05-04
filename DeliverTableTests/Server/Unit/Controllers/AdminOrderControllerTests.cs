@@ -180,12 +180,17 @@ public class AdminOrderControllerTests
     public void RefundOrder_HasAdministratorAuthorizeAttribute()
     {
         var method = typeof(AdminOrderController).GetMethod(nameof(AdminOrderController.RefundOrder))!;
-        var attrs = method
+        var methodAttrs = method
             .GetCustomAttributes(typeof(AuthorizeAttribute), true)
-            .Cast<AuthorizeAttribute>()
-            .ToList();
+            .Cast<AuthorizeAttribute>();
+        var controllerAttrs = typeof(AdminOrderController)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), true)
+            .Cast<AuthorizeAttribute>();
 
-        Assert.That(attrs.Any(a => a.Roles?.Contains(nameof(UserRole.Administrator)) == true), Is.True);
+        Assert.That(
+            methodAttrs.Concat(controllerAttrs)
+                .Any(a => a.Roles?.Contains(nameof(UserRole.Administrator)) == true),
+            Is.True);
     }
 
     #endregion
