@@ -53,10 +53,10 @@
                             <h3>Commande #@order.Id</h3>
                             <span class="order-restaurant">@order.RestaurantName</span>
                         </div>
-                        <span class="status-badge status--@order.Status.ToLower()">@TranslateStatus(order.Status)</span>
+                        <span class="status-badge status--@order.Status.ToLower()">@DisplayHelpers.TranslateStatus(order.Status)</span>
                     </div>
                     <div class="order-card-body">
-                        <span class="order-type-label">@TranslateOrderType(order.OrderType)</span>
+                        <span class="order-type-label">@DisplayHelpers.TranslateOrderType(order.OrderType)</span>
                         <span class="order-guests">@order.GuestCount pers.</span>
                         @if (order.ScheduledAt.HasValue)
                         {
@@ -172,23 +172,4 @@
     private static bool CanCancel(string status) =>
         status is "Pending" or "Confirmed";
 
-    private static string TranslateOrderType(string orderType) => orderType switch
-    {
-        "Delivery" => "Livraison",
-        "DineIn" => "Sur place",
-        _ => orderType
-    };
-
-    private static string TranslateStatus(string status) => status switch
-    {
-        "Pending" => "En attente",
-        "Confirmed" => "Confirmée",
-        "Refused" => "Refusée",
-        "Preparing" => "En préparation",
-        "Ready" => "Prête",
-        "Delivering" => "En livraison",
-        "Delivered" => "Livrée",
-        "Cancelled" => "Annulée",
-        _ => status
-    };
 }

@@ -79,7 +79,7 @@
                             <td><strong>@order.Id</strong></td>
                             <td>
                                 <span class="order-type-badge order-type--@order.OrderType.ToLower()">
-                                    @TranslateOrderType(order.OrderType)
+                                    @DisplayHelpers.TranslateOrderType(order.OrderType)
                                 </span>
                             </td>
                             <td>@order.GuestCount</td>
@@ -97,7 +97,7 @@
                             </td>
                             <td>
                                 <span class="status-badge status--@order.Status.ToLower()">
-                                    @TranslateStatus(order.Status)
+                                    @DisplayHelpers.TranslateStatus(order.Status)
                                 </span>
                             </td>
                             <td class="order-actions-cell">
@@ -250,23 +250,4 @@
     private static bool IsActiveOrder(string status) =>
         status is "Confirmed" or "Preparing" or "Ready" or "Delivering";
 
-    private static string TranslateOrderType(string orderType) => orderType switch
-    {
-        "Delivery" => "Livraison",
-        "DineIn" => "Sur place",
-        _ => orderType
-    };
-
-    private static string TranslateStatus(string status) => status switch
-    {
-        "Pending" => "En attente",
-        "Confirmed" => "Confirmée",
-        "Refused" => "Refusée",
-        "Preparing" => "En préparation",
-        "Ready" => "Prête",
-        "Delivering" => "En livraison",
-        "Delivered" => "Livrée",
-        "Cancelled" => "Annulée",
-        _ => status
-    };
 }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using DeliverTableSharedLibrary.Enums;
 
 namespace DeliverTableClient.Helpers;
 
@@ -8,45 +9,67 @@ public static class DisplayHelpers
 
     public static string TranslateOrderType(string orderType) => orderType switch
     {
-        "Delivery" => "Livraison",
-        "DineIn" => "Sur place",
+        nameof(OrderType.Delivery) => "Livraison",
+        nameof(OrderType.DineIn) => "Sur place",
         _ => orderType
     };
 
     public static string TranslateStatus(string status) => status switch
     {
-        "Pending" => "En attente",
-        "Confirmed" => "Confirmée",
-        "Refused" => "Refusée",
-        "Preparing" => "En préparation",
-        "Ready" => "Prête",
-        "Delivering" => "En livraison",
-        "Delivered" => "Livrée",
-        "Cancelled" => "Annulée",
+        nameof(OrderStatus.Pending) => "En attente",
+        nameof(OrderStatus.Confirmed) => "Confirmée",
+        nameof(OrderStatus.Refused) => "Refusée",
+        nameof(OrderStatus.Preparing) => "En préparation",
+        nameof(OrderStatus.Ready) => "Prête",
+        nameof(OrderStatus.Delivering) => "En livraison",
+        nameof(OrderStatus.Delivered) => "Livrée",
+        nameof(OrderStatus.Cancelled) => "Annulée",
         _ => status
+    };
+
+    public static string OrderStatusBadgeVariant(string status) => status switch
+    {
+        nameof(OrderStatus.Pending) => "warning",
+        nameof(OrderStatus.Confirmed) => "info",
+        nameof(OrderStatus.Preparing) => "info",
+        nameof(OrderStatus.Ready) => "success",
+        nameof(OrderStatus.Delivering) => "info",
+        nameof(OrderStatus.Delivered) => "success",
+        nameof(OrderStatus.Cancelled) => "danger",
+        nameof(OrderStatus.Refused) => "danger",
+        _ => "info"
     };
 
     public static string TranslatePaymentStatus(string status) => status switch
     {
-        "Pending" => "En attente",
-        "Completed" => "Payé",
-        "Failed" => "Échoué",
-        "Refunded" => "Remboursé",
+        nameof(PaymentStatus.Pending) => "En attente",
+        nameof(PaymentStatus.Completed) => "Payé",
+        nameof(PaymentStatus.Failed) => "Échoué",
+        nameof(PaymentStatus.Refunded) => "Remboursé",
         _ => status
+    };
+
+    public static string PaymentStatusBadgeVariant(string status) => status switch
+    {
+        nameof(PaymentStatus.Pending) => "warning",
+        nameof(PaymentStatus.Completed) => "success",
+        nameof(PaymentStatus.Failed) => "danger",
+        nameof(PaymentStatus.Refunded) => "info",
+        _ => "info"
     };
 
     public static string TranslateDiscountSource(string source) => source switch
     {
-        "Promotion" => "Promotion",
-        "DiscountCode" => "Code promo",
-        "LoyaltyPoints" => "Fidélité",
+        nameof(OrderDiscountSource.Promotion) => "Promotion",
+        nameof(OrderDiscountSource.DiscountCode) => "Code promo",
+        nameof(OrderDiscountSource.LoyaltyPoints) => "Fidélité",
         _ => source
     };
 
     public static string FormatDiscount(string discountType, decimal value) => discountType switch
     {
-        "Percentage" => $"{value}%",
-        "FixedAmount" => $"{value:0.00} €",
+        nameof(DiscountType.Percentage) => $"{value}%",
+        nameof(DiscountType.FixedAmount) => $"{value:0.00} €",
         _ => $"{value}"
     };
 
