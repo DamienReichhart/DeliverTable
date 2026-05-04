@@ -348,7 +348,7 @@ public class PaymentService(
             foreach (var msg in invoicesResult.Value)
             {
                 var captured = msg;
-                deferredPublishes.Add(() => publisher.PublishAsync("invoice", captured, ct));
+                deferredPublishes.Add(() => publisher.PublishAsync(MessagingExchanges.Invoice, captured, ct));
             }
         }
     }
@@ -431,7 +431,7 @@ public class PaymentService(
                 foreach (var msg in cnResult.Value)
                 {
                     var captured = msg;
-                    deferredPublishes.Add(() => publisher.PublishAsync("invoice", captured, ct));
+                    deferredPublishes.Add(() => publisher.PublishAsync(MessagingExchanges.Invoice, captured, ct));
                 }
             }
         }

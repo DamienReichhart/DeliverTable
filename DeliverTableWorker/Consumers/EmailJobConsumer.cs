@@ -26,7 +26,7 @@ public class EmailJobConsumer(
     private const string DeadExchange = "delivertable.jobs.dead";
     private const string MainQueue = "delivertable.jobs.email";
     private const string DeadQueue = "delivertable.jobs.email.dead";
-    private const string RoutingKey = "email";
+    private const string RoutingKey = MessagingExchanges.Email;
     private const int MaxRetries = 3;
 
     private static readonly int[] RetryDelaysSeconds = [60, 300, 900];
