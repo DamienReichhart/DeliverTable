@@ -60,8 +60,6 @@ public sealed class RestaurantService(
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
         var coords = legalAndCoords.Value;
 
-        _ = Enum.TryParse<RestaurantType>(dto.Type, out var restaurantType);
-
         var restaurant = new Restaurant
         {
             Name = dto.Name,
@@ -70,7 +68,7 @@ public sealed class RestaurantService(
             AdressLine2 = dto.AdressLine2 ?? string.Empty,
             City = dto.City,
             ZipCode = dto.ZipCode,
-            Type = restaurantType,
+            Type = ParseRestaurantType(dto.Type),
             Country = char.ToUpper(dto.Country[0]) + dto.Country[1..],
             OwnerId = ownerId,
             Longitude = coords.lon,
@@ -99,12 +97,9 @@ public sealed class RestaurantService(
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
         var coords = legalAndCoords.Value;
 
-        var isValid = Enum.TryParse<RestaurantType>(dto.Type, out var restaurantType);
-        if (!isValid) restaurantType = RestaurantType.Autre;
-
         restaurant.Name = dto.Name;
         restaurant.Description = dto.Description;
-        restaurant.Type = restaurantType;
+        restaurant.Type = ParseRestaurantType(dto.Type);
         restaurant.AdressLine1 = dto.AdressLine1;
         restaurant.AdressLine2 = dto.AdressLine2;
         restaurant.City = dto.City;
@@ -130,6 +125,9 @@ public sealed class RestaurantService(
 
         return ServiceResult.Success();
     }
+
+    private static RestaurantType ParseRestaurantType(string? value) =>
+        Enum.TryParse<RestaurantType>(value, out var type) ? type : RestaurantType.Autre;
 
     private async Task<ServiceResult<(double lat, double lon)>> ValidateLegalAndLocateAsync(
         string siret, string? legalName, string? legalAddress, string? legalForm,
