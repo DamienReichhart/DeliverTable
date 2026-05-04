@@ -51,21 +51,12 @@ public sealed class DishService(
     public async Task<ServiceResult<DishDto>> CreateAsync(
         CreateDishDto dto, int restaurantId, IFormFile? image, CancellationToken ct = default)
     {
-        if (image is not null && image.Length > _maxUploadBytes)
-            return new ServiceError(ErrorMessages.FileTooLarge(_maxUploadMb), 413);
+        var imageError = ValidateImage(image);
+        if (imageError is not null)
+            return imageError;
 
-        var dish = new Dish
-        {
-            Name = dto.Name,
-            Description = dto.Description,
-            BasePrice = dto.BasePrice,
-            IsVegetarian = dto.IsVegetarian,
-            IsVegan = dto.IsVegan,
-            IsGlutenFree = dto.IsGlutenFree,
-            IsAllergenHazard = dto.IsAllergenHazard,
-            IsDishOfTheDay = dto.IsDishOfTheDay,
-            RestaurantId = restaurantId
-        };
+        var dish = new Dish { RestaurantId = restaurantId };
+        ApplyDtoToDish(dto, dish);
 
         var created = await _dishRepository.CreateAsync(dish, ct);
 
@@ -78,8 +69,9 @@ public sealed class DishService(
     public async Task<ServiceResult<DishDto>> UpdateAsync(
         int id, CreateDishDto dto, IFormFile? image, CancellationToken ct = default)
     {
-        if (image is not null && image.Length > _maxUploadBytes)
-            return new ServiceError(ErrorMessages.FileTooLarge(_maxUploadMb), 413);
+        var imageError = ValidateImage(image);
+        if (imageError is not null)
+            return imageError;
 
         var dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
@@ -91,6 +83,19 @@ public sealed class DishService(
             await _objectStorage.UploadAsync(image, DishImageFolder, dish.Id);
         }
 
+        ApplyDtoToDish(dto, dish);
+
+        var updated = await _dishRepository.UpdateAsync(dish, ct);
+        return updated.ToDto();
+    }
+
+    private ServiceError? ValidateImage(IFormFile? image) =>
+        image is not null && image.Length > _maxUploadBytes
+            ? new ServiceError(ErrorMessages.FileTooLarge(_maxUploadMb), 413)
+            : null;
+
+    private static void ApplyDtoToDish(CreateDishDto dto, Dish dish)
+    {
         dish.Name = dto.Name;
         dish.Description = dto.Description;
         dish.BasePrice = dto.BasePrice;
@@ -99,9 +104,6 @@ public sealed class DishService(
         dish.IsGlutenFree = dto.IsGlutenFree;
         dish.IsAllergenHazard = dto.IsAllergenHazard;
         dish.IsDishOfTheDay = dto.IsDishOfTheDay;
-
-        var updated = await _dishRepository.UpdateAsync(dish, ct);
-        return updated.ToDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
