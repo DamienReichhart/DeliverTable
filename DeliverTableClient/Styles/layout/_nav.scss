@@ -169,6 +169,37 @@
   }
 }
 
+.nav-link-live {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-md;
+  height: 2.5rem;
+  transition: background-color $transition-fast, color $transition-fast;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: $color-text-inverse;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &.active {
+    background-color: $color-coral-fire;
+    color: $color-text-inverse;
+    font-weight: $font-weight-semibold;
+  }
+}
+
 .nav-link-logout {
   width: 100%;
   border: none;
