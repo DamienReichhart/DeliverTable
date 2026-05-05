@@ -159,8 +159,8 @@ public static class ApiRoutes
         // ── Order Config ──
         public const string OrderRulesRoute = "order-config/rules";
         public const string OrderRuleByIdRoute = "order-config/rules/{id:int}";
-        public const string BlockedSlotsRoute = "order-config/blocked-slots";
-        public const string BlockedSlotByIdRoute = "order-config/blocked-slots/{id:int}";
+        public const string BlockedSlotsRoute = "order-config/creneau";
+        public const string BlockedSlotByIdRoute = "order-config/creneau/{id:int}";
         public const string OrderRules = Base + "/" + OrderRulesRoute;
         public const string BlockedSlots = Base + "/" + BlockedSlotsRoute;
 
@@ -239,6 +239,20 @@ public static class ApiRoutes
     {
         public const string RestaurantBaseRoute = VersionnedBase + "/restaurant/{id:int}/loyalty";
         public const string MyAccountRoute = "my-account";
+    }
+
+    /// <summary>Restaurant order configuration routes (RestaurantOwner).</summary>
+    public static class OrderConfig
+    {
+        public const string RestaurantBlockedSlotsRoute = "api/v1/restaurant/{id:int}/order-config/creneau";
+        public const string RestaurantBlockedSlotByIdRoute =
+            "api/v1/restaurant/{id:int}/order-config/creneau/{slotId:int}";
+        public const string TablesCapacityRoute =
+            "api/v1/restaurant/{id:int}/order-config/tables-capacity";
+        public const string OpeningHoursRoute =
+            "api/v1/restaurant/{id:int}/order-config/opening-hours";
+        public const string AvailableSlotsRoute =
+            "api/v1/restaurant/{id:int}/order-config/available-slots";
     }
 
     /// <summary>Invoice routes.</summary>

@@ -9,6 +9,7 @@ public class AdminOrderRuleResponse
     public int? MinLeadTimeHours { get; set; }
     public int? MaxAdvanceDays { get; set; }
     public int? SlotDurationMinutes { get; set; }
+    public int? TablesCapacityPerSlot { get; set; }
     public string AvailabilityRanges { get; set; } = "";
     public bool AllowPreorder { get; set; }
     public bool AllowDelivery { get; set; }

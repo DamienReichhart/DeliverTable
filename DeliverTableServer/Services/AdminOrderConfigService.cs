@@ -48,6 +48,7 @@ public sealed class AdminOrderConfigService(
             MinLeadTimeHours = request.MinLeadTimeHours,
             MaxAdvanceDays = request.MaxAdvanceDays,
             SlotDurationMinutes = request.SlotDurationMinutes,
+            TablesCapacityPerSlot = request.TablesCapacityPerSlot,
             AvailabilityRanges = request.AvailabilityRanges,
             AllowPreorder = request.AllowPreorder,
             AllowDelivery = request.AllowDelivery
@@ -68,6 +69,7 @@ public sealed class AdminOrderConfigService(
         rule.MinLeadTimeHours = request.MinLeadTimeHours;
         rule.MaxAdvanceDays = request.MaxAdvanceDays;
         rule.SlotDurationMinutes = request.SlotDurationMinutes;
+        rule.TablesCapacityPerSlot = request.TablesCapacityPerSlot;
         rule.AvailabilityRanges = request.AvailabilityRanges;
         rule.AllowPreorder = request.AllowPreorder;
         rule.AllowDelivery = request.AllowDelivery;
