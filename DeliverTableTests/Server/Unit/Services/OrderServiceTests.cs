@@ -3,12 +3,15 @@ using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableServer.Hubs;
+using DeliverTableServer.Hubs.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Order;
 using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Helpers;
+using Microsoft.AspNetCore.SignalR;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
 

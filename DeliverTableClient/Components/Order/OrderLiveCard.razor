@@ -1,0 +1,77 @@
+@inherits ComponentBase
+
+<article class="order-card">
+    <header class="order-card__header">
+        <div class="order-card__id">
+            <span class="order-card__label">Commande</span>
+            <span class="order-card__number">#@Order.Id</span>
+        </div>
+        <div class="order-card__status order-card__status--@Order.Status.ToString().ToLower()">
+            @Translate(Order.Status)
+        </div>
+    </header>
+
+    <div class="order-card__body">
+        @if (!string.IsNullOrWhiteSpace(Order.DeliveryAddress))
+        {
+            <div class="order-card__info-item">
+                <Blazicon Svg="Lucide.MapPin" class="order-card__info-icon" />
+                <span class="order-card__info-text-sm">@Order.DeliveryAddress</span>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Order.Notes))
+        {
+            <div class="order-card__info-item order-card__info-item--note">
+                <Blazicon Svg="Lucide.MessageSquare" class="order-card__info-icon" />
+                <span class="order-card__info-text">@Order.Notes</span>
+            </div>
+        }
+
+        <div class="order-items">
+            <h3 class="order-items__title">Plats à préparer</h3>
+            <ul class="order-items__list">
+                @foreach (var item in Order.Items)
+                {
+                    <li class="order-item">
+                        <div class="order-item__main">
+                            <span class="order-item__quantity">@item.Quantity ×</span>
+                            <span class="order-item__name">@item.DishName</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(item.SpecialInstructions))
+                        {
+                            <div class="order-item__instructions">
+                                <Blazicon Svg="Lucide.Info" class="order-item__instruction-icon" />
+                                @item.SpecialInstructions
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <footer class="order-card__footer">
+        @if (Enum.TryParse<OrderStatus>(Order.Status, out var status))
+        {
+            @switch (status)
+            {
+                case OrderStatus.Pending:
+                    <button class="app-btn app-btn--primary w-100" @onclick="() => OnOrderConfirmed.InvokeAsync(Order.Id)">
+                        Confirmer
+                    </button>
+                    break;
+                case OrderStatus.Confirmed:
+                    <button class="app-btn app-btn--primary w-100" @onclick="() => OnOrderPreparing.InvokeAsync(Order.Id)">
+                        Commencer la préparation
+                    </button>
+                    break;
+                case OrderStatus.Preparing:
+                    <button class="app-btn app-btn--primary w-100" @onclick="() => OnOrderReady.InvokeAsync(Order.Id)">
+                        Prêt à livrer
+                    </button>
+                    break;
+            }
+        }
+    </footer>
+</article>

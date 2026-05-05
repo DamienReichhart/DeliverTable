@@ -53,10 +53,13 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))
             q = q.Where(o => o.Status == status);
 
-        if (query.ToPrepare is true)
-            q = q.Where(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Preparing);
+        if (query.CreatedAfter.HasValue)
+            q = q.Where(o => o.CreatedAt >= query.CreatedAfter.Value);
 
-        q = q.ApplySorting(query);
+        if (query.ToPrepare is true)
+            q = q.Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Preparing);
+
+        q = ApplySorting(q, query);
 
         var totalCount = await q.CountAsync(ct);
         var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
