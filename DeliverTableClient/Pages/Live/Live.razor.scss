@@ -1,0 +1,264 @@
+@use "../../Styles/abstracts/variables" as *;
+@use "../../Styles/abstracts/mixins" as *;
+
+.live-page {
+  padding: $spacing-xl $content-padding-x;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.live-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: $spacing-2xl;
+  gap: $spacing-lg;
+  flex-wrap: wrap;
+
+  &__title-container {
+    flex: 1;
+  }
+
+  &__title {
+    @include heading-display;
+    font-size: $font-size-h2;
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__icon {
+    color: $color-primary;
+    width: 32px;
+    height: 32px;
+    
+    // Pulse effect for "Live"
+    animation: live-pulse 2s infinite;
+  }
+
+  &__subtitle {
+    color: $color-text-muted;
+    font-size: $font-size-lg;
+  }
+}
+
+@keyframes live-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.restaurant-selector {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: $color-bg-white;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+
+  &__icon {
+    color: $color-text-muted;
+    width: 20px;
+    height: 20px;
+  }
+
+  &__select {
+    border: none;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    background: transparent;
+    cursor: pointer;
+    padding-right: $spacing-xl;
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.live-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+
+  &__card {
+    @include card;
+    text-align: center;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: $spacing-3xl;
+  }
+
+  &__icon {
+    width: 64px;
+    height: 64px;
+    color: $color-border;
+    margin-bottom: $spacing-lg;
+  }
+
+  &__title {
+    @include heading-display;
+    font-size: $font-size-h3;
+    margin-bottom: $spacing-md;
+  }
+
+  &__text {
+    color: $color-text-muted;
+    line-height: $line-height-base;
+  }
+}
+
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: $spacing-xl;
+}
+
+.order-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  padding: 0; // Remove default padding from mixin to use custom sections
+  overflow: hidden;
+
+  &__header {
+    padding: $spacing-lg;
+    background: $color-bg-subtle;
+    border-bottom: 1px solid $color-border;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__id {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__label {
+    @include label-mono;
+    color: $color-text-muted;
+  }
+
+  &__number {
+    font-weight: $font-weight-bold;
+    font-size: $font-size-lg;
+    color: $color-text;
+  }
+
+  &__status {
+    padding: $spacing-xs $spacing-sm;
+    border-radius: $radius-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    &--confirmed { background-color: rgba($color-success, 0.1); color: $color-success; }
+    &--preparing { background-color: rgba($color-warning, 0.1); color: $color-warning; }
+    &--ready { background-color: rgba($color-primary, 0.1); color: $color-primary; }
+  }
+
+  &__body {
+    padding: $spacing-lg;
+    flex: 1;
+  }
+
+  &__info-item {
+    display: flex;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-md;
+    color: $color-text;
+    font-size: $font-size-sm;
+
+    &--note {
+      background: #FFFBEB;
+      padding: $spacing-sm;
+      border-radius: $radius-md;
+      border-left: 3px solid $color-warning;
+    }
+  }
+
+  &__info-icon {
+    width: 18px;
+    height: 18px;
+    color: $color-text-muted;
+    flex-shrink: 0;
+  }
+
+  &__footer {
+    padding: $spacing-lg;
+    border-top: 1px solid $color-border;
+  }
+}
+
+.order-items {
+  margin-top: $spacing-xl;
+
+  &__title {
+    @include label-mono;
+    color: $color-text-muted;
+    margin-bottom: $spacing-md;
+    border-bottom: 1px solid $color-border;
+    padding-bottom: $spacing-xs;
+  }
+
+  &__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+}
+
+.order-item {
+  margin-bottom: $spacing-md;
+
+  &__main {
+    display: flex;
+    gap: $spacing-sm;
+    align-items: baseline;
+  }
+
+  &__quantity {
+    font-weight: $font-weight-bold;
+    color: $color-primary;
+    font-family: $font-family-mono;
+  }
+
+  &__name {
+    font-weight: $font-weight-medium;
+  }
+
+  &__instructions {
+    margin-top: $spacing-xs;
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+    font-style: italic;
+    display: flex;
+    gap: $spacing-xs;
+    align-items: center;
+    padding-left: $spacing-xl;
+  }
+
+  &__instruction-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .live-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .live-grid {
+    grid-template-columns: 1fr;
+  }
+}

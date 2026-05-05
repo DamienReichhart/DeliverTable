@@ -213,6 +213,15 @@
                         </div>
                     </div>
                 </AuthorizeView>
+            
+                <AuthorizeView Roles="@nameof(UserRole.RestaurantOwner)">
+                    <div class="nav-item">
+                        <NavLink href="/live" class="nav-link-live">
+                            <Blazicon Svg="Lucide.Radio" class="nav-icon" />
+                            <span>Service en direct</span>
+                        </NavLink>
+                    </div>
+                </AuthorizeView>
 
                 <span class="nav-section-label">Compte</span>
 

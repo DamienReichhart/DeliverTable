@@ -53,7 +53,10 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))
             q = q.Where(o => o.Status == status);
 
-        q = q.OrderByDescending(o => o.CreatedAt);
+        if (query.ToPrepare is true)
+            q = q.Where(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Preparing);
+
+        q = q.ApplySorting(query);
 
         var totalCount = await q.CountAsync(ct);
         var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
@@ -93,4 +96,39 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         _dbContext.Orders
             .Where(o => o.Status == status && o.CreatedAt < threshold)
             .ToListAsync(ct);
+    private IQueryable<Order> ApplySorting(IQueryable<Order> query, OrderQuery request)
+    {
+        var property = request.SortBy switch
+        {
+            "CreatedAt" => nameof(Order.CreatedAt),
+            "Status" => nameof(Order.Status),
+            "Id" => nameof(Order.Id),
+            "OrderType" => nameof(Order.OrderType),
+            "PaymentStatus" => nameof(Order.PaymentStatus),
+            "TotalAmount" => nameof(Order.TotalAmount),
+            "OriginalAmount" => nameof(Order.OriginalAmount),
+            "DiscountAmount" => nameof(Order.DiscountAmount),
+            "LoyaltyPointsUsed" => nameof(Order.LoyaltyPointsUsed),
+            "LoyaltyPointsEarned" => nameof(Order.LoyaltyPointsEarned),
+            "GuestCount" => nameof(Order.GuestCount),
+            "DeliveryAddress" => nameof(Order.DeliveryAddress),
+            "Notes" => nameof(Order.Notes),
+            "ScheduledAt" => nameof(Order.ScheduledAt),
+            "RestaurantTableId" => nameof(Order.RestaurantTableId),
+            "IsEventBooking" => nameof(Order.IsEventBooking),
+            "EventId" => nameof(Order.EventId),
+            _ => nameof(Order.CreatedAt)
+        };
+
+        if (request.SortDesc is true)
+        {
+            query = query.OrderByDescending(o => o.CreatedAt);
+        }
+        else
+        {
+            query = query.OrderBy(o => o.CreatedAt);
+        }
+
+        return query;
+    }
 }
