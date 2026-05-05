@@ -11,13 +11,27 @@ public interface IOrderConfigRepository
     // ── OrderRule ──
     Task<List<OrderRule>> GetAllRulesAsync(CancellationToken ct = default);
     Task<OrderRule?> GetRuleByIdAsync(int id, CancellationToken ct = default);
+    Task<OrderRule?> GetRuleByRestaurantIdAsync(int restaurantId, CancellationToken ct = default);
     Task<OrderRule> CreateRuleAsync(OrderRule rule, CancellationToken ct = default);
     Task<OrderRule> UpdateRuleAsync(OrderRule rule, CancellationToken ct = default);
     Task<bool> DeleteRuleAsync(int id, CancellationToken ct = default);
 
     // ── OrderBlockedSlot ──
     Task<List<OrderBlockedSlot>> GetAllBlockedSlotsAsync(CancellationToken ct = default);
+    Task<List<OrderBlockedSlot>> GetBlockedSlotsByRestaurantAsync(int restaurantId, CancellationToken ct = default);
     Task<OrderBlockedSlot?> GetBlockedSlotByIdAsync(int id, CancellationToken ct = default);
     Task<OrderBlockedSlot> CreateBlockedSlotAsync(OrderBlockedSlot slot, CancellationToken ct = default);
     Task<bool> DeleteBlockedSlotAsync(int id, CancellationToken ct = default);
+    Task<bool> ExistsBlockedSlotOverlapAsync(
+        int restaurantId,
+        int? restaurantTableId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default);
+
+    Task<bool> IsRestaurantLevelSlotBlockedAsync(
+        int restaurantId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default);
 }

@@ -22,6 +22,8 @@ public class OrderRule
 
     public int? SlotDurationMinutes { get; set; }
 
+    public int? TablesCapacityPerSlot { get; set; }
+
     [MaxLength(2000)]
     public string AvailabilityRanges { get; set; } = string.Empty;
 

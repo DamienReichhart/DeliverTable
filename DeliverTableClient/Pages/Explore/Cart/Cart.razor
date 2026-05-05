@@ -1,6 +1,7 @@
 @page "/panier/{RestaurantId:int}"
 @inject ICartService CartService
 @inject IRestaurantService RestaurantService
+@inject IRestaurantOrderConfigClientService RestaurantOrderConfigService
 @inject IPromotionService PromotionService
 @inject IDiscountCodeClientService DiscountCodeService
 @inject ILoyaltyClientService LoyaltyService
@@ -129,8 +130,9 @@
                         <div class="guest-count-selector">
                             <button type="button" class="qty-btn" @onclick="DecrementGuests" disabled="@(_guestCount <= 1)">−</button>
                             <span class="qty-value">@_guestCount</span>
-                            <button type="button" class="qty-btn" @onclick="IncrementGuests" disabled="@(_guestCount >= 50)">+</button>
+                            <button type="button" class="qty-btn" @onclick="IncrementGuests" disabled="@(_guestCount >= _maxGuestCount)">+</button>
                         </div>
+                        <p class="slots-empty">Maximum pour ce restaurant: @_maxGuestCount personne(s)</p>
                     </div>
                     <div class="dine-in-info">
                         <p>Vous mangerez directement au restaurant. Une table pour <strong>@_guestCount</strong> personne(s) sera préparée.</p>
@@ -144,17 +146,55 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="scheduled-at">
-                        @(_orderType == "DineIn" ? "Date et heure de la réservation" : "Date et heure de livraison souhaitée")
+                    <label for="scheduled-date">
+                        @(_orderType == "DineIn" ? "Date de la réservation" : "Date souhaitée")
                         <span class="optional-label">(optionnel)</span>
                     </label>
-                    <input type="datetime-local" id="scheduled-at" @bind="_scheduledAt" class="filter-input" />
+                    <input type="date" id="scheduled-date" value="@_scheduledDateText" class="filter-input"
+                           @onchange="HandleScheduledDateChanged" />
+                    <div class="slot-helper-row">
+                        <span>Créneaux disponibles sur la date sélectionnée</span>
+                        @if (_scheduledAt.HasValue)
+                        {
+                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="ClearSelectedSlot">
+                                Retirer le créneau
+                            </button>
+                        }
+                    </div>
+
+                    @if (_loadingSlots)
+                    {
+                        <p class="slots-loading">Chargement des créneaux disponibles...</p>
+                    }
+                    else if (_slotsError is not null)
+                    {
+                        <p class="slots-error">@_slotsError</p>
+                    }
+                    else if (_availableSlots.Count == 0)
+                    {
+                        <p class="slots-empty">Aucun créneau disponible pour cette date.</p>
+                    }
+                    else
+                    {
+                        <div class="slot-selector-grid">
+                            @foreach (var slot in _availableSlots)
+                            {
+                                var isSelected = _scheduledAt.HasValue && _scheduledAt.Value == slot.StartsAt;
+                                <button type="button"
+                                        class="slot-option @(isSelected ? "slot-option--selected" : string.Empty)"
+                                        @onclick="() => SelectSlot(slot.StartsAt)">
+                                    <span class="slot-option-time">@slot.StartsAt.ToString("HH:mm")</span>
+                                    <span class="slot-option-end">@slot.EndsAt.ToString("HH:mm")</span>
+                                </button>
+                            }
+                        </div>
+                    }
+
                     @if (_scheduledAt.HasValue)
                     {
-                        <button type="button" class="app-btn app-btn--secondary app-btn--sm" style="margin-top: 0.25rem;"
-                                @onclick="() => _scheduledAt = null">
-                            Retirer la date planifiée
-                        </button>
+                        <p class="slot-selection-summary">
+                            Sélection actuelle : @_scheduledAt.Value.ToString("dd/MM/yyyy à HH:mm")
+                        </p>
                     }
                 </div>
             </div>
@@ -319,9 +359,15 @@
 
     private string _orderType = "Delivery";
     private int _guestCount = 1;
+    private int _maxGuestCount = 50;
     private string _deliveryAddress = string.Empty;
     private string _notes = string.Empty;
     private DateTime? _scheduledAt;
+    private DateTime _scheduledDate = DateTime.Today.AddDays(1);
+    private string _scheduledDateText = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+    private List<AvailableSlotDto> _availableSlots = [];
+    private bool _loadingSlots;
+    private string? _slotsError;
     private string _discountCodeInput = string.Empty;
     private List<DiscountCodeDto> _appliedCodes = [];
     private bool _applyingCode;
@@ -396,29 +442,41 @@
     // ── Navigation ──
     private void GoToRestaurant() => Nav.NavigateTo($"/restaurant/{RestaurantId}");
 
-    private void SelectOrderType(OrderTypeValue type)
+    private async Task SelectOrderType(OrderTypeValue type)
     {
         _orderType = type.ToString();
         _validationError = null;
 
         if (type == OrderTypeValue.Delivery)
             _guestCount = 1;
+
+        await LoadAvailableSlots();
     }
 
-    private void IncrementGuests()
+    private async Task IncrementGuests()
     {
-        if (_guestCount < 50) _guestCount++;
+        if (_guestCount < _maxGuestCount)
+        {
+            _guestCount++;
+            await LoadAvailableSlots();
+        }
     }
 
-    private void DecrementGuests()
+    private async Task DecrementGuests()
     {
-        if (_guestCount > 1) _guestCount--;
+        if (_guestCount > 1)
+        {
+            _guestCount--;
+            await LoadAvailableSlots();
+        }
     }
 
     // ── Data loading ──
     protected override async Task OnInitializedAsync()
     {
         await Task.WhenAll(LoadCart(), LoadActivePromotions(), LoadLoyaltyAccount());
+        await LoadGuestCapacityLimit();
+        await LoadAvailableSlots();
     }
 
     private async Task LoadCart()
@@ -447,6 +505,68 @@
     {
         var (account, _) = await LoyaltyService.GetMyAccountAsync(RestaurantId);
         _loyaltyAccount = account;
+    }
+
+    private async Task LoadGuestCapacityLimit()
+    {
+        var (capacity, _) = await RestaurantOrderConfigService.GetTablesCapacityAsync(RestaurantId);
+        var tablesPerSlot = capacity?.CapacityPerSlot ?? 0;
+        _maxGuestCount = Math.Max(1, tablesPerSlot * 2);
+
+        if (_guestCount > _maxGuestCount)
+            _guestCount = _maxGuestCount;
+    }
+
+    private async Task HandleScheduledDateChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(value) || !DateTime.TryParse(value, out var parsedDate))
+            return;
+
+        _scheduledDate = parsedDate.Date;
+        _scheduledDateText = _scheduledDate.ToString("yyyy-MM-dd");
+        _scheduledAt = null;
+        await LoadAvailableSlots();
+    }
+
+    private void SelectSlot(DateTime slotStartsAt)
+    {
+        _scheduledAt = slotStartsAt;
+        _validationError = null;
+    }
+
+    private void ClearSelectedSlot()
+    {
+        _scheduledAt = null;
+    }
+
+    private async Task LoadAvailableSlots()
+    {
+        _loadingSlots = true;
+        _slotsError = null;
+        StateHasChanged();
+
+        var query = new RestaurantAvailableSlotsQuery
+        {
+            Date = _scheduledDate,
+            GuestCount = _guestCount
+        };
+
+        var (response, error) = await RestaurantOrderConfigService.GetAvailableSlotsAsync(RestaurantId, query);
+        if (error is not null)
+        {
+            _slotsError = error.Error;
+            _availableSlots = [];
+        }
+        else
+        {
+            _availableSlots = response?.Slots ?? [];
+            if (_scheduledAt.HasValue && !_availableSlots.Any(slot => slot.StartsAt == _scheduledAt.Value))
+                _scheduledAt = null;
+        }
+
+        _loadingSlots = false;
+        StateHasChanged();
     }
 
     // ── Cart actions ──
@@ -555,9 +675,15 @@
             return;
         }
 
-        if (_orderType == "DineIn" && (_guestCount < 1 || _guestCount > 50))
+        if (_orderType == "DineIn" && (_guestCount < 1 || _guestCount > _maxGuestCount))
         {
-            _validationError = "Le nombre de convives doit être compris entre 1 et 50.";
+            _validationError = $"Le nombre de convives doit être compris entre 1 et {_maxGuestCount}.";
+            return;
+        }
+
+        if (_scheduledAt.HasValue && !_availableSlots.Any(slot => slot.StartsAt == _scheduledAt.Value))
+        {
+            _validationError = "Le créneau sélectionné n'est plus disponible.";
             return;
         }
 
