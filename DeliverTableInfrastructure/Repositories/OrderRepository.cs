@@ -99,7 +99,6 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         _dbContext.Orders
             .Where(o => o.Status == status && o.CreatedAt < threshold)
             .ToListAsync(ct);
-
     private IQueryable<Order> ApplySorting(IQueryable<Order> query, OrderQuery request)
     {
         var property = request.SortBy switch
