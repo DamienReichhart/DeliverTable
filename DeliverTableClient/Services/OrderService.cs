@@ -84,6 +84,12 @@ public sealed class OrderService(HttpClient httpClient) : IOrderService
             if (!string.IsNullOrWhiteSpace(query.Status))
                 queryParams.Add($"Status={Uri.EscapeDataString(query.Status)}");
 
+            if (query.ToPrepare.HasValue)
+                queryParams.Add($"ToPrepare={query.ToPrepare.Value}");
+
+            if (query.CreatedAfter.HasValue)
+                queryParams.Add($"CreatedAfter={query.CreatedAfter.Value:O}");
+
             var url = $"{ApiRoutes.Order.Base}/restaurant/{restaurantId}?{string.Join("&", queryParams)}";
             var result = await _httpClient.GetFromJsonAsync<PaginatedResult<OrderDto>>(url, ct);
             return (result, null);

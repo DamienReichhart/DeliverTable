@@ -15,6 +15,8 @@ public static class ApiRoutes
 
     public const string StorageDocuments = "documents/{**path}";
 
+    public const string LiveOrdersHub = "api/v1/live/orders";
+
     /// <summary>Authentication routes.</summary>
     public static class Auth
     {

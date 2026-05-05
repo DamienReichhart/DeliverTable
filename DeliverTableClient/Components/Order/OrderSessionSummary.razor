@@ -1,0 +1,47 @@
+@using DeliverTableSharedLibrary.Dtos.Order
+@using DeliverTableSharedLibrary.Enums
+
+<aside class="session-summary">
+    <header class="session-summary__header">
+        <div class="session-summary__title-wrapper">
+            <Blazicon Svg="Lucide.CircleCheck" class="session-summary__icon" />
+            <h2 class="session-summary__title">Commandes traitées</h2>
+        </div>
+        <span class="session-summary__count">@Orders.Count</span>
+    </header>
+
+    <div class="session-summary__body">
+        @if (Orders.Count == 0)
+        {
+            <div class="session-summary__empty">
+                <div class="session-summary__empty-icon-wrapper">
+                    <Blazicon Svg="Lucide.Inbox" class="session-summary__empty-icon" />
+                </div>
+                <p class="session-summary__empty-text">Aucune commande traitée dans cette session.</p>
+            </div>
+        }
+        else
+        {
+            <div class="session-summary__list-container">
+                <ul class="session-summary__list">
+                    @foreach (var order in Orders)
+                    {
+                        <li class="session-order">
+                            <div class="session-order__id-row">
+                                <span class="session-order__id">#@order.Id</span>
+                                <span class="session-order__time">@order.CreatedAt.ToLocalTime().ToString("HH:mm")</span>
+                            </div>
+                            <div class="session-order__info-row">
+                                <span class="session-order__type">
+                                    <Blazicon Svg="@(order.OrderType == nameof(OrderType.Delivery) ? Lucide.Truck : Lucide.Utensils)" class="session-order__type-icon" />
+                                    @(order.OrderType == nameof(OrderType.Delivery) ? TranslateType(nameof(OrderType.Delivery)) : TranslateType(nameof(OrderType.DineIn)))
+                                </span>
+                                <span class="session-order__amount">@order.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("fr-FR"))</span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</aside>

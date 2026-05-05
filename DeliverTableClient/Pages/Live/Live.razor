@@ -1,5 +1,7 @@
 @page "/live"
+@layout LiveLayout
 @inherits ComponentBase
+@using DeliverTableClient.Components.Order
 @attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
 
 <PageTitle>Service en direct — DeliverTable</PageTitle>
@@ -42,83 +44,43 @@
             </div>
         </div>
     }
-    else if (orders.Length == 0)
-    {
-        <div class="live-empty">
-            <div class="live-empty__card">
-                <Blazicon Svg="Lucide.ChefHat" class="live-empty__icon" />
-                <h2 class="live-empty__title">Prêt pour le service !</h2>
-                <p class="live-empty__text">Les commandes apparaîtront ici dès qu'elles seront passées.</p>
-                <button class="app-btn app-btn--secondary mt-4" @onclick="LoadOrders">
-                    <Blazicon Svg="Lucide.RefreshCcw" class="app-btn__icon" />
-                    Actualiser
-                </button>
-            </div>
-        </div>
-    }
     else
     {
-        <div class="live-grid">
-            @foreach (var order in orders)
-            {
-                <article class="order-card">
-                    <header class="order-card__header">
-                        <div class="order-card__id">
-                            <span class="order-card__label">Commande</span>
-                            <span class="order-card__number">#@order.Id</span>
-                        </div>
-                        <div class="order-card__status order-card__status--@order.Status.ToString().ToLower()">
-                            @Translate(order.Status)
-                        </div>
-                    </header>
-
-                    <div class="order-card__body">
-                        @if (!string.IsNullOrWhiteSpace(order.DeliveryAddress))
-                        {
-                            <div class="order-card__info-item">
-                                <Blazicon Svg="Lucide.MapPin" class="order-card__info-icon" />
-                                <span class="order-card__info-text-sm">@order.DeliveryAddress</span>
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrWhiteSpace(order.Notes))
-                        {
-                            <div class="order-card__info-item order-card__info-item--note">
-                                <Blazicon Svg="Lucide.MessageSquare" class="order-card__info-icon" />
-                                <span class="order-card__info-text">@order.Notes</span>
-                            </div>
-                        }
-
-                        <div class="order-items">
-                            <h3 class="order-items__title">Plats à préparer</h3>
-                            <ul class="order-items__list">
-                                @foreach (var item in order.Items)
-                                {
-                                    <li class="order-item">
-                                        <div class="order-item__main">
-                                            <span class="order-item__quantity">@item.Quantity ×</span>
-                                            <span class="order-item__name">@item.DishName</span>
-                                        </div>
-                                        @if (!string.IsNullOrWhiteSpace(item.SpecialInstructions))
-                                        {
-                                            <div class="order-item__instructions">
-                                                <Blazicon Svg="Lucide.Info" class="order-item__instruction-icon" />
-                                                @item.SpecialInstructions
-                                            </div>
-                                        }
-                                    </li>
-                                }
-                            </ul>
+        <div class="live-content">
+            <main class="live-main">
+                @if (orders.Length == 0)
+                {
+                    <div class="live-empty live-empty--inline">
+                        <div class="live-empty__card">
+                            <Blazicon Svg="Lucide.ChefHat" class="live-empty__icon" />
+                            <h2 class="live-empty__title">Prêt pour le service !</h2>
+                            <p class="live-empty__text">Les commandes apparaîtront ici dès qu'elles seront passées.</p>
+                            <button class="app-btn app-btn--secondary mt-4" @onclick="LoadOrders">
+                                <Blazicon Svg="Lucide.RefreshCcw" class="app-btn__icon" />
+                                Actualiser
+                            </button>
                         </div>
                     </div>
-
-                    <footer class="order-card__footer">
-                        <button class="app-btn app-btn--primary w-100" @onclick="() => MarkAsReady(order.Id)">
-                            Prêt à livrer
-                        </button>
-                    </footer>
-                </article>
-            }
+                }
+                else
+                {
+                    <div class="live-grid">
+                        @foreach (var order in orders)
+                        {
+                            if (order.Status == nameof(OrderStatus.Pending) || order.Status == nameof(OrderStatus.Confirmed) || order.Status == nameof(OrderStatus.Preparing))
+                            {
+                                <OrderLiveCard Order="order" 
+                                               OnOrderReady="MarkAsReady" 
+                                               OnOrderConfirmed="MarkAsConfirmed" 
+                                               OnOrderPreparing="MarkAsPreparing" />
+                            }                        }
+                    </div>
+                }
+            </main>
+            
+            <aside class="live-sidebar">
+                <OrderSessionSummary Orders="finishedOrders" />
+            </aside>
         </div>
     }
 </div>
