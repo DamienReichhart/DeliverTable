@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // -----------------------------------------------------------------------------
 // Design tokens – single source of truth for colors, spacing, typography.
 // Based on DeliverTable Brand Guidelines v1.0 (March 2026)
@@ -16,13 +18,13 @@ $color-soft-coral:    #FF7F50;
 
 $color-primary:       $color-coral-fire;
 $color-primary-hover: $color-soft-coral;
-$color-primary-dark:  darken($color-coral-fire, 10%);
+$color-primary-dark:  color.adjust($color-coral-fire, $lightness: -10%);
 
 $color-accent:        $color-deep-charcoal;
-$color-accent-hover:  lighten($color-deep-charcoal, 12%);
+$color-accent-hover:  color.adjust($color-deep-charcoal, $lightness: 12%);
 
 $color-secondary:     $color-amber-gold;
-$color-secondary-hover: darken($color-amber-gold, 8%);
+$color-secondary-hover: color.adjust($color-amber-gold, $lightness: -8%);
 
 $color-text:          $color-deep-charcoal;
 $color-text-muted:    #6B6B80;
@@ -35,7 +37,7 @@ $color-border:        #E8E4DF;
 $color-border-focus:  $color-coral-fire;
 
 $color-success:       $color-garden-sage;
-$color-success-outline: lighten($color-garden-sage, 10%);
+$color-success-outline: color.adjust($color-garden-sage, $lightness: 10%);
 $color-error:         #C0392B;
 $color-error-bg:      #C0392B;
 $color-warning:       $color-amber-gold;

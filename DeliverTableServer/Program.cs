@@ -1,6 +1,7 @@
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Extensions;
+using DeliverTableServer.Hubs;
 using DeliverTableServer.Middleware;
 using DeliverTableSharedLibrary.Constants;
 
@@ -14,6 +15,7 @@ var maxUploadBytes = UploadLimits.ToBytes(env.UploadMaxSizeMb);
 builder.Services.AddSingleton(env);
 builder.Services.AddSingleton(env.Jwt);
 builder.Services.AddSingleton(env.ObjectStorage);
+builder.Services.AddSignalR();
 
 Stripe.StripeConfiguration.ApiKey = env.StripeSecretKey;
 
@@ -92,6 +94,7 @@ if (enableOpenApi)
     });
 }
 
+app.MapHub<OrderHub>(ApiRoutes.LiveOrdersHub);
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 app.UseCors();

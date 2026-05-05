@@ -1,0 +1,53 @@
+@use '../abstracts/variables' as *;
+
+.live-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: $color-bg;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding: $spacing-sm $content-padding-x;
+    background-color: $color-deep-charcoal;
+    color: $color-text-inverse;
+    cursor: pointer;
+    transition: background-color $transition-fast;
+    z-index: $z-topbar;
+    box-shadow: $shadow-md;
+    min-height: $topbar-height;
+
+    &:hover {
+      background-color: lighten($color-deep-charcoal, 5%);
+      
+      .live-layout__icon {
+        transform: translateX(-4px);
+      }
+    }
+  }
+
+  &__icon {
+    font-size: 1.5rem;
+    transition: transform $transition-fast;
+  }
+
+  &__title {
+    font-family: $font-family-display;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-md;
+    
+    @media (min-width: $breakpoint-desktop) {
+        padding: $spacing-xl;
+    }
+  }
+}

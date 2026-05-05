@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+
+<div class="live-layout">
+    <div class="live-layout__header app_btn" @onclick="GoBack">
+        <Blazicon Svg="Lucide.ArrowBigLeftDash" class="live-layout__icon" />
+        <span class="live-layout__title">Revenir au site principal</span>
+    </div>
+    <div class="live-layout__content">
+        @Body
+    </div>
+</div>
+
+@code {
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

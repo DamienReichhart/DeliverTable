@@ -6,12 +6,15 @@ using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Extensions;
 using DeliverTableServer.Helpers;
+using DeliverTableServer.Hubs;
+using DeliverTableServer.Hubs.Interfaces;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Order;
 using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DeliverTableServer.Services;
 
@@ -209,7 +212,10 @@ public sealed class OrderService(
 
         await SendStatusEmailAsync(order, newStatus, ct);
 
-        return updated.ToDto();
+        var orderDto = updated.ToDto();
+        await _orderHubContext.Clients.All.UpdateStatus(orderDto);
+
+        return orderDto;
     }
 
     public async Task<ServiceResult<OrderDto>> CancelOrderAsync(int orderId, int customerId, CancellationToken ct = default)
