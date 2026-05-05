@@ -14,4 +14,14 @@ public interface IOrderRepository
     Task<List<Order>> GetAllUnscopedAsync(CancellationToken ct = default);
     Task<Order?> GetByIdWithFullDetailsAsync(int id, CancellationToken ct = default);
     Task<List<Order>> GetOrdersOlderThanAsync(OrderStatus status, DateTime threshold, CancellationToken ct = default);
+    Task<int> CountScheduledDineInOverlappingAsync(
+        int restaurantId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default);
+    Task<int> GetScheduledDineInReservedTableUnitsOverlappingAsync(
+        int restaurantId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default);
 }

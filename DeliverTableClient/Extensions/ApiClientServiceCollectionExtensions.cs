@@ -47,6 +47,7 @@ public static class ApiClientServiceCollectionExtensions
         RegisterOrderHubClientService(services);
         RegisterRestaurantAccountService(services);
         RegisterPromotionService(services);
+        RegisterRestaurantOrderConfigService(services);
         RegisterDiscountCodeClientService(services);
         RegisterLoyaltyClientService(services);
         RegisterRatingClientService(services);
@@ -110,6 +111,11 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterPromotionService(IServiceCollection services)
     {
         services.AddScoped<IPromotionService, PromotionService>();
+    }
+
+    private static void RegisterRestaurantOrderConfigService(IServiceCollection services)
+    {
+        services.AddScoped<IRestaurantOrderConfigClientService, RestaurantOrderConfigClientService>();
     }
 
     private static void RegisterDiscountCodeClientService(IServiceCollection services)

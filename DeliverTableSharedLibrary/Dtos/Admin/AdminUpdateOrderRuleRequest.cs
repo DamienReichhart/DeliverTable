@@ -16,6 +16,9 @@ public class AdminUpdateOrderRuleRequest
     [Range(1, int.MaxValue, ErrorMessage = "La durée du créneau doit être au moins 1 minute")]
     public int? SlotDurationMinutes { get; set; }
 
+    [Range(0, int.MaxValue, ErrorMessage = "Le nombre de tables doit être positif")]
+    public int? TablesCapacityPerSlot { get; set; }
+
     [MaxLength(2000)]
     public string AvailabilityRanges { get; set; } = "";
 

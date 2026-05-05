@@ -22,6 +22,7 @@ public sealed class OrderService(
     IOrderRepository orderRepository,
     ICartRepository cartRepository,
     IRestaurantRepository restaurantRepository,
+    IOrderConfigRepository orderConfigRepository,
     IRestaurantTransactionRepository transactionRepository,
     IPromotionRepository promotionRepository,
     IDiscountCodeRepository discountCodeRepository,
@@ -36,6 +37,7 @@ public sealed class OrderService(
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly ICartRepository _cartRepository = cartRepository;
     private readonly IRestaurantRepository _restaurantRepository = restaurantRepository;
+    private readonly IOrderConfigRepository _orderConfigRepository = orderConfigRepository;
     private readonly IRestaurantTransactionRepository _transactionRepository = transactionRepository;
     private readonly IPromotionRepository _promotionRepository = promotionRepository;
     private readonly IDiscountCodeRepository _discountCodeRepository = discountCodeRepository;
@@ -77,6 +79,43 @@ public sealed class OrderService(
 
         if (!restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotActive);
+
+        if (request.ScheduledAt.HasValue)
+        {
+            var slotStartsAt = request.ScheduledAt.Value;
+            var slotDurationMinutes = await GetSlotDurationMinutesAsync(request.RestaurantId, ct);
+            var slotEndsAt = slotStartsAt.AddMinutes(slotDurationMinutes);
+
+            var isBlocked = await _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                request.RestaurantId,
+                slotStartsAt,
+                slotEndsAt,
+                ct);
+
+            if (isBlocked)
+                return new ServiceError(ErrorMessages.ScheduledSlotIsBlocked, 400);
+
+            if (orderType == OrderType.DineIn)
+            {
+                var capacityPerSlot = await GetTablesCapacityPerSlotAsync(request.RestaurantId, ct);
+
+                if (capacityPerSlot <= 0)
+                    return new ServiceError(ErrorMessages.TablesCapacityFull, 400);
+
+                var requiredTableUnits = GetRequiredTableUnits(request.GuestCount);
+                if (requiredTableUnits > capacityPerSlot)
+                    return new ServiceError(ErrorMessages.TablesCapacityFull, 400);
+
+                var reservedTableUnits = await _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+                    request.RestaurantId,
+                    slotStartsAt,
+                    slotEndsAt,
+                    ct);
+
+                if (reservedTableUnits + requiredTableUnits > capacityPerSlot)
+                    return new ServiceError(ErrorMessages.TablesCapacityFull, 400);
+            }
+        }
 
         var cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, request.RestaurantId, ct);
         if (cart is null || cart.Items.Count == 0)
@@ -322,6 +361,31 @@ public sealed class OrderService(
         }
 
         return appliedCodes;
+    }
+
+    private async Task<int> GetSlotDurationMinutesAsync(int restaurantId, CancellationToken ct)
+    {
+        var orderRule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
+
+        if (orderRule?.SlotDurationMinutes is null || orderRule.SlotDurationMinutes <= 0)
+            return 60;
+
+        return orderRule.SlotDurationMinutes.Value;
+    }
+
+    private async Task<int> GetTablesCapacityPerSlotAsync(int restaurantId, CancellationToken ct)
+    {
+        var orderRule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
+
+        if (orderRule?.TablesCapacityPerSlot is > -1)
+            return orderRule.TablesCapacityPerSlot.Value;
+
+        return await _restaurantRepository.CountActiveTablesByMaxCapacityAsync(restaurantId, maxCapacity: 2, ct);
+    }
+
+    private static int GetRequiredTableUnits(int guestCount)
+    {
+        return Math.Max(1, (int)Math.Ceiling(guestCount / 2m));
     }
 
     private async Task<ServiceResult<int>> ApplyLoyaltyPointsAsync(

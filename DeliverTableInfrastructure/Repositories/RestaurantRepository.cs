@@ -142,6 +142,18 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
     public async Task<Restaurant?> GetByIdWithOwnerAsync(int id, CancellationToken ct = default)
         => await _dbContext.Restaurants.Include(r => r.Owner).FirstOrDefaultAsync(r => r.Id == id, ct);
 
+    public async Task<int> CountActiveTablesByMaxCapacityAsync(
+        int restaurantId,
+        int maxCapacity,
+        CancellationToken ct = default)
+    {
+        return await _dbContext.RestaurantTables.CountAsync(t =>
+            t.RestaurantId == restaurantId
+            && t.IsActive
+            && t.Capacity <= maxCapacity,
+            ct);
+    }
+
     private static IQueryable<Restaurant> ApplyFilters(IQueryable<Restaurant> query, RestaurantQuery filter)
     {
         if (!string.IsNullOrWhiteSpace(filter.Name))
