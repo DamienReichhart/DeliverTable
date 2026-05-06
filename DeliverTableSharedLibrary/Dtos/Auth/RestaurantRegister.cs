@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DeliverTableSharedLibrary.Dtos.Restaurant;
 
 namespace DeliverTableSharedLibrary.Dtos.Auth;
 
@@ -11,15 +12,6 @@ public class RestaurantRegister
     [Required(ErrorMessage = "Le nom est requis")]
     [MaxLength(100, ErrorMessage = "Le nom ne peut pas dépasser 100 caractères")]
     public string LastName { get; set; } = "";
-
-    [Required(ErrorMessage = "Le nom de l'entreprise est requis")]
-    [MaxLength(255, ErrorMessage = "Le nom de l'entreprise ne peut pas dépasser 255 caractères")]
-    public string CompanyName { get; set; } = "";
-
-    [Required(ErrorMessage = "Le numéro de TVA est requis")]
-    [MinLength(10, ErrorMessage = "Le numéro de TVA doit contenir au moins 10 caractères")]
-    [MaxLength(20, ErrorMessage = "Le numéro de TVA ne peut pas dépasser 20 caractères")]
-    public string VatNumber { get; set; } = "";
 
     [Required(ErrorMessage = "Le numéro de téléphone est requis")]
     [MinLength(10, ErrorMessage = "Ce numéro de téléphone n'est pas valide")]
@@ -38,4 +30,7 @@ public class RestaurantRegister
     [Required(ErrorMessage = "Veuillez confirmer votre mot de passe")]
     [Compare("Password", ErrorMessage = "Les mots de passe ne correspondent pas")]
     public string ConfirmPassword { get; set; } = "";
+
+    [Required(ErrorMessage = "Les informations du restaurant sont requises")]
+    public CreateRestaurantDto Restaurant { get; set; } = new();
 }

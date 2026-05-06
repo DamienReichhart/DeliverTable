@@ -1,4 +1,4 @@
-﻿using DeliverTableInfrastructure.Models;
+using DeliverTableInfrastructure.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,10 +14,6 @@ public class RestaurantOwnerConfiguration : IEntityTypeConfiguration<RestaurantO
             .WithOne(u => u.RestaurantOwner)
             .HasForeignKey<RestaurantOwner>(ro => ro.Id)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(u => u.CompanyName).HasMaxLength(255);
-
-        builder.Property(u => u.VatNumber).HasMaxLength(20);
 
         builder.Property(u => u.ContactPhoneNumber).HasMaxLength(20);
 

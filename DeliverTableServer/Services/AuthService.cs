@@ -14,12 +14,14 @@ namespace DeliverTableServer.Services;
 public sealed class AuthService(
     IUserRepository userRepository,
     ITokenService tokenService,
-    IEmailJobService emailJobService
+    IEmailJobService emailJobService,
+    IRestaurantService restaurantService
 ) : IAuthService
 {
     private readonly IUserRepository _userRepository = userRepository;
     private readonly ITokenService _tokenService = tokenService;
     private readonly IEmailJobService _emailJobService = emailJobService;
+    private readonly IRestaurantService _restaurantService = restaurantService;
     private readonly string _defaultRole = nameof(UserRole.Customer);
 
     public async Task<ServiceResult<ConnectionResponse>> LoginAsync(LoginRequest request, CancellationToken ct = default)
@@ -69,6 +71,16 @@ public sealed class AuthService(
         if (await _userRepository.EmailExistsAsync(normalizedEmail!, ct))
             return new ServiceError(ErrorMessages.EmailAlreadyUsed);
 
+        var legalAndCoords = await _restaurantService.ValidateLegalAndLocateAsync(
+            request.Restaurant.Siret,
+            request.Restaurant.LegalName,
+            request.Restaurant.LegalAddress,
+            request.Restaurant.LegalForm,
+            request.Restaurant.AdressLine1,
+            request.Restaurant.City,
+            request.Restaurant.ZipCode);
+        if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
+
         var user = new User
         {
             UserName = request.Email,
@@ -77,8 +89,6 @@ public sealed class AuthService(
             LastName = request.LastName,
             RestaurantOwner = new RestaurantOwner
             {
-                CompanyName = request.CompanyName,
-                VatNumber = request.VatNumber,
                 ContactPhoneNumber = request.ContactPhoneNumber
             },
             Customer = new Customer()
@@ -90,7 +100,18 @@ public sealed class AuthService(
 
         var (roleOk, _) = await _userRepository.AddToRoleAsync(user, nameof(UserRole.RestaurantOwner));
         if (!roleOk)
+        {
+            await _userRepository.DeleteAsync(user);
             return new ServiceError(ErrorMessages.InternalError, 500);
+        }
+
+        var restaurantResult = await _restaurantService.CreateValidatedAsync(
+            request.Restaurant, user.Id, legalAndCoords.Value, ct);
+        if (!restaurantResult.IsSuccess)
+        {
+            await _userRepository.DeleteAsync(user);
+            return restaurantResult.Error!;
+        }
 
         var ownerName = user.GetFullName();
         await _emailJobService.QueueWelcomeEmailAsync(user.Email!, ownerName);
