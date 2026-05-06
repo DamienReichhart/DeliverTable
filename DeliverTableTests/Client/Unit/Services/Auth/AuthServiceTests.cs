@@ -3,6 +3,7 @@ using DeliverTableClient.Services.Auth;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
+using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Client.Factories;
 using DeliverTableTests.Client.Helpers;
 using Microsoft.JSInterop;
@@ -260,8 +261,8 @@ public class AuthServiceTests
                 AdressLine1 = "1 rue Test",
                 City = "Paris",
                 ZipCode = "75001",
-                Country = "France",
-                Type = "Autre",
+                Country = AvailableCountries.France.ToString(),
+                Type = RestaurantType.Autre.ToString(),
                 Siret = "73282932000074",
                 LegalName = "Le Bon Restaurant SAS",
                 LegalAddress = "1 rue Test",
@@ -295,8 +296,8 @@ public class AuthServiceTests
                 AdressLine1 = "1 rue Test",
                 City = "Paris",
                 ZipCode = "75001",
-                Country = "France",
-                Type = "Autre",
+                Country = AvailableCountries.France.ToString(),
+                Type = RestaurantType.Autre.ToString(),
                 Siret = "73282932000074",
                 LegalName = "Le Bon Restaurant SAS",
                 LegalAddress = "1 rue Test",
@@ -332,8 +333,8 @@ public class AuthServiceTests
                 AdressLine1 = "1 rue Test",
                 City = "Paris",
                 ZipCode = "75001",
-                Country = "France",
-                Type = "Autre",
+                Country = AvailableCountries.France.ToString(),
+                Type = RestaurantType.Autre.ToString(),
                 Siret = "73282932000074",
                 LegalName = "Le Bon Restaurant SAS",
                 LegalAddress = "1 rue Test",
