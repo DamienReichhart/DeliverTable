@@ -29,6 +29,7 @@ public sealed class OrderService(
     IUserRepository userRepository,
     IEmailJobService emailJobService,
     IPaymentService paymentService,
+    IHubContext<OrderHub, IOrderHub> orderHubContext,
     AppEnvironment appEnvironment
 ) : IOrderService
 {
@@ -42,6 +43,7 @@ public sealed class OrderService(
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IEmailJobService _emailJobService = emailJobService;
     private readonly IPaymentService _paymentService = paymentService;
+    private readonly IHubContext<OrderHub, IOrderHub> _orderHubContext = orderHubContext;
     private readonly decimal _commissionRate = appEnvironment.PlatformCommissionRate;
     private readonly string _stripePublishableKey = appEnvironment.StripePublishableKey;
     private static readonly string OrderTypeNames = string.Join(", ", Enum.GetNames<OrderType>());
@@ -213,7 +215,14 @@ public sealed class OrderService(
         await SendStatusEmailAsync(order, newStatus, ct);
 
         var orderDto = updated.ToDto();
-        await _orderHubContext.Clients.All.UpdateStatus(orderDto);
+        if (newStatus == OrderStatus.Cancelled)
+        {
+            await _orderHubContext.Clients.Group($"restaurant_{orderDto.RestaurantId}").CancelOrder(orderDto);
+        }
+        else
+        {
+            await _orderHubContext.Clients.Group($"restaurant_{orderDto.RestaurantId}").UpdateStatus(orderDto);
+        }
 
         return orderDto;
     }

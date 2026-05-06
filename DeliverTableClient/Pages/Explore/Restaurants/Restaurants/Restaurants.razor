@@ -24,17 +24,17 @@
             @if (!_showMap)
             {
                 <button type="button" class="app-btn app-btn--primary" @onclick="SearchRestaurants">
-                    Rechercher
+                    <Blazicon Svg="Lucide.Search" /> Rechercher
                 </button>
             }
             else
             {
                 <button type="button" class="app-btn app-btn--primary" @onclick="OnFiltersSearchClicked">
-                    Rechercher
+                    <Blazicon Svg="Lucide.Search" /> Rechercher
                 </button>
             }
             <button type="button" class="app-btn app-btn--secondary map-toggle-btn" @onclick="ToggleMapView">
-                @(_showMap ? "Liste" : "Carte")
+                <Blazicon Svg="@(_showMap ? Lucide.List : Lucide.Map)" /> @(_showMap ? "Liste" : "Carte")
             </button>
         </div>
     </div>
@@ -69,12 +69,22 @@
                 @foreach (var restaurant in _restaurants.Items)
                 {
                     <div class="restaurant-card" @onclick="() => NavigateToRestaurant(restaurant.Id)">
-                        <div class="restaurant-card-header">
-                            <h3>@restaurant.Name</h3>
-                            <span class="restaurant-type-badge">@restaurant.Type</span>
+                        <div class="restaurant-card-image-placeholder">
+                            <Blazicon Svg="Lucide.Utensils" />
                         </div>
-                        <div class="restaurant-card-body">
-                            <p class="restaurant-location">@restaurant.City, @restaurant.ZipCode</p>
+                        <div class="restaurant-card-content">
+                            <div class="restaurant-card-header">
+                                <h3>@restaurant.Name</h3>
+                                <span class="restaurant-type-badge">@restaurant.Type</span>
+                            </div>
+                            <div class="restaurant-card-body">
+                                <p class="restaurant-location">
+                                    <Blazicon Svg="Lucide.MapPin" /> @restaurant.City, @restaurant.ZipCode
+                                </p>
+                            </div>
+                            <div class="restaurant-card-footer">
+                                Voir le menu <Blazicon Svg="Lucide.ArrowRight" />
+                            </div>
                         </div>
                     </div>
                 }

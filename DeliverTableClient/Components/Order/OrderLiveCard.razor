@@ -67,9 +67,18 @@
                     </button>
                     break;
                 case OrderStatus.Preparing:
-                    <button class="app-btn app-btn--primary w-100" @onclick="() => OnOrderReady.InvokeAsync(Order.Id)">
-                        Prêt à livrer
-                    </button>
+                    if(Order.OrderType == nameof(OrderType.Delivery)) {
+                        <button class="app-btn app-btn--primary w-100" @onclick="() => OnOrderReady.InvokeAsync(Order.Id)">
+                            <Blazicon Svg="Lucide.Scooter" class="app-btn__icon" />
+                            Prêt à livrer
+                        </button>
+                    } else {
+                        <button class="app-btn app-btn--primary w-100" @onclick="() => OnOrderReady.InvokeAsync(Order.Id)">
+                            <Blazicon Svg="Lucide.Utensils"
+                                 class="app-btn__icon" />
+                            Prêt à servir
+                        </button>
+                    }
                     break;
             }
         }

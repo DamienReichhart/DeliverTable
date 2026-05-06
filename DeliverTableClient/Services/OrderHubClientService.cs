@@ -55,6 +55,22 @@ public sealed class OrderHubClientService : IOrderHubClientService
         }
     }
 
+    public async Task JoinRestaurantGroup(int restaurantId)
+    {
+        if (_hubConnection.State == HubConnectionState.Connected)
+        {
+            await _hubConnection.InvokeAsync("JoinRestaurantGroup", restaurantId);
+        }
+    }
+
+    public async Task LeaveRestaurantGroup(int restaurantId)
+    {
+        if (_hubConnection.State == HubConnectionState.Connected)
+        {
+            await _hubConnection.InvokeAsync("LeaveRestaurantGroup", restaurantId);
+        }
+    }
+
     public HubConnectionState State => _hubConnection.State;
 
     public async ValueTask DisposeAsync()
