@@ -17,6 +17,19 @@
         </div>
 
         <div class="live-header__actions">
+            <div class="mode-toggle">
+                <button class="mode-toggle__btn @(CurrentMode == LiveViewMode.Restaurant ? "mode-toggle__btn--active" : "")" 
+                        @onclick="() => CurrentMode = LiveViewMode.Restaurant">
+                    <Blazicon Svg="Lucide.ChefHat" class="mode-toggle__icon" />
+                    Restaurant
+                </button>
+                <button class="mode-toggle__btn @(CurrentMode == LiveViewMode.Client ? "mode-toggle__btn--active" : "")" 
+                        @onclick="() => CurrentMode = LiveViewMode.Client">
+                    <Blazicon Svg="Lucide.Users" class="mode-toggle__icon" />
+                    Client
+                </button>
+            </div>
+
             @if (restaurants.Length > 0)
             {
                 <div class="restaurant-selector">
@@ -46,9 +59,9 @@
     }
     else
     {
-        <div class="live-content">
+        <div class="live-content @(CurrentMode == LiveViewMode.Client ? "live-content--client" : "")">
             <main class="live-main">
-                @if (orders.Length == 0)
+                @if (orders.Length == 0 && finishedOrders.Count(o => o.Status == nameof(OrderStatus.Ready)) == 0)
                 {
                     <div class="live-empty live-empty--inline">
                         <div class="live-empty__card">
@@ -64,23 +77,88 @@
                 }
                 else
                 {
-                    <div class="live-grid">
-                        @foreach (var order in orders)
-                        {
-                            if (order.Status == nameof(OrderStatus.Pending) || order.Status == nameof(OrderStatus.Confirmed) || order.Status == nameof(OrderStatus.Preparing))
-                            {
-                                <OrderLiveCard Order="order" 
-                                               OnOrderReady="MarkAsReady" 
-                                               OnOrderConfirmed="MarkAsConfirmed" 
-                                               OnOrderPreparing="MarkAsPreparing" />
-                            }                        }
-                    </div>
+                    @if (CurrentMode == LiveViewMode.Restaurant)
+                    {
+                        <div class="live-columns">
+                            <div class="live-column">
+                                <div class="live-column__header">
+                                    <h2 class="live-column__title">À préparer</h2>
+                                    <span class="live-column__count">@orders.Count(o => o.Status == nameof(OrderStatus.Pending) || o.Status == nameof(OrderStatus.Confirmed))</span>
+                                </div>
+                                <div class="live-column__grid">
+                                    @foreach (var order in orders.Where(o => o.Status == nameof(OrderStatus.Pending) || o.Status == nameof(OrderStatus.Confirmed)))
+                                    {
+                                        <OrderLiveCard Order="order" 
+                                                       OnOrderReady="MarkAsReady" 
+                                                       OnOrderConfirmed="MarkAsConfirmed" 
+                                                       OnOrderPreparing="MarkAsPreparing" />
+                                    }
+                                </div>
+                            </div>
+                            <div class="live-column">
+                                <div class="live-column__header">
+                                    <h2 class="live-column__title">En cours</h2>
+                                    <span class="live-column__count">@orders.Count(o => o.Status == nameof(OrderStatus.Preparing))</span>
+                                </div>
+                                <div class="live-column__grid">
+                                    @foreach (var order in orders.Where(o => o.Status == nameof(OrderStatus.Preparing)))
+                                    {
+                                        <OrderLiveCard Order="order" 
+                                                       OnOrderReady="MarkAsReady" 
+                                                       OnOrderConfirmed="MarkAsConfirmed" 
+                                                       OnOrderPreparing="MarkAsPreparing" />
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="live-columns live-columns--client">
+                            <div class="live-column live-column--preparing">
+                                <div class="live-column__header">
+                                    <h2 class="live-column__title">En préparation</h2>
+                                </div>
+                                <div class="live-column__grid live-column__grid--client">
+                                    @foreach (var order in orders.Where(o => o.Status == nameof(OrderStatus.Confirmed) || o.Status == nameof(OrderStatus.Preparing)))
+                                    {
+                                        <div class="client-order-id">#@order.Id</div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="live-column live-column--ready">
+                                <div class="live-column__header">
+                                    <h2 class="live-column__title">À emporter</h2>
+                                </div>
+                                <div class="live-column__grid live-column__grid--client">
+                                    @foreach (var order in finishedOrders.Where(o => o.Status == nameof(OrderStatus.Ready) && o.OrderType == nameof(OrderType.Delivery) && o.UpdatedAt >= DateTime.UtcNow.AddMinutes(-15)))
+                                    {
+                                        <div class="client-order-id client-order-id--ready">#@order.Id</div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="live-column live-column--dinein">
+                                <div class="live-column__header">
+                                    <h2 class="live-column__title">Sur place</h2>
+                                </div>
+                                <div class="live-column__grid live-column__grid--client">
+                                    @foreach (var order in finishedOrders.Where(o => o.Status == nameof(OrderStatus.Ready) && o.OrderType == nameof(OrderType.DineIn) && o.UpdatedAt >= DateTime.UtcNow.AddMinutes(-15)))
+                                    {
+                                        <div class="client-order-id client-order-id--ready">#@order.Id</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
                 }
             </main>
-            
-            <aside class="live-sidebar">
-                <OrderSessionSummary Orders="finishedOrders" />
-            </aside>
+
+            @if (CurrentMode == LiveViewMode.Restaurant)
+            {
+                <aside class="live-sidebar">
+                    <OrderSessionSummary Orders="finishedOrders" />
+                </aside>
+            }
         </div>
     }
 </div>

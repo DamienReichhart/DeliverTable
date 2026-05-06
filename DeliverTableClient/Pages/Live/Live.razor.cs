@@ -9,6 +9,12 @@ namespace DeliverTableClient.Pages.Live;
 
 public partial class Live : ComponentBase, IDisposable
 {
+    public enum LiveViewMode
+    {
+        Restaurant,
+        Client
+    }
+
     [Inject]
     private IRestaurantService RestaurantService { get; set; } = default!;
 
@@ -18,6 +24,8 @@ public partial class Live : ComponentBase, IDisposable
     [Inject]
     private IOrderHubClientService OrderHub { get; set; } = default!;
 
+    private LiveViewMode CurrentMode { get; set; } = LiveViewMode.Restaurant;
+
     private int? SelectedRestaurant { get; set; } = null;
 
     private OrderDto[] orders = [];
@@ -25,6 +33,8 @@ public partial class Live : ComponentBase, IDisposable
     private List<OrderDto> finishedOrders = [];
 
     private RestaurantDto[] restaurants = [];
+
+    private System.Timers.Timer? refreshTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,21 +53,35 @@ public partial class Live : ComponentBase, IDisposable
         {
             await OnRestaurantSelected(restaurants[0].Id);
         }
+
+        // Timer to refresh the UI every minute (for the 15min window)
+        refreshTimer = new System.Timers.Timer(60000);
+        refreshTimer.Elapsed += (s, e) => InvokeAsync(StateHasChanged);
+        refreshTimer.Start();
     }
 
     private void HandleOrderCreated(OrderDto order)
     {
-        _ = InvokeAsync(async () => await LoadOrders());
+        _ = InvokeAsync(async () => {
+            await LoadOrders();
+            await LoadFinishedOrders();
+        });
     }
 
     private void HandleOrderStatusUpdated(OrderDto order)
     {
-        _ = InvokeAsync(async () => await LoadOrders());
+        _ = InvokeAsync(async () => {
+            await LoadOrders();
+            await LoadFinishedOrders();
+        });
     }
 
     private void HandleOrderCancelled(OrderDto order)
     {
-        _ = InvokeAsync(async () => await LoadOrders());
+        _ = InvokeAsync(async () => {
+            await LoadOrders();
+            await LoadFinishedOrders();
+        });
     }
 
     public async Task OnRestaurantSelected(int restaurantId)
@@ -186,6 +210,9 @@ public partial class Live : ComponentBase, IDisposable
 
     public void Dispose()
     {
+        refreshTimer?.Stop();
+        refreshTimer?.Dispose();
+
         OrderHub.OnOrderCreated -= HandleOrderCreated;
         OrderHub.OnOrderStatusUpdated -= HandleOrderStatusUpdated;
         OrderHub.OnOrderCancelled -= HandleOrderCancelled;
