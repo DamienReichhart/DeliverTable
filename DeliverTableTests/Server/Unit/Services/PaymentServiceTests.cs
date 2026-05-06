@@ -7,12 +7,16 @@ using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Hubs;
+using DeliverTableServer.Hubs.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
 using DeliverTableTests.Server.Fixtures;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -34,6 +38,7 @@ public class PaymentServiceTests
     private IInvoiceService _invoiceService = null!;
     private IDisputeService _disputeService = null!;
     private IMessagePublisher _publisher = null!;
+    private IHubContext<OrderHub, IOrderHub> _hubContext = null!;
     private AppEnvironment _env = null!;
     private TestDatabase _testDb = null!;
     private PaymentService _sut = null!;
@@ -52,12 +57,13 @@ public class PaymentServiceTests
         _invoiceService = Substitute.For<IInvoiceService>();
         _disputeService = Substitute.For<IDisputeService>();
         _publisher = Substitute.For<IMessagePublisher>();
+        _hubContext = Substitute.For<IHubContext<OrderHub, IOrderHub>>();
         _env = TestEnvironmentFactory.Create();
         _testDb = new TestDatabase();
         _sut = new PaymentService(
             _stripe, _paymentRepo, _orderRepo, _userRepo,
             _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _invoiceService, _disputeService, _publisher,
-            _testDb.Context, _env, NullLogger<PaymentService>.Instance);
+            _hubContext, _testDb.Context, _env, NullLogger<PaymentService>.Instance);
     }
 
     [TearDown]

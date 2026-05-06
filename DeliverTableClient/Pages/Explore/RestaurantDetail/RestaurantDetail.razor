@@ -12,11 +12,14 @@
 <div class="restaurant-detail-page">
     @if (_loading)
     {
-        <p>Chargement...</p>
+        <div class="loading-container centered">
+            <p>Chargement du restaurant...</p>
+        </div>
     }
     else if (_error is not null)
     {
-        <div class="error-message">
+        <div class="error-message centered">
+            <Blazicon Svg="Lucide.BadgeAlert" class="app-icon" />
             <p>@_error</p>
         </div>
     }
@@ -24,16 +27,19 @@
     {
         <div class="restaurant-header">
             <div class="restaurant-header-info">
-                <h1>@_restaurant.Name</h1>
                 <span class="restaurant-type-badge">@_restaurant.Type</span>
+                <h1>@_restaurant.Name</h1>
                 <p class="restaurant-description">@_restaurant.Description</p>
                 <p class="restaurant-address">
-                    @_restaurant.AdressLine1
-                    @if (!string.IsNullOrWhiteSpace(_restaurant.AdressLine2))
-                    {
-                        <br />@_restaurant.AdressLine2
-                    }
-                    <br />@_restaurant.ZipCode @_restaurant.City
+                    <Blazicon Svg="Lucide.MapPin" class="app-icon" />
+                    <span>
+                        @_restaurant.AdressLine1
+                        @if (!string.IsNullOrWhiteSpace(_restaurant.AdressLine2))
+                        {
+                            <br />@_restaurant.AdressLine2
+                        }
+                        <br />@_restaurant.ZipCode @_restaurant.City
+                    </span>
                 </p>
             </div>
 
@@ -42,9 +48,12 @@
                     @if (_cart is not null && _cart.TotalItems > 0)
                     {
                         <div class="cart-mini">
-                            <span>@_cart.TotalItems article(s) — @_cart.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                            <div class="cart-info">
+                                <span>Votre panier</span>
+                                <strong>@_cart.TotalItems article(s) — @_cart.TotalAmount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</strong>
+                            </div>
                             <button type="button" class="app-btn app-btn--primary" @onclick="GoToCart">
-                                Voir le panier
+                                <Blazicon Svg="Lucide.ShoppingBag" /> Voir le panier
                             </button>
                         </div>
                     }
@@ -56,29 +65,39 @@
             <h2>La carte</h2>
 
             <div class="dishes-filters">
-                <input type="text" placeholder="Rechercher un plat..." @bind="_dishQuery.Name" @bind:event="oninput"
-                       @onkeydown="HandleDishKeyDown" class="filter-input" />
-                <label class="filter-checkbox">
-                    <input type="checkbox" @bind="_filterVegetarian" @bind:after="FilterDishes" />
-                    <span>Végétarien</span>
-                </label>
-                <label class="filter-checkbox">
-                    <input type="checkbox" @bind="_filterVegan" @bind:after="FilterDishes" />
-                    <span>Végan</span>
-                </label>
-                <label class="filter-checkbox">
-                    <input type="checkbox" @bind="_filterGlutenFree" @bind:after="FilterDishes" />
-                    <span>Sans gluten</span>
-                </label>
+                <div class="filter-search">
+                    <Blazicon Svg="Lucide.Search" class="search-icon" />
+                    <input type="text" placeholder="Rechercher un plat..." @bind="_dishQuery.Name" @bind:event="oninput"
+                           @onkeydown="HandleDishKeyDown" class="filter-input" />
+                </div>
+                <div class="filter-group">
+                    <label class="filter-checkbox">
+                        <input type="checkbox" @bind="_filterVegetarian" @bind:after="FilterDishes" />
+                        <span>Végétarien</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" @bind="_filterVegan" @bind:after="FilterDishes" />
+                        <span>Végan</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" @bind="_filterGlutenFree" @bind:after="FilterDishes" />
+                        <span>Sans gluten</span>
+                    </label>
+                </div>
             </div>
 
             @if (_dishesLoading)
             {
-                <p>Chargement des plats...</p>
+                <div class="loading-container centered">
+                    <p>Chargement des délices...</p>
+                </div>
             }
             else if (_dishes is null || _dishes.Items.Count == 0)
             {
-                <p>Aucun plat disponible.</p>
+                <div class="empty-state centered">
+                    <Blazicon Svg="Lucide.Utensils" class="app-icon" />
+                    <p>Aucun plat disponible pour le moment.</p>
+                </div>
             }
             else
             {
@@ -87,8 +106,16 @@
                     {
                         <div class="dish-card">
                             <div class="dish-card-img">
-                                <img src="@dish.Image" alt="@dish.Name" loading="lazy"
-                                     onerror="this.style.display='none'" />
+                                @if (!string.IsNullOrEmpty(dish.Image))
+                                {
+                                    <img src="@dish.Image" alt="@dish.Name" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <div class="dish-placeholder">
+                                        <Blazicon Svg="Lucide.CameraOff" />
+                                    </div>
+                                }
                             </div>
                             <div class="dish-card-body">
                                 <h3>@dish.Name</h3>
@@ -112,7 +139,7 @@
                                             </div>
                                             <button type="button" class="app-btn app-btn--primary app-btn--sm"
                                                     @onclick="() => AddToCart(dish)" disabled="@_addingToCart">
-                                                Ajouter
+                                                <Blazicon Svg="Lucide.Plus" />
                                             </button>
                                         </div>
                                     </AuthorizeView>

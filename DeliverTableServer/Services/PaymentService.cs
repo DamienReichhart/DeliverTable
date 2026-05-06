@@ -7,9 +7,13 @@ using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
+using DeliverTableServer.Hubs;
+using DeliverTableServer.Hubs.Interfaces;
+using DeliverTableServer.Mappers;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace DeliverTableServer.Services;
@@ -26,6 +30,7 @@ public class PaymentService(
     IInvoiceService invoiceService,
     IDisputeService disputeService,
     IMessagePublisher publisher,
+    IHubContext<OrderHub, IOrderHub> hubContext,
     DeliverTableContext dbContext,
     AppEnvironment env,
     ILogger<PaymentService> logger) : IPaymentService
@@ -350,6 +355,12 @@ public class PaymentService(
                 var captured = msg;
                 deferredPublishes.Add(() => publisher.PublishAsync(MessagingExchanges.Invoice, captured, ct));
             }
+        }
+
+        if (fullOrder is not null)
+        {
+            var orderDto = fullOrder.ToDto();
+            deferredPublishes.Add(() => hubContext.Clients.Group($"restaurant_{orderDto.RestaurantId}").NewOrder(orderDto));
         }
     }
 

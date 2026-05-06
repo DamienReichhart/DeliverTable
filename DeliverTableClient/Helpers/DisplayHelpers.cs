@@ -24,6 +24,7 @@ public static class DisplayHelpers
         nameof(OrderStatus.Delivering) => "En livraison",
         nameof(OrderStatus.Delivered) => "Livrée",
         nameof(OrderStatus.Cancelled) => "Annulée",
+        nameof(OrderStatus.AwaitingPayment) => "En attente de paiement",
         _ => status
     };
 
@@ -37,6 +38,7 @@ public static class DisplayHelpers
         nameof(OrderStatus.Delivered) => "success",
         nameof(OrderStatus.Cancelled) => "danger",
         nameof(OrderStatus.Refused) => "danger",
+        nameof(OrderStatus.AwaitingPayment) => "warning",
         _ => "info"
     };
 

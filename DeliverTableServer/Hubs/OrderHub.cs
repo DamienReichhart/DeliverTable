@@ -7,18 +7,28 @@ namespace DeliverTableServer.Hubs;
 
 public class OrderHub : Hub<IOrderHub>
 {
+    public async Task JoinRestaurantGroup(int restaurantId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"restaurant_{restaurantId}");
+    }
+
+    public async Task LeaveRestaurantGroup(int restaurantId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"restaurant_{restaurantId}");
+    }
+
     public Task NewOrder(OrderDto order)
     {
-        return Clients.All.NewOrder(order);
+        return Clients.Group($"restaurant_{order.RestaurantId}").NewOrder(order);
     }
 
     public Task UpdateStatus(OrderDto order)
     {
-        return Clients.All.UpdateStatus(order);
+        return Clients.Group($"restaurant_{order.RestaurantId}").UpdateStatus(order);
     }
 
     public Task CancelOrder(OrderDto order)
     {
-        return Clients.All.CancelOrder(order);
+        return Clients.Group($"restaurant_{order.RestaurantId}").CancelOrder(order);
     }
 }
