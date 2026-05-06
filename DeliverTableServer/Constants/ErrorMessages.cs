@@ -122,6 +122,7 @@ public static class ErrorMessages
     // SIRET / Legal
     public const string SiretInvalid = "Le numéro SIRET est invalide";
     public const string LegalFieldsRequired = "Les informations légales (SIRET, raison sociale, adresse, forme juridique) sont obligatoires";
+    public const string VatNumberRequiredWhenVatRegistered = "Le numéro de TVA est requis pour une entreprise assujettie à la TVA";
 
     // Disputes
     public const string DisputeNotFound = "Litige introuvable";
