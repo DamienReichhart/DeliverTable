@@ -1,8 +1,7 @@
-@use "../../Styles/abstracts/variables" as *;
-@use "../../Styles/abstracts/mixins" as *;
+/* Version simplifiée sans imports pour éviter les erreurs de compilation Docker */
 
 .live-page {
-  padding: $spacing-xl $content-padding-x;
+  padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -10,9 +9,9 @@
 .live-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: $spacing-2xl;
-  gap: $spacing-lg;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
 
   &__title-container {
@@ -20,26 +19,89 @@
   }
 
   &__title {
-    @include heading-display;
-    font-size: $font-size-h2;
+    font-size: 2.25rem;
     display: flex;
     align-items: center;
-    gap: $spacing-md;
-    margin-bottom: $spacing-xs;
+    gap: 1rem;
+    margin-bottom: 0.25rem;
+    color: #E85D34; /* color-primary */
   }
 
   &__icon {
-    color: $color-primary;
+    color: #E85D34;
     width: 32px;
     height: 32px;
-    
-    // Pulse effect for "Live"
     animation: live-pulse 2s infinite;
   }
 
   &__subtitle {
-    color: $color-text-muted;
-    font-size: $font-size-lg;
+    color: #6B6B80;
+    font-size: 1.0625rem;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+}
+
+.mode-toggle {
+  display: flex;
+  background: #FFF4E8;
+  padding: 4px;
+  border-radius: 0.75rem;
+  border: 1px solid #E8E4DF;
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: #6B6B80;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    border-radius: 0.5rem;
+    transition: all 0.25s ease;
+    cursor: pointer;
+
+    &--active {
+      background: #FFFFFF;
+      color: #E85D34;
+      box-shadow: 0 1px 3px rgba(26, 26, 46, 0.06);
+    }
+  }
+}
+
+.restaurant-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #FFFFFF;
+  padding: 0.5rem 1rem;
+  border: 1px solid #E8E4DF;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(26, 26, 46, 0.06);
+
+  &__icon {
+    color: #6B6B80;
+    width: 20px;
+    height: 20px;
+  }
+
+  &__select {
+    border: none;
+    font-weight: 500;
+    color: #1A1A2E;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.8125rem;
+
+    &:focus {
+      outline: none;
+    }
   }
 }
 
@@ -49,93 +111,107 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-.restaurant-selector {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  background: $color-bg-white;
-  padding: $spacing-sm $spacing-md;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  box-shadow: $shadow-sm;
-
-  &__icon {
-    color: $color-text-muted;
-    width: 20px;
-    height: 20px;
-  }
-
-  &__select {
-    border: none;
-    font-weight: $font-weight-medium;
-    color: $color-text;
-    background: transparent;
-    cursor: pointer;
-    padding-right: $spacing-xl;
-
-    &:focus {
-      outline: none;
-    }
-  }
-}
-
-.live-empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-
-  &--inline {
-    min-height: 400px;
-    justify-content: flex-start;
-    align-items: flex-start;
-
-    .live-empty__card {
-      width: 100%;
-      max-width: none;
-    }
-  }
-
-  &__card {
-    @include card;
-    text-align: center;
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: $spacing-3xl;
-  }
-
-  &__icon {
-    width: 64px;
-    height: 64px;
-    color: $color-border;
-    margin-bottom: $spacing-lg;
-  }
-
-  &__title {
-    @include heading-display;
-    font-size: $font-size-h3;
-    margin-bottom: $spacing-md;
-  }
-
-  &__text {
-    color: $color-text-muted;
-    line-height: $line-height-base;
-  }
-}
-
 .live-content {
   display: grid;
   grid-template-columns: 1fr 320px;
-  gap: $spacing-2xl;
+  gap: 2.5rem;
   align-items: start;
+
+  &--client {
+    grid-template-columns: 1fr;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 }
 
-.live-grid {
+.live-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: $spacing-xl;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: start;
+
+  &--client {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.live-column {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #FFF4E8;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  &__count {
+    background: #FFF4E8;
+    color: #6B6B80;
+    padding: 2px 8px;
+    border-radius: 50%;
+    font-size: 0.8125rem;
+  }
+
+  &__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    &--client {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+  }
+
+  &--ready {
+    .live-column__title { color: #7BAE7A; }
+    .live-column__header { border-bottom-color: rgba(123, 174, 122, 0.2); }
+  }
+
+  &--dinein {
+    .live-column__title { color: #E85D34; }
+    .live-column__header { border-bottom-color: rgba(232, 93, 52, 0.2); }
+  }
+
+  &--preparing {
+    .live-column__title { color: #F2A541; }
+    .live-column__header { border-bottom-color: rgba(242, 165, 65, 0.2); }
+  }
+}
+
+.client-order-id {
+  background: #FFFFFF;
+  border: 2px solid #E8E4DF;
+  border-radius: 0.75rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #1A1A2E;
+  
+  &--ready {
+    color: #7BAE7A;
+    border-color: #7BAE7A;
+    background: rgba(123, 174, 122, 0.05);
+    animation: ready-pulse 2s infinite;
+  }
+}
+
+@keyframes ready-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(123, 174, 122, 0.2); }
+  100% { transform: scale(1); }
 }
 
 @media (max-width: 1200px) {
@@ -144,13 +220,13 @@
   }
 }
 
-@media (max-width: $breakpoint-mobile) {
+@media (max-width: 640px) {
   .live-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .live-grid {
+  .live-columns {
     grid-template-columns: 1fr;
   }
 }
