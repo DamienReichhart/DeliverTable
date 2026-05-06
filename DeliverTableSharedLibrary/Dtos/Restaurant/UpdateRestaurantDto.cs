@@ -47,5 +47,8 @@ public class UpdateRestaurantDto
     [MaxLength(50)]
     public string LegalForm { get; set; } = string.Empty;
 
+    [MaxLength(20)]
+    public string? VatNumber { get; set; }
+
     public bool IsVatRegistered { get; set; } = true;
 }

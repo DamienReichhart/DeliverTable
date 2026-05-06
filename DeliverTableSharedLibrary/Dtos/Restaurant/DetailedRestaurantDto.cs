@@ -19,4 +19,5 @@ public class DetailedRestaurantDto
     public string LegalAddress { get; set; } = string.Empty;
     public string LegalForm { get; set; } = string.Empty;
     public bool IsVatRegistered { get; set; } = true;
+    public string? VatNumber { get; set; }
 }
