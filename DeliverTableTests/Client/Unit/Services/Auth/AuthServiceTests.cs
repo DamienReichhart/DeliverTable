@@ -2,6 +2,7 @@ using System.Net;
 using DeliverTableClient.Services.Auth;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos.Auth;
+using DeliverTableSharedLibrary.Dtos.Restaurant;
 using DeliverTableTests.Client.Factories;
 using DeliverTableTests.Client.Helpers;
 using Microsoft.JSInterop;
@@ -248,12 +249,26 @@ public class AuthServiceTests
         {
             FirstName = "Marie",
             LastName = "Curie",
-            CompanyName = "Le Bon Restaurant",
-            VatNumber = "BE0123456789",
             ContactPhoneNumber = "+32470123456",
             Email = "contact@restaurant.be",
             Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!"
+            ConfirmPassword = "SecurePass123!",
+            Restaurant = new CreateRestaurantDto
+            {
+                Name = "Le Bon Restaurant",
+                Description = "Une description",
+                AdressLine1 = "1 rue Test",
+                City = "Paris",
+                ZipCode = "75001",
+                Country = "France",
+                Type = "Autre",
+                Siret = "73282932000074",
+                LegalName = "Le Bon Restaurant SAS",
+                LegalAddress = "1 rue Test",
+                LegalForm = "SAS",
+                IsVatRegistered = true,
+                VatNumber = "FR12345678901",
+            }
         });
 
         Assert.That(result.Success, Is.True);
@@ -269,12 +284,26 @@ public class AuthServiceTests
         {
             FirstName = "Marie",
             LastName = "Curie",
-            CompanyName = "Le Bon Restaurant",
-            VatNumber = "BE0123456789",
             ContactPhoneNumber = "+32470123456",
             Email = "contact@restaurant.be",
             Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!"
+            ConfirmPassword = "SecurePass123!",
+            Restaurant = new CreateRestaurantDto
+            {
+                Name = "Le Bon Restaurant",
+                Description = "Une description",
+                AdressLine1 = "1 rue Test",
+                City = "Paris",
+                ZipCode = "75001",
+                Country = "France",
+                Type = "Autre",
+                Siret = "73282932000074",
+                LegalName = "Le Bon Restaurant SAS",
+                LegalAddress = "1 rue Test",
+                LegalForm = "SAS",
+                IsVatRegistered = true,
+                VatNumber = "FR12345678901",
+            }
         });
 
         Assert.That(_httpHandler.SentRequests[0].RequestUri!.PathAndQuery,
@@ -292,12 +321,26 @@ public class AuthServiceTests
         {
             FirstName = "Marie",
             LastName = "Curie",
-            CompanyName = "Le Bon Restaurant",
-            VatNumber = "BE0123456789",
             ContactPhoneNumber = "+32470123456",
             Email = "contact@restaurant.be",
             Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!"
+            ConfirmPassword = "SecurePass123!",
+            Restaurant = new CreateRestaurantDto
+            {
+                Name = "Le Bon Restaurant",
+                Description = "Une description",
+                AdressLine1 = "1 rue Test",
+                City = "Paris",
+                ZipCode = "75001",
+                Country = "France",
+                Type = "Autre",
+                Siret = "73282932000074",
+                LegalName = "Le Bon Restaurant SAS",
+                LegalAddress = "1 rue Test",
+                LegalForm = "SAS",
+                IsVatRegistered = true,
+                VatNumber = "FR12345678901",
+            }
         });
 
         Assert.Multiple(() =>
