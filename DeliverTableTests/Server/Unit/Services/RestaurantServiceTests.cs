@@ -335,5 +335,78 @@ public class RestaurantServiceTests
             Arg.Any<CancellationToken>());
     }
 
+    [Test]
+    public async Task UpdateAsync_IsVatRegisteredTrueWithoutVatNumber_ReturnsError()
+    {
+        var existing = CreateRestaurant(id: 1);
+        _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
+
+        _geoLocationService
+            .GetCoordinatesAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns((48.85, 2.35));
+
+        var request = new UpdateRestaurantDto
+        {
+            Name = "X",
+            Description = "Une description",
+            AdressLine1 = "1 rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "France",
+            Type = RestaurantType.Autre.ToString(),
+            Siret = "73282932000074",
+            LegalName = "X SAS",
+            LegalAddress = "1 rue",
+            LegalForm = "SAS",
+            IsVatRegistered = true,
+            VatNumber = null,
+        };
+
+        var result = await _sut.UpdateAsync(1, request, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.VatNumberRequiredWhenVatRegistered));
+    }
+
+    [Test]
+    public async Task UpdateAsync_IsVatRegisteredFalseWithStaleVatNumber_PersistsAsNull()
+    {
+        var existing = CreateRestaurant(id: 1);
+        existing.VatNumber = "FR99999999999";
+        _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
+
+        _geoLocationService
+            .GetCoordinatesAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns((48.85, 2.35));
+
+        _restaurantRepository
+            .UpdateAsync(Arg.Any<Restaurant>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => callInfo.Arg<Restaurant>());
+
+        var request = new UpdateRestaurantDto
+        {
+            Name = "Updated",
+            Description = "desc",
+            AdressLine1 = "1 rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "France",
+            Type = RestaurantType.Autre.ToString(),
+            Siret = "73282932000074",
+            LegalName = "X SAS",
+            LegalAddress = "1 rue",
+            LegalForm = "SAS",
+            IsVatRegistered = false,
+            VatNumber = "FR12345678901",
+        };
+
+        var result = await _sut.UpdateAsync(1, request, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _restaurantRepository.Received(1).UpdateAsync(
+            Arg.Is<Restaurant>(r => r.IsVatRegistered == false && r.VatNumber == null),
+            Arg.Any<CancellationToken>());
+    }
+
     #endregion
 }

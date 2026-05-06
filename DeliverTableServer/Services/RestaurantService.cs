@@ -101,6 +101,9 @@ public sealed class RestaurantService(
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
         var coords = legalAndCoords.Value;
 
+        if (dto.IsVatRegistered && string.IsNullOrWhiteSpace(dto.VatNumber))
+            return new ServiceError(ErrorMessages.VatNumberRequiredWhenVatRegistered);
+
         restaurant.Name = dto.Name;
         restaurant.Description = dto.Description;
         restaurant.Type = ParseRestaurantType(dto.Type);
@@ -116,6 +119,7 @@ public sealed class RestaurantService(
         restaurant.LegalAddress = dto.LegalAddress;
         restaurant.LegalForm = dto.LegalForm;
         restaurant.IsVatRegistered = dto.IsVatRegistered;
+        restaurant.VatNumber = dto.IsVatRegistered ? dto.VatNumber : null;
 
         var updated = await _restaurantRepository.UpdateAsync(restaurant, ct);
         return updated.ToDetailedDto();
