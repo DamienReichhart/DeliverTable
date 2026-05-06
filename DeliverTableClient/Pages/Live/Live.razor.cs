@@ -62,8 +62,7 @@ public partial class Live : ComponentBase, IDisposable
 
     private void HandleOrderCreated(OrderDto order)
     {
-        _ = InvokeAsync(async () =>
-        {
+        _ = InvokeAsync(async () => {
             await LoadOrders();
             await LoadFinishedOrders();
         });
@@ -71,8 +70,7 @@ public partial class Live : ComponentBase, IDisposable
 
     private void HandleOrderStatusUpdated(OrderDto order)
     {
-        _ = InvokeAsync(async () =>
-        {
+        _ = InvokeAsync(async () => {
             await LoadOrders();
             await LoadFinishedOrders();
         });
@@ -80,8 +78,7 @@ public partial class Live : ComponentBase, IDisposable
 
     private void HandleOrderCancelled(OrderDto order)
     {
-        _ = InvokeAsync(async () =>
-        {
+        _ = InvokeAsync(async () => {
             await LoadOrders();
             await LoadFinishedOrders();
         });
