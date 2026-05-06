@@ -23,6 +23,8 @@ namespace DeliverTableInfrastructure.Data.ModelConfiguration
                 .HasColumnType("decimal(9, 2)")
                 .HasDefaultValue(0m)
                 .IsRequired();
+
+            builder.Property(r => r.VatNumber).HasMaxLength(20);
         }
     }
 }
