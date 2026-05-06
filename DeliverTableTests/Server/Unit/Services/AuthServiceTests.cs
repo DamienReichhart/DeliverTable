@@ -163,6 +163,32 @@ public class AuthServiceTests
         await _emailJobService.DidNotReceive().QueueWelcomeEmailAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 
+    [Test]
+    public async Task RegisterRestaurantAsync_RoleAssignmentFails_DeletesUser()
+    {
+        var request = BuildValidRestaurantRegister();
+        _userRepository.EmailExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+        _restaurantService.ValidateLegalAndLocateAsync(
+                Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns((48.85, 2.35));
+        _userRepository.CreateAsync(Arg.Any<User>(), Arg.Any<string>())
+            .Returns((true, Enumerable.Empty<string>()));
+        _userRepository.AddToRoleAsync(Arg.Any<User>(), nameof(UserRole.RestaurantOwner))
+            .Returns((false, new[] { "role error" }));
+        _userRepository.DeleteAsync(Arg.Any<User>())
+            .Returns((true, Enumerable.Empty<string>()));
+
+        var result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.False);
+        await _userRepository.Received(1).DeleteAsync(Arg.Any<User>());
+        await _restaurantService.DidNotReceive().CreateValidatedAsync(
+            Arg.Any<CreateRestaurantDto>(), Arg.Any<int>(),
+            Arg.Any<(double lat, double lon)>(), Arg.Any<CancellationToken>());
+        await _emailJobService.DidNotReceive().QueueWelcomeEmailAsync(Arg.Any<string>(), Arg.Any<string>());
+    }
+
     #endregion
 
     private static RestaurantRegister BuildValidRestaurantRegister() => new()
@@ -180,7 +206,7 @@ public class AuthServiceTests
             AdressLine1 = "1 rue Test",
             City = "Paris",
             ZipCode = "75001",
-            Country = "France",
+            Country = AvailableCountries.France.ToString(),
             Type = RestaurantType.Autre.ToString(),
             Siret = "73282932000074",
             LegalName = "Le Bon Resto SAS",
