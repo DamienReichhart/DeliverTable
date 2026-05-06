@@ -60,6 +60,9 @@ public sealed class RestaurantService(
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
         var coords = legalAndCoords.Value;
 
+        if (dto.IsVatRegistered && string.IsNullOrWhiteSpace(dto.VatNumber))
+            return new ServiceError(ErrorMessages.VatNumberRequiredWhenVatRegistered);
+
         var restaurant = new Restaurant
         {
             Name = dto.Name,
@@ -77,7 +80,8 @@ public sealed class RestaurantService(
             LegalName = dto.LegalName,
             LegalAddress = dto.LegalAddress,
             LegalForm = dto.LegalForm,
-            IsVatRegistered = dto.IsVatRegistered
+            IsVatRegistered = dto.IsVatRegistered,
+            VatNumber = dto.IsVatRegistered ? dto.VatNumber : null,
         };
 
         var created = await _restaurantRepository.CreateAsync(restaurant, ct);
