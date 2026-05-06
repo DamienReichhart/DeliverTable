@@ -1,6 +1,8 @@
 @page "/owner/register"
 @layout AuthLayout
 @using DeliverTableSharedLibrary.Dtos.Auth
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+@using DeliverTableSharedLibrary.Enums
 @inject AuthService AuthService
 @inject NavigationManager Nav
 
@@ -54,128 +56,195 @@
                 Discover restaurants, book your table, pre-order your meal
                 — all in one place. From intimate dinners to grand events.
             </p>
-            <div class="showcase-stats">
-                <div class="showcase-stat">
-                    <span class="showcase-stat-value">2,400+</span>
-                    <span class="showcase-stat-label">Restaurants</span>
-                </div>
-                <div class="showcase-stat">
-                    <span class="showcase-stat-value">180k+</span>
-                    <span class="showcase-stat-label">Bookings</span>
-                </div>
-                <div class="showcase-stat">
-                    <span class="showcase-stat-value">4.8</span>
-                    <span class="showcase-stat-label">Avg Rating</span>
-                </div>
-            </div>
         </div>
     </section>
 
     <section class="auth-panel">
         <div class="auth-panel-content">
-            <div class="auth-brand">
-                <svg class="auth-brand-logo" viewBox="0 0 53 53" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path opacity="0.15" d="M26.4 48.3999C38.5503 48.3999 48.4 38.5502 48.4 26.3999C48.4 14.2496 38.5503 4.3999 26.4 4.3999C14.2498 4.3999 4.40002 14.2496 4.40002 26.3999C4.40002 38.5502 14.2498 48.3999 26.4 48.3999Z" stroke="#1A1A2E" stroke-width="0.88"/>
-                    <path d="M15.3998 29.9201C15.3998 21.1201 19.0665 15.8401 26.3998 14.0801C33.7332 15.8401 37.3998 21.1201 37.3998 29.9201" stroke="#E85D3A" stroke-width="1.1" stroke-linecap="round"/>
-                    <path d="M13.2 29.9199H39.6" stroke="#E85D3A" stroke-width="1.1" stroke-linecap="round"/>
-                    <path opacity="0.4" d="M21.9999 12.32C22.5865 10.56 22.5865 8.80004 21.9999 7.04004" stroke="#E85D3A" stroke-width="0.66" stroke-linecap="round"/>
-                    <path opacity="0.4" d="M26.4 11.4397C26.9866 9.67967 26.9866 7.91967 26.4 6.15967" stroke="#E85D3A" stroke-width="0.66" stroke-linecap="round"/>
-                    <path opacity="0.4" d="M30.8 12.32C31.3867 10.56 31.3867 8.80004 30.8 7.04004" stroke="#E85D3A" stroke-width="0.66" stroke-linecap="round"/>
-                    <path opacity="0.6" d="M26.4001 36.9599C27.3721 36.9599 28.1601 36.172 28.1601 35.1999C28.1601 34.2279 27.3721 33.4399 26.4001 33.4399C25.4281 33.4399 24.6401 34.2279 24.6401 35.1999C24.6401 36.172 25.4281 36.9599 26.4001 36.9599Z" fill="#E85D3A"/>
-                </svg>
-                <span class="auth-brand-text">Deliver<em>Table</em></span>
-            </div>
-
             <h2 class="auth-heading">Espace gérant</h2>
             <p class="auth-subheading">Référencez votre restaurant et touchez de nouveaux clients</p>
 
-            <EditForm Model="@_restaurantRegisterModel" OnValidSubmit="HandleRestaurantOwnerRegister" class="auth-form">
+            <div class="wizard-steps">
+                <span class="wizard-step @(_currentStep == 1 ? "active" : "")">1. Votre compte</span>
+                <span class="wizard-step @(_currentStep == 2 ? "active" : "")">2. Premier restaurant</span>
+            </div>
+
+            <EditForm Model="@_model" OnValidSubmit="HandleValidSubmit" class="auth-form">
                 <DataAnnotationsValidator />
 
-                <div class="auth-field">
-                    <label class="auth-label">Prénom</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.User" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.FirstName"
-                                   class="auth-input"
-                                   placeholder="Votre prénom" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.FirstName)" class="validation-message" />
-                </div>
-
-                <div class="auth-field">
-                    <label class="auth-label">Nom</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.User" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.LastName"
-                                   class="auth-input"
-                                   placeholder="Votre nom" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.LastName)" class="validation-message" />
-                </div>
-
-                <div class="auth-field">
-                    <label class="auth-label">Adresse email</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.Mail" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.Email"
-                                   class="auth-input"
-                                   placeholder="votre@email.com" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.Email)" class="validation-message" />
-                </div>
-
-                <div class="auth-field">
-                    <label class="auth-label">N° de téléphone</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.Phone" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.ContactPhoneNumber"
-                                   class="auth-input"
-                                   placeholder="+33 6 00 00 00 00" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.ContactPhoneNumber)" class="validation-message" />
-                </div>
-
-                <div class="auth-field">
-                    <label class="auth-label">Mot de passe (12 caractères min.)</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.Lock" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.Password"
-                                   type="password"
-                                   class="auth-input"
-                                   placeholder="••••••••••••" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.Password)" class="validation-message" />
-                </div>
-
-                <div class="auth-field">
-                    <label class="auth-label">Confirmer le mot de passe</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.Lock" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.ConfirmPassword"
-                                   type="password"
-                                   class="auth-input"
-                                   placeholder="••••••••••••" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.ConfirmPassword)" class="validation-message" />
-                </div>
-
-                @if (!string.IsNullOrEmpty(_errorMessage))
+                @if (_currentStep == 1)
                 {
-                    <div class="alert alert-danger">@_errorMessage</div>
-                }
+                    <div class="auth-field">
+                        <label class="auth-label">Prénom</label>
+                        <InputText @bind-Value="_model.FirstName" class="auth-input" placeholder="Votre prénom" />
+                        <ValidationMessage For="@(() => _model.FirstName)" class="validation-message" />
+                    </div>
 
-                <button type="submit" class="auth-submit" disabled="@_isSubmitting">
-                    @if (_isSubmitting)
+                    <div class="auth-field">
+                        <label class="auth-label">Nom</label>
+                        <InputText @bind-Value="_model.LastName" class="auth-input" placeholder="Votre nom" />
+                        <ValidationMessage For="@(() => _model.LastName)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Adresse email</label>
+                        <InputText @bind-Value="_model.Email" class="auth-input" placeholder="votre@email.com" />
+                        <ValidationMessage For="@(() => _model.Email)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">N° de téléphone</label>
+                        <InputText @bind-Value="_model.ContactPhoneNumber" class="auth-input" placeholder="+33 6 00 00 00 00" />
+                        <ValidationMessage For="@(() => _model.ContactPhoneNumber)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Mot de passe (12 caractères min.)</label>
+                        <InputText @bind-Value="_model.Password" type="password" class="auth-input" placeholder="••••••••••••" />
+                        <ValidationMessage For="@(() => _model.Password)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Confirmer le mot de passe</label>
+                        <InputText @bind-Value="_model.ConfirmPassword" type="password" class="auth-input" placeholder="••••••••••••" />
+                        <ValidationMessage For="@(() => _model.ConfirmPassword)" class="validation-message" />
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_errorMessage))
                     {
-                        <span class="auth-spinner"></span>
-                        <span>Création du compte...</span>
+                        <div class="alert alert-danger">@_errorMessage</div>
                     }
-                    else
+
+                    <button type="button" class="auth-submit" @onclick="GoToStep2">
+                        Suivant
+                    </button>
+                }
+                else
+                {
+                    <div class="auth-field">
+                        <label class="auth-label">Nom du restaurant</label>
+                        <InputText @bind-Value="_model.Restaurant.Name" class="auth-input" placeholder="Nom du restaurant" />
+                        <ValidationMessage For="@(() => _model.Restaurant.Name)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Description</label>
+                        <InputTextArea rows="3" @bind-Value="_model.Restaurant.Description" class="auth-input" placeholder="Description courte" />
+                        <ValidationMessage For="@(() => _model.Restaurant.Description)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Type de restaurant</label>
+                        <InputSelect @bind-Value="_model.Restaurant.Type" class="auth-input">
+                            @foreach (var t in Enum.GetValues<RestaurantType>())
+                            {
+                                <option value="@t">@t.ToString()</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Adresse</label>
+                        <InputText @bind-Value="_model.Restaurant.AdressLine1" class="auth-input" placeholder="N° et rue" />
+                        <ValidationMessage For="@(() => _model.Restaurant.AdressLine1)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Complément d'adresse</label>
+                        <InputText @bind-Value="_model.Restaurant.AdressLine2" class="auth-input" placeholder="Optionnel" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Ville</label>
+                        <InputText @bind-Value="_model.Restaurant.City" class="auth-input" placeholder="Ville" />
+                        <ValidationMessage For="@(() => _model.Restaurant.City)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Code postal</label>
+                        <InputText @bind-Value="_model.Restaurant.ZipCode" class="auth-input" placeholder="75001" maxlength="5" />
+                        <ValidationMessage For="@(() => _model.Restaurant.ZipCode)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Pays</label>
+                        <InputSelect @bind-Value="_model.Restaurant.Country" class="auth-input">
+                            @foreach (var c in Enum.GetValues<AvailableCountries>())
+                            {
+                                <option value="@c">@c.ToString()</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Numéro SIRET</label>
+                        <InputText @bind-Value="_model.Restaurant.Siret" class="auth-input" placeholder="14 chiffres" maxlength="14" />
+                        <ValidationMessage For="@(() => _model.Restaurant.Siret)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Raison sociale</label>
+                        <InputText @bind-Value="_model.Restaurant.LegalName" class="auth-input" placeholder="Raison sociale" />
+                        <ValidationMessage For="@(() => _model.Restaurant.LegalName)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Adresse légale</label>
+                        <InputText @bind-Value="_model.Restaurant.LegalAddress" class="auth-input" placeholder="Adresse légale" />
+                        <ValidationMessage For="@(() => _model.Restaurant.LegalAddress)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">Forme juridique</label>
+                        <InputSelect @bind-Value="_model.Restaurant.LegalForm" class="auth-input">
+                            <option value="">-- Sélectionnez une forme juridique --</option>
+                            <option value="SAS">SAS</option>
+                            <option value="SARL">SARL</option>
+                            <option value="EURL">EURL</option>
+                            <option value="EI">EI</option>
+                            <option value="SA">SA</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => _model.Restaurant.LegalForm)" class="validation-message" />
+                    </div>
+
+                    <div class="auth-field">
+                        <label class="auth-label">
+                            <InputCheckbox @bind-Value="_model.Restaurant.IsVatRegistered" />
+                            <span>Entreprise assujettie à la TVA</span>
+                        </label>
+                    </div>
+
+                    @if (_model.Restaurant.IsVatRegistered)
                     {
-                        <span>Créer mon compte gérant</span>
+                        <div class="auth-field">
+                            <label class="auth-label">Numéro de TVA</label>
+                            <InputText @bind-Value="_model.Restaurant.VatNumber" class="auth-input" placeholder="FR12345678901" maxlength="20" />
+                            <ValidationMessage For="@(() => _model.Restaurant.VatNumber)" class="validation-message" />
+                        </div>
                     }
-                </button>
+
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-danger">@_errorMessage</div>
+                    }
+
+                    <div class="wizard-actions">
+                        <button type="button" class="auth-submit auth-submit--secondary" @onclick="GoToStep1">
+                            Précédent
+                        </button>
+                        <button type="submit" class="auth-submit" disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="auth-spinner"></span>
+                                <span>Création du compte...</span>
+                            }
+                            else
+                            {
+                                <span>Créer mon compte</span>
+                            }
+                        </button>
+                    </div>
+                }
             </EditForm>
 
             <p class="auth-footer">
@@ -186,18 +255,46 @@
 </div>
 
 @code {
-    private RestaurantRegister _restaurantRegisterModel = new RestaurantRegister();
-    private bool _isSubmitting = false;
+    private RestaurantRegister _model = new();
+    private int _currentStep = 1;
+    private bool _isSubmitting;
     private string? _errorMessage;
 
-    private async Task HandleRestaurantOwnerRegister()
+    private static readonly string[] Step1Fields =
+    {
+        nameof(RestaurantRegister.FirstName),
+        nameof(RestaurantRegister.LastName),
+        nameof(RestaurantRegister.Email),
+        nameof(RestaurantRegister.ContactPhoneNumber),
+        nameof(RestaurantRegister.Password),
+        nameof(RestaurantRegister.ConfirmPassword),
+    };
+
+    private void GoToStep1() => _currentStep = 1;
+
+    private void GoToStep2()
+    {
+        _errorMessage = null;
+        var ctx = new EditContext(_model);
+        ctx.Validate();
+        var hasStep1Errors = ctx.GetValidationMessages()
+            .Any() && Step1Fields.Any(f => ctx.GetValidationMessages(new FieldIdentifier(_model, f)).Any());
+        if (hasStep1Errors)
+        {
+            _errorMessage = "Merci de corriger les champs en erreur avant de continuer.";
+            return;
+        }
+        _currentStep = 2;
+    }
+
+    private async Task HandleValidSubmit()
     {
         _isSubmitting = true;
         _errorMessage = null;
 
         try
         {
-            AuthResponse? response = await AuthService.RegisterRestaurant(_restaurantRegisterModel);
+            var response = await AuthService.RegisterRestaurant(_model);
 
             if (response is null)
             {
@@ -210,7 +307,14 @@
                 Nav.NavigateTo("/");
                 return;
             }
+
             _errorMessage = response.Error;
+
+            if (!string.IsNullOrEmpty(_errorMessage)
+                && _errorMessage.Contains("email", StringComparison.OrdinalIgnoreCase))
+            {
+                _currentStep = 1;
+            }
         }
         catch
         {
