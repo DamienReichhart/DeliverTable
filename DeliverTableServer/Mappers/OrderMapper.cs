@@ -25,6 +25,7 @@ public static class OrderMapper
             EventId = order.EventId,
             Items = order.Items.Select(i => i.ToDto()).ToList(),
             CreatedAt = order.CreatedAt,
+            UpdatedAt = order.UpdatedAt,
             OriginalAmount = order.OriginalAmount,
             DiscountAmount = order.DiscountAmount,
             LoyaltyPointsUsed = order.LoyaltyPointsUsed,
