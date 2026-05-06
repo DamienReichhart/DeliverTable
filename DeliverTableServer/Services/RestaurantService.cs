@@ -58,8 +58,13 @@ public sealed class RestaurantService(
             dto.Siret, dto.LegalName, dto.LegalAddress, dto.LegalForm,
             dto.AdressLine1, dto.City, dto.ZipCode);
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
-        var coords = legalAndCoords.Value;
 
+        return await CreateValidatedAsync(dto, ownerId, legalAndCoords.Value, ct);
+    }
+
+    public async Task<ServiceResult<RestaurantDto>> CreateValidatedAsync(
+        CreateRestaurantDto dto, int ownerId, (double lat, double lon) coords, CancellationToken ct = default)
+    {
         if (dto.IsVatRegistered && string.IsNullOrWhiteSpace(dto.VatNumber))
             return new ServiceError(ErrorMessages.VatNumberRequiredWhenVatRegistered);
 
@@ -137,7 +142,7 @@ public sealed class RestaurantService(
     private static RestaurantType ParseRestaurantType(string? value) =>
         Enum.TryParse<RestaurantType>(value, out var type) ? type : RestaurantType.Autre;
 
-    private async Task<ServiceResult<(double lat, double lon)>> ValidateLegalAndLocateAsync(
+    public async Task<ServiceResult<(double lat, double lon)>> ValidateLegalAndLocateAsync(
         string siret, string? legalName, string? legalAddress, string? legalForm,
         string addressLine1, string city, string zipCode)
     {
