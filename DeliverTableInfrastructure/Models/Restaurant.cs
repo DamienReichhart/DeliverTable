@@ -45,5 +45,7 @@ namespace DeliverTableInfrastructure.Models
         [MaxLength(50)]
         public string LegalForm { get; set; } = string.Empty;
         public bool IsVatRegistered { get; set; } = true;
+        [MaxLength(20)]
+        public string? VatNumber { get; set; }
     }
 }
