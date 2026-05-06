@@ -50,6 +50,7 @@ public static class RestaurantMappers
             LegalAddress = restaurantModel.LegalAddress,
             LegalForm = restaurantModel.LegalForm,
             IsVatRegistered = restaurantModel.IsVatRegistered,
+            VatNumber = restaurantModel.VatNumber,
         };
     }
 }
