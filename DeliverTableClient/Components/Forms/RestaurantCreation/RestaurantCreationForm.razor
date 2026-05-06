@@ -103,6 +103,15 @@
         </label>
     </div>
 
+    @if (_creationDto.IsVatRegistered)
+    {
+        <div class="col gap-1 mb-1">
+            <label for="restaurant-vat-number">Numéro de TVA</label>
+            <InputText id="restaurant-vat-number" @bind-Value="_creationDto.VatNumber" class="app-input" placeholder="FR12345678901" maxlength="20" />
+            <ValidationMessage For="@(() => _creationDto.VatNumber)" class="validation-message" />
+        </div>
+    }
+
     <button type="submit" class="app-btn mx-auto flex mt-1" disabled="@_isSubmitting">
         @if (_isSubmitting)
         {
