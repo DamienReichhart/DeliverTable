@@ -49,8 +49,6 @@ public static class ServerEntityFactory
         var user = CreateValidUser(email);
         user.RestaurantOwner = new RestaurantOwner
         {
-            CompanyName = "Le Bon Restaurant",
-            VatNumber = "BE0123456789",
             ContactPhoneNumber = "+32470123456"
         };
         user.Customer = new Customer();

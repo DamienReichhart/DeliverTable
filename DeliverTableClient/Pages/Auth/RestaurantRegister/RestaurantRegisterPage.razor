@@ -126,17 +126,6 @@
                 </div>
 
                 <div class="auth-field">
-                    <label class="auth-label">Nom de l'enseigne</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.Store" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.CompanyName"
-                                   class="auth-input"
-                                   placeholder="Nom du restaurant" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.CompanyName)" class="validation-message" />
-                </div>
-
-                <div class="auth-field">
                     <label class="auth-label">N° de téléphone</label>
                     <div class="auth-input-wrapper">
                         <Blazicon Svg="Lucide.Phone" class="auth-input-icon" />
@@ -145,17 +134,6 @@
                                    placeholder="+33 6 00 00 00 00" />
                     </div>
                     <ValidationMessage For="@(() => _restaurantRegisterModel.ContactPhoneNumber)" class="validation-message" />
-                </div>
-
-                <div class="auth-field">
-                    <label class="auth-label">N° de SIRET</label>
-                    <div class="auth-input-wrapper">
-                        <Blazicon Svg="Lucide.FileText" class="auth-input-icon" />
-                        <InputText @bind-Value="_restaurantRegisterModel.VatNumber"
-                                   class="auth-input"
-                                   placeholder="N° de SIRET" />
-                    </div>
-                    <ValidationMessage For="@(() => _restaurantRegisterModel.VatNumber)" class="validation-message" />
                 </div>
 
                 <div class="auth-field">
