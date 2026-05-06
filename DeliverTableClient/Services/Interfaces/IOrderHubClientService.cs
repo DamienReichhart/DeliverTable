@@ -11,5 +11,7 @@ public interface IOrderHubClientService : IAsyncDisposable
 
     Task StartAsync();
     Task StopAsync();
+    Task JoinRestaurantGroup(int restaurantId);
+    Task LeaveRestaurantGroup(int restaurantId);
     HubConnectionState State { get; }
 }

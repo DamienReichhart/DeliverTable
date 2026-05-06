@@ -32,45 +32,44 @@ public partial class Live : ComponentBase, IDisposable
         if (error is null)
         {
             restaurants = paginatedResult?.Items?.ToArray() ?? [];
-            if (restaurants.Length != 0)
-            {
-                await OnRestaurantSelected(restaurants[0].Id);
-            }
         }
 
         OrderHub.OnOrderCreated += HandleOrderCreated;
         OrderHub.OnOrderStatusUpdated += HandleOrderStatusUpdated;
         OrderHub.OnOrderCancelled += HandleOrderCancelled;
         await OrderHub.StartAsync();
+
+        if (restaurants.Length != 0)
+        {
+            await OnRestaurantSelected(restaurants[0].Id);
+        }
     }
 
     private void HandleOrderCreated(OrderDto order)
     {
-        if (SelectedRestaurant == order.RestaurantId)
-        {
-            _ = InvokeAsync(async () => await LoadOrders());
-        }
+        _ = InvokeAsync(async () => await LoadOrders());
     }
 
     private void HandleOrderStatusUpdated(OrderDto order)
     {
-        if (SelectedRestaurant == order.RestaurantId)
-        {
-            _ = InvokeAsync(async () => await LoadOrders());
-        }
+        _ = InvokeAsync(async () => await LoadOrders());
     }
 
     private void HandleOrderCancelled(OrderDto order)
     {
-        if (SelectedRestaurant == order.RestaurantId)
-        {
-            _ = InvokeAsync(async () => await LoadOrders());
-        }
+        _ = InvokeAsync(async () => await LoadOrders());
     }
 
     public async Task OnRestaurantSelected(int restaurantId)
     {
+        if (SelectedRestaurant.HasValue)
+        {
+            await OrderHub.LeaveRestaurantGroup(SelectedRestaurant.Value);
+        }
+
         SelectedRestaurant = restaurantId;
+        await OrderHub.JoinRestaurantGroup(restaurantId);
+
         finishedOrders.Clear();
         await LoadOrders();
         await LoadFinishedOrders();
@@ -119,6 +118,10 @@ public partial class Live : ComponentBase, IDisposable
 
     public void OnRestaurantDeselected()
     {
+        if (SelectedRestaurant.HasValue)
+        {
+            _ = OrderHub.LeaveRestaurantGroup(SelectedRestaurant.Value);
+        }
         SelectedRestaurant = null;
         StateHasChanged();
     }
@@ -186,5 +189,10 @@ public partial class Live : ComponentBase, IDisposable
         OrderHub.OnOrderCreated -= HandleOrderCreated;
         OrderHub.OnOrderStatusUpdated -= HandleOrderStatusUpdated;
         OrderHub.OnOrderCancelled -= HandleOrderCancelled;
+
+        if (SelectedRestaurant.HasValue)
+        {
+            _ = OrderHub.LeaveRestaurantGroup(SelectedRestaurant.Value);
+        }
     }
 }
