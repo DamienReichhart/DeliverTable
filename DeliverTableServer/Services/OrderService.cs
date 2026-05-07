@@ -43,7 +43,6 @@ public sealed class OrderService(
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IEmailJobService _emailJobService = emailJobService;
     private readonly IPaymentService _paymentService = paymentService;
-    private readonly IHubContext<OrderHub, IOrderHub> _orderHubContext = orderHubContext;
     private readonly decimal _commissionRate = appEnvironment.PlatformCommissionRate;
     private readonly string _stripePublishableKey = appEnvironment.StripePublishableKey;
     private static readonly string OrderTypeNames = string.Join(", ", Enum.GetNames<OrderType>());
