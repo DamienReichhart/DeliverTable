@@ -12,20 +12,20 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DeliverTableInfrastructure.Migrations
 {
     [DbContext(typeof(DeliverTableContext))]
-    [Migration("20260331204017_FixReclamationKeys")]
-    partial class FixReclamationKeys
+    [Migration("20260507084747_AddReclamation")]
+    partial class AddReclamation
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("DeliverTableServer.Models.Cart", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Cart", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -59,7 +59,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Carts");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CartItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.CartItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -108,7 +108,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("CartItems");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Customer", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Customer", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("integer");
@@ -141,7 +141,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerFavouriteRestaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.CustomerFavouriteRestaurant", b =>
                 {
                     b.Property<int>("CustomerUserId")
                         .HasColumnType("integer");
@@ -161,7 +161,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("CustomerFavouriteRestaurants");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerHiddenRestaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.CustomerHiddenRestaurant", b =>
                 {
                     b.Property<int>("CustomerUserId")
                         .HasColumnType("integer");
@@ -181,55 +181,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("CustomerHiddenRestaurants");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerRating", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasDefaultValue("");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RatedCustomerUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RestaurantId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RestaurantUserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("RatedCustomerUserId");
-
-                    b.HasIndex("RestaurantId");
-
-                    b.HasIndex("RestaurantUserId");
-
-                    b.ToTable("CustomerRatings");
-                });
-
-            modelBuilder.Entity("DeliverTableServer.Models.DiscountCode", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.DiscountCode", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -298,7 +250,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("DiscountCodes");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.DiscountCodeRedemption", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.DiscountCodeRedemption", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -320,6 +272,10 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
@@ -331,7 +287,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("DiscountCodeRedemptions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Dish", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Dish", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -399,6 +355,9 @@ namespace DeliverTableInfrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<int>("VatRate")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RestaurantId");
@@ -406,7 +365,158 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Dishes");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Event", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Dispute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime?>("DueBy")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<int>("RestaurantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("StripeDisputeId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("StripePayload")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.HasIndex("StripeDisputeId")
+                        .IsUnique();
+
+                    b.HasIndex("RestaurantId", "State");
+
+                    b.ToTable("Disputes");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.EmailJob", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttachmentFilename")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("AttachmentStoragePath")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("MaxRetries")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(5);
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RecipientEmail")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("RecipientName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("RetryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("TemplateData")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("EmailJobs");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Event", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -469,7 +579,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Events");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.EventBookingPolicy", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.EventBookingPolicy", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -497,7 +607,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("EventBookingPolicies");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.EventMenuItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.EventMenuItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -523,7 +633,190 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("EventMenuItems");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyAccount", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Invoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IssuerLegalSnapshotJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int?>("IssuerRestaurantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IssuerType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RecipientRestaurantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecipientSnapshotJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int?>("RecipientUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RelatedInvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("StoragePath")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<decimal>("TotalHt")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<decimal>("TotalTtc")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<decimal>("TotalVat")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IssuerRestaurantId");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("RecipientRestaurantId");
+
+                    b.HasIndex("RecipientUserId");
+
+                    b.HasIndex("RelatedInvoiceId");
+
+                    b.ToTable("Invoices");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.InvoiceCounter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("EntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("NextNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityType", "EntityId", "Year")
+                        .IsUnique();
+
+                    b.ToTable("InvoiceCounters");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.InvoiceLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Item");
+
+                    b.Property<decimal>("LineHt")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<decimal>("LineTtc")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<decimal>("LineVat")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(9, 3)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPriceHt")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<decimal>("UnitPriceTtc")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<decimal>("VatRate")
+                        .HasColumnType("decimal(5, 2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("InvoiceLines");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyAccount", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -560,7 +853,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("LoyaltyAccounts");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyProgram", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyProgram", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -598,7 +891,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("LoyaltyPrograms");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyTransaction", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyTransaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -620,6 +913,10 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Property<int>("Points")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("text");
@@ -633,7 +930,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("LoyaltyTransactions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.ModerationAction", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.ModerationAction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -674,7 +971,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("ModerationActions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Notification", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Notification", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -711,7 +1008,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Order", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -827,7 +1124,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderBlockedSlot", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderBlockedSlot", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -868,7 +1165,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("OrderBlockedSlots");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderDiscount", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderDiscount", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -901,7 +1198,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("OrderDiscounts");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -944,7 +1241,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("OrderItems");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderRule", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderRule", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1001,7 +1298,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("OrderRules");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Payment", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Payment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1069,7 +1366,26 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Payments");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Promotion", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.ProcessedStripeEvent", b =>
+                {
+                    b.Property<string>("StripeEventId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("StripeEventId");
+
+                    b.ToTable("ProcessedStripeEvents");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Promotion", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1130,7 +1446,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Promotions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.PromotionDish", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.PromotionDish", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1154,7 +1470,50 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("PromotionDishes");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.ReclamationItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Reclamation", b =>
+                {
+                    b.Property<int>("ReclamationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("ReclamationId");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReclamationId"));
+
+                    b.Property<DateTime>("Created")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("RefundAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Updated")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("ReclamationId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("Reclamation");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.ReclamationItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1180,7 +1539,58 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("ReclamationItems");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Restaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Refund", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(9, 2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasDefaultValue("EUR");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("StripeRefundId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("StripeRefundId")
+                        .IsUnique();
+
+                    b.ToTable("Refunds");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Restaurant", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1222,8 +1632,26 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsVatRegistered")
+                        .HasColumnType("boolean");
+
                     b.Property<double>("Latitude")
                         .HasColumnType("double precision");
+
+                    b.Property<string>("LegalAddress")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("LegalForm")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("LegalName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<double>("Longitude")
                         .HasColumnType("double precision");
@@ -1236,6 +1664,11 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Property<int>("OwnerId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Siret")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1244,6 +1677,10 @@ namespace DeliverTableInfrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("VatNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("ZipCode")
                         .IsRequired()
@@ -1257,15 +1694,10 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("Restaurants");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantOwner", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantOwner", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("integer");
-
-                    b.Property<string>("CompanyName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("ContactPhoneNumber")
                         .IsRequired()
@@ -1282,17 +1714,12 @@ namespace DeliverTableInfrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("VatNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.HasKey("Id");
 
                     b.ToTable("RestaurantOwners");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantRating", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantRating", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1335,7 +1762,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("RestaurantRatings");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantTable", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantTable", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1376,7 +1803,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("RestaurantTables");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantTransaction", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantTransaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1422,7 +1849,7 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("RestaurantTransactions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.User", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1432,6 +1859,31 @@ namespace DeliverTableInfrastructure.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
+
+                    b.Property<string>("BillingAddressLine1")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("BillingAddressLine2")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("BillingCity")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("BillingCountry")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("BillingPostalCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -1489,6 +1941,10 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("StripeCustomerId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
@@ -1672,60 +2128,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Reclamation", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Cart", b =>
                 {
-                    b.Property<int>("ReclamationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("ReclamationId");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReclamationId"));
-
-                    b.Property<DateTime>("Created")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(10000)
-                        .HasColumnType("character varying(10000)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("OrderId1")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("Updated")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.HasKey("ReclamationId");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("OrderId1");
-
-                    b.ToTable("Reclamation");
-                });
-
-            modelBuilder.Entity("DeliverTableServer.Models.Cart", b =>
-                {
-                    b.HasOne("DeliverTableServer.Models.User", "Customer")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1736,15 +2147,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CartItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.CartItem", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Cart", "Cart")
+                    b.HasOne("DeliverTableInfrastructure.Models.Cart", "Cart")
                         .WithMany("Items")
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Dish", "Dish")
+                    b.HasOne("DeliverTableInfrastructure.Models.Dish", "Dish")
                         .WithMany()
                         .HasForeignKey("DishId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1755,26 +2166,26 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Dish");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Customer", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Customer", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "User")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "User")
                         .WithOne("Customer")
-                        .HasForeignKey("DeliverTableServer.Models.Customer", "Id")
+                        .HasForeignKey("DeliverTableInfrastructure.Models.Customer", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerFavouriteRestaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.CustomerFavouriteRestaurant", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "CustomerUser")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "CustomerUser")
                         .WithMany()
                         .HasForeignKey("CustomerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1785,15 +2196,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerHiddenRestaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.CustomerHiddenRestaurant", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "CustomerUser")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "CustomerUser")
                         .WithMany()
                         .HasForeignKey("CustomerUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1804,44 +2215,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.CustomerRating", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.DiscountCode", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DeliverTableServer.Models.User", "RatedCustomerUser")
-                        .WithMany()
-                        .HasForeignKey("RatedCustomerUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
-                        .WithMany()
-                        .HasForeignKey("RestaurantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("DeliverTableServer.Models.User", "RestaurantUser")
-                        .WithMany()
-                        .HasForeignKey("RestaurantUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("RatedCustomerUser");
-
-                    b.Navigation("Restaurant");
-
-                    b.Navigation("RestaurantUser");
-                });
-
-            modelBuilder.Entity("DeliverTableServer.Models.DiscountCode", b =>
-                {
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1850,21 +2226,21 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.DiscountCodeRedemption", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.DiscountCodeRedemption", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "Customer")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.DiscountCode", "DiscountCode")
+                    b.HasOne("DeliverTableInfrastructure.Models.DiscountCode", "DiscountCode")
                         .WithMany("Redemptions")
                         .HasForeignKey("DiscountCodeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1877,9 +2253,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Dish", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Dish", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany("Dishes")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1888,15 +2264,42 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Event", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Dispute", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "CreatedByUser")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeliverTableInfrastructure.Models.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Event", b =>
+                {
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1906,9 +2309,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.EventBookingPolicy", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.EventBookingPolicy", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Event", "Event")
+                    b.HasOne("DeliverTableInfrastructure.Models.Event", "Event")
                         .WithMany("EventBookingPolicies")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1917,15 +2320,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Event");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.EventMenuItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.EventMenuItem", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Dish", "Dish")
+                    b.HasOne("DeliverTableInfrastructure.Models.Dish", "Dish")
                         .WithMany()
                         .HasForeignKey("DishId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Event", "Event")
+                    b.HasOne("DeliverTableInfrastructure.Models.Event", "Event")
                         .WithMany("EventMenuItems")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1936,15 +2339,65 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Event");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyAccount", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Invoice", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "Customer")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "IssuerRestaurant")
+                        .WithMany()
+                        .HasForeignKey("IssuerRestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "RecipientRestaurant")
+                        .WithMany()
+                        .HasForeignKey("RecipientRestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "RecipientUser")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DeliverTableInfrastructure.Models.Invoice", "RelatedInvoice")
+                        .WithMany()
+                        .HasForeignKey("RelatedInvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("IssuerRestaurant");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("RecipientRestaurant");
+
+                    b.Navigation("RecipientUser");
+
+                    b.Navigation("RelatedInvoice");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.InvoiceLine", b =>
+                {
+                    b.HasOne("DeliverTableInfrastructure.Models.Invoice", "Invoice")
+                        .WithMany("Lines")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyAccount", b =>
+                {
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.LoyaltyProgram", "LoyaltyProgram")
+                    b.HasOne("DeliverTableInfrastructure.Models.LoyaltyProgram", "LoyaltyProgram")
                         .WithMany("Accounts")
                         .HasForeignKey("LoyaltyProgramId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1955,9 +2408,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("LoyaltyProgram");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyProgram", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyProgram", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1966,15 +2419,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyTransaction", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyTransaction", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.LoyaltyAccount", "LoyaltyAccount")
+                    b.HasOne("DeliverTableInfrastructure.Models.LoyaltyAccount", "LoyaltyAccount")
                         .WithMany("Transactions")
                         .HasForeignKey("LoyaltyAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1984,9 +2437,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.ModerationAction", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.ModerationAction", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "AdminUser")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "AdminUser")
                         .WithMany()
                         .HasForeignKey("AdminUserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1995,9 +2448,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("AdminUser");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Notification", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Notification", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "User")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2006,31 +2459,31 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Order", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Order", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "Customer")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.DiscountCode", "DiscountCode")
+                    b.HasOne("DeliverTableInfrastructure.Models.DiscountCode", "DiscountCode")
                         .WithMany()
                         .HasForeignKey("DiscountCodeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("DeliverTableServer.Models.Event", "Event")
+                    b.HasOne("DeliverTableInfrastructure.Models.Event", "Event")
                         .WithMany()
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.RestaurantTable", "RestaurantTable")
+                    b.HasOne("DeliverTableInfrastructure.Models.RestaurantTable", "RestaurantTable")
                         .WithMany()
                         .HasForeignKey("RestaurantTableId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -2046,15 +2499,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("RestaurantTable");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderBlockedSlot", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderBlockedSlot", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.RestaurantTable", "RestaurantTable")
+                    b.HasOne("DeliverTableInfrastructure.Models.RestaurantTable", "RestaurantTable")
                         .WithMany()
                         .HasForeignKey("RestaurantTableId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -2064,9 +2517,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("RestaurantTable");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderDiscount", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderDiscount", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
                         .WithMany("Discounts")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2075,15 +2528,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderItem", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Dish", "Dish")
+                    b.HasOne("DeliverTableInfrastructure.Models.Dish", "Dish")
                         .WithMany()
                         .HasForeignKey("DishId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2094,9 +2547,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.OrderRule", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.OrderRule", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2105,9 +2558,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Payment", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Payment", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
                         .WithMany("Payments")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -2116,9 +2569,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Promotion", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Promotion", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2127,15 +2580,15 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.PromotionDish", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.PromotionDish", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Dish", "Dish")
+                    b.HasOne("DeliverTableInfrastructure.Models.Dish", "Dish")
                         .WithMany()
                         .HasForeignKey("DishId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Promotion", "Promotion")
+                    b.HasOne("DeliverTableInfrastructure.Models.Promotion", "Promotion")
                         .WithMany("PromotionDishes")
                         .HasForeignKey("PromotionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2146,15 +2599,26 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Promotion");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.ReclamationItem", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Reclamation", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.OrderItem", "OrderItem")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
+                        .WithMany("Reclamations")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.ReclamationItem", b =>
+                {
+                    b.HasOne("DeliverTableInfrastructure.Models.OrderItem", "OrderItem")
                         .WithMany()
                         .HasForeignKey("OrderItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Reclamation", "Reclamation")
+                    b.HasOne("DeliverTableInfrastructure.Models.Reclamation", "Reclamation")
                         .WithMany("Items")
                         .HasForeignKey("ReclamationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2165,9 +2629,27 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Reclamation");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Restaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Refund", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "Owner")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DeliverTableInfrastructure.Models.Payment", "Payment")
+                        .WithMany("Refunds")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Payment");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Restaurant", b =>
+                {
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "Owner")
                         .WithMany("Restaurants")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2176,32 +2658,32 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantOwner", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantOwner", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "User")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "User")
                         .WithOne("RestaurantOwner")
-                        .HasForeignKey("DeliverTableServer.Models.RestaurantOwner", "Id")
+                        .HasForeignKey("DeliverTableInfrastructure.Models.RestaurantOwner", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantRating", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantRating", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", "CustomerUser")
+                    b.HasOne("DeliverTableInfrastructure.Models.User", "CustomerUser")
                         .WithMany()
                         .HasForeignKey("CustomerUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -2214,9 +2696,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantTable", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantTable", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany()
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2225,14 +2707,14 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.RestaurantTransaction", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.RestaurantTransaction", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
+                    b.HasOne("DeliverTableInfrastructure.Models.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("DeliverTableServer.Models.Restaurant", "Restaurant")
+                    b.HasOne("DeliverTableInfrastructure.Models.Restaurant", "Restaurant")
                         .WithMany("Transactions")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -2254,7 +2736,7 @@ namespace DeliverTableInfrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", null)
+                    b.HasOne("DeliverTableInfrastructure.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2263,7 +2745,7 @@ namespace DeliverTableInfrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", null)
+                    b.HasOne("DeliverTableInfrastructure.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2278,7 +2760,7 @@ namespace DeliverTableInfrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DeliverTableServer.Models.User", null)
+                    b.HasOne("DeliverTableInfrastructure.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2287,56 +2769,46 @@ namespace DeliverTableInfrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
-                    b.HasOne("DeliverTableServer.Models.User", null)
+                    b.HasOne("DeliverTableInfrastructure.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Reclamation", b =>
-                {
-                    b.HasOne("DeliverTableServer.Models.Order", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DeliverTableServer.Models.Order", null)
-                        .WithMany("Reclamations")
-                        .HasForeignKey("OrderId1");
-
-                    b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("DeliverTableServer.Models.Cart", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Cart", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.DiscountCode", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.DiscountCode", b =>
                 {
                     b.Navigation("Redemptions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Event", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Event", b =>
                 {
                     b.Navigation("EventBookingPolicies");
 
                     b.Navigation("EventMenuItems");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyAccount", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Invoice", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyAccount", b =>
                 {
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.LoyaltyProgram", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.LoyaltyProgram", b =>
                 {
                     b.Navigation("Accounts");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Order", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Order", b =>
                 {
                     b.Navigation("Discounts");
 
@@ -2347,30 +2819,35 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Navigation("Reclamations");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Promotion", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Payment", b =>
+                {
+                    b.Navigation("Refunds");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Promotion", b =>
                 {
                     b.Navigation("PromotionDishes");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.Restaurant", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Reclamation", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.Restaurant", b =>
                 {
                     b.Navigation("Dishes");
 
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("DeliverTableServer.Models.User", b =>
+            modelBuilder.Entity("DeliverTableInfrastructure.Models.User", b =>
                 {
                     b.Navigation("Customer");
 
                     b.Navigation("RestaurantOwner");
 
                     b.Navigation("Restaurants");
-                });
-
-            modelBuilder.Entity("Reclamation", b =>
-                {
-                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }
