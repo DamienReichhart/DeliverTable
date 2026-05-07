@@ -30,6 +30,7 @@ public class OrderServiceTests
     private IUserRepository _userRepository = null!;
     private IEmailJobService _emailJobService = null!;
     private IPaymentService _paymentService = null!;
+    private IHubContext<OrderHub, IOrderHub> _orderHubContext = null!;
     private AppEnvironment _appEnvironment = null!;
     private OrderService _sut = null!;
 
@@ -49,6 +50,7 @@ public class OrderServiceTests
         _userRepository = Substitute.For<IUserRepository>();
         _emailJobService = Substitute.For<IEmailJobService>();
         _paymentService = Substitute.For<IPaymentService>();
+        _orderHubContext = Substitute.For<IHubContext<OrderHub, IOrderHub>>();
 
         _appEnvironment = AppEnvironmentTestHelper.SetupEnvironment();
 
@@ -65,7 +67,8 @@ public class OrderServiceTests
         _sut = new OrderService(
             _orderRepository, _cartRepository, _restaurantRepository,
             _transactionRepository, _promotionRepository, _discountCodeRepository,
-            _loyaltyRepository, _userRepository, _emailJobService, _paymentService, _appEnvironment);
+            _loyaltyRepository, _userRepository, _emailJobService, _paymentService,
+            _orderHubContext, _appEnvironment);
     }
 
     [TearDown]
