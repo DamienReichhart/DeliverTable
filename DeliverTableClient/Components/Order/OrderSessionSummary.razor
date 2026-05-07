@@ -34,7 +34,7 @@
                             <div class="session-order__info-row">
                                 <span class="session-order__type">
                                     <Blazicon Svg="@(order.OrderType == nameof(OrderType.Delivery) ? Lucide.Truck : Lucide.Utensils)" class="session-order__type-icon" />
-                                    @(order.OrderType == nameof(OrderType.Delivery) ? TranslateType(nameof(OrderType.Delivery)) : TranslateType(nameof(OrderType.DineIn)))
+                                    @(order.OrderType == nameof(OrderType.Delivery) ? DisplayHelpers.TranslateOrderType(nameof(OrderType.Delivery)) : DisplayHelpers.TranslateOrderType(nameof(OrderType.DineIn)))
                                 </span>
                                 <span class="session-order__amount">@order.TotalAmount.ToString("C2", new System.Globalization.CultureInfo("fr-FR"))</span>
                             </div>
