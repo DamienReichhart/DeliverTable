@@ -1,10 +1,12 @@
 using DeliverTableServer.Hubs.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Order;
 using DeliverTableSharedLibrary.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace DeliverTableServer.Hubs;
 
+[Authorize]
 public class OrderHub : Hub<IOrderHub>
 {
     public async Task JoinRestaurantGroup(int restaurantId)
