@@ -125,12 +125,7 @@ public partial class Live : ComponentBase, IDisposable
         OrderDto? order = orders.First(o => o.Id == orderId);
         if (order is null) return;
 
-        string status = nameof(OrderStatus.Ready);
-
-        if (order.OrderType == nameof(OrderType.Delivery))
-        {
-            status = nameof(OrderStatus.Delivered);
-        }
+        string status = nameof(OrderStatus.Delivered);
 
         var (updatedOrder, error) = await OrderService.UpdateOrderStatusAsync(orderId, status);
         if (error is null)

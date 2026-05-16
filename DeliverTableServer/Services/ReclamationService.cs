@@ -1,9 +1,10 @@
-﻿using DeliverTableServer.Services.Interfaces;
+using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Reclamation;
 using DeliverTableServer.Configuration;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Enums;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
@@ -18,12 +19,16 @@ public class ReclamationService(
     IRestaurantRepository restaurantRepository,
     IRestaurantTransactionRepository transactionRepository,
     IObjectStorageService objectStorage,
-    AppEnvironment appEnvironment
+    AppEnvironment appEnvironment,
+    IPaymentService paymentService,
+    IAdminNotificationService adminNotificationService
     ) : IReclamationService
 {
 
     private readonly long _maxUploadBytes = UploadLimits.ToBytes(appEnvironment.UploadMaxSizeMb);
     private readonly int _maxUploadMb = appEnvironment.UploadMaxSizeMb;
+    private readonly IPaymentService _paymentService = paymentService;
+    private readonly IAdminNotificationService _adminNotificationService = adminNotificationService;
 
     public async Task<ServiceResult<List<ReclamationDto>>> GetAllReclamations(ReclamationQuery query)
     {
@@ -147,6 +152,16 @@ public class ReclamationService(
             refundAmount = selectedItems.Sum(i => i.OrderItem.UnitPrice * i.OrderItem.Quantity);
         }
 
+        Console.WriteLine($"Refund amount: {refundAmount} for order {reclamation.OrderId} with description {reclamation.Description}");
+
+        await _paymentService.RefundAsync(
+            reclamation.OrderId,
+            refundAmount,
+            reclamation.Description,
+            null,
+            CancellationToken.None
+        );
+
         Restaurant? restaurant = await restaurantRepository.GetByIdAsync(reclamation.Order.RestaurantId);
         if (restaurant == null)
             return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
@@ -210,6 +225,16 @@ public class ReclamationService(
             return new ServiceError(ErrorMessages.ReclamationInvalidTransition, 409);
 
         Reclamation? updated = await reclamationRepository.UpdateReclamationStatus(reclamationId, ReclamationStatus.Contested);
+
+        var notificationPayload = JsonSerializer.Serialize(new
+        {
+            reclamationId = updated!.ReclamationId,
+            orderId = updated.OrderId,
+            customerId = customerId,
+            description = updated.Description
+        });
+        await _adminNotificationService.RaiseForAllAdminsAsync(NotificationType.ReclamationContested, notificationPayload);
+
         return updated!.ToDto();
     }
 
