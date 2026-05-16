@@ -20,6 +20,8 @@ public class ReclamationServiceTests
     private IObjectStorageService _objectStorageService = null!;
     private IRestaurantRepository _restaurantRepository = null!;
     private IRestaurantTransactionRepository _restaurantTransactionRepository = null!;
+    private IPaymentService _paymentService = null!;
+    private IAdminNotificationService _adminNotificationService = null!;
     private AppEnvironment _appEnvironment = null!;
     private ReclamationService _sut = null!;
 
@@ -36,8 +38,10 @@ public class ReclamationServiceTests
         _objectStorageService = Substitute.For<IObjectStorageService>();
         _appEnvironment = AppEnvironmentTestHelper.SetupEnvironment();
         _restaurantRepository = Substitute.For<IRestaurantRepository>();
+        _paymentService = Substitute.For<IPaymentService>();
         _restaurantTransactionRepository = Substitute.For<IRestaurantTransactionRepository>();
-        _sut = new ReclamationService(_reclamationRepository, _restaurantRepository, _restaurantTransactionRepository, _objectStorageService, _appEnvironment);
+        _adminNotificationService = Substitute.For<IAdminNotificationService>();
+        _sut = new ReclamationService(_reclamationRepository, _restaurantRepository, _restaurantTransactionRepository, _objectStorageService, _appEnvironment, _paymentService, _adminNotificationService);
     }
 
     [TearDown]
@@ -129,6 +133,11 @@ public class ReclamationServiceTests
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Status, Is.EqualTo(ReclamationStatus.Contested));
+        await _adminNotificationService.Received(1).RaiseForAllAdminsAsync(
+            NotificationType.ReclamationContested,
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>()
+        );
     }
 
     [Test]

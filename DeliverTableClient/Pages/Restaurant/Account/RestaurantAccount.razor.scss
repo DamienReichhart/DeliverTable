@@ -187,6 +187,11 @@
   color: $color-error;
 }
 
+.tx-type--refund {
+  background: rgba($color-error, 0.10);
+  color: $color-error;
+}
+
 .invoice-badge {
   display: inline-block;
   background: #ff9800;
