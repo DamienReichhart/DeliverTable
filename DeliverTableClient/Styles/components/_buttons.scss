@@ -2,6 +2,7 @@
 // Button styles – DeliverTable brand.
 // -----------------------------------------------------------------------------
 
+@use "sass:color";
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
@@ -112,8 +113,8 @@
   border-color: $color-error;
 
   &:hover:not(:disabled) {
-    background-color: darken($color-error, 8%);
-    border-color: darken($color-error, 8%);
+    background-color: color.adjust($color-error, $lightness: -8%);
+    border-color: color.adjust($color-error, $lightness: -8%);
   }
 }
 
