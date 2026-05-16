@@ -7,4 +7,5 @@ public enum NotificationType
     EventUpdate,
     System,
     Dispute = 100,
+    ReclamationContested = 101,
 }

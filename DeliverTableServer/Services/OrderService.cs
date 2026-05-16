@@ -181,6 +181,7 @@ public sealed class OrderService(
     public async Task<ServiceResult<OrderDto>> UpdateStatusAsync(
         int orderId, UpdateOrderStatusRequest request, CancellationToken ct = default)
     {
+        // On récupère la commande avec les détails (incluant le restaurant)
         var order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null)
             return ServiceError.NotFound(ErrorMessages.OrderNotFound);
