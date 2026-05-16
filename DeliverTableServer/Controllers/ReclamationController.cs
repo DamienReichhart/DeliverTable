@@ -35,6 +35,7 @@ public class ReclamationController(
     }
 
     [HttpPost]
+    [Authorize(Roles = nameof(UserRole.Customer))]
     public async Task<IActionResult> Create([FromForm] CreateReclamationDto reclamation)
     {
         var result = await _reclamationService.CreateReclamation(reclamation, Request.Form.Files);
@@ -66,6 +67,7 @@ public class ReclamationController(
     }
 
     [HttpGet(ApiRoutes.Reclamation.ByOrderRoute)]
+    [Authorize]
     public async Task<IActionResult> GetByOrderId([FromRoute] int orderId)
     {
         var result = await _reclamationService.GetReclamationsByOrderId(orderId);
