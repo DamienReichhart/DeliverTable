@@ -57,8 +57,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
             q = q.Where(o => o.CreatedAt >= query.CreatedAfter.Value);
 
         if (query.ToPrepare is true)
-            q = q.Where(o => o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Preparing);
-
+            q = q.Where(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Preparing);
         q = ApplySorting(q, query);
 
         var totalCount = await q.CountAsync(ct);
