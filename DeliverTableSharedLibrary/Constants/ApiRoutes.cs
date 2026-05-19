@@ -270,32 +270,34 @@ public static class ApiRoutes
         public const string Base = "api/v1/stripe";
         public const string WebhookRoute = "webhook";
         public const string Webhook = Base + "/" + WebhookRoute;
-    /// <summary>Reclamation routes.</summary>
-    public static class Reclamation
-    {
-        public const string Base = VersionnedBase + "/reclamation";
-        public const string ImageFolder = "images/reclamation/item";
-        public const string ByIdRoute = "{id:int}";
-        public const string ById = Base + "/" + ByIdRoute;
+        /// <summary>Reclamation routes.</summary>
+        public static class Reclamation
+        {
+            public const string Base = VersionnedBase + "/reclamation";
+            public const string ImageFolder = "images/reclamation/item";
+            public const string ByIdRoute = "{id:int}";
+            public const string ById = Base + "/" + ByIdRoute;
 
-        public const string ByUserRoute = "user/{userId:int}";
-        public const string ByOrderRoute = "order/{orderId:int}";
-        public const string ByRestaurantRoute = "restaurant/{restaurantId:int}";
+            public const string ByUserRoute = "user/{userId:int}";
+            public const string ByOrderRoute = "order/{orderId:int}";
+            public const string ByRestaurantRoute = "restaurant/{restaurantId:int}";
 
-        public const string MyRestaurantRoute = "my-restaurant";
-        public const string MyRestaurant = Base + "/" + MyRestaurantRoute;
+            public const string MyRestaurantRoute = "my-restaurant";
+            public const string MyRestaurant = Base + "/" + MyRestaurantRoute;
 
-        public const string ResolveRoute = "{id:int}/resolve";
-        public const string ContestRoute = "{id:int}/contest";
-        public const string CompleteRoute = "{id:int}/complete";
-        public const string RefundRoute = "{id:int}/refund";
+            public const string ResolveRoute = "{id:int}/resolve";
+            public const string ContestRoute = "{id:int}/contest";
+            public const string CompleteRoute = "{id:int}/complete";
+            public const string RefundRoute = "{id:int}/refund";
 
-        public const string Resolve = Base + "/{id:int}/resolve";
-        public const string Contest = Base + "/{id:int}/contest";
-        public const string Complete = Base + "/{id:int}/complete";
-        public const string Refund = Base + "/{id:int}/refund";
+            public const string Resolve = Base + "/{id:int}/resolve";
+            public const string Contest = Base + "/{id:int}/contest";
+            public const string Complete = Base + "/{id:int}/complete";
+            public const string Refund = Base + "/{id:int}/refund";
 
-        public const string ImagePath = "images/reclamation/item/";
+            public const string ImagePath = "images/reclamation/item/";
+        }
+
     }
     /// <summary>Reclamation routes.</summary>
     public static class Reclamation
