@@ -51,13 +51,11 @@ public class RestaurantOrderConfigController(IRestaurantOrderConfigService resta
         return result.ToNoContentResult();
     }
 
+    [AllowAnonymous]
     [HttpGet(ApiRoutes.OrderConfig.TablesCapacityRoute)]
     public async Task<IActionResult> GetTablesCapacity([FromRoute] int id, CancellationToken ct)
     {
-        if (!this.TryGetUserId(out int userId))
-            return Unauthorized();
-
-        var result = await _restaurantOrderConfigService.GetTablesCapacityAsync(id, userId, ct);
+        var result = await _restaurantOrderConfigService.GetTablesCapacityAsync(id, 0, ct);
         return result.ToOkResult();
     }
 
