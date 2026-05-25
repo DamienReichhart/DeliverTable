@@ -25,6 +25,28 @@ public class RestaurantOrderConfigServiceTests
     }
 
     [Test]
+    public async Task GetTablesCapacityAsync_WhenOwnerDoesNotMatch_ReturnsCapacity()
+    {
+        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
+        _orderConfigRepository.GetRuleByRestaurantIdAsync(1, Arg.Any<CancellationToken>())
+            .Returns(new OrderRule
+            {
+                RestaurantId = 1,
+                TablesCapacityPerSlot = 3
+            });
+        _restaurantRepository.CountActiveTablesByMaxCapacityAsync(1, 2, Arg.Any<CancellationToken>())
+            .Returns(4);
+
+        var result = await _sut.GetTablesCapacityAsync(1, 999);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.RestaurantId, Is.EqualTo(1));
+        Assert.That(result.Value.CapacityPerSlot, Is.EqualTo(3));
+        Assert.That(result.Value.ActiveTablesFallback, Is.EqualTo(4));
+    }
+
+    [Test]
     public async Task GetBlockedSlotsAsync_WhenOwnerMatches_ReturnsSlots()
     {
         var restaurant = CreateRestaurant(id: 1, ownerId: 10);

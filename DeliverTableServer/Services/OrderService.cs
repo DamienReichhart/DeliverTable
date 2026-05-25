@@ -22,6 +22,7 @@ public sealed class OrderService(
     IOrderRepository orderRepository,
     ICartRepository cartRepository,
     IRestaurantRepository restaurantRepository,
+    IEventRepository eventRepository,
     IOrderConfigRepository orderConfigRepository,
     IRestaurantTransactionRepository transactionRepository,
     IPromotionRepository promotionRepository,
@@ -37,6 +38,7 @@ public sealed class OrderService(
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly ICartRepository _cartRepository = cartRepository;
     private readonly IRestaurantRepository _restaurantRepository = restaurantRepository;
+    private readonly IEventRepository _eventRepository = eventRepository;
     private readonly IOrderConfigRepository _orderConfigRepository = orderConfigRepository;
     private readonly IRestaurantTransactionRepository _transactionRepository = transactionRepository;
     private readonly IPromotionRepository _promotionRepository = promotionRepository;
@@ -64,7 +66,10 @@ public sealed class OrderService(
         if (!Enum.TryParse<OrderType>(request.OrderType, out var orderType))
             return new ServiceError(ErrorMessages.InvalidOrderType(OrderTypeNames));
 
-        if (orderType == OrderType.DineIn && (request.GuestCount < 1 || request.GuestCount > 50))
+        if (request.IsEventBooking && request.GuestCount > 500)
+            return new ServiceError(ErrorMessages.EventGuestCountExceedsLimit);
+
+        if (orderType == OrderType.DineIn && !request.IsEventBooking && (request.GuestCount < 2 || request.GuestCount > 50))
             return new ServiceError(ErrorMessages.GuestCountRequired);
 
         if (orderType == OrderType.Delivery && string.IsNullOrWhiteSpace(request.DeliveryAddress))
@@ -80,7 +85,18 @@ public sealed class OrderService(
         if (!restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotActive);
 
-        if (request.ScheduledAt.HasValue)
+        var eventBookingResult = await ResolveEventBookingAsync(
+            customerId,
+            request,
+            orderType,
+            restaurant.Id,
+            ct);
+        if (!eventBookingResult.IsSuccess)
+            return eventBookingResult.Error!;
+
+        var (isEventBooking, eventId) = eventBookingResult.Value;
+
+        if (request.ScheduledAt.HasValue && !isEventBooking)
         {
             var slotStartsAt = request.ScheduledAt.Value;
             var slotDurationMinutes = await GetSlotDurationMinutesAsync(request.RestaurantId, ct);
@@ -167,6 +183,8 @@ public sealed class OrderService(
             DeliveryAddress = orderType == OrderType.Delivery ? request.DeliveryAddress : string.Empty,
             Notes = request.Notes,
             ScheduledAt = request.ScheduledAt,
+            IsEventBooking = isEventBooking,
+            EventId = eventId,
             Source = BookingSource.CustomerApp,
             Items = orderItems,
             Discounts = orderDiscounts
@@ -386,6 +404,53 @@ public sealed class OrderService(
     private static int GetRequiredTableUnits(int guestCount)
     {
         return Math.Max(1, (int)Math.Ceiling(guestCount / 2m));
+    }
+
+    private async Task<ServiceResult<(bool IsEventBooking, int? EventId)>> ResolveEventBookingAsync(
+        int customerId,
+        CreateOrderRequest request,
+        OrderType orderType,
+        int restaurantId,
+        CancellationToken ct)
+    {
+        if (!request.IsEventBooking)
+            return (false, null);
+
+        if (orderType != OrderType.DineIn)
+            return new ServiceError(ErrorMessages.EventBookingRequiresDineIn);
+
+        if (request.EventId.HasValue)
+        {
+            var existingEvent = await _eventRepository.GetByIdAsync(request.EventId.Value, ct);
+            if (existingEvent is null || !existingEvent.IsActive || existingEvent.RestaurantId != restaurantId)
+                return ServiceError.NotFound(ErrorMessages.EventNotFound);
+
+            return (true, existingEvent.Id);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.EventName))
+            return new ServiceError(ErrorMessages.EventNameRequired);
+
+        if (!request.EventStartsAt.HasValue || !request.EventEndsAt.HasValue)
+            return new ServiceError(ErrorMessages.EventDatesRequired);
+
+        if (request.EventEndsAt.Value <= request.EventStartsAt.Value || request.EventStartsAt.Value <= DateTime.UtcNow)
+            return new ServiceError(ErrorMessages.EventDatesRequired);
+
+        var createdEvent = await _eventRepository.CreateAsync(new Event
+        {
+            RestaurantId = restaurantId,
+            CreatedByUserId = customerId,
+            Name = request.EventName.Trim(),
+            Description = request.EventDescription?.Trim() ?? string.Empty,
+            StartsAt = request.EventStartsAt.Value,
+            EndsAt = request.EventEndsAt.Value,
+            MaxGuests = request.GuestCount,
+            Visibility = EventVisibility.Private,
+            IsActive = true
+        }, ct);
+
+        return (true, createdEvent.Id);
     }
 
     private async Task<ServiceResult<int>> ApplyLoyaltyPointsAsync(

@@ -16,6 +16,7 @@ public class AdminOrderResponse
     public string Notes { get; set; } = "";
     public DateTime? ScheduledAt { get; set; }
     public bool IsEventBooking { get; set; }
+    public string EventName { get; set; } = "";
     public string Source { get; set; } = "";
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = "";

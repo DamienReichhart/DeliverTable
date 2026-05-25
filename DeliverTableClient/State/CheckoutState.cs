@@ -15,6 +15,11 @@ public class CheckoutState
     public string DeliveryAddress { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
     public DateTime? ScheduledAt { get; set; }
+    public bool IsEventBooking { get; set; }
+    public string EventName { get; set; } = string.Empty;
+    public string EventDescription { get; set; } = string.Empty;
+    public DateTime? EventStartsAt { get; set; }
+    public DateTime? EventEndsAt { get; set; }
     public List<DiscountCodeDto> AppliedCodes { get; set; } = [];
     public int LoyaltyPointsToRedeem { get; set; }
     public LoyaltyAccountDto? LoyaltyAccount { get; set; }
@@ -29,6 +34,11 @@ public class CheckoutState
         DeliveryAddress = string.Empty;
         Notes = string.Empty;
         ScheduledAt = null;
+        IsEventBooking = false;
+        EventName = string.Empty;
+        EventDescription = string.Empty;
+        EventStartsAt = null;
+        EventEndsAt = null;
         AppliedCodes = [];
         LoyaltyPointsToRedeem = 0;
         LoyaltyAccount = null;

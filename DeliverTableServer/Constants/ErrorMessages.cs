@@ -42,7 +42,7 @@ public static class ErrorMessages
     public const string OrderNotFound = "Commande introuvable";
     public const string OrderCannotBeCancelled = "Cette commande ne peut pas être annulée";
     public const string DeliveryAddressRequired = "L'adresse de livraison est obligatoire pour une commande en livraison";
-    public const string GuestCountRequired = "Le nombre de convives doit être compris entre 1 et 50";
+    public const string GuestCountRequired = "Le nombre de convives doit être compris entre 2 et 50";
     public const string BillingAddressIncomplete =
         "Veuillez compléter votre adresse de facturation dans votre profil avant de commander.";
 
@@ -54,6 +54,10 @@ public static class ErrorMessages
 
     public const string ScheduledAtMustBeFuture = "La date planifiée doit être dans le futur";
     public const string TablesCapacityFull = "Ce créneau est complet";
+    public const string EventNameRequired = "Le nom de l'événement est obligatoire";
+    public const string EventDatesRequired = "Les dates de l'événement sont obligatoires et doivent être valides";
+    public const string EventBookingRequiresDineIn = "Une réservation événement doit être une commande sur place";
+    public const string EventGuestCountExceedsLimit = "Le nombre de convives pour un événement ne peut pas dépasser 500";
 
     public const string PercentageDiscountTooHigh = "Un pourcentage de réduction ne peut pas dépasser 100%";
 

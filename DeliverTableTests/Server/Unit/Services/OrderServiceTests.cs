@@ -23,6 +23,7 @@ public class OrderServiceTests
     private IOrderRepository _orderRepository = null!;
     private ICartRepository _cartRepository = null!;
     private IRestaurantRepository _restaurantRepository = null!;
+    private IEventRepository _eventRepository = null!;
     private IOrderConfigRepository _orderConfigRepository = null!;
     private IRestaurantTransactionRepository _transactionRepository = null!;
     private IPromotionRepository _promotionRepository = null!;
@@ -44,6 +45,7 @@ public class OrderServiceTests
         _orderRepository = Substitute.For<IOrderRepository>();
         _cartRepository = Substitute.For<ICartRepository>();
         _restaurantRepository = Substitute.For<IRestaurantRepository>();
+        _eventRepository = Substitute.For<IEventRepository>();
         _orderConfigRepository = Substitute.For<IOrderConfigRepository>();
         _transactionRepository = Substitute.For<IRestaurantTransactionRepository>();
         _promotionRepository = Substitute.For<IPromotionRepository>();
@@ -68,6 +70,7 @@ public class OrderServiceTests
 
         _sut = new OrderService(
             _orderRepository, _cartRepository, _restaurantRepository,
+            _eventRepository,
             _orderConfigRepository,
             _transactionRepository, _promotionRepository, _discountCodeRepository,
             _loyaltyRepository, _userRepository, _emailJobService, _paymentService,
@@ -1091,6 +1094,19 @@ public class OrderServiceTests
     }
 
     [Test]
+    public async Task CreateFromCartAsync_DineInOrder_WithGuestCountOne_ReturnsError()
+    {
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 1;
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.GuestCountRequired));
+    }
+
+    [Test]
     public async Task CreateFromCartAsync_DineInOrder_WithValidGuestCount_Succeeds()
     {
         SetupBaseCreateMocks();
@@ -1126,6 +1142,98 @@ public class OrderServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.GuestCountRequired));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingWithNewEvent_CreatesPrivateEventAndLinksOrder()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 120;
+        request.IsEventBooking = true;
+        request.EventName = "Mariage Léa et Samir";
+        request.EventDescription = "Cocktail + dîner";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(10);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(10).AddHours(6);
+
+        _eventRepository.CreateAsync(Arg.Any<Event>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var evt = callInfo.Arg<Event>();
+                evt.Id = 77;
+                return evt;
+            });
+
+        Order? capturedOrder = null;
+        _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                capturedOrder = callInfo.Arg<Order>();
+                return capturedOrder;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(capturedOrder, Is.Not.Null);
+        Assert.That(capturedOrder!.IsEventBooking, Is.True);
+        Assert.That(capturedOrder.EventId, Is.EqualTo(77));
+        await _eventRepository.Received(1).CreateAsync(
+            Arg.Is<Event>(e =>
+                e.Name == "Mariage Léa et Samir"
+                && e.Visibility == EventVisibility.Private
+                && e.RestaurantId == RestaurantId
+                && e.CreatedByUserId == CustomerId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingDatesInvalid_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.IsEventBooking = true;
+        request.EventName = "Soirée privée";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(5);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(5).AddHours(-1);
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error, Is.Not.Null);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.EventDatesRequired));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingWithForeignEvent_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.IsEventBooking = true;
+        request.EventId = 99;
+
+        _eventRepository.GetByIdAsync(99, Arg.Any<CancellationToken>())
+            .Returns(new Event
+            {
+                Id = 99,
+                RestaurantId = RestaurantId + 1,
+                Name = "Événement autre restaurant",
+                StartsAt = DateTime.UtcNow.AddDays(8),
+                EndsAt = DateTime.UtcNow.AddDays(8).AddHours(4),
+                IsActive = true
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error, Is.Not.Null);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.EventNotFound));
     }
 
     // ─── New payment-flow tests ────────────────────────────────────────────

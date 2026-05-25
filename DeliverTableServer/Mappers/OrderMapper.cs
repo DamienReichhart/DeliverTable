@@ -23,6 +23,7 @@ public static class OrderMapper
             RestaurantTableId = order.RestaurantTableId,
             IsEventBooking = order.IsEventBooking,
             EventId = order.EventId,
+            EventName = order.Event?.Name ?? string.Empty,
             Items = order.Items.Select(i => i.ToDto()).ToList(),
             CreatedAt = order.CreatedAt,
             UpdatedAt = order.UpdatedAt,

@@ -69,6 +69,13 @@
                         <span>@_order.ScheduledAt.Value.ToLocalTime().ToString("dd/MM/yyyy à HH:mm")</span>
                     </div>
                 }
+                @if (_order.IsEventBooking)
+                {
+                    <div class="order-meta-item">
+                        <span class="meta-label">Événement :</span>
+                        <span>@(string.IsNullOrWhiteSpace(_order.EventName) ? "Réservation événement" : _order.EventName)</span>
+                    </div>
+                }
                 <div class="order-meta-item">
                     <span class="meta-label">Date :</span>
                     <span>@_order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
