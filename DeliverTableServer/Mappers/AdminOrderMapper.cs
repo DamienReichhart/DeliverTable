@@ -24,6 +24,7 @@ public static class AdminOrderMapper
             Notes = order.Notes,
             ScheduledAt = order.ScheduledAt,
             IsEventBooking = order.IsEventBooking,
+            EventName = order.Event?.Name ?? string.Empty,
             Source = order.Source.ToString(),
             CustomerId = order.CustomerId,
             CustomerName = order.Customer?.GetFullName() ?? "",

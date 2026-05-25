@@ -19,6 +19,11 @@ namespace DeliverTableClient.Services
             {
                 string queryString = $"?PageNumber={query.PageNumber}&PageSize={query.PageSize}";
                 if (!string.IsNullOrEmpty(query.Name)) queryString += $"&Name={Uri.EscapeDataString(query.Name)}";
+                if (query.IsDishOfTheDay is not null) queryString += $"&IsDishOfTheDay={Uri.EscapeDataString(query.IsDishOfTheDay.ToString() ?? string.Empty)}";
+                if (query.IsVegetarian is not null) queryString += $"&IsVegetarian={Uri.EscapeDataString(query.IsVegetarian.ToString() ?? string.Empty)}";
+                if (query.IsVegan is not null) queryString += $"&IsVegan={Uri.EscapeDataString(query.IsVegan.ToString() ?? string.Empty)}";
+                if (query.IsGlutenFree is not null) queryString += $"&IsGlutenFree={Uri.EscapeDataString(query.IsGlutenFree.ToString() ?? string.Empty)}";
+                if (query.IsAllergenHazard is not null) queryString += $"&IsAllergenHazard={Uri.EscapeDataString(query.IsAllergenHazard.ToString() ?? string.Empty)}";
 
                 string url = $"{ApiRoutes.Dish.DishesByRestaurantId.Replace("{id:int}", restaurantId.ToString())}{queryString}";
 

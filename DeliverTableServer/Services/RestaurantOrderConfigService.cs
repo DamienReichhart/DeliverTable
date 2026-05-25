@@ -101,10 +101,9 @@ public sealed class RestaurantOrderConfigService(
         int ownerId,
         CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
-            _restaurantRepository, restaurantId, ownerId, ct);
-        if (!ownershipResult.IsSuccess)
-            return ownershipResult.Error!;
+        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
+        if (restaurant is null || !restaurant.IsActive)
+            return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
 
         var rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
         var fallbackCount = await _restaurantRepository.CountActiveTablesByMaxCapacityAsync(restaurantId, 2, ct);

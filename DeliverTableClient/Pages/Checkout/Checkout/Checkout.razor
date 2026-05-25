@@ -85,6 +85,46 @@
                             <dd>@CheckoutState.ScheduledAt.Value.ToString("dddd d MMMM yyyy HH:mm", _frCulture)</dd>
                         </div>
                     }
+
+                    @if (CheckoutState.IsEventBooking)
+                    {
+                        <div class="checkout-readonly__row">
+                            <dt>Réservation événement</dt>
+                            <dd>Oui</dd>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(CheckoutState.EventName))
+                        {
+                            <div class="checkout-readonly__row">
+                                <dt>Nom de l'événement</dt>
+                                <dd>@CheckoutState.EventName</dd>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(CheckoutState.EventDescription))
+                        {
+                            <div class="checkout-readonly__row">
+                                <dt>Description événement</dt>
+                                <dd>@CheckoutState.EventDescription</dd>
+                            </div>
+                        }
+
+                        @if (CheckoutState.EventStartsAt.HasValue)
+                        {
+                            <div class="checkout-readonly__row">
+                                <dt>Début événement</dt>
+                                <dd>@CheckoutState.EventStartsAt.Value.ToString("dddd d MMMM yyyy HH:mm", _frCulture)</dd>
+                            </div>
+                        }
+
+                        @if (CheckoutState.EventEndsAt.HasValue)
+                        {
+                            <div class="checkout-readonly__row">
+                                <dt>Fin événement</dt>
+                                <dd>@CheckoutState.EventEndsAt.Value.ToString("dddd d MMMM yyyy HH:mm", _frCulture)</dd>
+                            </div>
+                        }
+                    }
                 </dl>
 
                 <div class="checkout-edit-link">
@@ -324,6 +364,11 @@
         DeliveryAddress = CheckoutState.DeliveryAddress,
         Notes = CheckoutState.Notes,
         ScheduledAt = CheckoutState.ScheduledAt.HasValue ? CheckoutState.ScheduledAt.Value.ToUniversalTime() : null,
+        IsEventBooking = CheckoutState.IsEventBooking,
+        EventName = CheckoutState.EventName,
+        EventDescription = CheckoutState.EventDescription,
+        EventStartsAt = CheckoutState.EventStartsAt.HasValue ? CheckoutState.EventStartsAt.Value.ToUniversalTime() : null,
+        EventEndsAt = CheckoutState.EventEndsAt.HasValue ? CheckoutState.EventEndsAt.Value.ToUniversalTime() : null,
         DiscountCodes = CheckoutState.AppliedCodes.Select(c => c.Code).ToList(),
         LoyaltyPointsToRedeem = CheckoutState.LoyaltyPointsToRedeem
     };
