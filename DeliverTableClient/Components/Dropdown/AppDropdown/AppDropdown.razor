@@ -1,0 +1,33 @@
+@if (_isOpen)
+{
+    <div class="dropdown-backdrop" @onclick="Close"></div>
+}
+<div class="app-dropdown @(_isOpen ? "app-dropdown--open" : "")" @onclick:stopPropagation="true">
+    <button type="button" class="app-btn app-btn--secondary dropdown-toggle" @onclick="Toggle">
+        @Label
+        <Blazicon Svg="Lucide.ChevronDown" class="app-icon dropdown-chevron" />
+    </button>
+    <div class="dropdown-panel">
+        <CascadingValue Value="this" IsFixed="true">
+            @ChildContent
+        </CascadingValue>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Options";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool _isOpen;
+
+    public void Close()
+    {
+        _isOpen = false;
+        StateHasChanged();
+    }
+
+    private void Toggle()
+    {
+        _isOpen = !_isOpen;
+    }
+}

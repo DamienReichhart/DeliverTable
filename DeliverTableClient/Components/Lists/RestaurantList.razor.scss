@@ -41,23 +41,9 @@
   }
 }
 
-.restaurant-card-controls {
-  display: flex;
-  gap: $spacing-sm;
-  flex-shrink: 0;
-}
-
-.restaurant-card-controls > button,
-.restaurant-card-controls ::deep a {
-  padding: $spacing-sm;
-  margin: 0;
-  min-width: 2.5rem;
-}
-
 @media (min-width: $breakpoint-desktop) {
   .restaurant-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: $spacing-md;
   }
 

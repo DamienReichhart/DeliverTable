@@ -1,0 +1,7 @@
+@use '../../../Styles/abstracts/variables' as *;
+
+.dropdown-separator {
+  height: 1px;
+  background: $color-border;
+  margin: $spacing-xs $spacing-md;
+}
