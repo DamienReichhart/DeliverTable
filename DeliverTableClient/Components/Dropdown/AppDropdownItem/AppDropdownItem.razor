@@ -1,0 +1,41 @@
+@using Blazicons
+
+@if (Href is not null)
+{
+    <a href="@Href" class="@_itemClass" @onclick="HandleClick" @onclick:preventDefault="false">
+        @if (Icon is not null)
+        {
+            <Blazicon Svg="@Icon" class="app-icon" />
+        }
+        @ChildContent
+    </a>
+}
+else
+{
+    <button type="button" class="@_itemClass" @onclick="HandleClick">
+        @if (Icon is not null)
+        {
+            <Blazicon Svg="@Icon" class="app-icon" />
+        }
+        @ChildContent
+    </button>
+}
+
+@code {
+    [CascadingParameter] private AppDropdown? Dropdown { get; set; }
+
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public SvgIcon? Icon { get; set; }
+    [Parameter] public bool Danger { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string _itemClass => Danger ? "dropdown-item dropdown-item--danger" : "dropdown-item";
+
+    private async Task HandleClick()
+    {
+        Dropdown?.Close();
+        if (OnClick.HasDelegate)
+            await OnClick.InvokeAsync();
+    }
+}
