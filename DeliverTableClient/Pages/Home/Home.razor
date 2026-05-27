@@ -1,29 +1,99 @@
-@page "/health"
-@using DeliverTableClient.Components.Test;
+@page "/"
+@using DeliverTableSharedLibrary.Dtos.Restaurant
+@using System.Security.Claims
 
-<PageTitle>Accueil — DeliverTable</PageTitle>
+<PageTitle>Découvrir — DeliverTable</PageTitle>
 
-<div class="health-page">
-    @if (_isLoading)
-    {
-        <div>
-            "Waiting";
+<div class="discover-page">
+
+    <div class="discover-greeting">
+        @if (_userName is not null)
+        {
+            <h1>@_greeting, <em>@_userName</em> !</h1>
+        }
+        else
+        {
+            <h1>@_greeting !</h1>
+        }
+        <p>Qu'est-ce qui vous fait envie aujourd'hui ?</p>
+    </div>
+
+    <div class="discover-filters">
+        <button type="button" class="filter-chip @(_activeType == null ? "filter-chip--active" : "")"
+                @onclick="() => SetTypeFilter(null)">
+            Tous
+        </button>
+        @foreach (var type in Enum.GetValues<RestaurantType>())
+        {
+            <button type="button"
+                    class="filter-chip @(_activeType == type.ToString() ? "filter-chip--active" : "")"
+                    @onclick="() => SetTypeFilter(type.ToString())">
+                @type
+            </button>
+        }
+    </div>
+
+    <div class="discover-featured">
+        <div class="discover-featured-text">
+            <span class="discover-featured-tag">Explorer</span>
+            <h2>Trouvez la table parfaite</h2>
+            <p>Utilisez la carte interactive pour découvrir les meilleurs restaurants près de chez vous.</p>
         </div>
-    }
-    else if (_health != null)
-    {
-        <div class="alert @DetermineColor()">
-            @_health.Status
+        <a href="/restaurants" class="app-btn app-btn--primary discover-featured-btn">
+            <Blazicon Svg="Lucide.Map" /> Explorer la carte
+        </a>
+    </div>
+
+    <div class="discover-section">
+        <div class="discover-section-header">
+            <h2>Restaurants à découvrir</h2>
+            <a href="/restaurants" class="discover-view-all">
+                Voir tous <Blazicon Svg="Lucide.ArrowRight" />
+            </a>
         </div>
-    }
-    else
-    {
-        <div>
-            Une erreur est survenue
-        </div>
-    }
-    @* <AuthorizeView Roles="Customer"> *@
-    @*     <Authorized> *@
-    @*     </Authorized> *@
-    @* </AuthorizeView> *@
+
+        @if (_loading)
+        {
+            <div class="discover-loading">
+                <p>Chargement des restaurants...</p>
+            </div>
+        }
+        else if (_restaurants is { Count: > 0 })
+        {
+            <div class="discover-cards">
+                @foreach (var r in _restaurants)
+                {
+                    <div class="discover-card @GetCardColorClass(r.Type)"
+                         @onclick="() => NavigateToRestaurant(r.Id)">
+                        <div class="discover-card-thumb">
+                            <span class="discover-card-type-tag">@r.Type</span>
+                            <div class="discover-card-icon" aria-hidden="true">
+                                <Blazicon Svg="Lucide.Utensils" />
+                            </div>
+                        </div>
+                        <div class="discover-card-body">
+                            <h3>@r.Name</h3>
+                            <p class="discover-card-location">
+                                <Blazicon Svg="Lucide.MapPin" /> @r.City
+                            </p>
+                            <button type="button" class="app-btn app-btn--primary discover-card-btn"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => NavigateToRestaurant(r.Id)">
+                                Voir
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="discover-empty">
+                <Blazicon Svg="Lucide.Utensils" />
+                <p>Aucun restaurant trouvé.</p>
+                <a href="/restaurants" class="app-btn app-btn--secondary">Explorer la carte</a>
+            </div>
+        }
+    </div>
+
 </div>
