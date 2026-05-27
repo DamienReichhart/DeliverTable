@@ -158,6 +158,49 @@ public class PromotionServiceTests
     }
 
     [Test]
+    public async Task CreateAsync_WithItemBasedSpecialMenuAndZeroDiscount_ReturnsSuccess()
+    {
+        var restaurant = CreateRestaurant(ownerId: 1);
+        _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var restaurantDishes = new List<Dish>
+        {
+            new() { Id = 5, RestaurantId = 1, Name = "Tarte pascale" }
+        };
+        _dishRepository.GetByRestaurantIdAsync(Arg.Any<DishQuery>(), 1, Arg.Any<CancellationToken>())
+            .Returns((restaurantDishes, 1));
+
+        _promotionRepository.CreateAsync(Arg.Any<Promotion>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var p = callInfo.ArgAt<Promotion>(0);
+                p.Id = 43;
+                p.PromotionDishes ??= [];
+                return p;
+            });
+
+        var request = new CreatePromotionRequest
+        {
+            Name = "Menu de Pâques",
+            Description = "Sélection spéciale du week-end",
+            PromotionType = nameof(PromotionType.ItemBased),
+            DiscountType = nameof(DiscountType.FixedAmount),
+            DiscountValue = 0m,
+            StartsAt = new DateTime(2026, 6, 1),
+            EndsAt = new DateTime(2026, 8, 31),
+            DishIds = [5]
+        };
+
+        var result = await _sut.CreateAsync(1, 1, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Id, Is.EqualTo(43));
+        Assert.That(result.Value.Name, Is.EqualTo("Menu de Pâques"));
+        Assert.That(result.Value.DishIds, Is.EqualTo([5]));
+        Assert.That(result.Value.DiscountValue, Is.EqualTo(0m));
+    }
+
+    [Test]
     public async Task GetByRestaurantAsync_WhenOwner_ReturnsPaginatedResult()
     {
         var restaurant = CreateRestaurant(ownerId: 1);

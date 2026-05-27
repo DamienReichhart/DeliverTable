@@ -38,8 +38,9 @@
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="name">Nom</label>
+                        <label for="name">Libellé affiché</label>
                         <InputText id="name" @bind-Value="_formModel.Name" class="form-control" />
+                        <small class="form-hint">Exemple : Menu de Pâques. Ce texte s’affiche en tête de la section publique.</small>
                     </div>
 
                     <div class="form-group">
@@ -69,6 +70,10 @@
                     <div class="form-group">
                         <label for="discountValue">Valeur de la réduction</label>
                         <InputNumber id="discountValue" @bind-Value="_formModel.DiscountValue" class="form-control" />
+                        @if (_formModel.PromotionType == "ItemBased")
+                        {
+                            <small class="form-hint">Pour un menu spécial sans remise, saisissez 0.</small>
+                        }
                     </div>
 
                     <div class="form-group">

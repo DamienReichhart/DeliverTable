@@ -14,9 +14,9 @@ public class UpdatePromotionRequest
     [Required]
     public string DiscountType { get; set; } = string.Empty;
     [Required]
-    [Range(0.01, 999999.99)]
+    [Range(0, 999999.99)]
     public decimal DiscountValue { get; set; }
-    [Range(0.01, 999999.99)]
+    [Range(0, 999999.99)]
     public decimal? MinOrderAmount { get; set; }
     [Required]
     public DateTime StartsAt { get; set; }

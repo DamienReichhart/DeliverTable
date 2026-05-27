@@ -1,5 +1,6 @@
 @page "/restaurant/{Id:int}"
 @inject IRestaurantService RestaurantService
+@inject IPromotionService PromotionService
 @inject IDishService DishService
 @inject ICartService CartService
 @inject NavigationManager Nav
@@ -70,6 +71,85 @@
             </div>
         }
 
+        @foreach (var specialSection in _specialSections)
+        {
+            <section class="special-dishes-section">
+                <div class="special-dishes-header">
+                    <span class="special-dishes-kicker">@specialSection.Promotion.Name</span>
+                    <h2>Plats spéciaux</h2>
+                    @if (!string.IsNullOrWhiteSpace(specialSection.Promotion.Description))
+                    {
+                        <p>@specialSection.Promotion.Description</p>
+                    }
+                </div>
+
+                <div class="dishes-grid dishes-grid--special">
+                    @foreach (var dish in specialSection.Dishes)
+                    {
+                        <div class="dish-card dish-card--special">
+                            <div class="dish-card-img">
+                                @if (!string.IsNullOrEmpty(dish.Image))
+                                {
+                                    <img src="@dish.Image" alt="@dish.Name" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <div class="dish-placeholder">
+                                        <Blazicon Svg="Lucide.CameraOff" />
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="dish-card-body">
+                                <span class="special-dish-pill">@specialSection.Promotion.Name</span>
+                                <h3>@dish.Name</h3>
+                                <p class="dish-description">@dish.Description</p>
+                                <div class="dish-tags">
+                                    @if (dish.IsVegetarian)
+                                    {
+                                        <span class="tag tag--green">Végétarien</span>
+                                    }
+                                    @if (dish.IsVegan)
+                                    {
+                                        <span class="tag tag--green">Végan</span>
+                                    }
+                                    @if (dish.IsGlutenFree)
+                                    {
+                                        <span class="tag tag--blue">Sans gluten</span>
+                                    }
+                                    @if (dish.IsAllergenHazard)
+                                    {
+                                        <span class="tag tag--red">Allergènes</span>
+                                    }
+                                    @if (dish.IsDishOfTheDay)
+                                    {
+                                        <span class="tag tag--orange">Plat du jour</span>
+                                    }
+                                </div>
+                                <div class="dish-card-footer">
+                                    <span class="dish-price">@dish.BasePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+
+                                    <AuthorizeView Roles="@nameof(UserRole.Customer)">
+                                        <div class="add-to-cart-controls">
+                                            <div class="quantity-selector">
+                                                <button type="button" class="qty-btn" @onclick="() => DecrementQuantity(dish.Id)">−</button>
+                                                <span class="qty-value">@GetQuantity(dish.Id)</span>
+                                                <button type="button" class="qty-btn" @onclick="() => IncrementQuantity(dish.Id)">+</button>
+                                            </div>
+                                            <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                                    @onclick="() => AddToCart(dish)" disabled="@_addingToCart">
+                                                <Blazicon Svg="Lucide.Plus" />
+                                            </button>
+                                        </div>
+                                    </AuthorizeView>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+
         <div class="dishes-section">
             <h2>La carte</h2>
 
@@ -95,23 +175,84 @@
                 </div>
             </div>
 
+            @if (_featuredDish is not null)
+            {
+                <section class="special-dish-hero">
+                    <span class="special-dish-hero__eyebrow">Plat du jour</span>
+                    <div class="dish-card">
+                        <div class="dish-card-img">
+                            @if (!string.IsNullOrEmpty(_featuredDish.Image))
+                            {
+                                <img src="@_featuredDish.Image" alt="@_featuredDish.Name" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="dish-placeholder">
+                                    <Blazicon Svg="Lucide.CameraOff" />
+                                </div>
+                            }
+                        </div>
+                        <div class="dish-card-body">
+                            <h3>@_featuredDish.Name</h3>
+                            <p class="dish-description">@_featuredDish.Description</p>
+                            <div class="dish-tags">
+                                @if (_featuredDish.IsVegetarian)
+                                {
+                                    <span class="tag tag--green">Végétarien</span>
+                                }
+                                @if (_featuredDish.IsVegan)
+                                {
+                                    <span class="tag tag--green">Végan</span>
+                                }
+                                @if (_featuredDish.IsGlutenFree)
+                                {
+                                    <span class="tag tag--blue">Sans gluten</span>
+                                }
+                                @if (_featuredDish.IsAllergenHazard)
+                                {
+                                    <span class="tag tag--red">Allergènes</span>
+                                }
+                                <span class="tag tag--orange">Plat du jour</span>
+                            </div>
+                            <div class="dish-card-footer">
+                                <span class="dish-price">@_featuredDish.BasePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+
+                                <AuthorizeView Roles="@nameof(UserRole.Customer)">
+                                    <div class="add-to-cart-controls">
+                                        <div class="quantity-selector">
+                                            <button type="button" class="qty-btn" @onclick="() => DecrementQuantity(_featuredDish.Id)">−</button>
+                                            <span class="qty-value">@GetQuantity(_featuredDish.Id)</span>
+                                            <button type="button" class="qty-btn" @onclick="() => IncrementQuantity(_featuredDish.Id)">+</button>
+                                        </div>
+                                        <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                                @onclick="() => AddToCart(_featuredDish)" disabled="@_addingToCart">
+                                            <Blazicon Svg="Lucide.Plus" />
+                                        </button>
+                                    </div>
+                                </AuthorizeView>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            }
+
             @if (_dishesLoading)
             {
                 <div class="loading-container centered">
                     <p>Chargement des délices...</p>
                 </div>
             }
-            else if (_dishes is null || _dishes.Items.Count == 0)
+            else if (_dishes is null || VisibleDishes.Count == 0)
             {
                 <div class="empty-state centered">
                     <Blazicon Svg="Lucide.Utensils" class="app-icon" />
-                    <p>Aucun plat disponible pour le moment.</p>
+                    <p>@(_specialSections.Count > 0 ? "Aucun autre plat disponible dans la carte pour le moment." : "Aucun plat disponible pour le moment.")</p>
                 </div>
             }
             else
             {
                 <div class="dishes-grid">
-                    @foreach (var dish in _dishes.Items)
+                    @foreach (var dish in VisibleDishes)
                     {
                         <div class="dish-card">
                             <div class="dish-card-img">
@@ -130,11 +271,26 @@
                                 <h3>@dish.Name</h3>
                                 <p class="dish-description">@dish.Description</p>
                                 <div class="dish-tags">
-                                    @if (dish.IsVegetarian) { <span class="tag tag--green">Végétarien</span> }
-                                    @if (dish.IsVegan) { <span class="tag tag--green">Végan</span> }
-                                    @if (dish.IsGlutenFree) { <span class="tag tag--blue">Sans gluten</span> }
-                                    @if (dish.IsAllergenHazard) { <span class="tag tag--red">Allergènes</span> }
-                                    @if (dish.IsDishOfTheDay) { <span class="tag tag--orange">Plat du jour</span> }
+                                    @if (dish.IsVegetarian)
+                                    {
+                                        <span class="tag tag--green">Végétarien</span>
+                                    }
+                                    @if (dish.IsVegan)
+                                    {
+                                        <span class="tag tag--green">Végan</span>
+                                    }
+                                    @if (dish.IsGlutenFree)
+                                    {
+                                        <span class="tag tag--blue">Sans gluten</span>
+                                    }
+                                    @if (dish.IsAllergenHazard)
+                                    {
+                                        <span class="tag tag--red">Allergènes</span>
+                                    }
+                                    @if (dish.IsDishOfTheDay)
+                                    {
+                                        <span class="tag tag--orange">Plat du jour</span>
+                                    }
                                 </div>
                                 <div class="dish-card-footer">
                                     <span class="dish-price">@dish.BasePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
@@ -201,7 +357,9 @@
     private bool _filterVegetarian;
     private bool _filterVegan;
     private bool _filterGlutenFree;
-
+    private DishDto? _featuredDish;
+    private List<SpecialPromotionSection> _specialSections = [];
+    private HashSet<int> _specialDishIds = [];
     private Dictionary<int, int> _quantities = new();
     private bool _mapInitialized;
 
@@ -219,6 +377,8 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadRestaurant();
+        await LoadFeaturedDish();
+        await LoadSpecialPromotions();
         await Task.WhenAll(LoadDishes(), LoadCart());
     }
 
@@ -237,6 +397,95 @@
         _loading = false;
     }
 
+    private async Task LoadFeaturedDish()
+    {
+        var featuredQuery = new DishQuery { PageSize = 10, PageNumber = 1, IsDishOfTheDay = true };
+        var (featuredDishes, _) = await DishService.GetDishesByRestaurantId(Id, featuredQuery);
+        _featuredDish = featuredDishes?.Items.FirstOrDefault();
+        if (_featuredDish is not null)
+        {
+            _specialDishIds.Add(_featuredDish.Id);
+        }
+    }
+
+    private async Task LoadSpecialPromotions()
+    {
+        try
+        {
+            var (promotions, _) = await PromotionService.GetActiveByRestaurantAsync(Id);
+            var itemBasedPromotions = (promotions ?? [])
+                .Where(promotion => string.Equals(promotion.PromotionType, nameof(PromotionType.ItemBased), StringComparison.OrdinalIgnoreCase) && promotion.DishIds.Count > 0)
+                .ToList();
+
+            if (itemBasedPromotions.Count == 0)
+            {
+                _specialSections = [];
+                _specialDishIds = _featuredDish is null ? [] : [_featuredDish.Id];
+                return;
+            }
+
+            var specialDishIds = itemBasedPromotions
+                .SelectMany(promotion => promotion.DishIds)
+                .Distinct()
+                .ToHashSet();
+
+            var dishesById = await LoadSpecialDishesAsync(specialDishIds);
+
+            _specialSections = itemBasedPromotions
+                .Select(promotion => new SpecialPromotionSection(
+                    promotion,
+                    promotion.DishIds
+                        .Select(id => dishesById.TryGetValue(id, out var dish) ? dish : null)
+                        .Where(dish => dish is not null)
+                        .Select(dish => dish!)
+                        .ToList()))
+                .Where(section => section.Dishes.Count > 0)
+                .ToList();
+
+            _specialDishIds = _specialSections
+                .SelectMany(section => section.Dishes.Select(dish => dish.Id))
+                .ToHashSet();
+
+            if (_featuredDish is not null)
+            {
+                _specialDishIds.Add(_featuredDish.Id);
+            }
+        }
+        catch
+        {
+            _specialSections = [];
+            _specialDishIds = _featuredDish is null ? [] : [_featuredDish.Id];
+        }
+    }
+
+    private async Task<Dictionary<int, DishDto>> LoadSpecialDishesAsync(IReadOnlyCollection<int> specialDishIds)
+    {
+        var dishesById = new Dictionary<int, DishDto>();
+        var query = new DishQuery { PageSize = 100, PageNumber = 1 };
+
+        while (true)
+        {
+            var (page, error) = await DishService.GetDishesByRestaurantId(Id, query);
+            if (error is not null || page is null)
+                break;
+
+            foreach (var dish in page.Items)
+            {
+                if (specialDishIds.Contains(dish.Id) && !dishesById.ContainsKey(dish.Id))
+                {
+                    dishesById[dish.Id] = dish;
+                }
+            }
+
+            if (!page.HasNextPage || dishesById.Count == specialDishIds.Count)
+                break;
+
+            query.PageNumber++;
+        }
+
+        return dishesById;
+    }
+
     private async Task LoadDishes()
     {
         _dishesLoading = true;
@@ -251,9 +500,14 @@
         {
             _dishes = dishes;
         }
+
         _dishesLoading = false;
         StateHasChanged();
     }
+
+    private IReadOnlyList<DishDto> VisibleDishes => _dishes is null
+        ? []
+        : _dishes.Items.Where(dish => !_specialDishIds.Contains(dish.Id)).ToList();
 
     private async Task LoadCart()
     {
@@ -266,6 +520,7 @@
         {
             // Cart might not exist yet, that's fine
         }
+
         StateHasChanged();
     }
 
@@ -277,17 +532,27 @@
     private void IncrementQuantity(int dishId)
     {
         if (!_quantities.ContainsKey(dishId))
+        {
             _quantities[dishId] = 1;
+        }
+
         if (_quantities[dishId] < 99)
+        {
             _quantities[dishId]++;
+        }
     }
 
     private void DecrementQuantity(int dishId)
     {
         if (!_quantities.ContainsKey(dishId))
+        {
             _quantities[dishId] = 1;
+        }
+
         if (_quantities[dishId] > 1)
+        {
             _quantities[dishId]--;
+        }
     }
 
     private async Task AddToCart(DishDto dish)
@@ -320,7 +585,6 @@
         _addingToCart = false;
         StateHasChanged();
 
-        // Auto-dismiss toast
         _ = Task.Delay(3000).ContinueWith(_ =>
         {
             _cartMessage = null;
@@ -374,4 +638,6 @@
             catch (JSDisconnectedException) { }
         }
     }
+
+    private sealed record SpecialPromotionSection(PromotionDto Promotion, List<DishDto> Dishes);
 }

@@ -12,6 +12,7 @@
 
 .restaurant-header {
   @include card;
+  order: 2;
   display: flex;
   flex-direction: column;
   gap: $spacing-lg;
@@ -130,6 +131,8 @@
 
 // Dishes section
 .dishes-section {
+  order: 1;
+
   h2 {
     @include heading-display;
     font-size: $font-size-h2;
@@ -213,6 +216,10 @@
   @media (min-width: $breakpoint-desktop) {
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   }
+}
+
+.toast-message {
+  order: 3;
 }
 
 .dish-card {
@@ -406,4 +413,89 @@
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
+}
+
+// ── Plat du jour : hero + sections promotionnelles mises en évidence ──
+.special-dish-hero {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-xl;
+  background: linear-gradient(135deg, rgba($color-coral-fire, 0.10), rgba($color-amber-gold, 0.16));
+  border: 1px solid rgba($color-coral-fire, 0.15);
+
+  .dish-card {
+    width: 100%;
+    max-width: 360px;
+  }
+}
+
+.special-dish-hero__eyebrow {
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $color-coral-fire;
+}
+
+.special-dishes-section {
+  margin-bottom: $spacing-xl;
+  padding: $spacing-lg;
+  border-radius: $radius-xl;
+  background: linear-gradient(135deg, rgba($color-coral-fire, 0.08), rgba($color-amber-gold, 0.14));
+  border: 1px solid rgba($color-coral-fire, 0.15);
+}
+
+.special-dishes-header {
+  margin-bottom: $spacing-md;
+
+  h2 {
+    @include heading-display;
+    font-size: $font-size-h2;
+    margin: 0;
+    color: $color-text;
+  }
+
+  p {
+    color: $color-text-muted;
+    margin: $spacing-xs 0 0;
+  }
+}
+
+.special-dishes-kicker {
+  display: inline-block;
+  font-family: $font-family-mono;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $color-coral-fire;
+  margin-bottom: $spacing-xs;
+}
+
+.dishes-grid--special {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: $spacing-lg;
+}
+
+.dish-card--special {
+  border: 1px solid rgba($color-coral-fire, 0.25);
+  box-shadow: 0 6px 18px rgba($color-coral-fire, 0.10);
+}
+
+.special-dish-pill {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.2em 0.7em;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba($color-coral-fire, 0.14);
+  color: darken($color-coral-fire, 10%);
+  margin-bottom: $spacing-xs;
 }
