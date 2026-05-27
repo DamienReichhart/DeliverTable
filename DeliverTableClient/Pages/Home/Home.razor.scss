@@ -1,75 +1,311 @@
-@use "../../Styles/abstracts/variables" as *;
-@use "../../Styles/abstracts/mixins" as *;
+@use '../../Styles/abstracts/variables' as *;
+@use '../../Styles/abstracts/mixins' as *;
 
-.health-page {
-  max-width: 640px;
+.discover-page {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2xl;
+}
 
+// ── Greeting ──────────────────────────────────────────────────
+
+.discover-greeting {
   h1 {
-    font-family: $font-family-display;
-    font-size: $font-size-h2;
+    @include heading-display;
+    font-size: clamp(1.75rem, 3.5vw, $font-size-h1);
+    margin: 0 0 $spacing-xs;
     color: $color-text;
-    margin-bottom: $spacing-lg;
+
+    em {
+      font-style: normal;
+      color: $color-primary;
+    }
+  }
+
+  p {
+    margin: 0;
+    color: $color-text-muted;
+    font-size: $font-size-lg;
   }
 }
 
-.health-card {
-  @include card;
+// ── Filter chips ──────────────────────────────────────────────
 
-  margin-bottom: $spacing-lg;
+.discover-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
 }
 
-.health-status {
+.filter-chip {
+  padding: 0.4em 1em;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: $color-bg-white;
+  color: $color-text-muted;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-primary;
+    color: $color-primary;
+  }
+
+  &--active {
+    background: $color-primary;
+    border-color: $color-primary;
+    color: $color-text-inverse;
+
+    &:hover {
+      background: $color-primary-hover;
+      border-color: $color-primary-hover;
+      color: $color-text-inverse;
+    }
+  }
+}
+
+// ── Featured CTA ──────────────────────────────────────────────
+
+.discover-featured {
+  background: $color-deep-charcoal;
+  border-radius: $radius-xl;
+  padding: $spacing-2xl $spacing-3xl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-xl;
+  overflow: hidden;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    border-radius: $radius-full;
+    background: rgba($color-primary, 0.12);
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 40px;
+    bottom: -80px;
+    width: 160px;
+    height: 160px;
+    border-radius: $radius-full;
+    background: rgba($color-amber-gold, 0.08);
+    pointer-events: none;
+  }
+}
+
+.discover-featured-text {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+
+  h2 {
+    @include heading-display;
+    font-size: $font-size-h3;
+    color: $color-text-inverse;
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: $font-size-sm;
+    max-width: 420px;
+  }
+}
+
+.discover-featured-tag {
+  @include label-mono;
+  color: $color-primary;
+  letter-spacing: 0.08em;
+}
+
+.discover-featured-btn {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: $spacing-sm;
-  margin-bottom: $spacing-md;
-  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  z-index: 1;
 }
 
-.health-status--loading {
+// ── Section header ────────────────────────────────────────────
+
+.discover-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.discover-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h2 {
+    @include heading-display;
+    font-size: $font-size-h3;
+    margin: 0;
+  }
+}
+
+.discover-view-all {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  color: $color-primary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  text-decoration: none;
+  transition: gap $transition-fast;
+
+  &:hover {
+    gap: $spacing-sm;
+  }
+}
+
+// ── Cards grid ────────────────────────────────────────────────
+
+.discover-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: $spacing-lg;
+}
+
+.discover-card {
+  border-radius: $radius-lg;
+  overflow: hidden;
+  cursor: pointer;
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  box-shadow: $shadow-card;
+  transition: transform $transition-base, box-shadow $transition-base;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+.discover-card-thumb {
+  height: 130px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discover-card-type-tag {
+  position: absolute;
+  top: $spacing-sm;
+  left: $spacing-sm;
+  @include label-mono;
+  font-size: 0.65rem;
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(0, 0, 0, 0.75);
+  padding: 0.2em 0.55em;
+  border-radius: $radius-sm;
+}
+
+.discover-card-icon {
+  font-size: 2.5rem;
+  opacity: 0.25;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.discover-card-body {
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  flex: 1;
+
+  h3 {
+    font-family: $font-family-display;
+    font-size: $font-size-base;
+    color: $color-text;
+    margin: 0;
+    line-height: $line-height-tight;
+  }
+}
+
+.discover-card-location {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
   color: $color-text-muted;
-}
-
-.health-status--ok {
-  color: $color-success;
-}
-
-.health-status--error {
-  color: $color-error;
-}
-
-.health-status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: $radius-full;
-  flex-shrink: 0;
-}
-
-.health-status-dot--ok {
-  background-color: $color-success;
-  box-shadow: 0 0 6px rgba($color-garden-sage, 0.4);
-}
-
-.health-status-dot--error {
-  background-color: $color-error;
-  box-shadow: 0 0 6px rgba($color-error, 0.4);
-}
-
-.health-status-dot--loading {
-  background-color: $color-text-muted;
-  animation: health-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes health-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-.health-timestamp {
-  font-family: $font-family-mono;
   font-size: $font-size-xs;
+  margin: 0;
+}
+
+.discover-card-btn {
+  margin-top: auto;
+  align-self: flex-end;
+  padding: 0.35em 1em;
+  font-size: $font-size-sm;
+}
+
+// ── Card color variants ───────────────────────────────────────
+
+.discover-card--orange .discover-card-thumb  { background: #FFD5B8; }
+.discover-card--green  .discover-card-thumb  { background: #C2ECD6; }
+.discover-card--purple .discover-card-thumb  { background: #DDD0F5; }
+.discover-card--yellow .discover-card-thumb  { background: #FDEEB6; }
+.discover-card--blue   .discover-card-thumb  { background: #C2D9F5; }
+.discover-card--red    .discover-card-thumb  { background: #F5C2C2; }
+.discover-card--teal   .discover-card-thumb  { background: #B8EAE8; }
+
+// ── Loading / empty ───────────────────────────────────────────
+
+.discover-loading {
+  text-align: center;
   color: $color-text-muted;
-  margin-top: $spacing-sm;
+  padding: $spacing-3xl 0;
+}
+
+.discover-empty {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-3xl;
+  text-align: center;
+  color: $color-text-muted;
+  font-size: 2rem;
+
+  p {
+    font-size: $font-size-base;
+    margin: 0;
+  }
+}
+
+// ── Responsive ────────────────────────────────────────────────
+
+@media (max-width: $breakpoint-mobile) {
+  .discover-featured {
+    flex-direction: column;
+    padding: $spacing-xl;
+    align-items: flex-start;
+  }
+
+  .discover-cards {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: $spacing-md;
+  }
 }
