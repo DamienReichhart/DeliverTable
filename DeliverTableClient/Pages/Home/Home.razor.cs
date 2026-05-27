@@ -1,47 +1,71 @@
-using DeliverTableSharedLibrary.Constants.Enums;
-using DeliverTableSharedLibrary.Dtos;
-using DeliverTableSharedLibrary.Constants;
+using System.Security.Claims;
 using DeliverTableClient.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos.Restaurant;
+using DeliverTableSharedLibrary.Enums;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 
-namespace DeliverTableClient.Pages.Home
+namespace DeliverTableClient.Pages.Home;
+
+public partial class Home(
+    IRestaurantService restaurantService,
+    AuthenticationStateProvider authStateProvider,
+    NavigationManager nav
+)
 {
-    public partial class Home(
-        IHealthApiClient healthApiClient
-    )
+    private NavigationManager Nav { get; } = nav;
+
+    private List<RestaurantDto>? _restaurants;
+    private bool _loading = true;
+    private string _greeting = "Bonjour";
+    private string? _userName;
+    private string? _activeType;
+
+    protected override async Task OnInitializedAsync()
     {
-
-        private HealthResponse? _health = null;
-        private bool _isLoading = false;
-        private string _error = string.Empty;
-
-        protected override async Task OnInitializedAsync()
+        _greeting = DateTime.Now.Hour switch
         {
-            _isLoading = true;
-            try
-            {
-                HealthResponse? response = await healthApiClient.GetHealthAsync();
-                _health = response;
-            }
-            catch (Exception e)
-            {
-                _error = e.Message;
-            }
-            finally
-            {
-                _isLoading = false;
-            }
-        }
+            >= 18 => "Bonsoir",
+            >= 12 => "Bon après-midi",
+            _ => "Bonjour"
+        };
 
-        private string DetermineColor()
-        {
-            Enum.TryParse<HealthStatus>(_health?.Status ?? HealthStatus.Unhealthy.ToString(), true, out HealthStatus status);
-            return status switch
-            {
-                HealthStatus.Healthy => "alert-success text-success",
-                HealthStatus.Degraded => "alert-warning  text-warning",
-                HealthStatus.Unhealthy => "alert-danger  text-danger",
-                _ => "alert-secondary"
-            };
-        }
+        var authState = await authStateProvider.GetAuthenticationStateAsync();
+        var name = authState.User.FindFirst(ClaimTypes.Name)?.Value;
+        _userName = !string.IsNullOrWhiteSpace(name) ? name : null;
+
+        await LoadRestaurants();
     }
+
+    private async Task SetTypeFilter(string? type)
+    {
+        _activeType = type;
+        await LoadRestaurants();
+    }
+
+    private async Task LoadRestaurants()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var query = new RestaurantQuery { PageSize = 8, Type = _activeType };
+        var (result, _) = await restaurantService.GetAllRestaurants(query);
+        _restaurants = result?.Items;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void NavigateToRestaurant(int id) => Nav.NavigateTo($"/restaurant/{id}");
+
+    private static string GetCardColorClass(string type) => type switch
+    {
+        nameof(RestaurantType.Italien) => "discover-card--orange",
+        nameof(RestaurantType.Asiatique) => "discover-card--green",
+        nameof(RestaurantType.Français) => "discover-card--purple",
+        nameof(RestaurantType.FastFood) => "discover-card--yellow",
+        nameof(RestaurantType.Traditionnel) => "discover-card--blue",
+        nameof(RestaurantType.Oriental) => "discover-card--red",
+        _ => "discover-card--teal"
+    };
 }
