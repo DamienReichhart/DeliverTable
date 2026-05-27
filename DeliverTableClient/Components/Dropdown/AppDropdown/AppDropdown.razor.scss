@@ -1,0 +1,52 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.app-dropdown {
+  position: relative;
+  flex-shrink: 0;
+
+  &--open {
+    z-index: 100;
+
+    .dropdown-chevron {
+      transform: rotate(180deg);
+    }
+
+    .dropdown-panel {
+      display: flex;
+    }
+  }
+}
+
+.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.dropdown-chevron {
+  transition: transform $transition-fast;
+}
+
+.dropdown-panel {
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 230px;
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+  z-index: 100;
+  padding: $spacing-xs 0;
+}
