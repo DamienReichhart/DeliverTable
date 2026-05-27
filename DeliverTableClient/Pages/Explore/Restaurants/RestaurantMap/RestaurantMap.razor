@@ -10,7 +10,7 @@
             {
                 <label for="radius-slider">Rayon : @_radiusKm km</label>
                 <input id="radius-slider" type="range" min="1" max="50" step="1"
-                       @bind="_radiusKm" @bind:event="oninput" @bind:after="OnRadiusChanged" />
+                       value="@_radiusKm" @oninput="HandleRadiusInput" />
             }
             else
             {
@@ -88,8 +88,10 @@
         DebounceFetchRestaurants();
     }
 
-    private async Task OnRadiusChanged()
+    private async Task HandleRadiusInput(ChangeEventArgs e)
     {
+        if (double.TryParse(e.Value?.ToString(), out var km))
+            _radiusKm = km;
         if (!_hasCenter) return;
         await Js.InvokeVoidAsync("restaurantMap.updateRadius", _centerLat, _centerLng, _radiusKm);
         DebounceFetchRestaurants();

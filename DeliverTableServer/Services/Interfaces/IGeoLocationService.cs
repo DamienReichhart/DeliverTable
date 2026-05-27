@@ -7,6 +7,6 @@ namespace DeliverTableServer.Services.Interfaces
 {
     public interface IGeoLocationService
     {
-        Task<(double lon, double lat)?> GetCoordinatesAsync(string address, string city, string zipcode);
+        Task<(double lat, double lon)?> GetCoordinatesAsync(string address, string city, string zipcode);
     }
 }
