@@ -1,0 +1,19 @@
+@using Blazicons
+
+<div class="alert alert--@Type">
+    <Blazicon Svg="@_icon" class="app-icon" />
+    <span>@ChildContent</span>
+</div>
+
+@code {
+    [Parameter] public string Type { get; set; } = "error";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private SvgIcon _icon => Type switch
+    {
+        "success" => Lucide.CircleCheck,
+        "warning" => Lucide.TriangleAlert,
+        "info"    => Lucide.Info,
+        _         => Lucide.CircleAlert,
+    };
+}
