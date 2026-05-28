@@ -12,7 +12,7 @@
     }
     else if (error != null)
     {
-        <div class="alert alert-danger">@error</div>
+        <AppAlert>@error</AppAlert>
     }
     else
     {
@@ -72,11 +72,11 @@
         </div>
         @if (submitError != null)
         {
-            <div class="alert alert-danger">@submitError</div>
+            <AppAlert>@submitError</AppAlert>
         }
         @if (error != null)
         {
-            <div class="alert alert-danger">@error</div>
+            <AppAlert>@error</AppAlert>
         }
         <div class="form-controls">
             <button class="app-btn my-2 mx-auto" @onclick="HandleSubmit" disabled="@submitting">

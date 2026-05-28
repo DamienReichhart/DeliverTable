@@ -31,6 +31,10 @@ public class RestaurantRegister
     [Compare("Password", ErrorMessage = "Les mots de passe ne correspondent pas")]
     public string ConfirmPassword { get; set; } = "";
 
+    [Required(ErrorMessage = "Le numéro de SIRET est requis")]
+    [MaxLength(14, ErrorMessage = "Le numéro de SIRET ne peut pas dépasser 14 caractères")]
+    public string Siret { get; set; } = "";
+
     [Required(ErrorMessage = "Les informations du restaurant sont requises")]
     public CreateRestaurantDto Restaurant { get; set; } = new();
 }

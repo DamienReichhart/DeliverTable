@@ -23,7 +23,7 @@
         else if (_loadError != null)
         {
             <div class="container">
-                <div class="alert alert-danger">@_loadError</div>
+                <AppAlert>@_loadError</AppAlert>
                 <button class="app-btn" @onclick="LoadProfile">Réessayer</button>
             </div>
         }
@@ -163,7 +163,7 @@
 
                             @if (!string.IsNullOrEmpty(_profileError))
                             {
-                                <div class="alert alert-danger mt-1">@_profileError</div>
+                                <AppAlert>@_profileError</AppAlert>
                             }
 
                             <div class="profile-form-actions">
@@ -252,7 +252,7 @@
 
                             @if (!string.IsNullOrEmpty(_passwordError))
                             {
-                                <div class="alert alert-danger">@_passwordError</div>
+                                <AppAlert>@_passwordError</AppAlert>
                             }
 
                             <div class="profile-form-actions">

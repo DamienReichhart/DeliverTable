@@ -5,18 +5,49 @@
 @use '../abstracts/variables' as *;
 
 .alert {
-  border-radius: $radius-lg;
-  padding: $spacing-sm $spacing-md;
-  text-align: center;
-  margin: $spacing-md auto;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
+  line-height: 1.5;
+  margin: $spacing-md 0;
+
+  p { margin: 0; }
+
+  .app-icon {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
 }
 
-@each $status, $bg, $border, $text in $alertColors {
-  .alert-#{$status} {
-    background-color: $bg;
-    border: 2px solid $border;
-    color: $text;
-  }
+.alert-danger,
+.alert--danger,
+.alert--error {
+  background: rgba($color-error, 0.06);
+  border-left: 4px solid $color-error;
+  color: $color-error;
+}
+
+.alert-success,
+.alert--success {
+  background: rgba($color-success, 0.06);
+  border-left: 4px solid $color-success;
+  color: $color-success;
+}
+
+.alert-warning,
+.alert--warning {
+  background: rgba($color-amber-gold, 0.10);
+  border-left: 4px solid $color-amber-gold;
+  color: darken($color-amber-gold, 20%);
+}
+
+.alert-info,
+.alert--info {
+  background: rgba(#5B8DEF, 0.08);
+  border-left: 4px solid #5B8DEF;
+  color: #3A6BD6;
 }

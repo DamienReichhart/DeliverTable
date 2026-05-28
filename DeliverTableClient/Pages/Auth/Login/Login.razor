@@ -122,7 +122,7 @@
 
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
-                    <div class="alert alert-danger">@_errorMessage</div>
+                    <AppAlert>@_errorMessage</AppAlert>
                 }
 
                 <button type="submit" class="auth-submit" disabled="@_isSubmitting">
