@@ -258,12 +258,24 @@
 // Error message
 // ---------------------------------------------------------------------------
 .error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
   padding: $spacing-md $spacing-lg;
   border-radius: $radius-md;
-  background: rgba($color-error, 0.08);
-  border-left: 3px solid $color-error;
+  background: rgba($color-error, 0.06);
+  border-left: 4px solid $color-error;
   color: $color-error;
   font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  line-height: 1.5;
+
+  p { margin: 0; }
+
+  .app-icon {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using DeliverTableSharedLibrary.Constants;
-using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Auth;
 using Microsoft.JSInterop;
 
@@ -36,21 +36,19 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
         {
             try
             {
-                var errorContent = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-                return new AuthResponse
-                {
-                    Success = false,
-                    Error = errorContent?.Error ?? "Une erreur est survenue"
-                };
+                var body = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("error", out var prop) && !string.IsNullOrWhiteSpace(prop.GetString()))
+                    return new AuthResponse { Success = false, Error = prop.GetString()! };
+
+                if (root.TryGetProperty("Error", out var propPascal) && !string.IsNullOrWhiteSpace(propPascal.GetString()))
+                    return new AuthResponse { Success = false, Error = propPascal.GetString()! };
             }
-            catch
-            {
-                return new AuthResponse
-                {
-                    Success = false,
-                    Error = "Une erreur est survenue"
-                };
-            }
+            catch { }
+
+            return new AuthResponse { Success = false, Error = "Une erreur est survenue" };
         }
 
         ConnectionResponse? result;
@@ -60,7 +58,7 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
         }
         catch
         {
-            return new AuthResponse { Success = false, Error = "Une erreur est survenue." };
+            return new AuthResponse { Success = false, Error = "Une erreur est survenue" };
         }
 
         if (result?.User != null && !string.IsNullOrEmpty(result.Token))
@@ -77,7 +75,7 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
             return new AuthResponse { Success = true };
         }
 
-        return new AuthResponse { Success = false, Error = "Une erreur est survenue." };
+        return new AuthResponse { Success = false, Error = "Une erreur est survenue" };
     }
 
     public async Task Logout()
