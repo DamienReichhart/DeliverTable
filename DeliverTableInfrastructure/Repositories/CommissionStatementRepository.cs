@@ -1,4 +1,5 @@
 using DeliverTableInfrastructure.Data;
+using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Enums;
@@ -71,6 +72,26 @@ public class CommissionStatementRepository(DeliverTableContext dbContext) : ICom
 
     public Task<CommissionStatementLine?> FindLineByRefundEventIdAsync(string refundEventId, CancellationToken ct = default) =>
         _dbContext.CommissionStatementLines.FirstOrDefaultAsync(l => l.RefundEventId == refundEventId, ct);
+
+    public async Task<(List<CommissionStatement> Items, int Total)> AdminListAsync(
+        int? year, CommissionStatementKind? kind, int? restaurantId,
+        int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _dbContext.CommissionStatements
+            .Include(s => s.RecipientRestaurant)
+            .AsQueryable();
+
+        if (year.HasValue) query = query.Where(s => s.PeriodYear == year.Value);
+        if (kind.HasValue) query = query.Where(s => s.Kind == kind.Value);
+        if (restaurantId.HasValue) query = query.Where(s => s.RecipientRestaurantId == restaurantId.Value);
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(s => s.IssuedAt)
+            .Paginate(page, pageSize)
+            .ToListAsync(ct);
+        return (items, total);
+    }
 
     public async Task<int> AllocateNextNumberAsync(CancellationToken ct = default)
     {
