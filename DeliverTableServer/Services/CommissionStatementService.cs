@@ -17,6 +17,7 @@ namespace DeliverTableServer.Services;
 public class CommissionStatementService(
     ICommissionStatementRepository repo,
     IRestaurantRepository restaurantRepo,
+    IOrderRepository orderRepo,
     IMessagePublisher publisher,
     AppEnvironment env,
     ILogger<CommissionStatementService> logger) : ICommissionStatementService
@@ -89,7 +90,7 @@ public class CommissionStatementService(
 
     public Task<ServiceResult> HandleRefundForPriorPeriodAsync(
         int orderId, int refundId, string stripeRefundId, decimal refundedAmount, CancellationToken ct)
-        => throw new NotImplementedException("Implemented in a later task.");
+        => throw new NotImplementedException("Implemented in Task 21.");
 
     internal static (DateTime startUtc, DateTime endUtc) ComputePeriodBoundsUtc(int year, int month)
     {
