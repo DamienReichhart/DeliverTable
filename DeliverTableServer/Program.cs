@@ -43,16 +43,11 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
-    options.InvalidModelStateResponseFactory = context =>
+    if (!builder.Environment.IsDevelopment())
     {
-        var firstError = context.ModelState
-            .Values
-            .SelectMany(v => v.Errors)
-            .Select(e => e.ErrorMessage)
-            .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m)) ?? "La requête est invalide.";
-
-        return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new { Error = firstError });
-    };
+        options.InvalidModelStateResponseFactory = _ =>
+            new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new { error = "Invalid request." });
+    }
 });
 
 
