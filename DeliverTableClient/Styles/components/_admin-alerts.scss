@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../abstracts/variables" as *;
 
 // ---------------------------------------------------------------------------
@@ -27,7 +28,7 @@
 .adm-alert--success {
   background: rgba($color-garden-sage, 0.08);
   border-color: rgba($color-garden-sage, 0.2);
-  color: darken($color-garden-sage, 15%);
+  color: color.adjust($color-garden-sage, $lightness: -15%);
 }
 
 .adm-alert--danger {
@@ -39,7 +40,7 @@
 .adm-alert--warning {
   background: rgba($color-amber-gold, 0.08);
   border-color: rgba($color-amber-gold, 0.2);
-  color: darken($color-amber-gold, 22%);
+  color: color.adjust($color-amber-gold, $lightness: -22%);
 }
 
 .adm-alert--info {
