@@ -175,6 +175,9 @@ public static class ApiRoutes
         public const string InvoicesRoute = "invoices";
         public const string InvoiceByIdRoute = "invoices/{id:int}";
 
+        // ── Commission statements ──
+        public const string CommissionStatementsRunRoute = "commission-statements/run";
+
         // ── Disputes ──
         public const string DisputesRoute = "disputes";
         public const string DisputeByIdRoute = "disputes/{id:int}";
