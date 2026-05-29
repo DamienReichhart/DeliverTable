@@ -1256,4 +1256,75 @@ public class OrderServiceTests
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.OrderCannotBeCancelled));
     }
+
+    // ─── DeliveredAt tests ─────────────────────────────────────────────────
+
+    [Test]
+    public async Task UpdateStatusAsync_WhenDelivered_SetsDeliveredAtToUtcNow()
+    {
+        var restaurant = new Restaurant
+        {
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
+        };
+        var order = new Order
+        {
+            Id = 10,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            TotalAmount = 100m,
+            Status = OrderStatus.Ready,
+            DeliveredAt = null,
+            Items = []
+        };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+
+        var before = DateTime.UtcNow;
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Delivered) });
+        var after = DateTime.UtcNow;
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(order.DeliveredAt, Is.Not.Null);
+        Assert.That(order.DeliveredAt!.Value, Is.GreaterThanOrEqualTo(before));
+        Assert.That(order.DeliveredAt!.Value, Is.LessThanOrEqualTo(after));
+        Assert.That(order.DeliveredAt!.Value.Kind, Is.EqualTo(DateTimeKind.Utc));
+    }
+
+    [Test]
+    public async Task UpdateStatusAsync_WhenNotDelivered_DoesNotSetDeliveredAt()
+    {
+        var restaurant = new Restaurant
+        {
+            Id = 1,
+            Name = "Test",
+            Balance = 0m,
+            AdressLine1 = "1 Rue Test",
+            City = "Paris",
+            ZipCode = "75001",
+            Country = "FR"
+        };
+        var order = new Order
+        {
+            Id = 10,
+            RestaurantId = 1,
+            Restaurant = restaurant,
+            TotalAmount = 100m,
+            Status = OrderStatus.Confirmed,
+            DeliveredAt = null,
+            Items = []
+        };
+        _orderRepository.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
+        _orderRepository.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
+
+        var result = await _sut.UpdateStatusAsync(10, new UpdateOrderStatusRequest { Status = nameof(OrderStatus.Preparing) });
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(order.DeliveredAt, Is.Null);
+    }
 }
