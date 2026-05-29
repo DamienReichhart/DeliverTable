@@ -266,6 +266,8 @@ public sealed class OrderService(
         }
 
         order.Status = newStatus;
+        if (newStatus == OrderStatus.Delivered)
+            order.DeliveredAt = DateTime.UtcNow;
         var updated = await _orderRepository.UpdateAsync(order, ct);
 
         if (newStatus == OrderStatus.Delivered)
