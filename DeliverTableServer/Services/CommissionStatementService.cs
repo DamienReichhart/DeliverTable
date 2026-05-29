@@ -3,11 +3,13 @@ using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
+using DeliverTableSharedLibrary.Dtos.CommissionStatement;
 using DeliverTableSharedLibrary.Dtos.Invoice;
 using DeliverTableSharedLibrary.Enums;
 using Microsoft.Extensions.Logging;
@@ -19,6 +21,7 @@ public class CommissionStatementService(
     IRestaurantRepository restaurantRepo,
     IOrderRepository orderRepo,
     IMessagePublisher publisher,
+    IObjectStorageService objectStorage,
     AppEnvironment env,
     ILogger<CommissionStatementService> logger) : ICommissionStatementService
 {
@@ -232,6 +235,95 @@ public class CommissionStatementService(
         => order.Payments
             .SelectMany(p => p.Refunds ?? Enumerable.Empty<Refund>())
             .Sum(r => r.Amount);
+
+    public async Task<ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>> AdminListAsync(
+        int? year, CommissionStatementKind? kind, int? restaurantId,
+        int page, int pageSize, CancellationToken ct)
+    {
+        var (items, total) = await repo.AdminListAsync(year, kind, restaurantId, page, pageSize, ct);
+
+        return ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>.Success(
+            new PaginatedResult<AdminCommissionStatementRowDto>
+            {
+                Items = items.Select(s => new AdminCommissionStatementRowDto
+                {
+                    Id = s.Id,
+                    Number = s.Number,
+                    Kind = s.Kind,
+                    RecipientRestaurantId = s.RecipientRestaurantId,
+                    RecipientRestaurantName = s.RecipientRestaurant?.Name ?? string.Empty,
+                    PeriodYear = s.PeriodYear,
+                    PeriodMonth = s.PeriodMonth,
+                    IssuedAt = s.IssuedAt,
+                    TotalTtc = s.TotalTtc,
+                    Status = s.Status,
+                    HasPdf = !string.IsNullOrEmpty(s.StoragePath),
+                }).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize,
+            });
+    }
+
+    public async Task<ServiceResult<AdminCommissionStatementDetailDto>> AdminGetDetailAsync(
+        int id, CancellationToken ct)
+    {
+        var statement = await repo.GetByIdWithLinesAndRecipientAsync(id, ct);
+        if (statement is null)
+            return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
+
+        return ServiceResult<AdminCommissionStatementDetailDto>.Success(
+            new AdminCommissionStatementDetailDto
+            {
+                Id = statement.Id,
+                Number = statement.Number,
+                Kind = statement.Kind,
+                RecipientRestaurantId = statement.RecipientRestaurantId,
+                RecipientRestaurantName = statement.RecipientRestaurant?.Name ?? string.Empty,
+                PeriodYear = statement.PeriodYear,
+                PeriodMonth = statement.PeriodMonth,
+                IssuedAt = statement.IssuedAt,
+                TotalHt = statement.TotalHt,
+                TotalVat = statement.TotalVat,
+                TotalTtc = statement.TotalTtc,
+                Status = statement.Status,
+                FailureReason = statement.FailureReason,
+                RelatedStatementId = statement.RelatedStatementId,
+                Lines = statement.Lines.Select(l => new AdminCommissionStatementLineDto
+                {
+                    OrderId = l.OrderId,
+                    OrderNumber = l.OrderNumber,
+                    OrderCompletedAt = l.OrderCompletedAt,
+                    OrderTotalAmount = l.OrderTotalAmount,
+                    CommissionRateSnapshot = l.CommissionRateSnapshot,
+                    VatRate = l.VatRate,
+                    LineHt = l.LineHt,
+                    LineVat = l.LineVat,
+                    LineTtc = l.LineTtc,
+                    RefundEventId = l.RefundEventId,
+                }).ToList(),
+            });
+    }
+
+    public async Task<ServiceResult<(byte[] Pdf, string FileName)>> AdminGetPdfAsync(
+        int id, CancellationToken ct)
+    {
+        var statement = await repo.GetByIdAsync(id, ct);
+        if (statement is null)
+            return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
+
+        if (string.IsNullOrEmpty(statement.StoragePath))
+            return ServiceError.NotFound(ErrorMessages.CommissionStatementPdfNotYetGenerated);
+
+        var storageResult = await objectStorage.GetObjectAsync(statement.StoragePath, ct);
+        if (storageResult is null)
+            return ServiceError.NotFound(ErrorMessages.CommissionStatementPdfNotYetGenerated);
+
+        using var ms = new MemoryStream();
+        await storageResult.Content.CopyToAsync(ms, ct);
+        var fileName = $"{statement.Number}.pdf";
+        return ServiceResult<(byte[] Pdf, string FileName)>.Success((ms.ToArray(), fileName));
+    }
 
     private async Task<string> FormatInvoiceNumberAsync(int year, int month, CancellationToken ct)
     {
