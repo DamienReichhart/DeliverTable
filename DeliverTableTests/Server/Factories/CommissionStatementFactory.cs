@@ -10,16 +10,16 @@ public static class CommissionStatementFactory
         int year,
         int month,
         string number = "COMM-2026-05-000001") => new()
-    {
-        Number = number,
-        Kind = CommissionStatementKind.Invoice,
-        RecipientRestaurantId = restaurantId,
-        PeriodYear = year,
-        PeriodMonth = month,
-        IssuedAt = DateTime.UtcNow,
-        Currency = "EUR",
-        Status = CommissionStatementStatus.Queued,
-        IssuerLegalSnapshotJson = "{}",
-        RecipientSnapshotJson = "{}",
-    };
+        {
+            Number = number,
+            Kind = CommissionStatementKind.Invoice,
+            RecipientRestaurantId = restaurantId,
+            PeriodYear = year,
+            PeriodMonth = month,
+            IssuedAt = DateTime.UtcNow,
+            Currency = "EUR",
+            Status = CommissionStatementStatus.Queued,
+            IssuerLegalSnapshotJson = "{}",
+            RecipientSnapshotJson = "{}",
+        };
 }
