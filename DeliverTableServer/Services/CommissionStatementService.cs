@@ -247,24 +247,49 @@ public class CommissionStatementService(
         return ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>.Success(
             new PaginatedResult<AdminCommissionStatementRowDto>
             {
-                Items = items.Select(s => new AdminCommissionStatementRowDto
-                {
-                    Id = s.Id,
-                    Number = s.Number,
-                    Kind = s.Kind,
-                    RecipientRestaurantId = s.RecipientRestaurantId,
-                    RecipientRestaurantName = s.RecipientRestaurant?.Name ?? string.Empty,
-                    PeriodYear = s.PeriodYear,
-                    PeriodMonth = s.PeriodMonth,
-                    IssuedAt = s.IssuedAt,
-                    TotalTtc = s.TotalTtc,
-                    Status = s.Status,
-                    HasPdf = !string.IsNullOrEmpty(s.StoragePath),
-                }).ToList(),
+                Items = items.Select(MapToRow).ToList(),
                 TotalCount = total,
                 Page = page,
                 PageSize = pageSize,
             });
+    }
+
+    public async Task<ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>> ListForRestaurantAsync(
+        int restaurantId, int userId, bool isAdmin, int page, int pageSize, CancellationToken ct)
+    {
+        if (!isAdmin)
+        {
+            var restaurant = await restaurantRepo.GetByIdAsync(restaurantId, ct);
+            if (restaurant is null) return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
+            if (restaurant.OwnerId != userId) return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
+        }
+
+        var (items, total) = await repo.AdminListAsync(year: null, kind: null, restaurantId: restaurantId, page, pageSize, ct);
+        return ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>.Success(
+            new PaginatedResult<AdminCommissionStatementRowDto>
+            {
+                Items = items.Select(MapToRow).ToList(),
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize,
+            });
+    }
+
+    public async Task<ServiceResult<(byte[] Pdf, string FileName)>> GetPdfForOwnerAsync(
+        int statementId, int userId, bool isAdmin, bool isRestaurantOwner, CancellationToken ct)
+    {
+        var statement = await repo.GetByIdAsync(statementId, ct);
+        if (statement is null) return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
+
+        if (!isAdmin)
+        {
+            if (!isRestaurantOwner) return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
+            var restaurant = await restaurantRepo.GetByIdAsync(statement.RecipientRestaurantId, ct);
+            if (restaurant is null || restaurant.OwnerId != userId)
+                return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
+        }
+
+        return await AdminGetPdfAsync(statementId, ct);
     }
 
     public async Task<ServiceResult<AdminCommissionStatementDetailDto>> AdminGetDetailAsync(
@@ -332,4 +357,19 @@ public class CommissionStatementService(
         var seq = await repo.AllocateNextNumberAsync(ct);
         return $"COMM-{year:D4}-{month:D2}-{seq:D6}";
     }
+
+    private static AdminCommissionStatementRowDto MapToRow(CommissionStatement s) => new()
+    {
+        Id = s.Id,
+        Number = s.Number,
+        Kind = s.Kind,
+        RecipientRestaurantId = s.RecipientRestaurantId,
+        RecipientRestaurantName = s.RecipientRestaurant?.Name ?? string.Empty,
+        PeriodYear = s.PeriodYear,
+        PeriodMonth = s.PeriodMonth,
+        IssuedAt = s.IssuedAt,
+        TotalTtc = s.TotalTtc,
+        Status = s.Status,
+        HasPdf = !string.IsNullOrEmpty(s.StoragePath),
+    };
 }
