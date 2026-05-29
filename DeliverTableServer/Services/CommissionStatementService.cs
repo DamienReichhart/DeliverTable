@@ -67,7 +67,9 @@ public class CommissionStatementService(
                 var statement = BuildStatement(restaurant, year, month, orders);
                 statement.Number = await FormatInvoiceNumberAsync(year, month, ct);
 
-                foreach (var o in orders) o.CommissionStatementId = statement.Id;
+                // Use the navigation rather than the (still-0) FK id so EF resolves
+                // CommissionStatementId after the INSERT during the same SaveChanges.
+                foreach (var o in orders) o.CommissionStatement = statement;
                 await repo.CreateAsync(statement, ct);
 
                 await publisher.PublishAsync(
