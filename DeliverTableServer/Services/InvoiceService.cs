@@ -26,7 +26,8 @@ public class InvoiceService(
     IObjectStorageService objectStorage,
     IEmailJobRepository emailJobRepository,
     IMessagePublisher messagePublisher,
-    AppEnvironment env) : IInvoiceService
+    AppEnvironment env,
+    ISystemClock clock) : IInvoiceService
 {
     public async Task<ServiceResult<List<InvoiceJobMessage>>> CreatePendingInvoicesForCapturedOrderAsync(
         int orderId,
@@ -47,20 +48,22 @@ public class InvoiceService(
             InvoiceIssuerType.Restaurant, restaurant.Id, year, false, ct);
         var customerInvoice = BuildCustomerInvoice(order, restaurant, customer, customerNumber);
 
-        var platformNumber = await numbering.IssueNumberAsync(
-            InvoiceIssuerType.Platform, null, year, false, ct);
-        var commissionInvoice = BuildCommissionInvoice(order, restaurant, platformNumber);
+        var invoicesToCreate = new List<Invoice> { customerInvoice };
 
-        // Batch both invoices into a single SaveChanges so they are created atomically.
+        if (clock.UtcNow < CommissionInvoicingCutover.MonthlyStartUtc)
+        {
+            var platformNumber = await numbering.IssueNumberAsync(
+                InvoiceIssuerType.Platform, null, year, false, ct);
+            var commissionInvoice = BuildCommissionInvoice(order, restaurant, platformNumber);
+            invoicesToCreate.Add(commissionInvoice);
+        }
+
+        // Batch invoices into a single SaveChanges so they are created atomically.
         // If the process crashes between two separate CreateAsync calls the idempotency
         // guard on retry would skip the commission invoice — batching prevents that gap.
-        await invoiceRepository.CreateBatchAsync(new[] { customerInvoice, commissionInvoice }, ct);
+        await invoiceRepository.CreateBatchAsync(invoicesToCreate, ct);
 
-        var messages = new List<InvoiceJobMessage>
-        {
-            new(customerInvoice.Id),
-            new(commissionInvoice.Id),
-        };
+        var messages = invoicesToCreate.Select(i => new InvoiceJobMessage(i.Id)).ToList();
 
         return ServiceResult<List<InvoiceJobMessage>>.Success(messages);
     }
