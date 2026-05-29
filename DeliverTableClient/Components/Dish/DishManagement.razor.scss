@@ -96,12 +96,12 @@
 
 .badge.bg-success {
     background: rgba($color-garden-sage, 0.15);
-    color:      darken($color-garden-sage, 10%);
+    color:      color.adjust($color-garden-sage, $lightness: -10%);
 }
 
 .badge.bg-info {
     background: rgba($color-amber-gold, 0.15);
-    color:      darken($color-amber-gold, 20%);
+    color:      color.adjust($color-amber-gold, $lightness: -20%);
 }
 
 .badge.bg-secondary {

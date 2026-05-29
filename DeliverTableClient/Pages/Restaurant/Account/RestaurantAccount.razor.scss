@@ -1,3 +1,4 @@
+@use "sass:color";
 @use '../../../Styles/abstracts/variables' as *;
 @use '../../../Styles/abstracts/mixins' as *;
 
@@ -150,7 +151,7 @@
 }
 
 .info-banner {
-  background: lighten($color-garden-sage, 40%);
+  background: color.adjust($color-garden-sage, $lightness: 40%);
   border: 1px solid $color-garden-sage;
   color: $color-garden-sage;
   padding: $spacing-sm $spacing-md;
