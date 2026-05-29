@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\DeliverTableInfrastructure\DeliverTableInfrastructure.csproj" />
+        <ProjectReference Include="..\DeliverTableServer\DeliverTableServer.csproj" />
         <ProjectReference Include="..\DeliverTableSharedLibrary\DeliverTableSharedLibrary.csproj" />
     </ItemGroup>
 
