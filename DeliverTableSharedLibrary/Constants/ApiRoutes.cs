@@ -177,6 +177,9 @@ public static class ApiRoutes
 
         // ── Commission statements ──
         public const string CommissionStatementsRunRoute = "commission-statements/run";
+        public const string CommissionStatementsRoute = "commission-statements";
+        public const string CommissionStatementByIdRoute = "commission-statements/{id:int}";
+        public const string CommissionStatementPdfRoute = "commission-statements/{id:int}/pdf";
 
         // ── Disputes ──
         public const string DisputesRoute = "disputes";

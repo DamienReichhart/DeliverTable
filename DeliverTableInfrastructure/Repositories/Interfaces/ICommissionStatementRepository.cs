@@ -22,4 +22,8 @@ public interface ICommissionStatementRepository
     Task<CommissionStatementLine?> FindLineByRefundEventIdAsync(string refundEventId, CancellationToken ct = default);
 
     Task<int> AllocateNextNumberAsync(CancellationToken ct = default);
+
+    Task<(List<CommissionStatement> Items, int Total)> AdminListAsync(
+        int? year, CommissionStatementKind? kind, int? restaurantId,
+        int page, int pageSize, CancellationToken ct = default);
 }
