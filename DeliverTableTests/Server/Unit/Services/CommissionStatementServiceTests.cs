@@ -392,6 +392,68 @@ public class CommissionStatementServiceTests
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
     }
 
+    // ── ListForRestaurantAsync tests ────────────────────────────────────────
+
+    [Test]
+    public async Task ListForRestaurantAsync_AllowsOwner()
+    {
+        const int restaurantId = 5;
+        const int ownerId = 10;
+        var restaurant = BuildRestaurant(restaurantId);
+        restaurant.OwnerId = ownerId;
+        _restaurantRepo.GetByIdAsync(restaurantId, Arg.Any<CancellationToken>()).Returns(restaurant);
+        _repo.AdminListAsync(null, null, restaurantId, 1, 50, Arg.Any<CancellationToken>())
+             .ReturnsForAnyArgs((new List<CommissionStatement>(), 0));
+
+        var result = await _sut.ListForRestaurantAsync(restaurantId, userId: ownerId, isAdmin: false, 1, 50, default);
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task ListForRestaurantAsync_DeniesNonOwner()
+    {
+        const int restaurantId = 5;
+        var restaurant = BuildRestaurant(restaurantId);
+        restaurant.OwnerId = 10;
+        _restaurantRepo.GetByIdAsync(restaurantId, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var result = await _sut.ListForRestaurantAsync(restaurantId, userId: 99, isAdmin: false, 1, 50, default);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
+    }
+
+    [Test]
+    public async Task ListForRestaurantAsync_AllowsAdmin_WithoutOwnerCheck()
+    {
+        const int restaurantId = 5;
+        _repo.AdminListAsync(null, null, restaurantId, 1, 50, Arg.Any<CancellationToken>())
+             .ReturnsForAnyArgs((new List<CommissionStatement>(), 0));
+
+        var result = await _sut.ListForRestaurantAsync(restaurantId, userId: 999, isAdmin: true, 1, 50, default);
+
+        Assert.That(result.IsSuccess, Is.True);
+        await _restaurantRepo.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
+    }
+
+    [Test]
+    public async Task GetPdfForOwnerAsync_DeniesNonOwner()
+    {
+        const int statementId = 20;
+        const int restaurantId = 5;
+        var statement = new CommissionStatement { Id = statementId, RecipientRestaurantId = restaurantId };
+        var restaurant = BuildRestaurant(restaurantId);
+        restaurant.OwnerId = 10;
+        _repo.GetByIdAsync(statementId, Arg.Any<CancellationToken>()).Returns(statement);
+        _restaurantRepo.GetByIdAsync(restaurantId, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var result = await _sut.GetPdfForOwnerAsync(statementId, userId: 99, isAdmin: false, isRestaurantOwner: true, default);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
+    }
+
     // ── Private helpers ──────────────────────────────────────────────────────
 
     private static Restaurant BuildRestaurant(int id)

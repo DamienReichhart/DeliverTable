@@ -14,4 +14,8 @@ public interface ICommissionStatementApiClient
     Task<AdminCommissionStatementDetailDto?> AdminGetAsync(int id);
 
     Task DownloadPdfAsync(int id);
+
+    Task<PaginatedResult<AdminCommissionStatementRowDto>?> GetForRestaurantAsync(int restaurantId, int page, int pageSize);
+
+    Task DownloadOwnerPdfAsync(int id);
 }

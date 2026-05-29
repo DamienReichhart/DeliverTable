@@ -19,4 +19,10 @@ public interface ICommissionStatementService
     Task<ServiceResult<AdminCommissionStatementDetailDto>> AdminGetDetailAsync(int id, CancellationToken ct);
 
     Task<ServiceResult<(byte[] Pdf, string FileName)>> AdminGetPdfAsync(int id, CancellationToken ct);
+
+    Task<ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>> ListForRestaurantAsync(
+        int restaurantId, int userId, bool isAdmin, int page, int pageSize, CancellationToken ct);
+
+    Task<ServiceResult<(byte[] Pdf, string FileName)>> GetPdfForOwnerAsync(
+        int statementId, int userId, bool isAdmin, bool isRestaurantOwner, CancellationToken ct);
 }
