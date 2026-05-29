@@ -79,6 +79,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRatingService, RatingService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
+        services.AddScoped<ICommissionStatementService, CommissionStatementService>();
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IReclamationService, ReclamationService>();
     }
