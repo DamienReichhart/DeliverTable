@@ -20,6 +20,14 @@
             </div>
         }
 
+        @if (Order.ScheduledAt is not null)
+        {
+            <div class="order-card__info-item">
+                <Blazicon Svg="Lucide.Clock" class="order-card__info-icon" />
+                <span class="order-card__info-text-sm">Commande réservée pour le <strong>@Order.ScheduledAt!.Value.ToString("dd/MM/yyyy à HH:mm")</strong></span>
+            </div>
+        }
+
         @if (!string.IsNullOrWhiteSpace(Order.Notes))
         {
             <div class="order-card__info-item order-card__info-item--note">

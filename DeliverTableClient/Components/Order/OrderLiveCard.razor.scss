@@ -64,6 +64,7 @@
 
     &__info-item {
         display: flex;
+        align-items: center;
         gap: $spacing-sm;
         margin-bottom: $spacing-md;
         color: $color-text;
