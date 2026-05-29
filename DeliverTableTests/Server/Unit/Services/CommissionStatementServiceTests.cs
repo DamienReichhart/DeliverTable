@@ -2,6 +2,7 @@ using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableInfrastructure.Services.Interfaces;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Enums;
@@ -9,6 +10,7 @@ using DeliverTableTests.Global.Helpers;
 using DeliverTableTests.Server.Factories;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NUnit.Framework;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
 
 namespace DeliverTableTests.Server.Unit.Services;
@@ -20,6 +22,7 @@ public class CommissionStatementServiceTests
     private IRestaurantRepository _restaurantRepo = null!;
     private IOrderRepository _orderRepo = null!;
     private IMessagePublisher _publisher = null!;
+    private IObjectStorageService _objectStorage = null!;
     private CommissionStatementService _sut = null!;
 
     [SetUp]
@@ -29,6 +32,7 @@ public class CommissionStatementServiceTests
         _restaurantRepo = Substitute.For<IRestaurantRepository>();
         _orderRepo = Substitute.For<IOrderRepository>();
         _publisher = Substitute.For<IMessagePublisher>();
+        _objectStorage = Substitute.For<IObjectStorageService>();
 
         var env = AppEnvironmentTestHelper.SetupEnvironment();
 
@@ -37,6 +41,7 @@ public class CommissionStatementServiceTests
             _restaurantRepo,
             _orderRepo,
             _publisher,
+            _objectStorage,
             env,
             NullLogger<CommissionStatementService>.Instance);
     }
@@ -174,7 +179,7 @@ public class CommissionStatementServiceTests
         Environment.SetEnvironmentVariable("PLATFORM_VAT_APPLICABLE", "false");
         env = AppEnvironment.Load();
         var sut = new CommissionStatementService(
-            _repo, _restaurantRepo, _orderRepo, _publisher, env,
+            _repo, _restaurantRepo, _orderRepo, _publisher, _objectStorage, env,
             NullLogger<CommissionStatementService>.Instance);
 
         _repo.ListRestaurantIdsWithEligibleOrdersAsync(
@@ -264,6 +269,127 @@ public class CommissionStatementServiceTests
             MessagingExchanges.CommissionStatement,
             Arg.Any<CommissionStatementJobMessage>(),
             Arg.Any<CancellationToken>());
+    }
+
+    // ── AdminListAsync tests ─────────────────────────────────────────────────
+
+    [Test]
+    public async Task AdminListAsync_ReturnsPagedRows_WithCorrectMapping()
+    {
+        var restaurant = BuildRestaurant(3);
+        restaurant.Name = "Test Restaurant";
+        var statement = new CommissionStatement
+        {
+            Id = 10,
+            Number = "COMM-2026-04-000010",
+            Kind = CommissionStatementKind.Invoice,
+            RecipientRestaurantId = 3,
+            RecipientRestaurant = restaurant,
+            PeriodYear = 2026,
+            PeriodMonth = 4,
+            IssuedAt = new DateTime(2026, 5, 1, 2, 0, 0, DateTimeKind.Utc),
+            TotalTtc = 120m,
+            Status = CommissionStatementStatus.Generated,
+            StoragePath = "statements/10.pdf",
+        };
+
+        _repo.AdminListAsync(2026, CommissionStatementKind.Invoice, null, 1, 50, default)
+             .ReturnsForAnyArgs((new List<CommissionStatement> { statement }, 1));
+
+        var result = await _sut.AdminListAsync(2026, CommissionStatementKind.Invoice, null, 1, 50, default);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var page = result.Value!;
+        Assert.That(page.TotalCount, Is.EqualTo(1));
+        Assert.That(page.Items, Has.Count.EqualTo(1));
+        var row = page.Items[0];
+        Assert.That(row.Id, Is.EqualTo(10));
+        Assert.That(row.RecipientRestaurantName, Is.EqualTo("Test Restaurant"));
+        Assert.That(row.HasPdf, Is.True);
+    }
+
+    // ── AdminGetDetailAsync tests ────────────────────────────────────────────
+
+    [Test]
+    public async Task AdminGetDetailAsync_ReturnsDetail_WhenStatementExists()
+    {
+        var restaurant = BuildRestaurant(3);
+        restaurant.Name = "Detail Restaurant";
+        var statement = new CommissionStatement
+        {
+            Id = 11,
+            Number = "COMM-2026-04-000011",
+            Kind = CommissionStatementKind.Invoice,
+            RecipientRestaurantId = 3,
+            RecipientRestaurant = restaurant,
+            PeriodYear = 2026,
+            PeriodMonth = 4,
+            IssuedAt = new DateTime(2026, 5, 1, 2, 0, 0, DateTimeKind.Utc),
+            TotalHt = 100m,
+            TotalVat = 20m,
+            TotalTtc = 120m,
+            Status = CommissionStatementStatus.Generated,
+        };
+
+        _repo.GetByIdWithLinesAndRecipientAsync(11, default)
+             .ReturnsForAnyArgs(statement);
+
+        var result = await _sut.AdminGetDetailAsync(11, default);
+
+        Assert.That(result.IsSuccess, Is.True);
+        var dto = result.Value!;
+        Assert.That(dto.Id, Is.EqualTo(11));
+        Assert.That(dto.RecipientRestaurantName, Is.EqualTo("Detail Restaurant"));
+        Assert.That(dto.TotalHt, Is.EqualTo(100m));
+    }
+
+    [Test]
+    public async Task AdminGetDetailAsync_ReturnsNotFound_WhenStatementMissing()
+    {
+        _repo.GetByIdWithLinesAndRecipientAsync(999, default)
+             .ReturnsForAnyArgs((CommissionStatement?)null);
+
+        var result = await _sut.AdminGetDetailAsync(999, default);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
+    }
+
+    // ── AdminGetPdfAsync tests ───────────────────────────────────────────────
+
+    [Test]
+    public async Task AdminGetPdfAsync_ReturnsPdf_WhenStoragePathExists()
+    {
+        var statement = new CommissionStatement
+        {
+            Id = 12,
+            Number = "COMM-2026-04-000012",
+            StoragePath = "statements/12.pdf",
+        };
+        _repo.GetByIdAsync(12, default).ReturnsForAnyArgs(statement);
+
+        var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF header
+        var stream = new MemoryStream(pdfBytes);
+        _objectStorage.GetObjectAsync("statements/12.pdf", default)
+                      .ReturnsForAnyArgs(new ObjectStorageResult(stream, "application/pdf", pdfBytes.Length));
+
+        var result = await _sut.AdminGetPdfAsync(12, default);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Pdf, Is.EqualTo(pdfBytes));
+        Assert.That(result.Value!.FileName, Is.EqualTo("COMM-2026-04-000012.pdf"));
+    }
+
+    [Test]
+    public async Task AdminGetPdfAsync_ReturnsNotFound_WhenStoragePathIsNull()
+    {
+        var statement = new CommissionStatement { Id = 13, Number = "COMM-2026-04-000013", StoragePath = null };
+        _repo.GetByIdAsync(13, default).ReturnsForAnyArgs(statement);
+
+        var result = await _sut.AdminGetPdfAsync(13, default);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────

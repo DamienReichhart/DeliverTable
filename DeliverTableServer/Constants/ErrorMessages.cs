@@ -154,4 +154,5 @@ public static class ErrorMessages
     public const string CommissionStatementInvalidPeriod = "Période invalide pour la génération du relevé de commissions";
     public const string CommissionStatementGenerationFailed = "Échec de la génération du relevé de commissions";
     public const string CommissionStatementNotFound = "Relevé de commissions introuvable";
+    public const string CommissionStatementPdfNotYetGenerated = "PDF non encore généré";
 }

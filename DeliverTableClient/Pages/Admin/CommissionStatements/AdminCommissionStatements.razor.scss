@@ -1,0 +1,119 @@
+@use "../../../Styles/abstracts/variables" as *;
+
+.admin-commission-statements {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  .generate-block,
+  .list-block {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    h2 {
+      font-size: $font-size-md;
+      font-weight: 600;
+      color: $color-deep-charcoal;
+      margin: 0;
+    }
+  }
+
+  .hint {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    margin: 0;
+  }
+
+  .filters {
+    display: flex;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+    align-items: center;
+
+    input,
+    select {
+      padding: $spacing-xs $spacing-sm;
+      border: 1px solid $color-border;
+      border-radius: $radius-md;
+      font-size: $font-size-sm;
+    }
+
+    button {
+      padding: $spacing-xs $spacing-md;
+      border: none;
+      border-radius: $radius-md;
+      background: $color-primary;
+      color: #fff;
+      font-size: $font-size-sm;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        opacity: 0.9;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .adm-alert {
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+
+    &--success {
+      background: rgba(#22c55e, 0.1);
+      border: 1px solid rgba(#22c55e, 0.3);
+      color: #15803d;
+    }
+
+    &--danger {
+      background: rgba(#ef4444, 0.1);
+      border: 1px solid rgba(#ef4444, 0.3);
+      color: #b91c1c;
+    }
+  }
+
+  .statements-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: $font-size-sm;
+
+    th,
+    td {
+      padding: 0.6rem;
+      border-bottom: 1px solid $color-border;
+      text-align: left;
+    }
+
+    th {
+      background: rgba($color-deep-charcoal, 0.03);
+      font-weight: 600;
+    }
+
+    tbody tr:hover {
+      background: $color-bg-subtle;
+    }
+  }
+
+  .link-button {
+    background: none;
+    border: none;
+    color: $color-primary;
+    cursor: pointer;
+    font-size: $font-size-sm;
+    padding: 0;
+    text-decoration: underline;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .muted {
+    color: $color-text-muted;
+  }
+}

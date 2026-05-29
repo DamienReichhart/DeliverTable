@@ -3,6 +3,7 @@ using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
+using DeliverTableSharedLibrary.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,5 +42,34 @@ public class AdminCommissionStatementController(
 
         var result = await commissionStatementService.GenerateForPeriodAsync(year, month, ct);
         return result.ToOkResult();
+    }
+
+    [HttpGet(ApiRoutes.Admin.CommissionStatementsRoute)]
+    public async Task<IActionResult> List(
+        [FromQuery] int? year,
+        [FromQuery] CommissionStatementKind? kind,
+        [FromQuery] int? restaurantId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var result = await commissionStatementService.AdminListAsync(year, kind, restaurantId, page, pageSize, ct);
+        return result.ToOkResult();
+    }
+
+    [HttpGet(ApiRoutes.Admin.CommissionStatementByIdRoute)]
+    public async Task<IActionResult> GetById(int id, CancellationToken ct)
+    {
+        var result = await commissionStatementService.AdminGetDetailAsync(id, ct);
+        return result.ToOkResult();
+    }
+
+    [HttpGet(ApiRoutes.Admin.CommissionStatementPdfRoute)]
+    public async Task<IActionResult> GetPdf(int id, CancellationToken ct)
+    {
+        var result = await commissionStatementService.AdminGetPdfAsync(id, ct);
+        if (!result.IsSuccess) return result.Error!.ToErrorResult();
+        var (pdf, fileName) = result.Value!;
+        return File(pdf, "application/pdf", fileName);
     }
 }

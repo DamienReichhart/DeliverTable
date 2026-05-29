@@ -1,0 +1,185 @@
+@page "/admin/commission-statements"
+@attribute [Authorize(Roles = nameof(UserRole.Administrator))]
+@using DeliverTableClient.Services.CommissionStatement
+@using DeliverTableSharedLibrary.Dtos.CommissionStatement
+@inject ICommissionStatementApiClient Api
+
+<PageTitle>Relevés de commissions — Administration</PageTitle>
+
+<AdminLayout Title="Relevés de commissions" Subtitle="@($"{_items.Count} relevé(s)")">
+    <ChildContent>
+        <section class="admin-commission-statements">
+
+            <div class="generate-block">
+                <h2>Générer un relevé</h2>
+                <p class="hint">Le job mensuel s'exécute automatiquement le 1er à 02:00 (Europe/Paris). Tu peux aussi déclencher la génération manuellement pour un mois donné — par défaut, le mois précédent.</p>
+                <form class="filters" @onsubmit="RunGenerationAsync" @onsubmit:preventDefault>
+                    <input type="number" @bind="_runYear" placeholder="Année" min="2000" max="9999" />
+                    <select @bind="_runMonth">
+                        <option value="">Mois précédent (auto)</option>
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            var month = m;
+                            <option value="@month">@MoisLabel(month)</option>
+                        }
+                    </select>
+                    <button type="submit" disabled="@_isRunning">@(_isRunning ? "Génération…" : "Générer")</button>
+                </form>
+                @if (_runResult is not null)
+                {
+                    <div class="adm-alert adm-alert--success">
+                        Période @_runResult.PeriodYear-@_runResult.PeriodMonth.ToString("D2") :
+                        @_runResult.RestaurantsProcessed restaurants traités,
+                        @_runResult.StatementsCreated relevés créés,
+                        @_runResult.RestaurantsSkipped ignorés.
+                        @if (_runResult.Failures.Count > 0)
+                        {
+                            <span> (@_runResult.Failures.Count échec(s))</span>
+                        }
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_runError))
+                {
+                    <div class="adm-alert adm-alert--danger">@_runError</div>
+                }
+            </div>
+
+            <div class="list-block">
+                <h2>Relevés existants</h2>
+                <form class="filters" @onsubmit="ApplyFiltersAsync" @onsubmit:preventDefault>
+                    <input type="number" @bind="_filterYear" placeholder="Année" min="2000" max="9999" />
+                    <select @bind="_filterKind">
+                        <option value="">Tous types</option>
+                        @foreach (var k in Enum.GetValues<CommissionStatementKind>())
+                        {
+                            <option value="@k">@(k == CommissionStatementKind.Invoice ? "Relevé" : "Avoir")</option>
+                        }
+                    </select>
+                    <input type="number" @bind="_filterRestaurantId" placeholder="ID restaurant" />
+                    <button type="submit">Filtrer</button>
+                </form>
+
+                @if (_loading)
+                {
+                    <p>Chargement…</p>
+                }
+                else if (_items.Count == 0)
+                {
+                    <p>Aucun relevé trouvé.</p>
+                }
+                else
+                {
+                    <table class="statements-table">
+                        <thead>
+                            <tr>
+                                <th>Numéro</th>
+                                <th>Type</th>
+                                <th>Restaurant</th>
+                                <th>Période</th>
+                                <th>Date</th>
+                                <th>Total TTC</th>
+                                <th>Statut</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in _items)
+                            {
+                                <tr>
+                                    <td>@s.Number</td>
+                                    <td>@(s.Kind == CommissionStatementKind.Invoice ? "Relevé" : "Avoir")</td>
+                                    <td>@s.RecipientRestaurantName (#@s.RecipientRestaurantId)</td>
+                                    <td>@s.PeriodYear-@s.PeriodMonth.ToString("D2")</td>
+                                    <td>@s.IssuedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>@s.TotalTtc.ToString("0.00 €")</td>
+                                    <td>@s.Status</td>
+                                    <td>
+                                        @if (s.HasPdf && s.Status == CommissionStatementStatus.Generated)
+                                        {
+                                            <button class="link-button" @onclick="() => DownloadAsync(s.Id)">PDF</button>
+                                        }
+                                        else
+                                        {
+                                            <span class="muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+
+        </section>
+    </ChildContent>
+</AdminLayout>
+
+@code {
+    private int? _runYear;
+    private string _runMonth = "";
+    private bool _isRunning;
+    private CommissionStatementGenerationResultDto? _runResult;
+    private string? _runError;
+
+    private int? _filterYear;
+    private string _filterKind = "";
+    private int? _filterRestaurantId;
+    private List<AdminCommissionStatementRowDto> _items = new();
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        CommissionStatementKind? kind = string.IsNullOrEmpty(_filterKind)
+            ? null
+            : Enum.Parse<CommissionStatementKind>(_filterKind);
+        var page = await Api.AdminListAsync(_filterYear, kind, _filterRestaurantId, 1, 100);
+        _items = page?.Items.ToList() ?? new();
+        _loading = false;
+    }
+
+    private async Task ApplyFiltersAsync() => await LoadAsync();
+
+    private async Task RunGenerationAsync()
+    {
+        _isRunning = true;
+        _runResult = null;
+        _runError = null;
+        try
+        {
+            int? month = string.IsNullOrEmpty(_runMonth) ? null : int.Parse(_runMonth);
+            _runResult = await Api.RunAsync(_runYear, month);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _runError = ex.Message;
+        }
+        finally
+        {
+            _isRunning = false;
+        }
+    }
+
+    private async Task DownloadAsync(int id)
+    {
+        try
+        {
+            await Api.DownloadPdfAsync(id);
+        }
+        catch (Exception ex)
+        {
+            _runError = $"Téléchargement échoué : {ex.Message}";
+        }
+    }
+
+    private static string MoisLabel(int m) => m switch
+    {
+        1 => "Janvier", 2 => "Février", 3 => "Mars", 4 => "Avril",
+        5 => "Mai", 6 => "Juin", 7 => "Juillet", 8 => "Août",
+        9 => "Septembre", 10 => "Octobre", 11 => "Novembre", 12 => "Décembre",
+        _ => m.ToString(),
+    };
+}
