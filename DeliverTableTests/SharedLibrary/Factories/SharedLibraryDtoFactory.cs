@@ -36,6 +36,7 @@ public static class SharedLibraryDtoFactory
         Email = "contact@restaurant.be",
         Password = "SecurePass123!",
         ConfirmPassword = "SecurePass123!",
+        Siret = "78467169500103",
         Restaurant = new CreateRestaurantDto
         {
             Name = "Le Bon Restaurant",
@@ -45,7 +46,7 @@ public static class SharedLibraryDtoFactory
             ZipCode = "75001",
             Country = AvailableCountries.France.ToString(),
             Type = RestaurantType.Autre.ToString(),
-            Siret = "73282932000074",
+            Siret = "78467169500103",
             LegalName = "Le Bon Restaurant SAS",
             LegalAddress = "1 rue Test",
             LegalForm = "SAS",

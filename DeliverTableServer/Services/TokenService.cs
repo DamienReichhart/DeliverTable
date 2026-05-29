@@ -29,6 +29,7 @@ namespace DeliverTableServer.Services
 
             List<Claim> claims = [
                 new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new(ClaimTypes.Role, role)
             ];
 
             var tokenDescriptor = new SecurityTokenDescriptor
