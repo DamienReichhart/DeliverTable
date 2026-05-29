@@ -60,4 +60,27 @@ public class CommissionStatementApiClient(HttpClient http, IJSRuntime js) : ICom
 
         await js.InvokeVoidAsync("downloadFileFromBase64", fileName, contentType, Convert.ToBase64String(bytes));
     }
+
+    public async Task<PaginatedResult<AdminCommissionStatementRowDto>?> GetForRestaurantAsync(int restaurantId, int page, int pageSize)
+    {
+        var url = $"{ApiRoutes.CommissionStatement.Base}/restaurant/{restaurantId}?page={page}&pageSize={pageSize}";
+        var response = await http.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<PaginatedResult<AdminCommissionStatementRowDto>>();
+    }
+
+    public async Task DownloadOwnerPdfAsync(int id)
+    {
+        var url = $"{ApiRoutes.CommissionStatement.Base}/{id}/pdf";
+        var response = await http.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return;
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? $"releve-commissions-{id}.pdf";
+
+        await js.InvokeVoidAsync("downloadFileFromBase64", fileName, contentType, Convert.ToBase64String(bytes));
+    }
 }
