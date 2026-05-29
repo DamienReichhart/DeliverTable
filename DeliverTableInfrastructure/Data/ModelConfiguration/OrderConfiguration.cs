@@ -102,5 +102,17 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasIndex(o => o.CustomerId);
         builder.HasIndex(o => o.RestaurantId);
         builder.HasIndex(o => o.Status);
+
+        builder.HasOne(o => o.CommissionStatement)
+               .WithMany()
+               .HasForeignKey(o => o.CommissionStatementId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(o => o.CommissionRefundStatement)
+               .WithMany()
+               .HasForeignKey(o => o.CommissionRefundStatementId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(o => o.CommissionStatementId);
     }
 }
