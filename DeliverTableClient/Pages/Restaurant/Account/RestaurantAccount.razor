@@ -3,12 +3,13 @@
 @inject IRestaurantService RestaurantService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableClient.Services.CommissionStatement
 @using DeliverTableClient.Services.Dispute
-@using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.CommissionStatement
 @using DeliverTableSharedLibrary.Dtos.Dispute
-@using DeliverTableSharedLibrary.Dtos.Invoice
 @using DeliverTableSharedLibrary.Dtos.Restaurant
-@inject IInvoiceApiClient InvoiceApi
+@using DeliverTableSharedLibrary.Enums
+@inject ICommissionStatementApiClient CommissionStatementApi
 @inject IDisputeApiClient DisputeApi
 
 <PageTitle>Compte — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
@@ -81,16 +82,16 @@
         }
 
         <div class="transactions-section">
-            <h2>Factures de commission</h2>
+            <h2>Relevés de commissions</h2>
 
-            @if (_invoicesLoading)
+            @if (_statementsLoading)
             {
-                <p>Chargement des factures...</p>
+                <p>Chargement des relevés...</p>
             }
-            else if (_invoices is null || _invoices.Count == 0)
+            else if (_statements is null || _statements.Count == 0)
             {
                 <div class="empty-state">
-                    <p>Aucune facture de commission pour le moment.</p>
+                    <p>Aucun relevé de commissions pour le moment.</p>
                 </div>
             }
             else
@@ -99,33 +100,31 @@
                     <table class="transactions-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
+                                <th>Période</th>
                                 <th>Numéro</th>
-                                <th>N° commande</th>
-                                <th>Montant TTC</th>
+                                <th>Type</th>
+                                <th>Date d'émission</th>
+                                <th>Total TTC</th>
                                 <th>Statut</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var inv in _invoices)
+                            @foreach (var s in _statements)
                             {
                                 <tr>
-                                    <td>@inv.IssuedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>@s.PeriodYear-@s.PeriodMonth.ToString("D2")</td>
+                                    <td>@s.Number</td>
                                     <td>
-                                        @inv.Number
-                                        @if (inv.Kind == InvoiceKind.CommissionCreditNoteToRestaurant)
-                                        {
-                                            <span class="invoice-badge">AVOIR</span>
-                                        }
+                                        @(s.Kind == CommissionStatementKind.Invoice ? "Relevé" : "Avoir")
                                     </td>
-                                    <td>#@inv.OrderId</td>
-                                    <td>@inv.TotalTtc.ToString("C", _frCulture)</td>
-                                    <td>@inv.Status</td>
+                                    <td>@s.IssuedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>@s.TotalTtc.ToString("C", _frCulture)</td>
+                                    <td>@s.Status</td>
                                     <td>
-                                        @if (inv.Status == InvoiceStatus.Generated)
+                                        @if (s.HasPdf && s.Status == CommissionStatementStatus.Generated)
                                         {
-                                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => DownloadInvoice(inv.Id)">Télécharger</button>
+                                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => DownloadStatement(s.Id)">Télécharger</button>
                                         }
                                     </td>
                                 </tr>
@@ -261,8 +260,8 @@
     private bool _loading = true;
     private string? _error;
 
-    private List<InvoiceListItemDto>? _invoices;
-    private bool _invoicesLoading = true;
+    private List<AdminCommissionStatementRowDto>? _statements;
+    private bool _statementsLoading = true;
 
     private List<DisputeRowDto>? _disputes;
     private bool _disputesLoading = true;
@@ -277,15 +276,15 @@
     {
         var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
         _restaurantName = restaurant?.Name;
-        await Task.WhenAll(LoadAccount(), LoadInvoices(), LoadDisputes());
+        await Task.WhenAll(LoadAccount(), LoadStatements(), LoadDisputes());
     }
 
-    private async Task LoadInvoices()
+    private async Task LoadStatements()
     {
-        _invoicesLoading = true;
-        var result = await InvoiceApi.GetForRestaurantAsync(RestaurantId, 1, 50);
-        _invoices = result?.Items.ToList() ?? new();
-        _invoicesLoading = false;
+        _statementsLoading = true;
+        var result = await CommissionStatementApi.GetForRestaurantAsync(RestaurantId, 1, 50);
+        _statements = result?.Items.ToList() ?? new();
+        _statementsLoading = false;
     }
 
     private async Task LoadDisputes()
@@ -296,7 +295,7 @@
         _disputesLoading = false;
     }
 
-    private Task DownloadInvoice(int id) => InvoiceApi.DownloadPdfAsync(id);
+    private Task DownloadStatement(int id) => CommissionStatementApi.DownloadOwnerPdfAsync(id);
 
     private async Task LoadAccount()
     {

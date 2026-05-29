@@ -256,6 +256,14 @@ public static class ApiRoutes
         public const string DownloadRoute = "{id:int}/pdf";
     }
 
+    /// <summary>Commission statement routes (owner-facing).</summary>
+    public static class CommissionStatement
+    {
+        public const string Base = VersionnedBase + "/commission-statement";
+        public const string RestaurantListRoute = "restaurant/{id:int}";
+        public const string DownloadRoute = "{id:int}/pdf";
+    }
+
     /// <summary>Dispute routes.</summary>
     public static class Dispute
     {
