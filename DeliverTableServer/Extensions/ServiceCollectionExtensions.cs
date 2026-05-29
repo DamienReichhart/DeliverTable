@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailJobRepository, EmailJobRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<ICommissionStatementRepository, CommissionStatementRepository>();
         services.AddScoped<IDisputeRepository, DisputeRepository>();
         services.AddScoped<IReclamationRepository, ReclamationRepository>();
     }
