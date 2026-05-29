@@ -56,15 +56,18 @@ builder.Services.AddScoped<IObjectStorageService, ObjectStorageService>();
 // Repositories
 builder.Services.AddScoped<IEmailJobRepository, EmailJobRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<ICommissionStatementRepository, CommissionStatementRepository>();
 
 // Worker services
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, RazorEmailTemplateRenderer>();
 builder.Services.AddSingleton<IInvoicePdfRenderer, InvoicePdfRenderer>();
+builder.Services.AddSingleton<ICommissionStatementPdfRenderer, CommissionStatementPdfRenderer>();
 
 // Background services
 builder.Services.AddHostedService<EmailJobConsumer>();
 builder.Services.AddHostedService<InvoiceJobConsumer>();
+builder.Services.AddHostedService<CommissionStatementJobConsumer>();
 builder.Services.AddHostedService<JobSweepService>();
 
 var host = builder.Build();
