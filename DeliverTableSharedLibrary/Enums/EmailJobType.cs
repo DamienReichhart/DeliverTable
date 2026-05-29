@@ -19,4 +19,6 @@ public enum EmailJobType
     DisputeWonRestaurant,
     DisputeLostAdmin,
     DisputeLostRestaurant,
+    CommissionStatementInvoice,
+    CommissionStatementCreditNote,
 }
