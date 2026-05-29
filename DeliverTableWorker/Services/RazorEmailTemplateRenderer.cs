@@ -39,6 +39,8 @@ public class RazorEmailTemplateRenderer : IEmailTemplateRenderer
             EmailJobType.DisputeWonRestaurant => await RenderTypedAsync<DisputeEmailData>("DisputeWonRestaurant", templateDataJson),
             EmailJobType.DisputeLostAdmin => await RenderTypedAsync<DisputeEmailData>("DisputeLostAdmin", templateDataJson),
             EmailJobType.DisputeLostRestaurant => await RenderTypedAsync<DisputeEmailData>("DisputeLostRestaurant", templateDataJson),
+            EmailJobType.CommissionStatementInvoice => await RenderTypedAsync<CommissionStatementInvoiceData>("CommissionStatementInvoice", templateDataJson),
+            EmailJobType.CommissionStatementCreditNote => await RenderTypedAsync<CommissionStatementCreditNoteData>("CommissionStatementCreditNote", templateDataJson),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown email job type")
         };
     }
