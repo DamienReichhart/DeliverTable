@@ -18,12 +18,12 @@
 
         <div class="live-header__actions">
             <div class="mode-toggle">
-                <button class="mode-toggle__btn @(CurrentMode == LiveViewMode.Restaurant ? "mode-toggle__btn--active" : "")" 
+                <button class="mode-toggle__btn @(CurrentMode == LiveViewMode.Restaurant ? "mode-toggle__btn--active" : "")"
                         @onclick="() => CurrentMode = LiveViewMode.Restaurant">
                     <Blazicon Svg="Lucide.ChefHat" class="mode-toggle__icon" />
                     Restaurant
                 </button>
-                <button class="mode-toggle__btn @(CurrentMode == LiveViewMode.Client ? "mode-toggle__btn--active" : "")" 
+                <button class="mode-toggle__btn @(CurrentMode == LiveViewMode.Client ? "mode-toggle__btn--active" : "")"
                         @onclick="() => CurrentMode = LiveViewMode.Client">
                     <Blazicon Svg="Lucide.Users" class="mode-toggle__icon" />
                     Client
@@ -34,8 +34,8 @@
             {
                 <div class="restaurant-selector">
                     <Blazicon Svg="Lucide.Store" class="restaurant-selector__icon" />
-                    <select class="restaurant-selector__select" 
-                            value="@SelectedRestaurant" 
+                    <select class="restaurant-selector__select"
+                            value="@SelectedRestaurant"
                             @onchange="@(async (e) => await OnRestaurantSelected(int.Parse(e.Value?.ToString() ?? "0")))">
                         @foreach (var restaurant in restaurants)
                         {
@@ -61,24 +61,22 @@
     {
         <div class="live-content @(CurrentMode == LiveViewMode.Client ? "live-content--client" : "")">
             <main class="live-main">
-                @if (orders.Length == 0 && finishedOrders.Count(o => o.Status == nameof(OrderStatus.Ready)) == 0)
+                @if (CurrentMode == LiveViewMode.Restaurant)
                 {
-                    <div class="live-empty live-empty--inline">
-                        <div class="live-empty__card">
-                            <Blazicon Svg="Lucide.ChefHat" class="live-empty__icon" />
-                            <h2 class="live-empty__title">Prêt pour le service !</h2>
-                            <p class="live-empty__text">Les commandes apparaîtront ici dès qu'elles seront passées.</p>
-                            <button class="app-btn app-btn--secondary mt-4" @onclick="LoadOrders">
-                                <Blazicon Svg="Lucide.RefreshCcw" class="app-btn__icon" />
-                                Actualiser
-                            </button>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    @if (CurrentMode == LiveViewMode.Restaurant)
+                    @if (orders.Length == 0 && finishedOrders.Count(o => o.Status == nameof(OrderStatus.Ready)) == 0)
                     {
+                        <div class="live-empty live-empty--inline">
+                            <div class="live-empty__card">
+                                <Blazicon Svg="Lucide.ChefHat" class="live-empty__icon" />
+                                <h2 class="live-empty__title">Prêt pour le service !</h2>
+                                <p class="live-empty__text">Les commandes apparaîtront ici dès qu'elles seront passées.</p>
+                                <button class="app-btn app-btn--secondary mt-4" @onclick="LoadOrders">
+                                    <Blazicon Svg="Lucide.RefreshCcw" class="app-btn__icon" />
+                                    Actualiser
+                                </button>
+                            </div>
+                        </div>
+                    } else {
                         <div class="live-columns">
                             <div class="live-column">
                                 <div class="live-column__header">
@@ -88,9 +86,9 @@
                                 <div class="live-column__grid">
                                     @foreach (var order in orders.Where(o => o.Status == nameof(OrderStatus.Pending) || o.Status == nameof(OrderStatus.Confirmed)))
                                     {
-                                        <OrderLiveCard Order="order" 
-                                                       OnOrderReady="MarkAsReady" 
-                                                       OnOrderConfirmed="MarkAsConfirmed" 
+                                        <OrderLiveCard Order="order"
+                                                       OnOrderReady="MarkAsReady"
+                                                       OnOrderConfirmed="MarkAsConfirmed"
                                                        OnOrderPreparing="MarkAsPreparing" />
                                     }
                                 </div>
@@ -103,14 +101,15 @@
                                 <div class="live-column__grid">
                                     @foreach (var order in orders.Where(o => o.Status == nameof(OrderStatus.Preparing)))
                                     {
-                                        <OrderLiveCard Order="order" 
-                                                       OnOrderReady="MarkAsReady" 
-                                                       OnOrderConfirmed="MarkAsConfirmed" 
+                                        <OrderLiveCard Order="order"
+                                                       OnOrderReady="MarkAsReady"
+                                                       OnOrderConfirmed="MarkAsConfirmed"
                                                        OnOrderPreparing="MarkAsPreparing" />
                                     }
                                 </div>
                             </div>
                         </div>
+                        }
                     }
                     else
                     {
@@ -131,7 +130,7 @@
                                     <h2 class="live-column__title">À emporter</h2>
                                 </div>
                                 <div class="live-column__grid live-column__grid--client">
-                                    @foreach (var order in finishedOrders.Where(o => o.Status == nameof(OrderStatus.Ready) && o.OrderType == nameof(OrderType.Delivery) && o.UpdatedAt >= DateTime.UtcNow.AddMinutes(-15)))
+                                    @foreach (var order in finishedOrders.Where(o => o.Status == nameof(OrderStatus.Ready) && o.OrderType == nameof(OrderType.Delivery) && o.UpdatedAt >= DateTime.UtcNow.AddMinutes(-20)))
                                     {
                                         <div class="client-order-id client-order-id--ready">#@order.Id</div>
                                     }
@@ -142,7 +141,7 @@
                                     <h2 class="live-column__title">Sur place</h2>
                                 </div>
                                 <div class="live-column__grid live-column__grid--client">
-                                    @foreach (var order in finishedOrders.Where(o => o.Status == nameof(OrderStatus.Ready) && o.OrderType == nameof(OrderType.DineIn) && o.UpdatedAt >= DateTime.UtcNow.AddMinutes(-15)))
+                                    @foreach (var order in finishedOrders.Where(o => o.Status == nameof(OrderStatus.Ready) && o.OrderType == nameof(OrderType.DineIn) && o.UpdatedAt >= DateTime.UtcNow.AddMinutes(-20)))
                                     {
                                         <div class="client-order-id client-order-id--ready">#@order.Id</div>
                                     }
@@ -150,7 +149,6 @@
                             </div>
                         </div>
                     }
-                }
             </main>
 
             @if (CurrentMode == LiveViewMode.Restaurant)
