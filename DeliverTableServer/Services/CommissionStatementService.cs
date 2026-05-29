@@ -88,9 +88,75 @@ public class CommissionStatementService(
         return result;
     }
 
-    public Task<ServiceResult> HandleRefundForPriorPeriodAsync(
+    public async Task<ServiceResult> HandleRefundForPriorPeriodAsync(
         int orderId, int refundId, string stripeRefundId, decimal refundedAmount, CancellationToken ct)
-        => throw new NotImplementedException("Implemented in Task 21.");
+    {
+        var order = await orderRepo.GetByIdAsync(orderId, ct);
+        if (order is null) return ServiceResult.Success();
+        if (order.CommissionStatementId is null) return ServiceResult.Success();
+
+        var existingLine = await repo.FindLineByRefundEventIdAsync(stripeRefundId, ct);
+        if (existingLine is not null) return ServiceResult.Success();
+
+        var original = await repo.GetByIdWithLinesAndRecipientAsync(order.CommissionStatementId.Value, ct);
+        if (original is null) return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
+
+        var originalLine = original.Lines.FirstOrDefault(l => l.OrderId == orderId);
+        if (originalLine is null) return ServiceResult.Success();
+
+        var restaurant = await restaurantRepo.GetByIdWithOwnerAsync(order.RestaurantId, ct);
+        if (restaurant is null) return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
+
+        var rate = originalLine.CommissionRateSnapshot;
+        var vat = originalLine.VatRate;
+        var ht = Math.Round(refundedAmount * rate, 2, MidpointRounding.AwayFromZero);
+        var ttc = Math.Round(ht * (1 + vat / 100m), 2, MidpointRounding.AwayFromZero);
+        var vatAmount = Math.Round(ttc - ht, 2, MidpointRounding.AwayFromZero);
+
+        var creditNote = new CommissionStatement
+        {
+            Kind = CommissionStatementKind.CreditNote,
+            RecipientRestaurantId = restaurant.Id,
+            PeriodYear = original.PeriodYear,
+            PeriodMonth = original.PeriodMonth,
+            IssuedAt = DateTime.UtcNow,
+            Currency = "EUR",
+            Status = CommissionStatementStatus.Queued,
+            RelatedStatementId = original.Id,
+            IssuerLegalSnapshotJson = original.IssuerLegalSnapshotJson,
+            RecipientSnapshotJson = original.RecipientSnapshotJson,
+            RecipientEmailSnapshot = restaurant.Owner?.Email,
+            TotalHt = -ht,
+            TotalVat = -vatAmount,
+            TotalTtc = -ttc,
+        };
+        creditNote.Lines.Add(new CommissionStatementLine
+        {
+            OrderId = order.Id,
+            OrderNumber = order.Id.ToString(),
+            OrderCompletedAt = order.DeliveredAt ?? order.UpdatedAt,
+            OrderTotalAmount = refundedAmount,
+            CommissionRateSnapshot = rate,
+            VatRate = vat,
+            LineHt = -ht,
+            LineVat = -vatAmount,
+            LineTtc = -ttc,
+            RefundEventId = stripeRefundId,
+            SortOrder = 0,
+        });
+
+        var seq = await repo.AllocateNextNumberAsync(ct);
+        creditNote.Number = $"AVOIR-COMM-{original.PeriodYear:D4}-{original.PeriodMonth:D2}-{seq:D6}";
+
+        order.CommissionRefundStatementId = creditNote.Id;
+        await repo.CreateAsync(creditNote, ct);
+        await orderRepo.UpdateAsync(order, ct);
+
+        await publisher.PublishAsync(MessagingExchanges.CommissionStatement,
+            new CommissionStatementJobMessage(creditNote.Id), ct);
+
+        return ServiceResult.Success();
+    }
 
     internal static (DateTime startUtc, DateTime endUtc) ComputePeriodBoundsUtc(int year, int month)
     {
