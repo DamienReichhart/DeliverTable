@@ -29,6 +29,7 @@ public class PaymentService(
     IEmailJobService emailJobService,
     IInvoiceService invoiceService,
     IDisputeService disputeService,
+    ICommissionStatementService commissionStatementService,
     IMessagePublisher publisher,
     IHubContext<OrderHub, IOrderHub> hubContext,
     DeliverTableContext dbContext,
@@ -444,6 +445,13 @@ public class PaymentService(
                     var captured = msg;
                     deferredPublishes.Add(() => publisher.PublishAsync(MessagingExchanges.Invoice, captured, ct));
                 }
+            }
+
+            var newRefund = await paymentRepository.GetRefundByIdAsync(newRefundId, ct);
+            if (newRefund is not null)
+            {
+                await commissionStatementService.HandleRefundForPriorPeriodAsync(
+                    order.Id, newRefund.Id, newRefund.StripeRefundId, newRefund.Amount, ct);
             }
         }
     }

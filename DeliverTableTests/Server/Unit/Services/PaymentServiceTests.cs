@@ -37,6 +37,7 @@ public class PaymentServiceTests
     private IEmailJobService _emailJobService = null!;
     private IInvoiceService _invoiceService = null!;
     private IDisputeService _disputeService = null!;
+    private ICommissionStatementService _commissionStatementService = null!;
     private IMessagePublisher _publisher = null!;
     private IHubContext<OrderHub, IOrderHub> _hubContext = null!;
     private AppEnvironment _env = null!;
@@ -56,13 +57,15 @@ public class PaymentServiceTests
         _emailJobService = Substitute.For<IEmailJobService>();
         _invoiceService = Substitute.For<IInvoiceService>();
         _disputeService = Substitute.For<IDisputeService>();
+        _commissionStatementService = Substitute.For<ICommissionStatementService>();
         _publisher = Substitute.For<IMessagePublisher>();
         _hubContext = Substitute.For<IHubContext<OrderHub, IOrderHub>>();
         _env = TestEnvironmentFactory.Create();
         _testDb = new TestDatabase();
         _sut = new PaymentService(
             _stripe, _paymentRepo, _orderRepo, _userRepo,
-            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _invoiceService, _disputeService, _publisher,
+            _loyaltyRepo, _discountRepo, _cartRepo, _emailJobService, _invoiceService, _disputeService,
+            _commissionStatementService, _publisher,
             _hubContext, _testDb.Context, _env, NullLogger<PaymentService>.Instance);
     }
 
@@ -650,4 +653,56 @@ public class PaymentServiceTests
     }
 
     #endregion
+
+    // ─── Commission statement refund wiring ───────────────────────────────
+
+    [Test]
+    public async Task HandleChargeRefundedAsync_CallsCommissionStatementHandlerForNewRefund()
+    {
+        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_cs", Amount = 100m };
+        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        var refund = new Refund { Id = 77, PaymentId = 1, StripeRefundId = "re_abc", Amount = 30m, Currency = "EUR" };
+
+        var charge = new Stripe.Charge
+        {
+            Id = "ch_cs",
+            PaymentIntentId = "pi_cs",
+            Refunds = new Stripe.StripeList<Stripe.Refund>
+            {
+                Data = new List<Stripe.Refund>
+                {
+                    new() { Id = "re_abc", Amount = 3000, Currency = "eur", Status = "succeeded" },
+                },
+            },
+        };
+        var evt = new Stripe.Event
+        {
+            Id = "evt_cs",
+            Type = "charge.refunded",
+            Data = new Stripe.EventData { Object = charge },
+        };
+
+        _paymentRepo.TryRegisterProcessedEventAsync("evt_cs", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+        _paymentRepo.GetByStripePaymentIntentIdAsync("pi_cs", Arg.Any<CancellationToken>())
+            .Returns(payment);
+        _paymentRepo.GetRefundByStripeIdAsync("re_abc", Arg.Any<CancellationToken>())
+            .Returns((Refund?)null);
+        _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>())
+            .Returns(ci => { var r = ci.Arg<Refund>(); r.Id = 77; return r; });
+        _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>())
+            .Returns(30m);
+        _paymentRepo.GetRefundByIdAsync(77, Arg.Any<CancellationToken>())
+            .Returns(refund);
+        _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>())
+            .Returns(order);
+        _commissionStatementService
+            .HandleRefundForPriorPeriodAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<decimal>(), Arg.Any<CancellationToken>())
+            .Returns(ServiceResult.Success());
+
+        await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+
+        await _commissionStatementService.Received(1).HandleRefundForPriorPeriodAsync(
+            10, 77, "re_abc", 30m, Arg.Any<CancellationToken>());
+    }
 }
