@@ -5,7 +5,9 @@ using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableInfrastructure.Services.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
+using DeliverTableServer.Constants;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.Invoice;
 using DeliverTableSharedLibrary.Enums;
@@ -27,6 +29,7 @@ public class InvoiceServiceTests
     private IEmailJobRepository _emailJobRepo = null!;
     private IMessagePublisher _publisher = null!;
     private AppEnvironment _env = null!;
+    private ISystemClock _clock = null!;
     private InvoiceService _sut = null!;
 
     [SetUp]
@@ -41,6 +44,9 @@ public class InvoiceServiceTests
         _emailJobRepo = Substitute.For<IEmailJobRepository>();
         _publisher = Substitute.For<IMessagePublisher>();
         _env = TestEnvironmentFactory.Create();
+        _clock = Substitute.For<ISystemClock>();
+        // Default: before the cutover so existing tests keep their two-invoice behaviour.
+        _clock.UtcNow.Returns(CommissionInvoicingCutover.MonthlyStartUtc.AddDays(-1));
         _sut = new InvoiceService(
             _invoiceRepo,
             _orderRepo,
@@ -50,7 +56,8 @@ public class InvoiceServiceTests
             _objectStorage,
             _emailJobRepo,
             _publisher,
-            _env);
+            _env,
+            _clock);
     }
 
     [Test]
@@ -1222,4 +1229,50 @@ public class InvoiceServiceTests
     private static InvoiceLine[] CustomerInvoiceLines(IEnumerable<Invoice> captured) =>
         captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer)
             .Lines.OrderBy(l => l.SortOrder).ToArray();
+
+    // ─── Cutover gate tests ───────────────────────────────────────────────
+
+    [Test]
+    public async Task CreatePendingInvoices_BeforeCutover_CommissionInvoiceIsInBatch()
+    {
+        _clock.UtcNow.Returns(CommissionInvoicingCutover.MonthlyStartUtc.AddDays(-1));
+
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 200,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 20m, 1, VatRate.Normal20) },
+            discounts: new());
+        ArrangeDefaultMocks(200, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(200, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.CommissionInvoiceToRestaurant), Is.True);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer), Is.True);
+    }
+
+    [Test]
+    public async Task CreatePendingInvoices_AfterCutover_CommissionInvoiceNotInBatch()
+    {
+        _clock.UtcNow.Returns(CommissionInvoicingCutover.MonthlyStartUtc.AddMinutes(1));
+
+        var captured = ArrangeCapture();
+        var resto = Resto();
+        var order = BuildOrder(
+            orderId: 201,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 20m, 1, VatRate.Normal20) },
+            discounts: new());
+        ArrangeDefaultMocks(201, order, resto.Id);
+
+        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(201, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.CommissionInvoiceToRestaurant), Is.False);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer), Is.True);
+    }
 }

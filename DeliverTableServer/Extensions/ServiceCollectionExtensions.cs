@@ -2,6 +2,7 @@ using DeliverTableInfrastructure.Invoicing;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 
@@ -89,5 +90,6 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IGeoLocationService, GeoLocationService>();
         services.AddScoped<IStripeGateway, StripeGateway>();
         services.AddScoped<IInvoiceNumberingService, InvoiceNumberingService>();
+        services.AddSingleton<ISystemClock, SystemClock>();
     }
 }
