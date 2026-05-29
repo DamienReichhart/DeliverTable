@@ -1,3 +1,4 @@
+@use "sass:color";
 @use '../../../../Styles/abstracts/variables' as *;
 @use '../../../../Styles/abstracts/mixins' as *;
 
@@ -133,7 +134,7 @@
   font-size: $font-size-xs;
   font-weight: $font-weight-medium;
   background: rgba($color-amber-gold, 0.12);
-  color: darken($color-amber-gold, 18%);
+  color: color.adjust($color-amber-gold, $lightness: -18%);
   white-space: nowrap;
   flex-shrink: 0;
 }

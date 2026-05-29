@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../../../../Styles/abstracts/variables" as *;
 @use "../../../../Styles/abstracts/mixins" as *;
 
@@ -47,7 +48,7 @@
   box-shadow: $shadow-card;
 
   thead tr {
-    background: lighten($color-garden-sage, 45%);
+    background: color.adjust($color-garden-sage, $lightness: 45%);
   }
 
   th,
