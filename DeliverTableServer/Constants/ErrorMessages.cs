@@ -149,4 +149,9 @@ public static class ErrorMessages
     public const string ReclamationAccessDenied = "Vous n'êtes pas autorisé à modifier cette réclamation";
     public const string ReclamationRefundInsufficientBalance = "Le solde du restaurant est insuffisant pour effectuer ce remboursement";
     public const string ReclamationRefundNoItems = "Aucun article valide sélectionné pour le remboursement partiel";
+
+    // ── Commission statements ──
+    public const string CommissionStatementInvalidPeriod = "Période invalide pour la génération du relevé de commissions";
+    public const string CommissionStatementGenerationFailed = "Échec de la génération du relevé de commissions";
+    public const string CommissionStatementNotFound = "Relevé de commissions introuvable";
 }
