@@ -87,8 +87,8 @@
                                        class="form-control"
                                        value="@slot.EndTime"
                                        @oninput="e => UpdateOpeningSlotEnd(currentDayIndex, currentSlotIndex, e.Value?.ToString())" />
-                                <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => RemoveOpeningSlot(currentDayIndex, currentSlotIndex)">
-                                    Supprimer
+                                <button type="button" class="app-btn app-btn--danger app-btn--sm opening-slot-remove" title="Supprimer" @onclick="() => RemoveOpeningSlot(currentDayIndex, currentSlotIndex)">
+                                    <Blazicon Svg="Lucide.Trash2" class="app-icon" />
                                 </button>
                             </div>
                         }
