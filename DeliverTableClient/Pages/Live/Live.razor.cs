@@ -182,8 +182,7 @@ public partial class Live : ComponentBase, IDisposable
 
         if (readyError is null && readyResult?.Items != null)
         {
-            finishedOrders.AddRange(readyResult.Items);
-            finishedOrders = finishedOrders.OrderByDescending(o => o.CreatedAt).ToList();
+            finishedOrders = readyResult.Items;
         }
 
         var (deliveredResult, deliveredError) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
