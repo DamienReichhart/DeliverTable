@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Net.Http.Json;
-using System.Text.Json;
 using DeliverTableClient.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants;
 using DeliverTableSharedLibrary.Dtos;
@@ -12,23 +11,13 @@ namespace DeliverTableClient.Services
     {
         private readonly HttpClient _httpClient = httpClient;
 
-        public async Task<bool> CreateRestaurant(CreateRestaurantDto creationDto, CancellationToken cancellationToken = default)
+        public async Task<(bool success, ErrorResponse? error)> CreateRestaurant(CreateRestaurantDto creationDto, CancellationToken cancellationToken = default)
         {
-            HttpResponseMessage? response = await _httpClient.PostAsJsonAsync(ApiRoutes.Restaurant.Base, creationDto);
+            var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Restaurant.Base, creationDto, cancellationToken);
             if (response.IsSuccessStatusCode)
-            {
-                await response.Content.ReadFromJsonAsync<RestaurantDto>(cancellationToken: cancellationToken);
-                return true;
-            }
-            else
-            {
-                ErrorResponse? errorContent = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken);
-                if (errorContent != null)
-                {
-                    throw new ArgumentException(errorContent.Error);
-                }
-                return false;
-            }
+                return (true, null);
+
+            return (false, await ReadError(response, cancellationToken));
         }
 
         public async Task<(PaginatedResult<RestaurantDto>?, ErrorResponse?)> GetConnectedUserRestaurants(CancellationToken cancellationToken = default)
@@ -46,16 +35,30 @@ namespace DeliverTableClient.Services
             }
         }
 
-        public async Task<bool> DeleteRestaurant(int id)
+        public async Task<(bool success, ErrorResponse? error)> DeleteRestaurant(int id)
         {
             var response = await _httpClient.DeleteAsync($"{ApiRoutes.Restaurant.Base}/{id}");
 
             if (response.IsSuccessStatusCode)
-                return true;
+                return (true, null);
 
-            ErrorResponse? errorContent = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-            throw new HttpRequestException(
-                errorContent?.Error ?? $"Delete failed for restaurant {id} (HTTP {(int)response.StatusCode})");
+            return (false, await ReadError(response));
+        }
+
+        private static async Task<ErrorResponse> ReadError(HttpResponseMessage response, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken);
+                if (error is not null && !string.IsNullOrWhiteSpace(error.Error))
+                    return error;
+            }
+            catch
+            {
+                // Non-JSON or empty error body — fall through to a generic message.
+            }
+
+            return new ErrorResponse { Error = $"Une erreur est survenue (HTTP {(int)response.StatusCode})" };
         }
 
         public async Task<(DetailedRestaurantDto?, ErrorResponse?)> GetRestaurantById(int id, CancellationToken cancellationToken = default)
