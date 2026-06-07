@@ -1,0 +1,14 @@
+<svg width="400" height="600" viewBox="0 0 400 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="600" fill="#F5F5F5"/>
+  <rect x="100" y="50" width="200" height="60" fill="#D0D0D0" stroke="#BBB"/>
+  <text x="200" y="85" text-anchor="middle" fill="#888" font-family="monospace" font-size="14">[LOGO_PLACEHOLDER]</text>
+  <rect x="40" y="160" width="320" height="320" fill="white" stroke="#CCC"/>
+  <rect x="60" y="190" width="150" height="25" fill="#F0F0F0"/>
+  <rect x="60" y="240" width="280" height="45" fill="white" stroke="#DDD"/>
+  <text x="70" y="265" fill="#BBB" font-family="monospace" font-size="12">[INPUT_EMAIL]</text>
+  <rect x="60" y="310" width="280" height="45" fill="white" stroke="#DDD"/>
+  <text x="70" y="335" fill="#BBB" font-family="monospace" font-size="12">[INPUT_PASSWORD]</text>
+  <rect x="60" y="400" width="280" height="50" fill="#D0D0D0" stroke="#BBB"/>
+  <text x="200" y="430" text-anchor="middle" fill="#666" font-family="monospace" font-size="14">[BTN_SUBMIT]</text>
+  <rect x="100" y="520" width="200" height="20" fill="#F0F0F0"/>
+</svg>

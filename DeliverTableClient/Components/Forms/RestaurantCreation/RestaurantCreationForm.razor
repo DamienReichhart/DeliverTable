@@ -136,15 +136,21 @@
 
         try
         {
-            bool response = await RestaurantService.CreateRestaurant(_creationDto);
-            if (response)
+            var (success, error) = await RestaurantService.CreateRestaurant(_creationDto);
+            if (success)
             {
                 Nav.NavigateTo(uri: "/profil");
+                return;
             }
+
+            _errorMessage = error?.Error ?? "Une erreur est survenue lors de la création du restaurant.";
         }
-        catch (System.Exception exception)
+        catch
         {
-            _errorMessage = exception.Message;
+            _errorMessage = "Une erreur est survenue lors de la création du restaurant.";
+        }
+        finally
+        {
             _isSubmitting = false;
         }
     }
