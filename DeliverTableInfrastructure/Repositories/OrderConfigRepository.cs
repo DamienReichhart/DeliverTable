@@ -98,16 +98,17 @@ public class OrderConfigRepository(DeliverTableContext dbContext) : IOrderConfig
         DateTime endsAt,
         CancellationToken ct = default)
     {
+        // Conflict rules:
+        // - a restaurant-wide incoming slot (restaurantTableId == null) conflicts with every slot
+        // - an existing restaurant-wide slot conflicts with any incoming slot
+        // - two table-specific slots conflict only when they target the same table
         return await _dbContext.OrderBlockedSlots.AnyAsync(s =>
             s.RestaurantId == restaurantId
             && startsAt < s.EndsAt
             && endsAt > s.StartsAt
             && (
-                // A restaurant-wide slot conflicts with every slot.
                 restaurantTableId == null
-                // A table-specific slot conflicts with restaurant-wide slots.
                 || s.RestaurantTableId == null
-                // Two table-specific slots conflict when they target the same table.
                 || s.RestaurantTableId == restaurantTableId
             ), ct);
     }
