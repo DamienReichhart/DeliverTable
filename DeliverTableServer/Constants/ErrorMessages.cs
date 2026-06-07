@@ -53,6 +53,7 @@ public static class ErrorMessages
         $"Type de commande invalide. Valeurs possibles : {validValues}";
 
     public const string ScheduledAtMustBeFuture = "La date planifiée doit être dans le futur";
+    public const string ScheduledAtOutsideEventWindow = "La date planifiée doit être comprise dans la période de l'événement";
     public const string TablesCapacityFull = "Ce créneau est complet";
     public const string EventNameRequired = "Le nom de l'événement est obligatoire";
     public const string EventDatesRequired = "Les dates de l'événement sont obligatoires et doivent être valides";
@@ -112,6 +113,7 @@ public static class ErrorMessages
     public const string BlockedSlotOverlapExists = "Ce créneau chevauche un autre créneau déjà réservé";
     public const string ScheduledSlotIsBlocked = "Le créneau sélectionné n'est pas disponible";
     public const string InvalidOpeningHours = "Les horaires d'ouverture sont invalides";
+    public const string InvalidSlotDuration = "La durée d'un créneau doit être comprise entre 15 et 240 minutes";
 
     // Moderation
     public const string ModerationActionNotFound = "Action de modération introuvable";
