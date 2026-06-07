@@ -1,0 +1,25 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#F5F5F5"/>
+  <rect width="250" height="800" fill="#E0E0E0" stroke="#CCC"/>
+  <rect x="25" y="30" width="200" height="40" fill="#D0D0D0" stroke="#BBB"/>
+  <text x="125" y="55" text-anchor="middle" fill="#888" font-family="monospace" font-size="12">[LOGO]</text>
+  <rect x="20" y="120" width="210" height="35" rx="4" fill="#D0D0D0"/>
+  <rect x="20" y="170" width="210" height="35" rx="4" fill="#D0D0D0"/>
+  <rect x="20" y="220" width="210" height="35" rx="4" fill="#D0D0D0"/>
+  <rect x="280" y="30" width="890" height="160" fill="white" stroke="#CCC"/>
+  <rect x="300" y="50" width="120" height="20" fill="#F0F0F0"/>
+  <rect x="300" y="80" width="450" height="45" fill="#F0F0F0"/>
+  <rect x="300" y="140" width="300" height="20" fill="#F0F0F0"/>
+  <rect x="940" y="60" width="210" height="100" fill="#F0F0F0" stroke="#CCC"/>
+  <text x="1045" y="115" text-anchor="middle" fill="#999" font-family="monospace" font-size="12">[WIDGET_PANIER]</text>
+  <rect x="280" y="220" width="200" height="30" fill="#D0D0D0"/>
+  <rect x="280" y="270" width="890" height="60" fill="white" stroke="#CCC"/>
+  <text x="300" y="305" fill="#AAA" font-family="monospace" font-size="12">[INPUT_SEARCH_AND_FILTERS]</text>
+  <rect x="280" y="360" width="270" height="380" fill="white" stroke="#CCC"/>
+  <rect x="280" y="360" width="270" height="180" fill="#F9F9F9" stroke="#EEE"/>
+  <line x1="280" y1="360" x2="550" y2="540" stroke="#DDD"/>
+  <line x1="550" y1="360" x2="280" y2="540" stroke="#DDD"/>
+  <rect x="295" y="555" width="180" height="25" fill="#F0F0F0"/>
+  <rect x="295" y="590" width="240" height="50" fill="#F0F0F0"/>
+  <rect x="295" y="700" width="100" height="30" fill="#D0D0D0"/>
+</svg>

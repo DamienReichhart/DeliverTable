@@ -36,7 +36,6 @@ public static class SharedLibraryDtoFactory
         Email = "contact@restaurant.be",
         Password = "SecurePass123!",
         ConfirmPassword = "SecurePass123!",
-        Siret = "78467169500103",
         Restaurant = new CreateRestaurantDto
         {
             Name = "Le Bon Restaurant",

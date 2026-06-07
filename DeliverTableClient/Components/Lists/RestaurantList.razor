@@ -85,11 +85,20 @@
 
     private async Task DeleteRestaurant(int id)
     {
-        bool deleteResult = await RestaurantService.DeleteRestaurant(id);
+        _error = null;
 
-        if (deleteResult)
-            _restaurants?.RemoveAll(r => r.Id == id);
-        else
+        try
+        {
+            var (success, error) = await RestaurantService.DeleteRestaurant(id);
+
+            if (success)
+                _restaurants?.RemoveAll(r => r.Id == id);
+            else
+                _error = error?.Error ?? "Erreur lors de la suppression du restaurant";
+        }
+        catch
+        {
             _error = "Erreur lors de la suppression du restaurant";
+        }
     }
 }
