@@ -1190,6 +1190,53 @@ public class OrderServiceTests
     }
 
     [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingScheduledOutsideEventWindow_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 20;
+        request.IsEventBooking = true;
+        request.EventName = "Anniversaire";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(10);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(10).AddHours(4);
+        request.ScheduledAt = DateTime.UtcNow.AddDays(11); // après la fin de l'événement
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.ScheduledAtOutsideEventWindow));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingScheduledWithinEventWindow_Succeeds()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 20;
+        request.IsEventBooking = true;
+        request.EventName = "Anniversaire";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(10);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(10).AddHours(4);
+        request.ScheduledAt = DateTime.UtcNow.AddDays(10).AddHours(1); // dans la fenêtre
+
+        _eventRepository.CreateAsync(Arg.Any<Event>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var evt = callInfo.Arg<Event>();
+                evt.Id = 88;
+                return evt;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
     public async Task CreateFromCartAsync_WhenEventBookingDatesInvalid_ReturnsError()
     {
         SetupBaseCreateMocks();

@@ -21,6 +21,12 @@ public sealed class RestaurantOrderConfigService(
     private readonly IRestaurantRepository _restaurantRepository = restaurantRepository;
     private readonly IOrderRepository _orderRepository = orderRepository;
 
+    // Garde-fou anti-surcharge : borne le nombre de créneaux évalués (donc de requêtes
+    // DB) par appel à GetAvailableSlotsAsync, exposé en [AllowAnonymous].
+    private const int MaxSlotEvaluations = 200;
+    private const int MinSlotDurationMinutes = 15;
+    private const int MaxSlotDurationMinutes = 240;
+
     public async Task<ServiceResult<List<AdminBlockedSlotResponse>>> GetBlockedSlotsAsync(
         int restaurantId,
         int ownerId,
@@ -191,6 +197,10 @@ public sealed class RestaurantOrderConfigService(
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
+        if (request.SlotDurationMinutes < MinSlotDurationMinutes
+            || request.SlotDurationMinutes > MaxSlotDurationMinutes)
+            return new ServiceError(ErrorMessages.InvalidSlotDuration, 400);
+
         if (!ValidateOpeningHours(request.Days))
             return new ServiceError(ErrorMessages.InvalidOpeningHours, 400);
 
@@ -240,7 +250,10 @@ public sealed class RestaurantOrderConfigService(
         var days = ParseOpeningHours(rule?.AvailabilityRanges);
 
         var date = query.Date.Date;
-        var daySchedule = days.FirstOrDefault(d => d.DayOfWeek == (int)date.DayOfWeek);
+        // Le client encode les jours avec 0 = Lundi .. 6 = Dimanche, alors que
+        // DateTime.DayOfWeek encode 0 = Dimanche .. 6 = Samedi. On convertit.
+        var clientDayOfWeek = ((int)date.DayOfWeek + 6) % 7;
+        var daySchedule = days.FirstOrDefault(d => d.DayOfWeek == clientDayOfWeek);
         var availableSlots = new List<AvailableSlotDto>();
 
         if (daySchedule is null || daySchedule.Slots.Count == 0)
@@ -268,8 +281,13 @@ public sealed class RestaurantOrderConfigService(
             };
         }
 
+        var evaluatedSlots = 0;
+
         foreach (var range in daySchedule.Slots)
         {
+            if (evaluatedSlots >= MaxSlotEvaluations)
+                break;
+
             if (!TimeOnly.TryParse(range.StartTime, out var startTime)
                 || !TimeOnly.TryParse(range.EndTime, out var endTime)
                 || endTime <= startTime)
@@ -281,9 +299,10 @@ public sealed class RestaurantOrderConfigService(
             var rangeEnd = DateTime.SpecifyKind(date.Add(endTime.ToTimeSpan()), DateTimeKind.Unspecified);
 
             for (var slotStart = rangeStart;
-                 slotStart.AddMinutes(slotDurationMinutes) <= rangeEnd;
+                 slotStart.AddMinutes(slotDurationMinutes) <= rangeEnd && evaluatedSlots < MaxSlotEvaluations;
                  slotStart = slotStart.AddMinutes(slotDurationMinutes))
             {
+                evaluatedSlots++;
                 var slotEnd = slotStart.AddMinutes(slotDurationMinutes);
 
                 var slotStartUtc = TimeZoneInfo.ConvertTimeToUtc(slotStart, TimeZoneInfo.Local);
