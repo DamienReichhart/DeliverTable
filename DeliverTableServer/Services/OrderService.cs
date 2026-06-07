@@ -98,8 +98,9 @@ public sealed class OrderService(
 
         if (request.ScheduledAt.HasValue && !isEventBooking)
         {
+            var orderRule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(request.RestaurantId, ct);
             var slotStartsAt = request.ScheduledAt.Value;
-            var slotDurationMinutes = await GetSlotDurationMinutesAsync(request.RestaurantId, ct);
+            var slotDurationMinutes = GetSlotDurationMinutes(orderRule);
             var slotEndsAt = slotStartsAt.AddMinutes(slotDurationMinutes);
 
             var isBlocked = await _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
@@ -113,7 +114,7 @@ public sealed class OrderService(
 
             if (orderType == OrderType.DineIn)
             {
-                var capacityPerSlot = await GetTablesCapacityPerSlotAsync(request.RestaurantId, ct);
+                var capacityPerSlot = await GetTablesCapacityPerSlotAsync(request.RestaurantId, orderRule, ct);
 
                 if (capacityPerSlot <= 0)
                     return new ServiceError(ErrorMessages.TablesCapacityFull, 400);
@@ -381,20 +382,16 @@ public sealed class OrderService(
         return appliedCodes;
     }
 
-    private async Task<int> GetSlotDurationMinutesAsync(int restaurantId, CancellationToken ct)
+    private static int GetSlotDurationMinutes(OrderRule? orderRule)
     {
-        var orderRule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
-
         if (orderRule?.SlotDurationMinutes is null || orderRule.SlotDurationMinutes <= 0)
             return 60;
 
         return orderRule.SlotDurationMinutes.Value;
     }
 
-    private async Task<int> GetTablesCapacityPerSlotAsync(int restaurantId, CancellationToken ct)
+    private async Task<int> GetTablesCapacityPerSlotAsync(int restaurantId, OrderRule? orderRule, CancellationToken ct)
     {
-        var orderRule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
-
         if (orderRule?.TablesCapacityPerSlot is > -1)
             return orderRule.TablesCapacityPerSlot.Value;
 
@@ -404,6 +401,14 @@ public sealed class OrderService(
     private static int GetRequiredTableUnits(int guestCount)
     {
         return Math.Max(1, (int)Math.Ceiling(guestCount / 2m));
+    }
+
+    private static bool IsScheduledWithinWindow(DateTime? scheduledAt, DateTime windowStart, DateTime windowEnd)
+    {
+        if (!scheduledAt.HasValue)
+            return true;
+
+        return scheduledAt.Value >= windowStart && scheduledAt.Value <= windowEnd;
     }
 
     private async Task<ServiceResult<(bool IsEventBooking, int? EventId)>> ResolveEventBookingAsync(
@@ -425,6 +430,9 @@ public sealed class OrderService(
             if (existingEvent is null || !existingEvent.IsActive || existingEvent.RestaurantId != restaurantId)
                 return ServiceError.NotFound(ErrorMessages.EventNotFound);
 
+            if (!IsScheduledWithinWindow(request.ScheduledAt, existingEvent.StartsAt, existingEvent.EndsAt))
+                return new ServiceError(ErrorMessages.ScheduledAtOutsideEventWindow, 400);
+
             return (true, existingEvent.Id);
         }
 
@@ -436,6 +444,9 @@ public sealed class OrderService(
 
         if (request.EventEndsAt.Value <= request.EventStartsAt.Value || request.EventStartsAt.Value <= DateTime.UtcNow)
             return new ServiceError(ErrorMessages.EventDatesRequired);
+
+        if (!IsScheduledWithinWindow(request.ScheduledAt, request.EventStartsAt.Value, request.EventEndsAt.Value))
+            return new ServiceError(ErrorMessages.ScheduledAtOutsideEventWindow, 400);
 
         var createdEvent = await _eventRepository.CreateAsync(new Event
         {

@@ -3,7 +3,9 @@ using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.Admin;
+using DeliverTableSharedLibrary.Dtos.Restaurant;
 using NSubstitute;
+using System.Text.Json;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -181,6 +183,87 @@ public class RestaurantOrderConfigServiceTests
         var result = await _sut.DeleteBlockedSlotAsync(1, 9, 10);
 
         Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task GetAvailableSlotsAsync_UsesMondayZeroDayConvention()
+    {
+        // Le client encode 0 = Lundi .. 6 = Dimanche. Le service doit convertir
+        // DateTime.DayOfWeek (0 = Dimanche) vers cette convention, sinon les créneaux
+        // sont calculés sur le mauvais jour (bug du décalage).
+        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        restaurant.IsActive = true;
+        _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var date = new DateTime(2026, 6, 8, 0, 0, 0, DateTimeKind.Unspecified);
+        var clientDay = ((int)date.DayOfWeek + 6) % 7;
+
+        var days = new List<OpeningDayScheduleDto>();
+        for (var d = 0; d <= 6; d++)
+        {
+            days.Add(new OpeningDayScheduleDto
+            {
+                DayOfWeek = d,
+                Slots = d == clientDay
+                    ? [new OpeningHourSlotDto { StartTime = "12:00", EndTime = "13:00" }]
+                    : []
+            });
+        }
+
+        _orderConfigRepository.GetRuleByRestaurantIdAsync(1, Arg.Any<CancellationToken>())
+            .Returns(new OrderRule
+            {
+                RestaurantId = 1,
+                SlotDurationMinutes = 60,
+                TablesCapacityPerSlot = 5,
+                AvailabilityRanges = JsonSerializer.Serialize(days)
+            });
+        _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+            1, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(false);
+        _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+            1, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(0);
+
+        var result = await _sut.GetAvailableSlotsAsync(
+            1, new RestaurantAvailableSlotsQuery { Date = date, GuestCount = 2 });
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value!.Slots, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task UpdateOpeningHoursAsync_WhenSlotDurationBelowMinimum_ReturnsError()
+    {
+        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var request = new UpdateRestaurantOpeningHoursRequest
+        {
+            SlotDurationMinutes = 1,
+            Days = []
+        };
+
+        var result = await _sut.UpdateOpeningHoursAsync(1, 10, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.InvalidSlotDuration));
+    }
+
+    [Test]
+    public async Task UpdateOpeningHoursAsync_WhenSlotDurationAboveMaximum_ReturnsError()
+    {
+        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
+
+        var request = new UpdateRestaurantOpeningHoursRequest
+        {
+            SlotDurationMinutes = 300,
+            Days = []
+        };
+
+        var result = await _sut.UpdateOpeningHoursAsync(1, 10, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.InvalidSlotDuration));
     }
 
     private static Restaurant CreateRestaurant(int id, int ownerId)
