@@ -12,7 +12,6 @@
 
 .restaurant-header {
   @include card;
-  order: 2;
   display: flex;
   flex-direction: column;
   gap: $spacing-lg;
@@ -417,25 +416,26 @@
 
 // ── Plat du jour : hero + sections promotionnelles mises en évidence ──
 .special-dish-hero {
-  @include card;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: $spacing-md;
   padding: $spacing-lg;
-  margin-bottom: $spacing-xl;
+  margin-bottom: $spacing-2xl;
+  border-radius: $radius-xl;
   background: linear-gradient(135deg, rgba($color-coral-fire, 0.10), rgba($color-amber-gold, 0.16));
   border: 1px solid rgba($color-coral-fire, 0.15);
 
+  // Label en haut, card à gauche à taille normale (comme une card du menu).
   .dish-card {
     width: 100%;
-    max-width: 360px;
+    max-width: 350px;
   }
 }
 
 .special-dish-hero__eyebrow {
   font-family: $font-family-mono;
-  font-size: $font-size-xs;
+  font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   text-transform: uppercase;
   letter-spacing: 0.08em;
