@@ -15,6 +15,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
 COPY DeliverTableScheduler/DeliverTableScheduler.csproj               DeliverTableScheduler/
+COPY DeliverTableServer/DeliverTableServer.csproj                     DeliverTableServer/
 COPY DeliverTableInfrastructure/DeliverTableInfrastructure.csproj     DeliverTableInfrastructure/
 COPY DeliverTableSharedLibrary/DeliverTableSharedLibrary.csproj       DeliverTableSharedLibrary/
 
@@ -22,6 +23,7 @@ RUN dotnet restore DeliverTableScheduler/DeliverTableScheduler.csproj \
     -r linux-musl-x64
 
 COPY DeliverTableScheduler/       DeliverTableScheduler/
+COPY DeliverTableServer/          DeliverTableServer/
 COPY DeliverTableInfrastructure/  DeliverTableInfrastructure/
 COPY DeliverTableSharedLibrary/   DeliverTableSharedLibrary/
 
