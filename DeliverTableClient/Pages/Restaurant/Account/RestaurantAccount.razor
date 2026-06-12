@@ -320,6 +320,8 @@
     private bool _loading = true;
     private string? _error;
 
+    private List<AdminCommissionStatementRowDto>? _statements;
+    private bool _statementsLoading = true;
     private List<DishDto>? _dishes;
     private bool _dishesLoading = true;
     private int? _selectedSpecialDishId;
@@ -327,9 +329,6 @@
     private bool _savingSpecialDish;
     private string? _specialDishError;
     private bool _specialDishSuccess;
-
-    private List<AdminCommissionStatementRowDto>? _statements;
-    private bool _statementsLoading = true;
 
     private List<DisputeRowDto>? _disputes;
     private bool _disputesLoading = true;
