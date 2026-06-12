@@ -2,6 +2,7 @@
 // Alert component.
 // -----------------------------------------------------------------------------
 
+@use 'sass:color';
 @use '../abstracts/variables' as *;
 
 .alert {
@@ -42,7 +43,7 @@
 .alert--warning {
   background: rgba($color-amber-gold, 0.10);
   border-left: 4px solid $color-amber-gold;
-  color: darken($color-amber-gold, 20%);
+  color: color.adjust($color-amber-gold, $lightness: -20%);
 }
 
 .alert-info,
