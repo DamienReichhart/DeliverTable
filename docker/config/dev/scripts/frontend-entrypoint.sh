@@ -42,9 +42,14 @@ start_app() {
 
 start_app
 
+# NOTE: the `.css`/`.css.map` exclusion is essential, not cosmetic. The Sass
+# compiler writes its generated output (wwwroot/css/app.css and the scoped
+# *.razor.css bundles) back inside the watched tree. Without excluding it, the
+# compiler's own output would retrigger this loop, killing `dotnet run`
+# mid-compile and leaving a truncated (0-byte) app.css — i.e. broken styling.
 while inotifywait -r -q \
     -e modify -e create -e delete -e move \
-    --exclude '/(obj|bin|\.git|node_modules|\.vs)/' \
+    --exclude '(/(obj|bin|\.git|node_modules|\.vs)/|\.css(\.map)?$)' \
     "$PROJECT/" "$SHARED_LIB/"; do
 
     echo ""
