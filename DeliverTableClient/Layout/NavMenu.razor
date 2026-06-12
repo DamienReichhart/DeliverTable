@@ -26,7 +26,14 @@
         <span class="nav-section-label">Navigation</span>
 
         <div class="nav-item">
-            <NavLink href="/" class="nav-link">
+            <NavLink href="/" Match="NavLinkMatch.All" class="nav-link">
+                <Blazicon Svg="Lucide.House" class="nav-icon" />
+                <span>Accueil</span>
+            </NavLink>
+        </div>
+
+        <div class="nav-item">
+            <NavLink href="/restaurants" class="nav-link">
                 <Blazicon Svg="Lucide.Search" class="nav-icon" />
                 <span>Restaurants</span>
             </NavLink>

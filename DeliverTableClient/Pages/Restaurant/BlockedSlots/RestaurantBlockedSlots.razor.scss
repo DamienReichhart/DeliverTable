@@ -1,0 +1,227 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-blocked-slots-page {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
+
+    h1 {
+      margin: 0;
+    }
+  }
+
+  .page-subtitle {
+    margin: $spacing-xs 0 0;
+    color: $color-text-muted;
+  }
+
+  .page-header-actions {
+    display: flex;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
+  }
+
+  .slot-form-container {
+    background: $color-bg-white;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+    margin-bottom: $spacing-lg;
+  }
+
+  .capacity-settings-card {
+    background: $color-bg-white;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+    margin-bottom: $spacing-lg;
+  }
+
+  .capacity-settings-hint {
+    color: $color-text-muted;
+    margin: $spacing-sm 0 $spacing-md;
+  }
+
+  .capacity-settings-controls {
+    display: flex;
+    gap: $spacing-sm;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .capacity-input {
+    max-width: 180px;
+  }
+
+  .opening-hours-card {
+    background: $color-bg-white;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+    margin-bottom: $spacing-lg;
+  }
+
+  .opening-hours-top-controls {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+    max-width: 320px;
+    margin-bottom: $spacing-md;
+  }
+
+  .opening-days-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: $spacing-md;
+    margin-bottom: $spacing-md;
+  }
+
+  .opening-day-card {
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    background: $color-bg-subtle;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+
+  .opening-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $spacing-sm;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+  }
+
+  .opening-day-empty {
+    margin: 0;
+    color: $color-text-muted;
+    font-style: italic;
+  }
+
+  .opening-slot-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: $spacing-sm;
+
+    .form-control {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .opening-slot-remove {
+      flex-shrink: 0;
+      padding: $spacing-xs;
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $spacing-md;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+  }
+
+  .form-group--full {
+    grid-column: 1 / -1;
+  }
+
+  .form-control {
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: $spacing-sm;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: $spacing-sm;
+    margin-top: $spacing-md;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: $color-bg-white;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+    overflow: hidden;
+
+    th,
+    td {
+      padding: $spacing-sm $spacing-md;
+      border-bottom: 1px solid $color-border;
+      text-align: left;
+    }
+
+    th {
+      background: $color-bg-subtle;
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  .actions-cell {
+    white-space: nowrap;
+  }
+
+  .error-message {
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    color: #991b1b;
+    border-radius: $radius-md;
+    padding: $spacing-md;
+    margin-bottom: $spacing-md;
+  }
+
+  .empty-state {
+    border: 1px dashed $color-border;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+    text-align: center;
+    color: $color-text-muted;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .restaurant-blocked-slots-page {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .opening-slot-row {
+      grid-template-columns: 1fr;
+      justify-items: stretch;
+
+      span {
+        display: none;
+      }
+    }
+  }
+}

@@ -23,6 +23,8 @@ public class OrderServiceTests
     private IOrderRepository _orderRepository = null!;
     private ICartRepository _cartRepository = null!;
     private IRestaurantRepository _restaurantRepository = null!;
+    private IEventRepository _eventRepository = null!;
+    private IOrderConfigRepository _orderConfigRepository = null!;
     private IRestaurantTransactionRepository _transactionRepository = null!;
     private IPromotionRepository _promotionRepository = null!;
     private IDiscountCodeRepository _discountCodeRepository = null!;
@@ -43,6 +45,8 @@ public class OrderServiceTests
         _orderRepository = Substitute.For<IOrderRepository>();
         _cartRepository = Substitute.For<ICartRepository>();
         _restaurantRepository = Substitute.For<IRestaurantRepository>();
+        _eventRepository = Substitute.For<IEventRepository>();
+        _orderConfigRepository = Substitute.For<IOrderConfigRepository>();
         _transactionRepository = Substitute.For<IRestaurantTransactionRepository>();
         _promotionRepository = Substitute.For<IPromotionRepository>();
         _discountCodeRepository = Substitute.For<IDiscountCodeRepository>();
@@ -66,6 +70,8 @@ public class OrderServiceTests
 
         _sut = new OrderService(
             _orderRepository, _cartRepository, _restaurantRepository,
+            _eventRepository,
+            _orderConfigRepository,
             _transactionRepository, _promotionRepository, _discountCodeRepository,
             _loyaltyRepository, _userRepository, _emailJobService, _paymentService,
             _orderHubContext, _appEnvironment);
@@ -87,15 +93,19 @@ public class OrderServiceTests
     };
     // Total = 2*20 + 1*30 = 70
 
-    private static CreateOrderRequest CreateBaseRequest(string? discountCode = null, int loyaltyPoints = 0) => new()
-    {
-        RestaurantId = RestaurantId,
-        OrderType = nameof(OrderType.Delivery),
-        DeliveryAddress = "123 Rue Test",
-        GuestCount = 1,
-        DiscountCodes = discountCode is not null ? [discountCode] : [],
-        LoyaltyPointsToRedeem = loyaltyPoints
-    };
+    private static CreateOrderRequest CreateBaseRequest(
+        string? discountCode = null,
+        int loyaltyPoints = 0,
+        DateTime? scheduledAt = null) => new()
+        {
+            RestaurantId = RestaurantId,
+            OrderType = nameof(OrderType.Delivery),
+            DeliveryAddress = "123 Rue Test",
+            GuestCount = 1,
+            DiscountCodes = discountCode is not null ? [discountCode] : [],
+            LoyaltyPointsToRedeem = loyaltyPoints,
+            ScheduledAt = scheduledAt
+        };
 
     private void SetupBaseCreateMocks(Restaurant? restaurant = null, Cart? cart = null)
     {
@@ -104,6 +114,8 @@ public class OrderServiceTests
 
         _restaurantRepository.GetByIdAsync(RestaurantId, Arg.Any<CancellationToken>())
             .Returns(restaurant);
+        _orderConfigRepository.GetRuleByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
+            .Returns((OrderRule?)null);
         _cartRepository.GetByCustomerAndRestaurantAsync(CustomerId, RestaurantId, Arg.Any<CancellationToken>())
             .Returns(cart);
         _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
@@ -421,6 +433,170 @@ public class OrderServiceTests
         Assert.That(capturedOrder.TotalAmount, Is.EqualTo(70m));
         Assert.That(capturedOrder.DiscountAmount, Is.EqualTo(0m));
         Assert.That(capturedOrder.Discounts, Is.Empty);
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenScheduledSlotIsBlocked_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var scheduledAt = DateTime.UtcNow.AddHours(4);
+        _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest(scheduledAt: scheduledAt));
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error, Is.Not.Null);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
+        Assert.That(result.Error.Message, Is.EqualTo(ErrorMessages.ScheduledSlotIsBlocked));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenScheduledSlotIsOpen_CreatesOrder()
+    {
+        SetupBaseCreateMocks();
+
+        var scheduledAt = DateTime.UtcNow.AddHours(4);
+        _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, CreateBaseRequest(scheduledAt: scheduledAt));
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_DineInTableCapacity_WhenCapacityIsFull_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var scheduledAt = DateTime.UtcNow.AddHours(4);
+        var request = CreateBaseRequest(scheduledAt: scheduledAt);
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 2;
+
+        _orderConfigRepository.GetRuleByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
+            .Returns(new OrderRule { RestaurantId = RestaurantId, SlotDurationMinutes = 60, TablesCapacityPerSlot = 1 });
+        _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(false);
+        _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(1);
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error, Is.Not.Null);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.TablesCapacityFull));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_DineInTableCapacity_WhenCapacityAvailable_Succeeds()
+    {
+        SetupBaseCreateMocks();
+
+        var scheduledAt = DateTime.UtcNow.AddHours(4);
+        var request = CreateBaseRequest(scheduledAt: scheduledAt);
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 2;
+
+        _orderConfigRepository.GetRuleByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
+            .Returns(new OrderRule { RestaurantId = RestaurantId, SlotDurationMinutes = 60, TablesCapacityPerSlot = 2 });
+        _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(false);
+        _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(1);
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_DineInTableCapacity_ForFiveGuests_WhenRequiredTablesExceedCapacity_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var scheduledAt = DateTime.UtcNow.AddHours(4);
+        var request = CreateBaseRequest(scheduledAt: scheduledAt);
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 5; // Requires 3 table units when 1 table = 2 guests.
+
+        _orderConfigRepository.GetRuleByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
+            .Returns(new OrderRule { RestaurantId = RestaurantId, SlotDurationMinutes = 60, TablesCapacityPerSlot = 2 });
+        _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(false);
+        _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(0);
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error, Is.Not.Null);
+        Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
+        Assert.That(result.Error.Message, Is.EqualTo(ErrorMessages.TablesCapacityFull));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_DineInTableCapacity_ForFiveGuests_WhenCapacityExactlyMatches_Succeeds()
+    {
+        SetupBaseCreateMocks();
+
+        var scheduledAt = DateTime.UtcNow.AddHours(4);
+        var request = CreateBaseRequest(scheduledAt: scheduledAt);
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 5; // Requires 3 table units.
+
+        _orderConfigRepository.GetRuleByRestaurantIdAsync(RestaurantId, Arg.Any<CancellationToken>())
+            .Returns(new OrderRule { RestaurantId = RestaurantId, SlotDurationMinutes = 60, TablesCapacityPerSlot = 4 });
+        _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(false);
+        _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+                RestaurantId,
+                Arg.Any<DateTime>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(1); // 1 already reserved + 3 required = 4 -> accepted.
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
     }
 
     [Test]
@@ -918,6 +1094,19 @@ public class OrderServiceTests
     }
 
     [Test]
+    public async Task CreateFromCartAsync_DineInOrder_WithGuestCountOne_ReturnsError()
+    {
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 1;
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.GuestCountRequired));
+    }
+
+    [Test]
     public async Task CreateFromCartAsync_DineInOrder_WithValidGuestCount_Succeeds()
     {
         SetupBaseCreateMocks();
@@ -953,6 +1142,145 @@ public class OrderServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.GuestCountRequired));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingWithNewEvent_CreatesPrivateEventAndLinksOrder()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 120;
+        request.IsEventBooking = true;
+        request.EventName = "Mariage Léa et Samir";
+        request.EventDescription = "Cocktail + dîner";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(10);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(10).AddHours(6);
+
+        _eventRepository.CreateAsync(Arg.Any<Event>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var evt = callInfo.Arg<Event>();
+                evt.Id = 77;
+                return evt;
+            });
+
+        Order? capturedOrder = null;
+        _orderRepository.CreateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                capturedOrder = callInfo.Arg<Order>();
+                return capturedOrder;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(capturedOrder, Is.Not.Null);
+        Assert.That(capturedOrder!.IsEventBooking, Is.True);
+        Assert.That(capturedOrder.EventId, Is.EqualTo(77));
+        await _eventRepository.Received(1).CreateAsync(
+            Arg.Is<Event>(e =>
+                e.Name == "Mariage Léa et Samir"
+                && e.Visibility == EventVisibility.Private
+                && e.RestaurantId == RestaurantId
+                && e.CreatedByUserId == CustomerId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingScheduledOutsideEventWindow_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 20;
+        request.IsEventBooking = true;
+        request.EventName = "Anniversaire";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(10);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(10).AddHours(4);
+        request.ScheduledAt = DateTime.UtcNow.AddDays(11); // après la fin de l'événement
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.ScheduledAtOutsideEventWindow));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingScheduledWithinEventWindow_Succeeds()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.GuestCount = 20;
+        request.IsEventBooking = true;
+        request.EventName = "Anniversaire";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(10);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(10).AddHours(4);
+        request.ScheduledAt = DateTime.UtcNow.AddDays(10).AddHours(1); // dans la fenêtre
+
+        _eventRepository.CreateAsync(Arg.Any<Event>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var evt = callInfo.Arg<Event>();
+                evt.Id = 88;
+                return evt;
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingDatesInvalid_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.IsEventBooking = true;
+        request.EventName = "Soirée privée";
+        request.EventStartsAt = DateTime.UtcNow.AddDays(5);
+        request.EventEndsAt = DateTime.UtcNow.AddDays(5).AddHours(-1);
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error, Is.Not.Null);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.EventDatesRequired));
+    }
+
+    [Test]
+    public async Task CreateFromCartAsync_WhenEventBookingWithForeignEvent_ReturnsError()
+    {
+        SetupBaseCreateMocks();
+
+        var request = CreateBaseRequest();
+        request.OrderType = nameof(OrderType.DineIn);
+        request.IsEventBooking = true;
+        request.EventId = 99;
+
+        _eventRepository.GetByIdAsync(99, Arg.Any<CancellationToken>())
+            .Returns(new Event
+            {
+                Id = 99,
+                RestaurantId = RestaurantId + 1,
+                Name = "Événement autre restaurant",
+                StartsAt = DateTime.UtcNow.AddDays(8),
+                EndsAt = DateTime.UtcNow.AddDays(8).AddHours(4),
+                IsActive = true
+            });
+
+        var result = await _sut.CreateFromCartAsync(CustomerId, request);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Error, Is.Not.Null);
+        Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.EventNotFound));
     }
 
     // ─── New payment-flow tests ────────────────────────────────────────────

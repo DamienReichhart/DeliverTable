@@ -19,7 +19,7 @@ namespace DeliverTableServer.Services
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "DeliverTableServer-App");
         }
 
-        public async Task<(double lon, double lat)?> GetCoordinatesAsync(string address, string city, string zipcode)
+        public async Task<(double lat, double lon)?> GetCoordinatesAsync(string address, string city, string zipcode)
         {
             string query = Uri.EscapeDataString($"{address} {zipcode} {city}");
             string url = GouvApiRoutes.Geolocation + query;
@@ -37,8 +37,8 @@ namespace DeliverTableServer.Services
                     )
                 )
             {
-                // On s'assure que le code postal passé en paramètre est correct
-                return (bestResult.Geometry.Coordinates[0], bestResult.Geometry.Coordinates[1]);
+                // GeoJSON stores [longitude, latitude] — swap to (lat, lon)
+                return (bestResult.Geometry.Coordinates[1], bestResult.Geometry.Coordinates[0]);
             }
 
             return null;

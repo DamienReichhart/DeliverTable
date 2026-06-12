@@ -125,7 +125,7 @@ public partial class Live : ComponentBase, IDisposable
         OrderDto? order = orders.First(o => o.Id == orderId);
         if (order is null) return;
 
-        string status = nameof(OrderStatus.Delivered);
+        string status = nameof(OrderStatus.Ready);
 
         var (updatedOrder, error) = await OrderService.UpdateOrderStatusAsync(orderId, status);
         if (error is null)
@@ -171,25 +171,23 @@ public partial class Live : ComponentBase, IDisposable
     {
         if (!SelectedRestaurant.HasValue) return;
 
-        var (paginatedResult, error) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
+        var (readyResult, readyError) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
         {
             Status = nameof(OrderStatus.Ready),
-            CreatedAfter = DateTime.UtcNow.Date,
             PageNumber = 1,
             PageSize = 1000,
             SortBy = nameof(OrderDto.CreatedAt),
             SortDesc = true
         }, CancellationToken.None);
 
-        if (error is null && paginatedResult?.Items != null)
+        if (readyError is null && readyResult?.Items != null)
         {
-            finishedOrders = paginatedResult.Items.ToList();
+            finishedOrders = readyResult.Items;
         }
 
         var (deliveredResult, deliveredError) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
         {
             Status = nameof(OrderStatus.Delivered),
-            CreatedAfter = DateTime.UtcNow.Date,
             PageNumber = 1,
             PageSize = 1000,
             SortBy = nameof(OrderDto.CreatedAt),
@@ -199,7 +197,6 @@ public partial class Live : ComponentBase, IDisposable
         if (deliveredError is null && deliveredResult?.Items != null)
         {
             finishedOrders.AddRange(deliveredResult.Items);
-            // Re-sort by date descending
             finishedOrders = finishedOrders.OrderByDescending(o => o.CreatedAt).ToList();
         }
 

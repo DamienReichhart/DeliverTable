@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using DeliverTableSharedLibrary.Enums;
+using DeliverTableSharedLibrary.Validation;
 
 namespace DeliverTableSharedLibrary.Dtos.Restaurant;
 
@@ -31,11 +32,14 @@ public class CreateRestaurantDto
     [Required(ErrorMessage = "Ce champ est requis")]
     public string Country { get; set; } = AvailableCountries.France.ToString();
 
-    [Required]
-    [MaxLength(14)]
+    [Required(ErrorMessage = "Pour des raisons juridiques, le Siret est requis")]
+    [MaxLength(14, ErrorMessage = "Le Siret doit comporter 14 chiffres")]
+    [MinLength(14, ErrorMessage = "Le Siret doit comporter 14 chiffres")]
+    [RegularExpression("^[0-9]{14}$", ErrorMessage = "Le Siret doit comporter 14 chiffres")]
+    [Siret]
     public string Siret { get; set; } = string.Empty;
 
-    [Required]
+    [Required(ErrorMessage = "Ce champ est requis")]
     [MaxLength(200)]
     public string LegalName { get; set; } = string.Empty;
 

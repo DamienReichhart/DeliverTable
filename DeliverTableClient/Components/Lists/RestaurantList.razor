@@ -1,108 +1,107 @@
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 @inject IRestaurantService RestaurantService
+
 <ul class="restaurant-list">
-    @if (restaurants == null && !loading)
+    @if (_restaurants == null && !_loading)
     {
-        <li>No restaurants found.</li>
+        <li class="empty-state">Aucun restaurant trouvé.</li>
     }
-    else if (loading)
+    else if (_loading)
     {
-        <li>Loading...</li>
+        <li class="loading-state">Chargement...</li>
+    }
+    else if (_error is not null)
+    {
+        <li><AppAlert>@_error</AppAlert></li>
     }
     else
     {
-        @if (restaurants == null)
+        @foreach (var restaurant in _restaurants!)
         {
-            <li class="alert alert-danger">@error</li>
-        }
-        else
-        {
-            @foreach (RestaurantDto restaurant in restaurants)
-            {
-                if (@restaurant != null)
-                {
-                    <li class="restaurant-card">
-                        <div class="restaurant-card-content">
-                            <h3>
-                                @restaurant.Name
-                            </h3>
-                            <p>
-                                @restaurant.ZipCode @restaurant.City
-                            </p>
-                        </div>
-                        <div class="restaurant-card-controls">
-                            <NavLink href=@($"/restaurant/{restaurant.Id}/promotions") class="app-btn" title="Promotions">
-                                <Blazicon Svg="Lucide.Tag" class="app-icon" />
-                            </NavLink>
-                            <NavLink href=@($"/restaurant/{restaurant.Id}/codes-promo") class="app-btn" title="Codes promo">
-                                <Blazicon Svg="Lucide.Ticket" class="app-icon" />
-                            </NavLink>
-                            <NavLink href=@($"/restaurant/{restaurant.Id}/fidelite") class="app-btn" title="Fidélité">
-                                <Blazicon Svg="Lucide.Heart" class="app-icon" />
-                            </NavLink>
-                            <NavLink href=@($"/restaurant/{restaurant.Id}/compte") class="app-btn" title="Compte">
-                                <Blazicon Svg="Lucide.Wallet" class="app-icon" />
-                            </NavLink>
-                            <NavLink href=@($"/restaurant/{restaurant.Id}/commandes") class="app-btn" title="Commandes">
-                                <Blazicon Svg="Lucide.ShoppingBag" class="app-icon" />
-                            </NavLink>
-                            <NavLink href=@($"/restaurant/update/{restaurant.Id}") class="app-btn" title="Modifier">
-                                <Blazicon Svg="Lucide.Pencil" class="app-icon" />
-                            </NavLink>
-                            <button class="app-btn bg-danger" @onclick="() => DeleteRestaurant(restaurant.Id)" title="Supprimer">
-                                <Blazicon Svg="Lucide.Trash2" class="app-icon" />
-                            </button>
-                        </div>
-                    </li>
-                }
-            }
+            <li class="restaurant-card">
+                <div class="restaurant-card-content">
+                    <h3>@restaurant.Name</h3>
+                    <p>@restaurant.ZipCode @restaurant.City</p>
+                </div>
+
+                <AppDropdown Label="Gérer">
+                    <AppDropdownItem Href="@($"/restaurant/{restaurant.Id}/commandes")" Icon="Lucide.ShoppingBag">
+                        Commandes
+                    </AppDropdownItem>
+                    <AppDropdownItem Href="@($"/restaurant/{restaurant.Id}/promotions")" Icon="Lucide.Tag">
+                        Promotions
+                    </AppDropdownItem>
+                    <AppDropdownItem Href="@($"/restaurant/{restaurant.Id}/codes-promo")" Icon="Lucide.Ticket">
+                        Codes promo
+                    </AppDropdownItem>
+                    <AppDropdownItem Href="@($"/restaurant/{restaurant.Id}/fidelite")" Icon="Lucide.Heart">
+                        Fidélité
+                    </AppDropdownItem>
+                    <AppDropdownItem Href="@($"/restaurant/{restaurant.Id}/creneau")" Icon="Lucide.CalendarX2">
+                        Créneaux
+                    </AppDropdownItem>
+                    <AppDropdownItem Href="@($"/restaurant/{restaurant.Id}/compte")" Icon="Lucide.Wallet">
+                        Compte
+                    </AppDropdownItem>
+                    <AppDropdownItem Href="@($"/restaurant/update/{restaurant.Id}")" Icon="Lucide.Pencil">
+                        Modifier
+                    </AppDropdownItem>
+                    <AppDropdownSeparator />
+                    <AppDropdownItem Icon="Lucide.Trash2" Danger="true"
+                                     OnClick="@(() => DeleteRestaurant(restaurant.Id))">
+                        Supprimer
+                    </AppDropdownItem>
+                </AppDropdown>
+            </li>
         }
     }
 </ul>
 
 @code {
-    private List<RestaurantDto>? restaurants;
-    private bool loading = true;
-    private string? error = null;
+    private List<RestaurantDto>? _restaurants;
+    private bool _loading = true;
+    private string? _error;
+
     protected override async Task OnInitializedAsync()
     {
-        loading = true;
-        error = null;
+        _loading = true;
+        _error = null;
 
         try
         {
             var (result, errorObject) = await RestaurantService.GetConnectedUserRestaurants();
 
             if (errorObject != null)
-            {
-                error = errorObject.Error;
-            }
+                _error = errorObject.Error;
             else
-            {
-                restaurants = result?.Items.ToList();
-            }
+                _restaurants = result?.Items.ToList();
         }
-        catch (Exception)
+        catch
         {
-            error = "Une erreur est survenue";
+            _error = "Une erreur est survenue";
         }
         finally
         {
-            loading = false;
+            _loading = false;
         }
     }
 
     private async Task DeleteRestaurant(int id)
     {
-        bool deleteResult = await RestaurantService.DeleteRestaurant(id);
+        _error = null;
 
-        if (deleteResult)
+        try
         {
-            restaurants?.RemoveAll(r => r.Id == id);
+            var (success, error) = await RestaurantService.DeleteRestaurant(id);
+
+            if (success)
+                _restaurants?.RemoveAll(r => r.Id == id);
+            else
+                _error = error?.Error ?? "Erreur lors de la suppression du restaurant";
         }
-        else
+        catch
         {
-            error = "Erreur lors de la suppression du restaurant";
+            _error = "Erreur lors de la suppression du restaurant";
         }
     }
 }

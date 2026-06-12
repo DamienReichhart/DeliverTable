@@ -13,7 +13,7 @@
     }
     else if (error != null)
     {
-        <div class="alert alert-danger">@error</div>
+        <AppAlert>@error</AppAlert>
     }
     else
     {
@@ -142,7 +142,7 @@
 
                         @if (formError != null)
                         {
-                            <div class="alert alert-danger">@formError</div>
+                            <AppAlert>@formError</AppAlert>
                         }
 
                         <div class="mt-3">

@@ -3,6 +3,8 @@
 @inject IDishService DishService
 @inject ICartService CartService
 @inject NavigationManager Nav
+@inject IJSRuntime Js
+@implements IAsyncDisposable
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 @using DeliverTableSharedLibrary.Dtos.Dish
 @using DeliverTableSharedLibrary.Dtos.Cart
@@ -60,6 +62,13 @@
                 </div>
             </AuthorizeView>
         </div>
+
+        @if (_restaurant.Latitude != 0 || _restaurant.Longitude != 0)
+        {
+            <div class="restaurant-location-map">
+                <div id="restaurant-detail-map" class="restaurant-detail-map-element"></div>
+            </div>
+        }
 
         <div class="dishes-section">
             <h2>La carte</h2>
@@ -194,6 +203,18 @@
     private bool _filterGlutenFree;
 
     private Dictionary<int, int> _quantities = new();
+    private bool _mapInitialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_mapInitialized && _restaurant is not null
+            && (_restaurant.Latitude != 0 || _restaurant.Longitude != 0))
+        {
+            _mapInitialized = true;
+            await Js.InvokeVoidAsync("restaurantDetailMap.init", "restaurant-detail-map",
+                _restaurant.Latitude, _restaurant.Longitude, _restaurant.Name);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -340,5 +361,17 @@
     private void GoToCart()
     {
         Nav.NavigateTo($"/panier/{Id}");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_mapInitialized)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("restaurantDetailMap.dispose");
+            }
+            catch (JSDisconnectedException) { }
+        }
     }
 }

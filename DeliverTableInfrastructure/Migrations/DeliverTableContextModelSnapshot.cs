@@ -1471,6 +1471,9 @@ namespace DeliverTableInfrastructure.Migrations
                     b.Property<int?>("SlotDurationMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("TablesCapacityPerSlot")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamp with time zone")

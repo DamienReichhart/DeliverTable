@@ -82,6 +82,13 @@
                             <span class="customer-notes">@_order.Notes</span>
                         </div>
                     }
+                    @if (_order.IsEventBooking)
+                    {
+                        <div class="info-item info-item--full">
+                            <span class="info-label">Événement spécial</span>
+                            <span>@(string.IsNullOrWhiteSpace(_order.EventName) ? "Réservation événement" : _order.EventName)</span>
+                        </div>
+                    }
                 </div>
             </div>
 

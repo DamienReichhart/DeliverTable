@@ -134,4 +134,40 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
 
         return query;
     }
+
+    public async Task<int> CountScheduledDineInOverlappingAsync(
+        int restaurantId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default)
+    {
+        return await _dbContext.Orders.CountAsync(o =>
+            o.RestaurantId == restaurantId
+            && o.OrderType == OrderType.DineIn
+            && o.GuestCount <= 2
+            && o.ScheduledAt.HasValue
+            && o.ScheduledAt.Value >= startsAt
+            && o.ScheduledAt.Value < endsAt
+            && o.Status != OrderStatus.Cancelled
+            && o.Status != OrderStatus.Refused,
+            ct);
+    }
+
+    public async Task<int> GetScheduledDineInReservedTableUnitsOverlappingAsync(
+        int restaurantId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default)
+    {
+        return await _dbContext.Orders
+            .Where(o =>
+                o.RestaurantId == restaurantId
+                && o.OrderType == OrderType.DineIn
+                && o.ScheduledAt.HasValue
+                && o.ScheduledAt.Value >= startsAt
+                && o.ScheduledAt.Value < endsAt
+                && o.Status != OrderStatus.Cancelled
+                && o.Status != OrderStatus.Refused)
+            .SumAsync(o => (o.GuestCount + 1) / 2, ct);
+    }
 }

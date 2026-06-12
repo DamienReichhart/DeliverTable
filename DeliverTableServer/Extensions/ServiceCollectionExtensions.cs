@@ -83,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICommissionStatementService, CommissionStatementService>();
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IReclamationService, ReclamationService>();
+        services.AddScoped<IRestaurantOrderConfigService, RestaurantOrderConfigService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)

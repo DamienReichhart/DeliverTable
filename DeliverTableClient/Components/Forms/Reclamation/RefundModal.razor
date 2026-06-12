@@ -12,7 +12,7 @@
             <div class="refund-modal__body">
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
-                    <div class="alert alert--danger">@_errorMessage</div>
+                    <AppAlert>@_errorMessage</AppAlert>
                 }
 
                 <div class="refund-modal__mode-toggle">

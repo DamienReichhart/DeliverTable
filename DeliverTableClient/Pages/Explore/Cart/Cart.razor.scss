@@ -188,6 +188,84 @@
   p { margin: 0; }
 }
 
+.slot-helper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  margin-top: -$spacing-xs;
+
+  span {
+    font-size: $font-size-xs;
+    color: $color-text-muted;
+  }
+}
+
+.slots-loading,
+.slots-empty,
+.slots-error,
+.slot-selection-summary {
+  margin: 0;
+  font-size: $font-size-sm;
+}
+
+.slots-loading,
+.slots-empty {
+  color: $color-text-muted;
+}
+
+.slots-error {
+  color: #9b1c1c;
+}
+
+.slot-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: $spacing-sm;
+}
+
+.slot-option {
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-white;
+  padding: $spacing-sm;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-deep-charcoal;
+    transform: translateY(-1px);
+  }
+
+  &--selected {
+    border-color: $color-deep-charcoal;
+    background: rgba($color-deep-charcoal, 0.06);
+    box-shadow: 0 0 0 1px rgba($color-deep-charcoal, 0.15) inset;
+  }
+}
+
+.slot-option-time {
+  font-family: $font-family-display;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.slot-option-end {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.slot-selection-summary {
+  color: $color-text;
+  font-weight: $font-weight-medium;
+}
+
 // Promotions banner
 .promotions-banner {
   display: flex;

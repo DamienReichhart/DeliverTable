@@ -28,9 +28,9 @@ namespace DeliverTableServer.Services
             var role = roles.FirstOrDefault(_defaultRoleValue);
 
             List<Claim> claims = [
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(ClaimTypes.Role, role)
-        ];
+                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new(ClaimTypes.Role, role)
+            ];
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
