@@ -36,8 +36,8 @@ internal sealed class OpenApiDocumentTransformer : IOpenApiDocumentTransformer
             },
             License = new OpenApiLicense
             {
-                Name = "Proprietary",
-                Url = new Uri("https://delivertable.example/terms", UriKind.Absolute)
+                Name = "MIT",
+                Url = new Uri("https://opensource.org/licenses/MIT", UriKind.Absolute)
             },
             TermsOfService = new Uri("https://delivertable.example/terms", UriKind.Absolute)
         };

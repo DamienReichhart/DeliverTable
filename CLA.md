@@ -19,9 +19,8 @@ By submitting a contribution to this project (via pull request, patch, or any ot
 You hereby grant to the Project Maintainers a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable license to:
 
 - Use, reproduce, modify, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute your Contributions and derivative works thereof.
-- Re-license your Contributions under any license, including proprietary licenses, without further permission from you.
 
-This broad license grant is necessary to enable the Project's dual licensing model (AGPL-3.0 and commercial). You retain full copyright ownership of your Contributions.
+This license grant allows the Project Maintainers to distribute your Contributions as part of the Project under its [MIT License](LICENSE). You retain full copyright ownership of your Contributions.
 
 ### 3. Representations
 
