@@ -7,7 +7,6 @@
 @using DeliverTableClient.Services.CommissionStatement
 @using DeliverTableClient.Services.Dispute
 @using DeliverTableSharedLibrary.Dtos.CommissionStatement
-@using DeliverTableClient.Services.Invoice
 @using DeliverTableSharedLibrary.Dtos.Dish
 @using DeliverTableSharedLibrary.Dtos.Dispute
 @using DeliverTableSharedLibrary.Dtos.Restaurant
@@ -331,9 +330,6 @@
     private string? _specialDishError;
     private bool _specialDishSuccess;
 
-    private List<InvoiceListItemDto>? _invoices;
-    private bool _invoicesLoading = true;
-
     private List<DisputeRowDto>? _disputes;
     private bool _disputesLoading = true;
 
@@ -347,8 +343,7 @@
     {
         var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
         _restaurantName = restaurant?.Name;
-        await Task.WhenAll(LoadAccount(), LoadStatements(), LoadDisputes());
-        await Task.WhenAll(LoadAccount(), LoadInvoices(), LoadDisputes(), LoadDishes());
+        await Task.WhenAll(LoadAccount(), LoadStatements(), LoadDisputes(), LoadDishes());
     }
 
     private async Task LoadDishes()
