@@ -16,17 +16,45 @@
   }
 }
 
+// Restaurant hero header (mirrors the restaurant detail page)
 .cart-restaurant-info {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: $spacing-md;
+  gap: $spacing-lg;
+  padding: $spacing-xl;
+  border-radius: $radius-xl;
+  border: 1px solid rgba($color-coral-fire, 0.12);
+  background:
+    radial-gradient(circle at 100% 0%, rgba($color-amber-gold, 0.20), transparent 42%),
+    linear-gradient(135deg, rgba($color-coral-fire, 0.10), rgba($color-bg-white, 0.5));
+  box-shadow: $shadow-card;
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+    min-width: 0;
+  }
+
+  &__badge {
+    @include label-mono;
+    align-self: flex-start;
+    padding: 0.35em 0.85em;
+    border-radius: $radius-md;
+    background: rgba($color-coral-fire, 0.12);
+    color: $color-primary-dark;
+  }
 
   h2 {
-    font-family: $font-family-display;
-    font-size: $font-size-h3;
-    color: $color-text;
+    @include heading-display;
+    font-size: $font-size-h2;
     margin: 0;
+  }
+
+  .app-btn {
+    flex-shrink: 0;
   }
 }
 
