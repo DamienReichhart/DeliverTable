@@ -70,6 +70,12 @@
                 TVA applicable
             </label>
         </div>
+        <div class="form-group">
+            <label>
+                Numéro de TVA
+            </label>
+            <input class="form-control" placeholder="FR123456879" type="text" @bind="form.VatNumber" />
+        </div>
         @if (submitError != null)
         {
             <AppAlert>@submitError</AppAlert>
@@ -151,6 +157,7 @@
                 LegalAddress = form.LegalAddress,
                 LegalForm = form.LegalForm,
                 IsVatRegistered = form.IsVatRegistered,
+                VatNumber = form.VatNumber,
             };
             (DetailedRestaurantDto? result, ErrorResponse? errorObject) = await RestaurantService.UpdateRestaurant(updateDto, Id);
 
