@@ -107,10 +107,15 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var restaurant = await _dbContext.Restaurants.FirstOrDefaultAsync(r => r.Id == id, ct);
+        // Soft delete: restaurants are referenced by orders, transactions, invoices, etc.
+        // (FK_Orders_Restaurants_RestaurantId uses DeleteBehavior.Restrict), so a hard
+        // delete would violate those constraints and destroy financial history. Flipping
+        // IsActive hides the restaurant from listing queries while preserving its records.
+        var restaurant = await _dbContext.Restaurants.FirstOrDefaultAsync(r => r.Id == id && r.IsActive, ct);
         if (restaurant is null) return false;
 
-        _dbContext.Restaurants.Remove(restaurant);
+        restaurant.IsActive = false;
+        restaurant.UpdatedAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync(ct);
         return true;
     }
@@ -160,6 +165,7 @@ public class RestaurantRepository(DeliverTableContext dbContext) : IRestaurantRe
             query = query.Where(r => r.Name.ToLower().Contains(filter.Name.ToLower()));
         if (!string.IsNullOrWhiteSpace(filter.City))
             query = query.Where(r => r.City.ToLower().Contains(filter.City.ToLower()));
+        query = query.Where(r => r.IsActive == filter.IsActive);
 
         return query;
     }
