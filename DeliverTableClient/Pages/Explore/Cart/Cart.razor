@@ -37,12 +37,15 @@
     }
     else
     {
-        <div class="cart-restaurant-info">
-            <h2>@_cart.RestaurantName</h2>
+        <header class="cart-restaurant-info">
+            <div class="cart-restaurant-info__heading">
+                <span class="cart-restaurant-info__badge">Commande chez</span>
+                <h2>@_cart.RestaurantName</h2>
+            </div>
             <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="GoToRestaurant">
                 Continuer les achats
             </button>
-        </div>
+        </header>
 
         @* ── Cart items ── *@
         <div class="cart-items">
