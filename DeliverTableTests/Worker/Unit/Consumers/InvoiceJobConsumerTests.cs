@@ -52,7 +52,7 @@ public class InvoiceJobConsumerTests
         _publisher = Substitute.For<IMessagePublisher>();
         _env = BuildWorkerEnvironment();
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         services.AddSingleton(_invoiceRepo);
         services.AddSingleton(_renderer);
         services.AddSingleton(_storage);
@@ -69,7 +69,7 @@ public class InvoiceJobConsumerTests
     [Test]
     public async Task HandleAsync_HappyPath_GeneratesUploadsAndQueuesEmail()
     {
-        var recipientSnapshot = new InvoiceLegalSnapshotDto(
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto(
             Name: "Jean Dupont",
             LegalForm: "",
             Siret: "",
@@ -77,7 +77,7 @@ public class InvoiceJobConsumerTests
             Address: "",
             Email: "client@example.fr");
 
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "R0001-2026-000001",
@@ -97,8 +97,8 @@ public class InvoiceJobConsumerTests
             },
         };
 
-        var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
-        var storageKey = "invoices/2026/04/R0001-2026-000001.pdf";
+        byte[] pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
+        string storageKey = "invoices/2026/04/R0001-2026-000001.pdf";
 
         _invoiceRepo.GetByIdWithLinesAndRecipientsAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
         _renderer.Render(invoice).Returns(pdfBytes);
@@ -132,9 +132,9 @@ public class InvoiceJobConsumerTests
     [Test]
     public async Task HandleAsync_RendererThrows_MarksFailedAndRethrows()
     {
-        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "client@example.fr");
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "client@example.fr");
 
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 2,
             Number = "R0001-2026-000002",
@@ -182,7 +182,7 @@ public class InvoiceJobConsumerTests
 
     private static WorkerEnvironment BuildWorkerEnvironment()
     {
-        var vars = new Dictionary<string, string>
+        Dictionary<string, string> vars = new Dictionary<string, string>
         {
             ["CONNECTION_STRING_DATABASE"] = "Host=localhost;Database=test",
             ["RABBITMQ_HOST"] = "localhost",
@@ -203,7 +203,7 @@ public class InvoiceJobConsumerTests
             ["OBJECT_STORAGE_BUCKET_NAME"] = "bucket",
         };
 
-        foreach (var (key, value) in vars)
+        foreach ((string? key, string? value) in vars)
             Environment.SetEnvironmentVariable(key, value);
 
         try
@@ -212,7 +212,7 @@ public class InvoiceJobConsumerTests
         }
         finally
         {
-            foreach (var key in vars.Keys)
+            foreach (string key in vars.Keys)
                 Environment.SetEnvironmentVariable(key, null);
         }
     }

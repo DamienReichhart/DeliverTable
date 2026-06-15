@@ -5,8 +5,12 @@ using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableInfrastructure.Services.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
+using DeliverTableServer.Constants;
 using DeliverTableServer.Services;
+using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Invoice;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
@@ -27,6 +31,7 @@ public class InvoiceServiceTests
     private IEmailJobRepository _emailJobRepo = null!;
     private IMessagePublisher _publisher = null!;
     private AppEnvironment _env = null!;
+    private ISystemClock _clock = null!;
     private InvoiceService _sut = null!;
 
     [SetUp]
@@ -41,6 +46,9 @@ public class InvoiceServiceTests
         _emailJobRepo = Substitute.For<IEmailJobRepository>();
         _publisher = Substitute.For<IMessagePublisher>();
         _env = TestEnvironmentFactory.Create();
+        _clock = Substitute.For<ISystemClock>();
+        // Default: before the cutover so existing tests keep their two-invoice behaviour.
+        _clock.UtcNow.Returns(CommissionInvoicingCutover.MonthlyStartUtc.AddDays(-1));
         _sut = new InvoiceService(
             _invoiceRepo,
             _orderRepo,
@@ -50,13 +58,14 @@ public class InvoiceServiceTests
             _objectStorage,
             _emailJobRepo,
             _publisher,
-            _env);
+            _env,
+            _clock);
     }
 
     [Test]
     public async Task CreatePendingInvoices_HappyPath_CreatesTwoAndReturnsMessages()
     {
-        var restaurant = new Restaurant
+        Restaurant restaurant = new Restaurant
         {
             Id = 5,
             Name = "Test",
@@ -66,9 +75,9 @@ public class InvoiceServiceTests
             LegalForm = "SAS",
             IsVatRegistered = true,
         };
-        var customer = new User { Id = 1, Email = "cust@example.fr", FirstName = "Jean", LastName = "Dupont" };
-        var dish = new Dish { Id = 10, VatRate = VatRate.Intermediate10 };
-        var order = new Order
+        User customer = new User { Id = 1, Email = "cust@example.fr", FirstName = "Jean", LastName = "Dupont" };
+        Dish dish = new Dish { Id = 10, VatRate = VatRate.Intermediate10 };
+        Order order = new Order
         {
             Id = 42,
             CustomerId = 1,
@@ -99,12 +108,12 @@ public class InvoiceServiceTests
             .CreateBatchAsync(Arg.Any<IEnumerable<Invoice>>(), Arg.Any<CancellationToken>())
             .Returns(ci =>
             {
-                foreach (var inv in ci.Arg<IEnumerable<Invoice>>())
+                foreach (Invoice inv in ci.Arg<IEnumerable<Invoice>>())
                     inv.Id = nextId++;
                 return Task.CompletedTask;
             });
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -123,7 +132,7 @@ public class InvoiceServiceTests
             .ExistsForOrderAndKindAsync(42, InvoiceKind.OrderInvoiceToCustomer, Arg.Any<CancellationToken>())
             .Returns(true);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(0));
@@ -134,7 +143,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task CreatePendingInvoices_VatExemptRestaurant_CustomerLinesAllZeroVat()
     {
-        var restaurant = new Restaurant
+        Restaurant restaurant = new Restaurant
         {
             Id = 5,
             Siret = "73282932000074",
@@ -143,8 +152,8 @@ public class InvoiceServiceTests
             LegalForm = "EI",
             IsVatRegistered = false,
         };
-        var dish = new Dish { Id = 10, VatRate = VatRate.Intermediate10 };
-        var order = new Order
+        Dish dish = new Dish { Id = 10, VatRate = VatRate.Intermediate10 };
+        Order order = new Order
         {
             Id = 42,
             CustomerId = 1,
@@ -177,7 +186,7 @@ public class InvoiceServiceTests
             .CreateBatchAsync(Arg.Any<IEnumerable<Invoice>>(), Arg.Any<CancellationToken>())
             .Returns(ci =>
             {
-                foreach (var inv in ci.Arg<IEnumerable<Invoice>>())
+                foreach (Invoice inv in ci.Arg<IEnumerable<Invoice>>())
                 {
                     if (inv.Kind == InvoiceKind.OrderInvoiceToCustomer)
                         customerInvoice = inv;
@@ -196,9 +205,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task BuildCustomerInvoice_WithSingleRateDiscount_EmitsOneDiscountLine()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto();
-        var order = BuildOrder(
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
             orderId: 42,
             resto,
             Cust(),
@@ -206,10 +215,10 @@ public class InvoiceServiceTests
             discounts: new() { new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "Promo Midi", Amount = 10m } });
         ArrangeDefaultMocks(42, order, resto.Id);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(42, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
-        var lines = CustomerInvoiceLines(captured);
+        InvoiceLine[] lines = CustomerInvoiceLines(captured);
         Assert.That(lines, Has.Length.EqualTo(2));
         Assert.That(lines[0].Kind, Is.EqualTo(InvoiceLineKind.Item));
         Assert.That(lines[1].Kind, Is.EqualTo(InvoiceLineKind.Discount));
@@ -217,16 +226,16 @@ public class InvoiceServiceTests
         Assert.That(lines[1].LineTtc, Is.EqualTo(-10m));
         Assert.That(lines[1].VatRate, Is.EqualTo(20m));
         Assert.That(lines[1].LineHt + lines[1].LineVat, Is.EqualTo(lines[1].LineTtc));
-        var customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        Invoice customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
         Assert.That(customerInvoice.TotalTtc, Is.EqualTo(90m));
     }
 
     [Test]
     public async Task BuildCustomerInvoice_WithMultiRateDiscount_SplitsAcrossRates()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto();
-        var order = BuildOrder(
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
             orderId: 43,
             resto,
             Cust(),
@@ -234,10 +243,10 @@ public class InvoiceServiceTests
             discounts: new() { new OrderDiscount { Source = OrderDiscountSource.DiscountCode, Description = "SUMMER10", Amount = 10m } });
         ArrangeDefaultMocks(43, order, resto.Id);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(43, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(43, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
-        var discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
+        InvoiceLine[] discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
         Assert.That(discountLines, Has.Length.EqualTo(2));
         Assert.That(discountLines.Select(l => l.LineTtc), Is.EquivalentTo(new[] { -6m, -4m }));
         Assert.That(discountLines.Sum(l => l.LineTtc), Is.EqualTo(-10m));
@@ -249,9 +258,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task BuildCustomerInvoice_WithThreeDiscountSources_RendersAllLabels()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto();
-        var order = BuildOrder(
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
             orderId: 44,
             resto,
             Cust(),
@@ -264,25 +273,25 @@ public class InvoiceServiceTests
             });
         ArrangeDefaultMocks(44, order, resto.Id);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(44, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(44, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
-        var lines = CustomerInvoiceLines(captured);
+        InvoiceLine[] lines = CustomerInvoiceLines(captured);
         Assert.That(lines.Count(l => l.Kind == InvoiceLineKind.Discount), Is.EqualTo(3));
-        var descriptions = lines.Where(l => l.Kind == InvoiceLineKind.Discount).Select(l => l.Description).ToArray();
+        string[] descriptions = lines.Where(l => l.Kind == InvoiceLineKind.Discount).Select(l => l.Description).ToArray();
         Assert.That(descriptions, Does.Contain("Promotion: Menu midi"));
         Assert.That(descriptions, Does.Contain("WELCOME — Bienvenue"));
         Assert.That(descriptions, Does.Contain("Points fidélité (20 pts)"));
-        var customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        Invoice customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
         Assert.That(customerInvoice.TotalTtc, Is.EqualTo(90m));
     }
 
     [Test]
     public async Task BuildCustomerInvoice_WithVatExemptRestaurant_EmitsZeroVatDiscountLine()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto(vatRegistered: false);
-        var order = BuildOrder(
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto(vatRegistered: false);
+        Order order = BuildOrder(
             orderId: 45,
             resto,
             Cust(),
@@ -290,10 +299,10 @@ public class InvoiceServiceTests
             discounts: new() { new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "Promo", Amount = 10m } });
         ArrangeDefaultMocks(45, order, resto.Id);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(45, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(45, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
-        var discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
+        InvoiceLine[] discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
         Assert.That(discountLines, Has.Length.EqualTo(1));
         Assert.That(discountLines[0].VatRate, Is.EqualTo(0m));
         Assert.That(discountLines[0].LineVat, Is.EqualTo(0m));
@@ -304,9 +313,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task BuildCustomerInvoice_WithRoundingDrift_ReconcilesToExactDiscountTotal()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto();
-        var order = BuildOrder(
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
             orderId: 46,
             resto,
             Cust(),
@@ -314,14 +323,14 @@ public class InvoiceServiceTests
             discounts: new() { new OrderDiscount { Source = OrderDiscountSource.Promotion, Description = "Tiny", Amount = 0.03m } });
         ArrangeDefaultMocks(46, order, resto.Id);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(46, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(46, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
-        var discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
+        InvoiceLine[] discountLines = CustomerInvoiceLines(captured).Where(l => l.Kind == InvoiceLineKind.Discount).ToArray();
         Assert.That(discountLines, Has.Length.EqualTo(2));
         Assert.That(discountLines.Sum(l => l.LineTtc), Is.EqualTo(-0.03m));
-        var line20 = discountLines.Single(l => l.VatRate == 20m);
-        var line10 = discountLines.Single(l => l.VatRate == 10m);
+        InvoiceLine line20 = discountLines.Single(l => l.VatRate == 20m);
+        InvoiceLine line10 = discountLines.Single(l => l.VatRate == 10m);
         Assert.That(line20.LineTtc, Is.EqualTo(-0.01m));
         Assert.That(line10.LineTtc, Is.EqualTo(-0.02m));
     }
@@ -329,9 +338,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task BuildCustomerInvoice_WithNoDiscounts_EmitsNoDiscountLines()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto();
-        var order = BuildOrder(
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
             orderId: 47,
             resto,
             Cust(),
@@ -339,26 +348,26 @@ public class InvoiceServiceTests
             discounts: new());
         ArrangeDefaultMocks(47, order, resto.Id);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(47, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(47, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
-        var lines = CustomerInvoiceLines(captured);
+        InvoiceLine[] lines = CustomerInvoiceLines(captured);
         Assert.That(lines.All(l => l.Kind == InvoiceLineKind.Item), Is.True);
     }
 
     [Test]
     public async Task BuildCustomerInvoice_WithCustomerAddress_PopulatesRecipientSnapshot()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto();
-        var customer = Cust();
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        User customer = Cust();
         customer.BillingAddressLine1 = "12 rue de la Paix";
         customer.BillingAddressLine2 = "Bât. B";
         customer.BillingPostalCode = "75002";
         customer.BillingCity = "Paris";
         customer.BillingCountry = "France";
 
-        var order = BuildOrder(
+        Order order = BuildOrder(
             orderId: 100,
             resto,
             customer,
@@ -366,11 +375,11 @@ public class InvoiceServiceTests
             discounts: new());
         ArrangeDefaultMocks(100, order, resto.Id);
 
-        var result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(100, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(100, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
-        var customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
-        var snapshot = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(customerInvoice.RecipientSnapshotJson);
+        Invoice customerInvoice = captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        InvoiceLegalSnapshotDto? snapshot = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(customerInvoice.RecipientSnapshotJson);
         Assert.That(snapshot, Is.Not.Null);
         Assert.That(snapshot!.Address,
             Is.EqualTo("12 rue de la Paix\nBât. B\n75002 Paris\nFrance"));
@@ -379,9 +388,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task BuildCustomerInvoice_DiscountLinesContinueSortOrderAfterItems()
     {
-        var captured = ArrangeCapture();
-        var resto = Resto();
-        var order = BuildOrder(
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
             orderId: 48,
             resto,
             Cust(),
@@ -391,7 +400,7 @@ public class InvoiceServiceTests
 
         await _sut.CreatePendingInvoicesForCapturedOrderAsync(48, CancellationToken.None);
 
-        var lines = CustomerInvoiceLines(captured);
+        InvoiceLine[] lines = CustomerInvoiceLines(captured);
         Assert.That(lines.Select(l => l.SortOrder), Is.EqualTo(new[] { 0, 1, 2 }));
         Assert.That(lines[2].Kind, Is.EqualTo(InvoiceLineKind.Discount));
     }
@@ -399,9 +408,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task CreateCreditNotes_FullRefund_MirrorsOriginalLinesNegatively()
     {
-        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 20m };
-        var payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
-        var originalCustomer = new Invoice
+        Refund refund = new Refund { Id = 7, PaymentId = 1, Amount = 20m };
+        Payment payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
+        Invoice originalCustomer = new Invoice
         {
             Id = 100,
             OrderId = 42,
@@ -431,7 +440,7 @@ public class InvoiceServiceTests
                 },
             },
         };
-        var originalCommission = new Invoice
+        Invoice originalCommission = new Invoice
         {
             Id = 101,
             OrderId = 42,
@@ -479,12 +488,12 @@ public class InvoiceServiceTests
             .CreateAsync(Arg.Any<Invoice>(), Arg.Any<CancellationToken>())
             .Returns(ci =>
             {
-                var inv = ci.Arg<Invoice>();
+                Invoice inv = ci.Arg<Invoice>();
                 inv.Id = nextId++;
                 return inv;
             });
 
-        var result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -500,9 +509,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task CreateCreditNotes_PartialRefund_ProratesNegativeLines()
     {
-        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 5m }; // 25% of 20
-        var payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
-        var originalCustomer = new Invoice
+        Refund refund = new Refund { Id = 7, PaymentId = 1, Amount = 5m }; // 25% of 20
+        Payment payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
+        Invoice originalCustomer = new Invoice
         {
             Id = 100,
             OrderId = 42,
@@ -568,9 +577,9 @@ public class InvoiceServiceTests
     {
         // Only commissionOriginal is present; no customer original.
         // The commission credit note ratio must be based on payment.Amount.
-        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 5m };
-        var payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
-        var commissionOriginal = new Invoice
+        Refund refund = new Refund { Id = 7, PaymentId = 1, Amount = 5m };
+        Payment payment = new Payment { Id = 1, OrderId = 42, Amount = 20m };
+        Invoice commissionOriginal = new Invoice
         {
             Id = 101,
             OrderId = 42,
@@ -625,7 +634,7 @@ public class InvoiceServiceTests
                 return creditNote;
             });
 
-        var result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(1));
@@ -642,7 +651,7 @@ public class InvoiceServiceTests
     {
         _paymentRepo.GetRefundByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Refund?)null);
 
-        var result = await _sut.CreateCreditNotesForRefundAsync(99, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreateCreditNotesForRefundAsync(99, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(0));
@@ -654,9 +663,9 @@ public class InvoiceServiceTests
         // Full refund of an order whose customer invoice has 2 item lines + 1 discount line.
         // The credit note must preserve InvoiceLineKind on each copied line so the PDF
         // renderer can still classify discount lines correctly.
-        var refund = new Refund { Id = 7, PaymentId = 1, Amount = 30m };
-        var payment = new Payment { Id = 1, OrderId = 42, Amount = 30m };
-        var originalCustomer = new Invoice
+        Refund refund = new Refund { Id = 7, PaymentId = 1, Amount = 30m };
+        Payment payment = new Payment { Id = 1, OrderId = 42, Amount = 30m };
+        Invoice originalCustomer = new Invoice
         {
             Id = 100,
             OrderId = 42,
@@ -738,12 +747,12 @@ public class InvoiceServiceTests
                 return creditNote;
             });
 
-        var result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreateCreditNotesForRefundAsync(7, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(creditNote, Is.Not.Null);
         Assert.That(creditNote!.Lines, Has.Count.EqualTo(3));
-        var byOrder = creditNote.Lines.OrderBy(l => l.SortOrder).ToList();
+        List<InvoiceLine> byOrder = creditNote.Lines.OrderBy(l => l.SortOrder).ToList();
         // Kinds preserved
         Assert.That(byOrder[0].Kind, Is.EqualTo(InvoiceLineKind.Item));
         Assert.That(byOrder[1].Kind, Is.EqualTo(InvoiceLineKind.Item));
@@ -759,7 +768,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task ListForMeAsync_ReturnsRecipientUserInvoices()
     {
-        var invoices = new List<Invoice>
+        List<Invoice> invoices = new List<Invoice>
         {
             new()
             {
@@ -777,7 +786,7 @@ public class InvoiceServiceTests
             .ListForRecipientUserAsync(7, 1, 20, Arg.Any<CancellationToken>())
             .Returns((invoices, 1));
 
-        var result = await _sut.ListForMeAsync(7, 1, 20, CancellationToken.None);
+        ServiceResult<PaginatedResult<InvoiceListItemDto>> result = await _sut.ListForMeAsync(7, 1, 20, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Items, Has.Count.EqualTo(1));
@@ -790,10 +799,10 @@ public class InvoiceServiceTests
     [Test]
     public async Task ListForRestaurantAsync_NonOwnerNonAdmin_ReturnsAccessDenied()
     {
-        var restaurant = new Restaurant { Id = 5, OwnerId = 99 };
+        Restaurant restaurant = new Restaurant { Id = 5, OwnerId = 99 };
         _restaurantRepo.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.ListForRestaurantAsync(5, 7, false, 1, 20, CancellationToken.None);
+        ServiceResult<PaginatedResult<InvoiceListItemDto>> result = await _sut.ListForRestaurantAsync(5, 7, false, 1, 20, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
@@ -802,10 +811,10 @@ public class InvoiceServiceTests
     [Test]
     public async Task ListForRestaurantAsync_OwnerMatches_ReturnsList()
     {
-        var restaurant = new Restaurant { Id = 5, OwnerId = 7 };
+        Restaurant restaurant = new Restaurant { Id = 5, OwnerId = 7 };
         _restaurantRepo.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var invoices = new List<Invoice>
+        List<Invoice> invoices = new List<Invoice>
         {
             new()
             {
@@ -823,7 +832,7 @@ public class InvoiceServiceTests
             .ListForRecipientRestaurantAsync(5, 1, 20, Arg.Any<CancellationToken>())
             .Returns((invoices, 1));
 
-        var result = await _sut.ListForRestaurantAsync(5, 7, false, 1, 20, CancellationToken.None);
+        ServiceResult<PaginatedResult<InvoiceListItemDto>> result = await _sut.ListForRestaurantAsync(5, 7, false, 1, 20, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Items, Has.Count.EqualTo(1));
@@ -833,7 +842,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task ListForRestaurantAsync_Admin_BypassesOwnerCheck()
     {
-        var invoices = new List<Invoice>
+        List<Invoice> invoices = new List<Invoice>
         {
             new()
             {
@@ -851,7 +860,7 @@ public class InvoiceServiceTests
             .ListForRecipientRestaurantAsync(5, 1, 20, Arg.Any<CancellationToken>())
             .Returns((invoices, 1));
 
-        var result = await _sut.ListForRestaurantAsync(5, 999, true, 1, 20, CancellationToken.None);
+        ServiceResult<PaginatedResult<InvoiceListItemDto>> result = await _sut.ListForRestaurantAsync(5, 999, true, 1, 20, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _restaurantRepo.DidNotReceive().GetByIdAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
@@ -864,7 +873,7 @@ public class InvoiceServiceTests
     {
         _invoiceRepo.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Invoice?)null);
 
-        var result = await _sut.GetPdfStreamAsync(99, 7, false, false, CancellationToken.None);
+        ServiceResult<InvoicePdfStreamResult> result = await _sut.GetPdfStreamAsync(99, 7, false, false, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -873,7 +882,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task GetPdfStreamAsync_NotGenerated_Returns409Style()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "R0005-2026-000001",
@@ -883,7 +892,7 @@ public class InvoiceServiceTests
         };
         _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
 
-        var result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
+        ServiceResult<InvoicePdfStreamResult> result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(409));
@@ -892,7 +901,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task GetPdfStreamAsync_WrongUser_ReturnsAccessDenied()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "R0005-2026-000001",
@@ -903,7 +912,7 @@ public class InvoiceServiceTests
         };
         _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
 
-        var result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
+        ServiceResult<InvoicePdfStreamResult> result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
@@ -912,7 +921,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task GetPdfStreamAsync_Authorized_ReturnsStream()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "R0005-2026-000001",
@@ -922,12 +931,12 @@ public class InvoiceServiceTests
         };
         _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
 
-        var stream = new MemoryStream(new byte[] { 0x25, 0x50 });
+        MemoryStream stream = new MemoryStream(new byte[] { 0x25, 0x50 });
         _objectStorage
             .GetObjectAsync("invoices/1.pdf", Arg.Any<CancellationToken>())
             .Returns(new ObjectStorageResult(stream, "application/pdf", 2));
 
-        var result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
+        ServiceResult<InvoicePdfStreamResult> result = await _sut.GetPdfStreamAsync(1, 7, false, false, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.ContentType, Is.EqualTo("application/pdf"));
@@ -937,7 +946,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task GetPdfStreamAsync_Admin_BypassesUserCheck()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "DT-2026-000001",
@@ -948,12 +957,12 @@ public class InvoiceServiceTests
         };
         _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
 
-        var stream = new MemoryStream(new byte[] { 0x25, 0x50 });
+        MemoryStream stream = new MemoryStream(new byte[] { 0x25, 0x50 });
         _objectStorage
             .GetObjectAsync("invoices/1.pdf", Arg.Any<CancellationToken>())
             .Returns(new ObjectStorageResult(stream, "application/pdf", 2));
 
-        var result = await _sut.GetPdfStreamAsync(1, 42, true, false, CancellationToken.None);
+        ServiceResult<InvoicePdfStreamResult> result = await _sut.GetPdfStreamAsync(1, 42, true, false, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -961,7 +970,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task GetPdfStreamAsync_RestaurantOwner_WithRecipientRestaurant_ChecksOwnership()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "DT-2026-000001",
@@ -974,12 +983,12 @@ public class InvoiceServiceTests
         _restaurantRepo.GetByIdAsync(5, Arg.Any<CancellationToken>())
             .Returns(new Restaurant { Id = 5, OwnerId = 7 });
 
-        var stream = new MemoryStream(new byte[] { 0x25, 0x50 });
+        MemoryStream stream = new MemoryStream(new byte[] { 0x25, 0x50 });
         _objectStorage
             .GetObjectAsync("invoices/1.pdf", Arg.Any<CancellationToken>())
             .Returns(new ObjectStorageResult(stream, "application/pdf", 2));
 
-        var result = await _sut.GetPdfStreamAsync(1, 7, false, true, CancellationToken.None);
+        ServiceResult<InvoicePdfStreamResult> result = await _sut.GetPdfStreamAsync(1, 7, false, true, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -989,9 +998,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task AdminListAsync_FiltersByYear_ReturnsMatchingRows()
     {
-        var issuerSnapshot = new InvoiceLegalSnapshotDto("Restaurant SAS", "SAS", "12345", "", "1 rue");
-        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "jean@example.fr");
-        var invoices = new List<Invoice>
+        InvoiceLegalSnapshotDto issuerSnapshot = new InvoiceLegalSnapshotDto("Restaurant SAS", "SAS", "12345", "", "1 rue");
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "jean@example.fr");
+        List<Invoice> invoices = new List<Invoice>
         {
             new()
             {
@@ -1011,8 +1020,8 @@ public class InvoiceServiceTests
             .AdminListAsync(2026, null, null, null, null, 1, 20, Arg.Any<CancellationToken>())
             .Returns((invoices, 1));
 
-        var query = new InvoiceAdminQuery { Year = 2026, Page = 1, PageSize = 20 };
-        var result = await _sut.AdminListAsync(query, CancellationToken.None);
+        InvoiceAdminQuery query = new InvoiceAdminQuery { Year = 2026, Page = 1, PageSize = 20 };
+        ServiceResult<PaginatedResult<AdminInvoiceRowDto>> result = await _sut.AdminListAsync(query, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Items, Has.Count.EqualTo(1));
@@ -1026,9 +1035,9 @@ public class InvoiceServiceTests
     [Test]
     public async Task AdminGetDetailAsync_Existing_ReturnsDetailWithSnapshots()
     {
-        var issuerSnapshot = new InvoiceLegalSnapshotDto("Platform", "SAS", "99999", "FR12345", "10 rue");
-        var recipientSnapshot = new InvoiceLegalSnapshotDto("Restaurant XYZ", "SARL", "11111", "", "2 avenue");
-        var invoice = new Invoice
+        InvoiceLegalSnapshotDto issuerSnapshot = new InvoiceLegalSnapshotDto("Platform", "SAS", "99999", "FR12345", "10 rue");
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto("Restaurant XYZ", "SARL", "11111", "", "2 avenue");
+        Invoice invoice = new Invoice
         {
             Id = 10,
             Number = "DT-2026-000001",
@@ -1063,7 +1072,7 @@ public class InvoiceServiceTests
             .GetByIdWithLinesAsync(10, Arg.Any<CancellationToken>())
             .Returns(invoice);
 
-        var result = await _sut.AdminGetDetailAsync(10, CancellationToken.None);
+        ServiceResult<AdminInvoiceDetailDto> result = await _sut.AdminGetDetailAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Header.Id, Is.EqualTo(10));
@@ -1080,7 +1089,7 @@ public class InvoiceServiceTests
             .GetByIdWithLinesAsync(99, Arg.Any<CancellationToken>())
             .Returns((Invoice?)null);
 
-        var result = await _sut.AdminGetDetailAsync(99, CancellationToken.None);
+        ServiceResult<AdminInvoiceDetailDto> result = await _sut.AdminGetDetailAsync(99, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -1091,7 +1100,7 @@ public class InvoiceServiceTests
     [Test]
     public async Task AdminResendEmailAsync_NotGenerated_ReturnsError()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "R0005-2026-000001",
@@ -1103,7 +1112,7 @@ public class InvoiceServiceTests
         };
         _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
 
-        var result = await _sut.AdminResendEmailAsync(1, CancellationToken.None);
+        ServiceResult result = await _sut.AdminResendEmailAsync(1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(409));
@@ -1112,8 +1121,8 @@ public class InvoiceServiceTests
     [Test]
     public async Task AdminResendEmailAsync_Generated_RepublishesJob()
     {
-        var recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "jean@example.fr");
-        var invoice = new Invoice
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto("Jean Dupont", "", "", "", "", "jean@example.fr");
+        Invoice invoice = new Invoice
         {
             Id = 1,
             Number = "R0005-2026-000001",
@@ -1130,7 +1139,7 @@ public class InvoiceServiceTests
         };
         _invoiceRepo.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(invoice);
 
-        var result = await _sut.AdminResendEmailAsync(1, CancellationToken.None);
+        ServiceResult result = await _sut.AdminResendEmailAsync(1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _emailJobRepo.Received(1).CreateAsync(Arg.Any<EmailJob>(), Arg.Any<CancellationToken>());
@@ -1141,14 +1150,14 @@ public class InvoiceServiceTests
 
     private List<Invoice> ArrangeCapture()
     {
-        var captured = new List<Invoice>();
+        List<Invoice> captured = new List<Invoice>();
         _invoiceRepo
             .CreateBatchAsync(Arg.Any<IEnumerable<Invoice>>(), Arg.Any<CancellationToken>())
             .Returns(ci =>
             {
                 int id = 100;
                 captured.Clear();
-                foreach (var inv in ci.Arg<IEnumerable<Invoice>>())
+                foreach (Invoice inv in ci.Arg<IEnumerable<Invoice>>())
                 {
                     inv.Id = id++;
                     captured.Add(inv);
@@ -1165,8 +1174,8 @@ public class InvoiceServiceTests
         List<OrderItem> items,
         List<OrderDiscount> discounts)
     {
-        var totalDiscount = discounts.Sum(d => d.Amount);
-        var original = items.Sum(i => i.UnitPrice * i.Quantity);
+        decimal totalDiscount = discounts.Sum(d => d.Amount);
+        decimal original = items.Sum(i => i.UnitPrice * i.Quantity);
         return new Order
         {
             Id = orderId,
@@ -1222,4 +1231,50 @@ public class InvoiceServiceTests
     private static InvoiceLine[] CustomerInvoiceLines(IEnumerable<Invoice> captured) =>
         captured.Single(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer)
             .Lines.OrderBy(l => l.SortOrder).ToArray();
+
+    // ─── Cutover gate tests ───────────────────────────────────────────────
+
+    [Test]
+    public async Task CreatePendingInvoices_BeforeCutover_CommissionInvoiceIsInBatch()
+    {
+        _clock.UtcNow.Returns(CommissionInvoicingCutover.MonthlyStartUtc.AddDays(-1));
+
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
+            orderId: 200,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 20m, 1, VatRate.Normal20) },
+            discounts: new());
+        ArrangeDefaultMocks(200, order, resto.Id);
+
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(200, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.CommissionInvoiceToRestaurant), Is.True);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer), Is.True);
+    }
+
+    [Test]
+    public async Task CreatePendingInvoices_AfterCutover_CommissionInvoiceNotInBatch()
+    {
+        _clock.UtcNow.Returns(CommissionInvoicingCutover.MonthlyStartUtc.AddMinutes(1));
+
+        List<Invoice> captured = ArrangeCapture();
+        Restaurant resto = Resto();
+        Order order = BuildOrder(
+            orderId: 201,
+            resto,
+            Cust(),
+            items: new() { Item("Plat", 20m, 1, VatRate.Normal20) },
+            discounts: new());
+        ArrangeDefaultMocks(201, order, resto.Id);
+
+        ServiceResult<List<InvoiceJobMessage>> result = await _sut.CreatePendingInvoicesForCapturedOrderAsync(201, CancellationToken.None);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.CommissionInvoiceToRestaurant), Is.False);
+        Assert.That(captured.Any(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer), Is.True);
+    }
 }

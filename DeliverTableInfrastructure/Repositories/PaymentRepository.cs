@@ -59,7 +59,7 @@ public class PaymentRepository(DeliverTableContext dbContext) : IPaymentReposito
 
     public async Task<bool> TryRegisterProcessedEventAsync(string stripeEventId, string eventType, CancellationToken ct = default)
     {
-        var exists = await _dbContext.ProcessedStripeEvents.AnyAsync(e => e.StripeEventId == stripeEventId, ct);
+        bool exists = await _dbContext.ProcessedStripeEvents.AnyAsync(e => e.StripeEventId == stripeEventId, ct);
         if (exists) return false;
 
         _dbContext.ProcessedStripeEvents.Add(new ProcessedStripeEvent

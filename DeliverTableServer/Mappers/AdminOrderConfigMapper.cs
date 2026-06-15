@@ -18,6 +18,7 @@ public static class AdminOrderConfigMapper
             MinLeadTimeHours = rule.MinLeadTimeHours,
             MaxAdvanceDays = rule.MaxAdvanceDays,
             SlotDurationMinutes = rule.SlotDurationMinutes,
+            TablesCapacityPerSlot = rule.TablesCapacityPerSlot,
             AvailabilityRanges = rule.AvailabilityRanges,
             AllowPreorder = rule.AllowPreorder,
             AllowDelivery = rule.AllowDelivery,

@@ -47,18 +47,18 @@ public sealed class AppConfigurationImplementation : IAppConfiguration
         if (IsLoaded)
             return;
 
-        var fileName = _hostEnvironment.IsDevelopment()
+        string fileName = _hostEnvironment.IsDevelopment()
             ? AppConfigurationOptions.DevelopmentConfigFileName
             : AppConfigurationOptions.ConfigFileName;
 
         try
         {
-            var response = await _configHttpClient.GetAsync(fileName, cancellationToken).ConfigureAwait(false);
+            HttpResponseMessage response = await _configHttpClient.GetAsync(fileName, cancellationToken).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
-                var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                var options = JsonSerializer.Deserialize<AppConfigurationOptions>(json);
+                string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                AppConfigurationOptions? options = JsonSerializer.Deserialize<AppConfigurationOptions>(json);
 
                 lock (_lock)
                 {
@@ -70,13 +70,13 @@ public sealed class AppConfigurationImplementation : IAppConfiguration
             else if (_hostEnvironment.IsDevelopment() && fileName == AppConfigurationOptions.DevelopmentConfigFileName)
             {
                 // Fallback: try base appconfig.json when appconfig.Development.json is missing (e.g. first run).
-                var fallback = await _configHttpClient.GetAsync(
+                HttpResponseMessage fallback = await _configHttpClient.GetAsync(
                     AppConfigurationOptions.ConfigFileName,
                     cancellationToken).ConfigureAwait(false);
                 if (fallback.IsSuccessStatusCode)
                 {
-                    var json = await fallback.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                    var options = JsonSerializer.Deserialize<AppConfigurationOptions>(json);
+                    string json = await fallback.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    AppConfigurationOptions? options = JsonSerializer.Deserialize<AppConfigurationOptions>(json);
                     lock (_lock)
                     {
                         ApiBaseUrl = options?.Api?.BaseUrl?.TrimEnd('/') ?? "";

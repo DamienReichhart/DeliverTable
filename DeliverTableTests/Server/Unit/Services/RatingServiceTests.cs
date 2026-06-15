@@ -30,20 +30,20 @@ public class RatingServiceTests
     [Test]
     public async Task CreateAsync_WhenValid_ReturnsRatingDto()
     {
-        var order = CreateOrder(id: 1, customerId: 10, restaurantId: 5, status: OrderStatus.Delivered);
+        Order order = CreateOrder(id: 1, customerId: 10, restaurantId: 5, status: OrderStatus.Delivered);
         _orderRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(order);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns((RestaurantRating?)null);
         _ratingRepository.CreateAsync(Arg.Any<RestaurantRating>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var r = callInfo.Arg<RestaurantRating>();
+                RestaurantRating r = callInfo.Arg<RestaurantRating>();
                 r.Id = 1;
                 r.Restaurant = order.Restaurant;
                 return r;
             });
 
-        var request = new CreateRatingRequest { Rating = 5, Comment = "Excellent" };
-        var result = await _sut.CreateAsync(1, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 5, Comment = "Excellent" };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Rating, Is.EqualTo(5));
@@ -57,8 +57,8 @@ public class RatingServiceTests
     {
         _orderRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
-        var request = new CreateRatingRequest { Rating = 5 };
-        var result = await _sut.CreateAsync(99, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 5 };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(99, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -68,11 +68,11 @@ public class RatingServiceTests
     [Test]
     public async Task CreateAsync_WhenOrderBelongsToOtherCustomer_Returns404()
     {
-        var order = CreateOrder(id: 1, customerId: 99);
+        Order order = CreateOrder(id: 1, customerId: 99);
         _orderRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(order);
 
-        var request = new CreateRatingRequest { Rating = 5 };
-        var result = await _sut.CreateAsync(1, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 5 };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -82,11 +82,11 @@ public class RatingServiceTests
     [Test]
     public async Task CreateAsync_WhenOrderNotDelivered_Returns400()
     {
-        var order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Preparing);
+        Order order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Preparing);
         _orderRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(order);
 
-        var request = new CreateRatingRequest { Rating = 5 };
-        var result = await _sut.CreateAsync(1, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 5 };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -96,13 +96,13 @@ public class RatingServiceTests
     [Test]
     public async Task CreateAsync_WhenRatingAlreadyExists_Returns409()
     {
-        var order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Delivered);
-        var existing = CreateRestaurantRating(orderId: 1, customerId: 10);
+        Order order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Delivered);
+        RestaurantRating existing = CreateRestaurantRating(orderId: 1, customerId: 10);
         _orderRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(order);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns(existing);
 
-        var request = new CreateRatingRequest { Rating = 5 };
-        var result = await _sut.CreateAsync(1, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 5 };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(409));
@@ -112,12 +112,12 @@ public class RatingServiceTests
     [Test]
     public async Task CreateAsync_WhenRatingTooLow_Returns400()
     {
-        var order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Delivered);
+        Order order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Delivered);
         _orderRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(order);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns((RestaurantRating?)null);
 
-        var request = new CreateRatingRequest { Rating = 0 };
-        var result = await _sut.CreateAsync(1, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 0 };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -127,12 +127,12 @@ public class RatingServiceTests
     [Test]
     public async Task CreateAsync_WhenRatingTooHigh_Returns400()
     {
-        var order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Delivered);
+        Order order = CreateOrder(id: 1, customerId: 10, status: OrderStatus.Delivered);
         _orderRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(order);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns((RestaurantRating?)null);
 
-        var request = new CreateRatingRequest { Rating = 6 };
-        var result = await _sut.CreateAsync(1, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 6 };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -142,20 +142,20 @@ public class RatingServiceTests
     [Test]
     public async Task CreateAsync_WithoutComment_DefaultsToEmpty()
     {
-        var order = CreateOrder(id: 1, customerId: 10, restaurantId: 5, status: OrderStatus.Delivered);
+        Order order = CreateOrder(id: 1, customerId: 10, restaurantId: 5, status: OrderStatus.Delivered);
         _orderRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(order);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns((RestaurantRating?)null);
         _ratingRepository.CreateAsync(Arg.Any<RestaurantRating>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var r = callInfo.Arg<RestaurantRating>();
+                RestaurantRating r = callInfo.Arg<RestaurantRating>();
                 r.Id = 1;
                 r.Restaurant = order.Restaurant;
                 return r;
             });
 
-        var request = new CreateRatingRequest { Rating = 3 };
-        var result = await _sut.CreateAsync(1, 10, request);
+        CreateRatingRequest request = new CreateRatingRequest { Rating = 3 };
+        ServiceResult<RatingDto> result = await _sut.CreateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Comment, Is.EqualTo(string.Empty));
@@ -168,10 +168,10 @@ public class RatingServiceTests
     [Test]
     public async Task GetByOrderAsync_WhenExists_ReturnsRatingDto()
     {
-        var rating = CreateRestaurantRating(id: 1, orderId: 1, restaurantId: 5, customerId: 10);
+        RestaurantRating rating = CreateRestaurantRating(id: 1, orderId: 1, restaurantId: 5, customerId: 10);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns(rating);
 
-        var result = await _sut.GetByOrderAsync(1, 10);
+        ServiceResult<RatingDto> result = await _sut.GetByOrderAsync(1, 10);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -183,7 +183,7 @@ public class RatingServiceTests
     {
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns((RestaurantRating?)null);
 
-        var result = await _sut.GetByOrderAsync(1, 10);
+        ServiceResult<RatingDto> result = await _sut.GetByOrderAsync(1, 10);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -197,13 +197,13 @@ public class RatingServiceTests
     [Test]
     public async Task UpdateAsync_WhenValid_ReturnsUpdatedRatingDto()
     {
-        var existing = CreateRestaurantRating(id: 1, orderId: 1, restaurantId: 5, customerId: 10, rating: 3);
+        RestaurantRating existing = CreateRestaurantRating(id: 1, orderId: 1, restaurantId: 5, customerId: 10, rating: 3);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns(existing);
         _ratingRepository.UpdateAsync(Arg.Any<RestaurantRating>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<RestaurantRating>());
 
-        var request = new UpdateRatingRequest { Rating = 5, Comment = "Finalement excellent" };
-        var result = await _sut.UpdateAsync(1, 10, request);
+        UpdateRatingRequest request = new UpdateRatingRequest { Rating = 5, Comment = "Finalement excellent" };
+        ServiceResult<RatingDto> result = await _sut.UpdateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Rating, Is.EqualTo(5));
@@ -215,8 +215,8 @@ public class RatingServiceTests
     {
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns((RestaurantRating?)null);
 
-        var request = new UpdateRatingRequest { Rating = 5 };
-        var result = await _sut.UpdateAsync(1, 10, request);
+        UpdateRatingRequest request = new UpdateRatingRequest { Rating = 5 };
+        ServiceResult<RatingDto> result = await _sut.UpdateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -226,11 +226,11 @@ public class RatingServiceTests
     [Test]
     public async Task UpdateAsync_WhenRatingOutOfRange_Returns400()
     {
-        var existing = CreateRestaurantRating(id: 1, orderId: 1, customerId: 10);
+        RestaurantRating existing = CreateRestaurantRating(id: 1, orderId: 1, customerId: 10);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns(existing);
 
-        var request = new UpdateRatingRequest { Rating = 0 };
-        var result = await _sut.UpdateAsync(1, 10, request);
+        UpdateRatingRequest request = new UpdateRatingRequest { Rating = 0 };
+        ServiceResult<RatingDto> result = await _sut.UpdateAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -244,10 +244,10 @@ public class RatingServiceTests
     [Test]
     public async Task DeleteAsync_WhenExists_ReturnsSuccess()
     {
-        var existing = CreateRestaurantRating(id: 1, orderId: 1, customerId: 10);
+        RestaurantRating existing = CreateRestaurantRating(id: 1, orderId: 1, customerId: 10);
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns(existing);
 
-        var result = await _sut.DeleteAsync(1, 10);
+        ServiceResult result = await _sut.DeleteAsync(1, 10);
 
         Assert.That(result.IsSuccess, Is.True);
         await _ratingRepository.Received(1).DeleteAsync(existing, Arg.Any<CancellationToken>());
@@ -258,7 +258,7 @@ public class RatingServiceTests
     {
         _ratingRepository.GetByOrderAndCustomerAsync(1, 10, Arg.Any<CancellationToken>()).Returns((RestaurantRating?)null);
 
-        var result = await _sut.DeleteAsync(1, 10);
+        ServiceResult result = await _sut.DeleteAsync(1, 10);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

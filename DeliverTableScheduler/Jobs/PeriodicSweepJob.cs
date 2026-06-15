@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Enums;
@@ -30,11 +31,11 @@ public abstract class PeriodicSweepJob(
 
     private async Task RunTickAsync(CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var lifecycle = scope.ServiceProvider.GetRequiredService<IPaymentLifecycleService>();
-        var orders = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
-        var stale = await orders.GetOrdersOlderThanAsync(TargetStatus, DateTime.UtcNow - Threshold, ct);
-        foreach (var o in stale)
+        using IServiceScope scope = scopeFactory.CreateScope();
+        IPaymentLifecycleService lifecycle = scope.ServiceProvider.GetRequiredService<IPaymentLifecycleService>();
+        IOrderRepository orders = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
+        List<Order> stale = await orders.GetOrdersOlderThanAsync(TargetStatus, DateTime.UtcNow - Threshold, ct);
+        foreach (Order o in stale)
         {
             try { await InvokeLifecycleAsync(lifecycle, o.Id, ct); }
             catch (Exception ex) { logger.LogError(ex, "Failed sweep for order {Id}", o.Id); }

@@ -41,9 +41,9 @@ public class DisputeRepository(DeliverTableContext dbContext) : IDisputeReposito
     public async Task<(List<Dispute> Items, int Total)> ListForRestaurantAsync(
         int restaurantId, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _dbContext.Disputes.Where(d => d.RestaurantId == restaurantId);
-        var total = await query.CountAsync(ct);
-        var items = await query
+        IQueryable<Dispute> query = _dbContext.Disputes.Where(d => d.RestaurantId == restaurantId);
+        int total = await query.CountAsync(ct);
+        List<Dispute> items = await query
             .OrderByDescending(d => d.OpenedAt)
             .Paginate(page, pageSize)
             .ToListAsync(ct);
@@ -59,7 +59,7 @@ public class DisputeRepository(DeliverTableContext dbContext) : IDisputeReposito
         int pageSize,
         CancellationToken ct = default)
     {
-        var query = _dbContext.Disputes
+        IQueryable<Dispute> query = _dbContext.Disputes
             .Include(d => d.Restaurant)
             .Include(d => d.Order).ThenInclude(o => o.Customer)
             .AsQueryable();
@@ -73,8 +73,8 @@ public class DisputeRepository(DeliverTableContext dbContext) : IDisputeReposito
         if (year.HasValue)
             query = query.Where(d => d.OpenedAt.Year == year.Value);
 
-        var total = await query.CountAsync(ct);
-        var items = await query
+        int total = await query.CountAsync(ct);
+        List<Dispute> items = await query
             .OrderByDescending(d => d.OpenedAt)
             .Paginate(page, pageSize)
             .ToListAsync(ct);

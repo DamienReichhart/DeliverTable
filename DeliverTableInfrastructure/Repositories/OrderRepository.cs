@@ -29,28 +29,28 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
     public async Task<(List<Order> Items, int TotalCount)> GetByCustomerAsync(
         int customerId, OrderQuery query, CancellationToken ct = default)
     {
-        var q = _dbContext.Orders
+        IQueryable<Order> q = _dbContext.Orders
             .IncludeOrderAggregate()
             .Where(o => o.CustomerId == customerId);
 
-        if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))
+        if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out OrderStatus status))
             q = q.Where(o => o.Status == status);
 
         q = q.OrderByDescending(o => o.CreatedAt);
 
-        var totalCount = await q.CountAsync(ct);
-        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
+        int totalCount = await q.CountAsync(ct);
+        List<Order> items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
     public async Task<(List<Order> Items, int TotalCount)> GetByRestaurantAsync(
         int restaurantId, OrderQuery query, CancellationToken ct = default)
     {
-        var q = _dbContext.Orders
+        IQueryable<Order> q = _dbContext.Orders
             .IncludeOrderAggregate()
             .Where(o => o.RestaurantId == restaurantId);
 
-        if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out var status))
+        if (!string.IsNullOrWhiteSpace(query.Status) && Enum.TryParse<OrderStatus>(query.Status, out OrderStatus status))
             q = q.Where(o => o.Status == status);
 
         if (query.CreatedAfter.HasValue)
@@ -60,8 +60,8 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
             q = q.Where(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed || o.Status == OrderStatus.Preparing);
         q = ApplySorting(q, query);
 
-        var totalCount = await q.CountAsync(ct);
-        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
+        int totalCount = await q.CountAsync(ct);
+        List<Order> items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
@@ -101,7 +101,7 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
 
     private IQueryable<Order> ApplySorting(IQueryable<Order> query, OrderQuery request)
     {
-        var property = request.SortBy switch
+        string property = request.SortBy switch
         {
             "CreatedAt" => nameof(Order.CreatedAt),
             "Status" => nameof(Order.Status),
@@ -133,5 +133,41 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
         }
 
         return query;
+    }
+
+    public async Task<int> CountScheduledDineInOverlappingAsync(
+        int restaurantId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default)
+    {
+        return await _dbContext.Orders.CountAsync(o =>
+            o.RestaurantId == restaurantId
+            && o.OrderType == OrderType.DineIn
+            && o.GuestCount <= 2
+            && o.ScheduledAt.HasValue
+            && o.ScheduledAt.Value >= startsAt
+            && o.ScheduledAt.Value < endsAt
+            && o.Status != OrderStatus.Cancelled
+            && o.Status != OrderStatus.Refused,
+            ct);
+    }
+
+    public async Task<int> GetScheduledDineInReservedTableUnitsOverlappingAsync(
+        int restaurantId,
+        DateTime startsAt,
+        DateTime endsAt,
+        CancellationToken ct = default)
+    {
+        return await _dbContext.Orders
+            .Where(o =>
+                o.RestaurantId == restaurantId
+                && o.OrderType == OrderType.DineIn
+                && o.ScheduledAt.HasValue
+                && o.ScheduledAt.Value >= startsAt
+                && o.ScheduledAt.Value < endsAt
+                && o.Status != OrderStatus.Cancelled
+                && o.Status != OrderStatus.Refused)
+            .SumAsync(o => (o.GuestCount + 1) / 2, ct);
     }
 }

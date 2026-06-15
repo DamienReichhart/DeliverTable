@@ -1,14 +1,17 @@
 @page "/restaurant/{RestaurantId:int}/compte"
 @inject IRestaurantAccountService AccountService
 @inject IRestaurantService RestaurantService
+@inject IDishService DishService
 @inject NavigationManager Nav
 @attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableClient.Services.CommissionStatement
 @using DeliverTableClient.Services.Dispute
-@using DeliverTableClient.Services.Invoice
+@using DeliverTableSharedLibrary.Dtos.CommissionStatement
+@using DeliverTableSharedLibrary.Dtos.Dish
 @using DeliverTableSharedLibrary.Dtos.Dispute
-@using DeliverTableSharedLibrary.Dtos.Invoice
 @using DeliverTableSharedLibrary.Dtos.Restaurant
-@inject IInvoiceApiClient InvoiceApi
+@using DeliverTableSharedLibrary.Enums
+@inject ICommissionStatementApiClient CommissionStatementApi
 @inject IDisputeApiClient DisputeApi
 
 <PageTitle>Compte — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
@@ -47,6 +50,64 @@
             </button>
         </div>
 
+        <div class="special-dish-card">
+            <div class="special-dish-card__header">
+                <div>
+                    <h2>Plat spécial</h2>
+                    <p>Choisissez le plat à mettre en avant sur la page du restaurant.</p>
+                </div>
+            </div>
+
+            @if (_dishesLoading)
+            {
+                <p>Chargement des plats...</p>
+            }
+            else if (_dishes is null || _dishes.Count == 0)
+            {
+                <p>Aucun plat disponible pour le moment.</p>
+            }
+            else
+            {
+                <div class="special-dish-card__body">
+                    <label for="special-dish">Plat mis en avant</label>
+                    <select id="special-dish" class="form-input" @bind="_selectedSpecialDishId">
+                        <option value="">-- Aucun --</option>
+                        @foreach (var dish in _dishes)
+                        {
+                            <option value="@dish.Id">@dish.Name</option>
+                        }
+                    </select>
+
+                    <div class="special-dish-card__current">
+                        @if (_currentSpecialDish is not null)
+                        {
+                            <strong>Actuellement mis en avant :</strong>
+                            <span>@_currentSpecialDish.Name</span>
+                        }
+                        else
+                        {
+                            <span>Aucun plat spécial n'est sélectionné.</span>
+                        }
+                    </div>
+
+                    @if (_specialDishError is not null)
+                    {
+                        <p class="field-error">@_specialDishError</p>
+                    }
+                    @if (_specialDishSuccess)
+                    {
+                        <p class="field-success">Le plat spécial a été mis à jour.</p>
+                    }
+
+                    <div class="special-dish-card__actions">
+                        <button type="button" class="app-btn app-btn--primary" @onclick="SaveSpecialDish" disabled="@_savingSpecialDish">
+                            @(_savingSpecialDish ? "Enregistrement..." : "Enregistrer le plat spécial")
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
         @if (_showWithdraw)
         {
             <div class="withdraw-card">
@@ -81,16 +142,16 @@
         }
 
         <div class="transactions-section">
-            <h2>Factures de commission</h2>
+            <h2>Relevés de commissions</h2>
 
-            @if (_invoicesLoading)
+            @if (_statementsLoading)
             {
-                <p>Chargement des factures...</p>
+                <p>Chargement des relevés...</p>
             }
-            else if (_invoices is null || _invoices.Count == 0)
+            else if (_statements is null || _statements.Count == 0)
             {
                 <div class="empty-state">
-                    <p>Aucune facture de commission pour le moment.</p>
+                    <p>Aucun relevé de commissions pour le moment.</p>
                 </div>
             }
             else
@@ -99,33 +160,31 @@
                     <table class="transactions-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
+                                <th>Période</th>
                                 <th>Numéro</th>
-                                <th>N° commande</th>
-                                <th>Montant TTC</th>
+                                <th>Type</th>
+                                <th>Date d'émission</th>
+                                <th>Total TTC</th>
                                 <th>Statut</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var inv in _invoices)
+                            @foreach (var s in _statements)
                             {
                                 <tr>
-                                    <td>@inv.IssuedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>@s.PeriodYear-@s.PeriodMonth.ToString("D2")</td>
+                                    <td>@s.Number</td>
                                     <td>
-                                        @inv.Number
-                                        @if (inv.Kind == InvoiceKind.CommissionCreditNoteToRestaurant)
-                                        {
-                                            <span class="invoice-badge">AVOIR</span>
-                                        }
+                                        @(s.Kind == CommissionStatementKind.Invoice ? "Relevé" : "Avoir")
                                     </td>
-                                    <td>#@inv.OrderId</td>
-                                    <td>@inv.TotalTtc.ToString("C", _frCulture)</td>
-                                    <td>@inv.Status</td>
+                                    <td>@s.IssuedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>@s.TotalTtc.ToString("C", _frCulture)</td>
+                                    <td>@s.Status</td>
                                     <td>
-                                        @if (inv.Status == InvoiceStatus.Generated)
+                                        @if (s.HasPdf && s.Status == CommissionStatementStatus.Generated)
                                         {
-                                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => DownloadInvoice(inv.Id)">Télécharger</button>
+                                            <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => DownloadStatement(s.Id)">Télécharger</button>
                                         }
                                     </td>
                                 </tr>
@@ -261,8 +320,15 @@
     private bool _loading = true;
     private string? _error;
 
-    private List<InvoiceListItemDto>? _invoices;
-    private bool _invoicesLoading = true;
+    private List<AdminCommissionStatementRowDto>? _statements;
+    private bool _statementsLoading = true;
+    private List<DishDto>? _dishes;
+    private bool _dishesLoading = true;
+    private int? _selectedSpecialDishId;
+    private DishDto? _currentSpecialDish;
+    private bool _savingSpecialDish;
+    private string? _specialDishError;
+    private bool _specialDishSuccess;
 
     private List<DisputeRowDto>? _disputes;
     private bool _disputesLoading = true;
@@ -277,15 +343,30 @@
     {
         var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
         _restaurantName = restaurant?.Name;
-        await Task.WhenAll(LoadAccount(), LoadInvoices(), LoadDisputes());
+        await Task.WhenAll(LoadAccount(), LoadStatements(), LoadDisputes(), LoadDishes());
     }
 
-    private async Task LoadInvoices()
+    private async Task LoadDishes()
     {
-        _invoicesLoading = true;
-        var result = await InvoiceApi.GetForRestaurantAsync(RestaurantId, 1, 50);
-        _invoices = result?.Items.ToList() ?? new();
-        _invoicesLoading = false;
+        _dishesLoading = true;
+
+        var (result, _) = await DishService.GetDishesByRestaurantId(
+            RestaurantId,
+            new DishQuery { PageSize = 500, PageNumber = 1 });
+
+        _dishes = result?.Items.ToList() ?? [];
+        _currentSpecialDish = _dishes.FirstOrDefault(d => d.IsDishOfTheDay);
+        _selectedSpecialDishId = _currentSpecialDish?.Id;
+        _dishesLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadStatements()
+    {
+        _statementsLoading = true;
+        var result = await CommissionStatementApi.GetForRestaurantAsync(RestaurantId, 1, 50);
+        _statements = result?.Items.ToList() ?? new();
+        _statementsLoading = false;
     }
 
     private async Task LoadDisputes()
@@ -296,7 +377,7 @@
         _disputesLoading = false;
     }
 
-    private Task DownloadInvoice(int id) => InvoiceApi.DownloadPdfAsync(id);
+    private Task DownloadStatement(int id) => CommissionStatementApi.DownloadOwnerPdfAsync(id);
 
     private async Task LoadAccount()
     {
@@ -312,6 +393,62 @@
 
         _loading = false;
         StateHasChanged();
+    }
+
+    private async Task SaveSpecialDish()
+    {
+        _specialDishError = null;
+        _specialDishSuccess = false;
+
+        if (_dishes is null || _dishes.Count == 0)
+        {
+            _specialDishError = "Aucun plat disponible.";
+            return;
+        }
+
+        _savingSpecialDish = true;
+
+        try
+        {
+            foreach (var dish in _dishes)
+            {
+                var shouldBeFeatured = _selectedSpecialDishId.HasValue && dish.Id == _selectedSpecialDishId.Value;
+                if (dish.IsDishOfTheDay == shouldBeFeatured)
+                    continue;
+
+                var updateDto = new CreateDishDto
+                {
+                    Name = dish.Name,
+                    Description = dish.Description,
+                    BasePrice = dish.BasePrice,
+                    IsVegetarian = dish.IsVegetarian,
+                    IsVegan = dish.IsVegan,
+                    IsGlutenFree = dish.IsGlutenFree,
+                    IsAllergenHazard = dish.IsAllergenHazard,
+                    IsDishOfTheDay = shouldBeFeatured,
+                    IsActive = dish.IsActive,
+                    VatRate = dish.VatRate
+                };
+
+                var (_, error) = await DishService.UpdateDish(dish.Id, updateDto, null);
+                if (error is not null)
+                {
+                    _specialDishError = error.Error;
+                    return;
+                }
+
+                dish.IsDishOfTheDay = shouldBeFeatured;
+            }
+
+            _currentSpecialDish = _selectedSpecialDishId.HasValue
+                ? _dishes.FirstOrDefault(d => d.Id == _selectedSpecialDishId.Value)
+                : null;
+            _specialDishSuccess = true;
+        }
+        finally
+        {
+            _savingSpecialDish = false;
+        }
     }
 
     private void ShowWithdrawForm()

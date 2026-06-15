@@ -5,6 +5,8 @@ using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
+using DeliverTableSharedLibrary.Dtos.Admin;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -26,8 +28,8 @@ public class AdminTransactionServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllTransactions()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var transactions = new List<RestaurantTransaction>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<RestaurantTransaction> transactions = new List<RestaurantTransaction>
         {
             new()
             {
@@ -45,7 +47,7 @@ public class AdminTransactionServiceTests
 
         _transactionRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(transactions);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminTransactionResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -54,8 +56,8 @@ public class AdminTransactionServiceTests
     [Test]
     public async Task GetAllAsync_MapsFieldsCorrectly()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var transactions = new List<RestaurantTransaction>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<RestaurantTransaction> transactions = new List<RestaurantTransaction>
         {
             new()
             {
@@ -67,10 +69,10 @@ public class AdminTransactionServiceTests
 
         _transactionRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(transactions);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminTransactionResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
-        var dto = result.Value![0];
+        AdminTransactionResponse dto = result.Value![0];
         Assert.That(dto.Id, Is.EqualTo(1));
         Assert.That(dto.Type, Is.EqualTo(nameof(TransactionType.Credit)));
         Assert.That(dto.GrossAmount, Is.EqualTo(100m));
@@ -88,8 +90,8 @@ public class AdminTransactionServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsTransaction()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var transaction = new RestaurantTransaction
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        RestaurantTransaction transaction = new RestaurantTransaction
         {
             Id = 1,
             RestaurantId = 1,
@@ -103,7 +105,7 @@ public class AdminTransactionServiceTests
 
         _transactionRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(transaction);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminTransactionResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -115,7 +117,7 @@ public class AdminTransactionServiceTests
     {
         _transactionRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((RestaurantTransaction?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminTransactionResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

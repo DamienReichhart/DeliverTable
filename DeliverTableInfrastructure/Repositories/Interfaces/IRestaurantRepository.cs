@@ -18,4 +18,5 @@ public interface IRestaurantRepository
     Task<List<Restaurant>> GetForMapAsync(RestaurantQuery query, CancellationToken ct = default);
     Task<List<Restaurant>> GetAllUnscopedAsync(CancellationToken ct = default);
     Task<Restaurant?> GetByIdWithOwnerAsync(int id, CancellationToken ct = default);
+    Task<int> CountActiveTablesByMaxCapacityAsync(int restaurantId, int maxCapacity, CancellationToken ct = default);
 }

@@ -2,6 +2,7 @@ using DeliverTableInfrastructure.Invoicing;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 
@@ -43,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailJobRepository, EmailJobRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<ICommissionStatementRepository, CommissionStatementRepository>();
         services.AddScoped<IDisputeRepository, DisputeRepository>();
         services.AddScoped<IReclamationRepository, ReclamationRepository>();
     }
@@ -78,8 +80,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRatingService, RatingService>();
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
+        services.AddScoped<ICommissionStatementService, CommissionStatementService>();
         services.AddScoped<IDisputeService, DisputeService>();
         services.AddScoped<IReclamationService, ReclamationService>();
+        services.AddScoped<IRestaurantOrderConfigService, RestaurantOrderConfigService>();
     }
 
     private static void RegisterInfrastructure(IServiceCollection services)
@@ -87,5 +91,6 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IGeoLocationService, GeoLocationService>();
         services.AddScoped<IStripeGateway, StripeGateway>();
         services.AddScoped<IInvoiceNumberingService, InvoiceNumberingService>();
+        services.AddSingleton<ISystemClock, SystemClock>();
     }
 }

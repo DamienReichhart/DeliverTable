@@ -20,7 +20,7 @@ public class RatingRepository(DeliverTableContext dbContext) : IRatingRepository
 
     public async Task<bool> DeleteRestaurantRatingAsync(int id, CancellationToken ct = default)
     {
-        var rating = await _dbContext.RestaurantRatings.FindAsync([id], ct);
+        RestaurantRating? rating = await _dbContext.RestaurantRatings.FindAsync([id], ct);
         if (rating is null) return false;
         _dbContext.RestaurantRatings.Remove(rating);
         await _dbContext.SaveChangesAsync(ct);

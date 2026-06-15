@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using DeliverTableSharedLibrary.Validation;
 using NUnit.Framework;
 
@@ -17,5 +18,24 @@ public class SiretValidatorTests
     public void IsValid_FixtureCases(string? siret, bool expected)
     {
         Assert.That(SiretValidator.IsValid(siret), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void SiretAttribute_WhenValid_ReturnsSuccess()
+    {
+        ValidationContext context = new ValidationContext(new object()) { MemberName = "Siret" };
+
+        Assert.That(new SiretAttribute().GetValidationResult("73282932000074", context), Is.EqualTo(ValidationResult.Success));
+    }
+
+    [Test]
+    public void SiretAttribute_WhenInvalid_ReturnsErrorWithMemberName()
+    {
+        ValidationContext context = new ValidationContext(new object()) { MemberName = "Siret" };
+
+        ValidationResult? result = new SiretAttribute().GetValidationResult("12345678900012", context);
+
+        Assert.That(result, Is.Not.EqualTo(ValidationResult.Success));
+        Assert.That(result!.MemberNames, Does.Contain("Siret"));
     }
 }

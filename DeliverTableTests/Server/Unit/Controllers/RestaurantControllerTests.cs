@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Restaurant;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -26,8 +26,8 @@ public class RestaurantControllerTests
     [Test]
     public async Task GetAll_ReturnsOkWithPaginatedResult()
     {
-        var query = new RestaurantQuery();
-        var paginated = new PaginatedResult<RestaurantDto>
+        RestaurantQuery query = new RestaurantQuery();
+        PaginatedResult<RestaurantDto> paginated = new PaginatedResult<RestaurantDto>
         {
             Items = [new RestaurantDto { Id = 1, Name = "Resto 1" }, new RestaurantDto { Id = 2, Name = "Resto 2" }],
             TotalCount = 2,
@@ -37,7 +37,7 @@ public class RestaurantControllerTests
         _restaurantService.GetAllAsync(query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<RestaurantDto>>.Success(paginated));
 
-        var result = await _sut.GetAll(query, CancellationToken.None);
+        IActionResult result = await _sut.GetAll(query, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -45,10 +45,10 @@ public class RestaurantControllerTests
     [Test]
     public async Task GetAllUserRestaurants_WithValidOwnerId_ReturnsOk()
     {
-        var userId = 5;
+        int userId = 5;
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, userId.ToString(), nameof(UserRole.RestaurantOwner));
-        var query = new RestaurantQuery();
-        var paginated = new PaginatedResult<RestaurantDto>
+        RestaurantQuery query = new RestaurantQuery();
+        PaginatedResult<RestaurantDto> paginated = new PaginatedResult<RestaurantDto>
         {
             Items = [new RestaurantDto { Id = 1, Name = "My Resto" }],
             TotalCount = 1,
@@ -58,7 +58,7 @@ public class RestaurantControllerTests
         _restaurantService.GetByOwnerAsync(userId, query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<RestaurantDto>>.Success(paginated));
 
-        var result = await _sut.GetAllUserRestaurants(query, CancellationToken.None, null);
+        IActionResult result = await _sut.GetAllUserRestaurants(query, CancellationToken.None, null);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -67,9 +67,9 @@ public class RestaurantControllerTests
     public async Task GetAllUserRestaurants_WithMismatchedUserId_ReturnsForbid()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", role: "User");
-        var query = new RestaurantQuery();
+        RestaurantQuery query = new RestaurantQuery();
 
-        var result = await _sut.GetAllUserRestaurants(query, CancellationToken.None, 10);
+        IActionResult result = await _sut.GetAllUserRestaurants(query, CancellationToken.None, 10);
 
         Assert.That(result, Is.InstanceOf<ForbidResult>());
     }
@@ -77,11 +77,11 @@ public class RestaurantControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var dto = new DetailedRestaurantDto { Id = 1, Name = "Test Resto" };
+        DetailedRestaurantDto dto = new DetailedRestaurantDto { Id = 1, Name = "Test Resto" };
         _restaurantService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DetailedRestaurantDto>.Success(dto));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -92,7 +92,7 @@ public class RestaurantControllerTests
         _restaurantService.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DetailedRestaurantDto>.Failure(new ServiceError("Not found", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));
@@ -104,7 +104,7 @@ public class RestaurantControllerTests
         _restaurantService.DeleteAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }

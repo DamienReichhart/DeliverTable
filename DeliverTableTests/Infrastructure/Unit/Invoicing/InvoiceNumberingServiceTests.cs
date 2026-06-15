@@ -27,8 +27,8 @@ public class InvoiceNumberingServiceTests
     [Test]
     public async Task IssueNumberAsync_Platform_FormatsAsExpected()
     {
-        var n1 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2026, false, CancellationToken.None);
-        var n2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2026, false, CancellationToken.None);
+        string n1 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2026, false, CancellationToken.None);
+        string n2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2026, false, CancellationToken.None);
         Assert.That(n1, Is.EqualTo("DT-2026-000001"));
         Assert.That(n2, Is.EqualTo("DT-2026-000002"));
     }
@@ -36,7 +36,7 @@ public class InvoiceNumberingServiceTests
     [Test]
     public async Task IssueNumberAsync_Restaurant_PrefixedById()
     {
-        var n = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 42, 2026, false, CancellationToken.None);
+        string n = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 42, 2026, false, CancellationToken.None);
         Assert.That(n, Is.EqualTo("R0042-2026-000001"));
     }
 
@@ -44,7 +44,7 @@ public class InvoiceNumberingServiceTests
     public async Task IssueNumberAsync_CreditNote_HasAvPrefixAndSharesCounter()
     {
         await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 42, 2026, false, CancellationToken.None);
-        var avNumber = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 42, 2026, true, CancellationToken.None);
+        string avNumber = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 42, 2026, true, CancellationToken.None);
         Assert.That(avNumber, Is.EqualTo("AV-R0042-2026-000002"));
     }
 
@@ -52,15 +52,15 @@ public class InvoiceNumberingServiceTests
     public async Task IssueNumberAsync_NewYear_RestartsAtOne()
     {
         await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2026, false, CancellationToken.None);
-        var y2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2027, false, CancellationToken.None);
+        string y2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2027, false, CancellationToken.None);
         Assert.That(y2, Is.EqualTo("DT-2027-000001"));
     }
 
     [Test]
     public async Task IssueNumberAsync_DistinctEntities_DoNotShareCounter()
     {
-        var r1 = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 1, 2026, false, CancellationToken.None);
-        var r2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 2, 2026, false, CancellationToken.None);
+        string r1 = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 1, 2026, false, CancellationToken.None);
+        string r2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Restaurant, 2, 2026, false, CancellationToken.None);
         Assert.That(r1, Is.EqualTo("R0001-2026-000001"));
         Assert.That(r2, Is.EqualTo("R0002-2026-000001"));
     }
@@ -79,7 +79,7 @@ public class InvoiceNumberingServiceTests
         // Manually clear tracker to replicate what the retry loop does.
         _database.Context.ChangeTracker.Clear();
 
-        var n2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2026, false, CancellationToken.None);
+        string n2 = await _sut.IssueNumberAsync(InvoiceIssuerType.Platform, null, 2026, false, CancellationToken.None);
 
         Assert.That(n2, Is.EqualTo("DT-2026-000002"));
     }

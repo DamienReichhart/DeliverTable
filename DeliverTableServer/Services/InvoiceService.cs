@@ -26,13 +26,14 @@ public class InvoiceService(
     IObjectStorageService objectStorage,
     IEmailJobRepository emailJobRepository,
     IMessagePublisher messagePublisher,
-    AppEnvironment env) : IInvoiceService
+    AppEnvironment env,
+    ISystemClock clock) : IInvoiceService
 {
     public async Task<ServiceResult<List<InvoiceJobMessage>>> CreatePendingInvoicesForCapturedOrderAsync(
         int orderId,
         CancellationToken ct)
     {
-        var order = await orderRepository.GetByIdWithFullDetailsAsync(orderId, ct);
+        Order? order = await orderRepository.GetByIdWithFullDetailsAsync(orderId, ct);
         if (order is null)
             return new ServiceError(ErrorMessages.OrderNotFound);
 
@@ -40,27 +41,29 @@ public class InvoiceService(
             return ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage>());
 
         int year = DateTime.UtcNow.Year;
-        var restaurant = order.Restaurant;
-        var customer = order.Customer;
+        Restaurant restaurant = order.Restaurant;
+        User customer = order.Customer;
 
-        var customerNumber = await numbering.IssueNumberAsync(
+        string customerNumber = await numbering.IssueNumberAsync(
             InvoiceIssuerType.Restaurant, restaurant.Id, year, false, ct);
-        var customerInvoice = BuildCustomerInvoice(order, restaurant, customer, customerNumber);
+        Invoice customerInvoice = BuildCustomerInvoice(order, restaurant, customer, customerNumber);
 
-        var platformNumber = await numbering.IssueNumberAsync(
-            InvoiceIssuerType.Platform, null, year, false, ct);
-        var commissionInvoice = BuildCommissionInvoice(order, restaurant, platformNumber);
+        List<Invoice> invoicesToCreate = new List<Invoice> { customerInvoice };
 
-        // Batch both invoices into a single SaveChanges so they are created atomically.
+        if (clock.UtcNow < CommissionInvoicingCutover.MonthlyStartUtc)
+        {
+            string platformNumber = await numbering.IssueNumberAsync(
+                InvoiceIssuerType.Platform, null, year, false, ct);
+            Invoice commissionInvoice = BuildCommissionInvoice(order, restaurant, platformNumber);
+            invoicesToCreate.Add(commissionInvoice);
+        }
+
+        // Batch invoices into a single SaveChanges so they are created atomically.
         // If the process crashes between two separate CreateAsync calls the idempotency
         // guard on retry would skip the commission invoice — batching prevents that gap.
-        await invoiceRepository.CreateBatchAsync(new[] { customerInvoice, commissionInvoice }, ct);
+        await invoiceRepository.CreateBatchAsync(invoicesToCreate, ct);
 
-        var messages = new List<InvoiceJobMessage>
-        {
-            new(customerInvoice.Id),
-            new(commissionInvoice.Id),
-        };
+        List<InvoiceJobMessage> messages = invoicesToCreate.Select(i => new InvoiceJobMessage(i.Id)).ToList();
 
         return ServiceResult<List<InvoiceJobMessage>>.Success(messages);
     }
@@ -69,17 +72,17 @@ public class InvoiceService(
         int refundId,
         CancellationToken ct)
     {
-        var refund = await paymentRepository.GetRefundByIdAsync(refundId, ct);
+        Refund? refund = await paymentRepository.GetRefundByIdAsync(refundId, ct);
         if (refund is null)
             return ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage>());
 
-        var payment = await paymentRepository.GetByIdAsync(refund.PaymentId, ct);
+        Payment? payment = await paymentRepository.GetByIdAsync(refund.PaymentId, ct);
         if (payment is null)
             return ServiceResult<List<InvoiceJobMessage>>.Success(new List<InvoiceJobMessage>());
 
-        var originals = await invoiceRepository.ListOriginalsByOrderIdAsync(payment.OrderId, ct);
-        var customerOriginal = originals.FirstOrDefault(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
-        var commissionOriginal = originals.FirstOrDefault(i =>
+        List<Invoice> originals = await invoiceRepository.ListOriginalsByOrderIdAsync(payment.OrderId, ct);
+        Invoice? customerOriginal = originals.FirstOrDefault(i => i.Kind == InvoiceKind.OrderInvoiceToCustomer);
+        Invoice? commissionOriginal = originals.FirstOrDefault(i =>
             i.Kind == InvoiceKind.CommissionInvoiceToRestaurant);
 
         if (customerOriginal is null && commissionOriginal is null)
@@ -93,14 +96,14 @@ public class InvoiceService(
             commissionOriginal =
                 await invoiceRepository.GetByIdWithLinesAsync(commissionOriginal.Id, ct) ?? commissionOriginal;
 
-        var messages = new List<InvoiceJobMessage>();
+        List<InvoiceJobMessage> messages = new List<InvoiceJobMessage>();
 
         if (customerOriginal is not null)
         {
             decimal ratio = customerOriginal.TotalTtc != 0m
                 ? refund.Amount / customerOriginal.TotalTtc
                 : 0m;
-            var creditNote = await BuildCreditNoteAsync(
+            Invoice creditNote = await BuildCreditNoteAsync(
                 customerOriginal, InvoiceKind.CreditNoteToCustomer, ratio, ct);
             await invoiceRepository.CreateAsync(creditNote, ct);
             messages.Add(new InvoiceJobMessage(creditNote.Id));
@@ -122,7 +125,7 @@ public class InvoiceService(
                 commissionRatio = 0m;
             }
 
-            var creditNote = await BuildCreditNoteAsync(
+            Invoice creditNote = await BuildCreditNoteAsync(
                 commissionOriginal, InvoiceKind.CommissionCreditNoteToRestaurant, commissionRatio, ct);
             await invoiceRepository.CreateAsync(creditNote, ct);
             messages.Add(new InvoiceJobMessage(creditNote.Id));
@@ -137,7 +140,7 @@ public class InvoiceService(
         int pageSize,
         CancellationToken ct)
     {
-        var (items, total) = await invoiceRepository.ListForRecipientUserAsync(userId, page, pageSize, ct);
+        (List<Invoice>? items, int total) = await invoiceRepository.ListForRecipientUserAsync(userId, page, pageSize, ct);
         return ServiceResult<PaginatedResult<InvoiceListItemDto>>.Success(new PaginatedResult<InvoiceListItemDto>
         {
             Items = items.Select(MapToListItemDto).ToList(),
@@ -157,12 +160,12 @@ public class InvoiceService(
     {
         if (!isAdmin)
         {
-            var restaurant = await restaurantRepository.GetByIdAsync(restaurantId, ct);
+            Restaurant? restaurant = await restaurantRepository.GetByIdAsync(restaurantId, ct);
             if (restaurant is null || restaurant.OwnerId != userId)
                 return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
         }
 
-        var (items, total) = await invoiceRepository.ListForRecipientRestaurantAsync(restaurantId, page, pageSize, ct);
+        (List<Invoice>? items, int total) = await invoiceRepository.ListForRecipientRestaurantAsync(restaurantId, page, pageSize, ct);
         return ServiceResult<PaginatedResult<InvoiceListItemDto>>.Success(new PaginatedResult<InvoiceListItemDto>
         {
             Items = items.Select(MapToListItemDto).ToList(),
@@ -179,7 +182,7 @@ public class InvoiceService(
         bool isRestaurantOwner,
         CancellationToken ct)
     {
-        var invoice = await invoiceRepository.GetByIdAsync(invoiceId, ct);
+        Invoice? invoice = await invoiceRepository.GetByIdAsync(invoiceId, ct);
         if (invoice is null)
             return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
@@ -195,7 +198,7 @@ public class InvoiceService(
 
             if (!authorized && isRestaurantOwner && invoice.RecipientRestaurantId.HasValue)
             {
-                var restaurant = await restaurantRepository.GetByIdAsync(invoice.RecipientRestaurantId.Value, ct);
+                Restaurant? restaurant = await restaurantRepository.GetByIdAsync(invoice.RecipientRestaurantId.Value, ct);
                 if (restaurant is not null && restaurant.OwnerId == userId)
                     authorized = true;
             }
@@ -204,11 +207,11 @@ public class InvoiceService(
                 return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
         }
 
-        var storageResult = await objectStorage.GetObjectAsync(invoice.StoragePath, ct);
+        ObjectStorageResult? storageResult = await objectStorage.GetObjectAsync(invoice.StoragePath, ct);
         if (storageResult is null)
             return ServiceError.Conflict(ErrorMessages.InvoiceNotGeneratedYet);
 
-        var fileName = $"{invoice.Number}.pdf";
+        string fileName = $"{invoice.Number}.pdf";
         return ServiceResult<InvoicePdfStreamResult>.Success(
             new InvoicePdfStreamResult(storageResult.Content, fileName, storageResult.ContentType));
     }
@@ -217,7 +220,7 @@ public class InvoiceService(
         InvoiceAdminQuery query,
         CancellationToken ct)
     {
-        var (items, total) = await invoiceRepository.AdminListAsync(
+        (List<Invoice>? items, int total) = await invoiceRepository.AdminListAsync(
             query.Year,
             query.Kind,
             query.IssuerType,
@@ -239,16 +242,16 @@ public class InvoiceService(
 
     public async Task<ServiceResult<AdminInvoiceDetailDto>> AdminGetDetailAsync(int id, CancellationToken ct)
     {
-        var invoice = await invoiceRepository.GetByIdWithLinesAsync(id, ct);
+        Invoice? invoice = await invoiceRepository.GetByIdWithLinesAsync(id, ct);
         if (invoice is null)
             return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
-        var issuer = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.IssuerLegalSnapshotJson)
+        InvoiceLegalSnapshotDto issuer = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.IssuerLegalSnapshotJson)
                      ?? new InvoiceLegalSnapshotDto(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
-        var recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson)
+        InvoiceLegalSnapshotDto recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson)
                         ?? new InvoiceLegalSnapshotDto(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 
-        var lines = invoice.Lines.OrderBy(l => l.SortOrder).Select(l => new InvoiceLineDto(
+        List<InvoiceLineDto> lines = invoice.Lines.OrderBy(l => l.SortOrder).Select(l => new InvoiceLineDto(
             l.Description,
             l.Quantity,
             l.UnitPriceHt,
@@ -259,23 +262,23 @@ public class InvoiceService(
             l.LineTtc,
             l.Kind)).ToList();
 
-        var header = MapToListItemDto(invoice);
+        InvoiceListItemDto header = MapToListItemDto(invoice);
         return ServiceResult<AdminInvoiceDetailDto>.Success(
             new AdminInvoiceDetailDto(header, lines, issuer, recipient, invoice.RelatedInvoiceId));
     }
 
     public async Task<ServiceResult> AdminResendEmailAsync(int id, CancellationToken ct)
     {
-        var invoice = await invoiceRepository.GetByIdAsync(id, ct);
+        Invoice? invoice = await invoiceRepository.GetByIdAsync(id, ct);
         if (invoice is null)
             return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
         if (invoice.Status != InvoiceStatus.Generated || string.IsNullOrEmpty(invoice.StoragePath))
             return ServiceError.Conflict(ErrorMessages.InvoiceNotGeneratedYet);
 
-        var recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson);
+        InvoiceLegalSnapshotDto? recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson);
 
-        var isCustomerKind = invoice.Kind == InvoiceKind.OrderInvoiceToCustomer
+        bool isCustomerKind = invoice.Kind == InvoiceKind.OrderInvoiceToCustomer
                              || invoice.Kind == InvoiceKind.CreditNoteToCustomer;
 
         string? recipientEmail;
@@ -303,14 +306,14 @@ public class InvoiceService(
         if (string.IsNullOrWhiteSpace(recipientEmail))
             return ServiceError.NotFound(ErrorMessages.InvoiceNotFound);
 
-        var fileName = $"{invoice.Number}.pdf";
+        string fileName = $"{invoice.Number}.pdf";
         bool isCreditNote = invoice.Kind == InvoiceKind.CreditNoteToCustomer
                             || invoice.Kind == InvoiceKind.CommissionCreditNoteToRestaurant;
-        var subject = isCreditNote
+        string subject = isCreditNote
             ? $"Votre avoir {invoice.Number} est disponible"
             : $"Votre facture {invoice.Number} est disponible";
 
-        var templateData = jobType == EmailJobType.InvoiceReadyCustomer
+        object templateData = jobType == EmailJobType.InvoiceReadyCustomer
             ? (object)new DeliverTableInfrastructure.TemplateData.InvoiceReadyCustomerData(
                 invoice.Number,
                 invoice.OrderId.ToString(),
@@ -324,7 +327,7 @@ public class InvoiceService(
                 invoice.TotalTtc.ToString("0.00"),
                 invoice.Currency);
 
-        var emailJob = new EmailJob
+        EmailJob emailJob = new EmailJob
         {
             Type = jobType,
             Status = EmailJobStatus.Pending,
@@ -364,8 +367,8 @@ public class InvoiceService(
 
     private static AdminInvoiceRowDto MapToAdminRowDto(Invoice invoice)
     {
-        var issuer = DeserializeSnapshot(invoice.IssuerLegalSnapshotJson);
-        var recipient = DeserializeSnapshot(invoice.RecipientSnapshotJson);
+        InvoiceLegalSnapshotDto? issuer = DeserializeSnapshot(invoice.IssuerLegalSnapshotJson);
+        InvoiceLegalSnapshotDto? recipient = DeserializeSnapshot(invoice.RecipientSnapshotJson);
         return new AdminInvoiceRowDto(
             invoice.Id,
             invoice.Number,
@@ -397,14 +400,14 @@ public class InvoiceService(
         CancellationToken ct)
     {
         int year = DateTime.UtcNow.Year;
-        var number = await numbering.IssueNumberAsync(
+        string number = await numbering.IssueNumberAsync(
             original.IssuerType,
             original.IssuerType == InvoiceIssuerType.Restaurant ? original.IssuerRestaurantId : null,
             year,
             isCreditNote: true,
             ct);
 
-        var creditNote = new Invoice
+        Invoice creditNote = new Invoice
         {
             Number = number,
             Kind = creditKind,
@@ -421,12 +424,12 @@ public class InvoiceService(
             RecipientSnapshotJson = original.RecipientSnapshotJson,
         };
 
-        foreach (var origLine in original.Lines.OrderBy(l => l.SortOrder))
+        foreach (InvoiceLine? origLine in original.Lines.OrderBy(l => l.SortOrder))
         {
-            var qty = Math.Round(origLine.Quantity * -ratio, 3, MidpointRounding.AwayFromZero);
-            var lineHt = Math.Round(origLine.LineHt * -ratio, 2, MidpointRounding.AwayFromZero);
-            var lineVat = Math.Round(origLine.LineVat * -ratio, 2, MidpointRounding.AwayFromZero);
-            var lineTtc = Math.Round(origLine.LineTtc * -ratio, 2, MidpointRounding.AwayFromZero);
+            decimal qty = Math.Round(origLine.Quantity * -ratio, 3, MidpointRounding.AwayFromZero);
+            decimal lineHt = Math.Round(origLine.LineHt * -ratio, 2, MidpointRounding.AwayFromZero);
+            decimal lineVat = Math.Round(origLine.LineVat * -ratio, 2, MidpointRounding.AwayFromZero);
+            decimal lineTtc = Math.Round(origLine.LineTtc * -ratio, 2, MidpointRounding.AwayFromZero);
 
             creditNote.Lines.Add(new InvoiceLine
             {
@@ -451,14 +454,14 @@ public class InvoiceService(
 
     private Invoice BuildCustomerInvoice(Order order, Restaurant restaurant, User customer, string number)
     {
-        var issuerSnapshot = new InvoiceLegalSnapshotDto(
+        InvoiceLegalSnapshotDto issuerSnapshot = new InvoiceLegalSnapshotDto(
             Name: restaurant.LegalName,
             LegalForm: restaurant.LegalForm,
             Siret: restaurant.Siret,
             VatNumber: string.Empty,
             Address: restaurant.LegalAddress);
 
-        var recipientSnapshot = new InvoiceLegalSnapshotDto(
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto(
             Name: customer.GetFullName(),
             LegalForm: string.Empty,
             Siret: string.Empty,
@@ -466,7 +469,7 @@ public class InvoiceService(
             Address: BillingAddressHelper.FormatBillingAddressForSnapshot(customer),
             Email: customer.Email ?? string.Empty);
 
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Number = number,
             Kind = InvoiceKind.OrderInvoiceToCustomer,
@@ -482,13 +485,13 @@ public class InvoiceService(
         };
 
         int sort = 0;
-        foreach (var item in order.Items)
+        foreach (OrderItem item in order.Items)
         {
-            var rate = restaurant.IsVatRegistered ? item.Dish.VatRate.ToDecimal() : 0m;
-            var lineTtc = Math.Round(item.UnitPrice * item.Quantity, 2, MidpointRounding.AwayFromZero);
-            var unitHt = Math.Round(item.UnitPrice / (1 + rate / 100m), 2, MidpointRounding.AwayFromZero);
-            var lineHt = Math.Round(unitHt * item.Quantity, 2, MidpointRounding.AwayFromZero);
-            var lineVat = Math.Round(lineTtc - lineHt, 2, MidpointRounding.AwayFromZero);
+            decimal rate = restaurant.IsVatRegistered ? item.Dish.VatRate.ToDecimal() : 0m;
+            decimal lineTtc = Math.Round(item.UnitPrice * item.Quantity, 2, MidpointRounding.AwayFromZero);
+            decimal unitHt = Math.Round(item.UnitPrice / (1 + rate / 100m), 2, MidpointRounding.AwayFromZero);
+            decimal lineHt = Math.Round(unitHt * item.Quantity, 2, MidpointRounding.AwayFromZero);
+            decimal lineVat = Math.Round(lineTtc - lineHt, 2, MidpointRounding.AwayFromZero);
 
             invoice.Lines.Add(new InvoiceLine
             {
@@ -505,7 +508,7 @@ public class InvoiceService(
             });
         }
 
-        foreach (var discountLine in BuildDiscountLines(invoice.Lines.ToList(), order.Discounts, sort))
+        foreach (InvoiceLine discountLine in BuildDiscountLines(invoice.Lines.ToList(), order.Discounts, sort))
         {
             invoice.Lines.Add(discountLine);
             sort++;
@@ -523,48 +526,48 @@ public class InvoiceService(
         IReadOnlyList<OrderDiscount> discounts,
         int startSortOrder)
     {
-        var result = new List<InvoiceLine>();
+        List<InvoiceLine> result = new List<InvoiceLine>();
         if (discounts.Count == 0) return result;
 
-        var subtotalByRate = itemLines
+        Dictionary<decimal, decimal> subtotalByRate = itemLines
             .GroupBy(l => l.VatRate)
             .ToDictionary(g => g.Key, g => g.Sum(l => l.LineTtc));
-        var subtotalTtc = subtotalByRate.Values.Sum();
+        decimal subtotalTtc = subtotalByRate.Values.Sum();
         if (subtotalTtc <= 0m) return result;
 
         int sort = startSortOrder;
-        foreach (var d in discounts)
+        foreach (OrderDiscount d in discounts)
         {
-            var slices = new List<(decimal Rate, decimal Slice)>();
-            foreach (var (rate, rateSubtotal) in subtotalByRate)
+            List<(decimal Rate, decimal Slice)> slices = new List<(decimal Rate, decimal Slice)>();
+            foreach ((decimal rate, decimal rateSubtotal) in subtotalByRate)
             {
                 if (rateSubtotal <= 0m) continue;
-                var share = rateSubtotal / subtotalTtc;
-                var slice = Math.Round(d.Amount * share, 2, MidpointRounding.AwayFromZero);
+                decimal share = rateSubtotal / subtotalTtc;
+                decimal slice = Math.Round(d.Amount * share, 2, MidpointRounding.AwayFromZero);
                 if (slice > 0m)
                     slices.Add((rate, slice));
             }
             if (slices.Count == 0) continue;
 
-            var drift = d.Amount - slices.Sum(s => s.Slice);
+            decimal drift = d.Amount - slices.Sum(s => s.Slice);
             if (drift != 0m)
             {
-                var idx = slices
+                int idx = slices
                     .Select((s, i) => (s, i))
                     .OrderByDescending(t => Math.Abs(t.s.Slice))
                     .ThenByDescending(t => t.s.Rate)
                     .First().i;
-                var (r, sl) = slices[idx];
+                (decimal r, decimal sl) = slices[idx];
                 slices[idx] = (r, sl + drift);
             }
 
-            var multiRate = slices.Count > 1;
-            foreach (var (rate, slice) in slices)
+            bool multiRate = slices.Count > 1;
+            foreach ((decimal rate, decimal slice) in slices)
             {
-                var lineTtc = -slice;
-                var lineHt = Math.Round(lineTtc / (1 + rate / 100m), 2, MidpointRounding.AwayFromZero);
-                var lineVat = lineTtc - lineHt;
-                var description = multiRate ? $"{d.Description} (TVA {rate:0.#}%)" : d.Description;
+                decimal lineTtc = -slice;
+                decimal lineHt = Math.Round(lineTtc / (1 + rate / 100m), 2, MidpointRounding.AwayFromZero);
+                decimal lineVat = lineTtc - lineHt;
+                string description = multiRate ? $"{d.Description} (TVA {rate:0.#}%)" : d.Description;
                 result.Add(new InvoiceLine
                 {
                     Kind = InvoiceLineKind.Discount,
@@ -586,29 +589,29 @@ public class InvoiceService(
 
     private Invoice BuildCommissionInvoice(Order order, Restaurant restaurant, string number)
     {
-        var issuerSnapshot = new InvoiceLegalSnapshotDto(
+        InvoiceLegalSnapshotDto issuerSnapshot = new InvoiceLegalSnapshotDto(
             Name: env.PlatformLegalName,
             LegalForm: env.PlatformLegalForm,
             Siret: env.PlatformSiret,
             VatNumber: env.PlatformVatNumber,
             Address: env.PlatformAddress);
 
-        var recipientSnapshot = new InvoiceLegalSnapshotDto(
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto(
             Name: restaurant.LegalName,
             LegalForm: restaurant.LegalForm,
             Siret: restaurant.Siret,
             VatNumber: string.Empty,
             Address: restaurant.LegalAddress);
 
-        var commissionAmount = Math.Round(
+        decimal commissionAmount = Math.Round(
             order.TotalAmount * env.PlatformCommissionRate, 2, MidpointRounding.AwayFromZero);
         decimal rate = env.PlatformVatApplicable ? 20m : 0m;
 
-        var unitHt = commissionAmount;
-        var unitTtc = Math.Round(unitHt * (1 + rate / 100m), 2, MidpointRounding.AwayFromZero);
-        var lineVat = Math.Round(unitTtc - unitHt, 2, MidpointRounding.AwayFromZero);
+        decimal unitHt = commissionAmount;
+        decimal unitTtc = Math.Round(unitHt * (1 + rate / 100m), 2, MidpointRounding.AwayFromZero);
+        decimal lineVat = Math.Round(unitTtc - unitHt, 2, MidpointRounding.AwayFromZero);
 
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Number = number,
             Kind = InvoiceKind.CommissionInvoiceToRestaurant,

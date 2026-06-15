@@ -9,7 +9,7 @@ public static class ActionFilterHelper
     public static bool TryGetRouteId(
         ActionExecutingContext context, out int id, string errorMessage)
     {
-        var routeId = context.RouteData.Values["id"]?.ToString();
+        string? routeId = context.RouteData.Values["id"]?.ToString();
         if (routeId is not null && int.TryParse(routeId, out id))
             return true;
 
@@ -20,7 +20,7 @@ public static class ActionFilterHelper
 
     public static bool TryGetUserId(ActionExecutingContext context, out int userId)
     {
-        var userIdString = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        string? userIdString = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userIdString is not null && int.TryParse(userIdString, out userId))
             return true;
 

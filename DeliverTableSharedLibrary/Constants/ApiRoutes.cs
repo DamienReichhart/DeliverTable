@@ -159,8 +159,8 @@ public static class ApiRoutes
         // ── Order Config ──
         public const string OrderRulesRoute = "order-config/rules";
         public const string OrderRuleByIdRoute = "order-config/rules/{id:int}";
-        public const string BlockedSlotsRoute = "order-config/blocked-slots";
-        public const string BlockedSlotByIdRoute = "order-config/blocked-slots/{id:int}";
+        public const string BlockedSlotsRoute = "order-config/creneau";
+        public const string BlockedSlotByIdRoute = "order-config/creneau/{id:int}";
         public const string OrderRules = Base + "/" + OrderRulesRoute;
         public const string BlockedSlots = Base + "/" + BlockedSlotsRoute;
 
@@ -174,6 +174,12 @@ public static class ApiRoutes
         // ── Invoices ──
         public const string InvoicesRoute = "invoices";
         public const string InvoiceByIdRoute = "invoices/{id:int}";
+
+        // ── Commission statements ──
+        public const string CommissionStatementsRunRoute = "commission-statements/run";
+        public const string CommissionStatementsRoute = "commission-statements";
+        public const string CommissionStatementByIdRoute = "commission-statements/{id:int}";
+        public const string CommissionStatementPdfRoute = "commission-statements/{id:int}/pdf";
 
         // ── Disputes ──
         public const string DisputesRoute = "disputes";
@@ -241,11 +247,33 @@ public static class ApiRoutes
         public const string MyAccountRoute = "my-account";
     }
 
+    /// <summary>Restaurant order configuration routes (RestaurantOwner).</summary>
+    public static class OrderConfig
+    {
+        public const string RestaurantBlockedSlotsRoute = "api/v1/restaurant/{id:int}/order-config/creneau";
+        public const string RestaurantBlockedSlotByIdRoute =
+            "api/v1/restaurant/{id:int}/order-config/creneau/{slotId:int}";
+        public const string TablesCapacityRoute =
+            "api/v1/restaurant/{id:int}/order-config/tables-capacity";
+        public const string OpeningHoursRoute =
+            "api/v1/restaurant/{id:int}/order-config/opening-hours";
+        public const string AvailableSlotsRoute =
+            "api/v1/restaurant/{id:int}/order-config/available-slots";
+    }
+
     /// <summary>Invoice routes.</summary>
     public static class Invoice
     {
         public const string Base = "api/v1/invoice";
         public const string MyListRoute = "me";
+        public const string RestaurantListRoute = "restaurant/{id:int}";
+        public const string DownloadRoute = "{id:int}/pdf";
+    }
+
+    /// <summary>Commission statement routes (owner-facing).</summary>
+    public static class CommissionStatement
+    {
+        public const string Base = VersionnedBase + "/commission-statement";
         public const string RestaurantListRoute = "restaurant/{id:int}";
         public const string DownloadRoute = "{id:int}/pdf";
     }

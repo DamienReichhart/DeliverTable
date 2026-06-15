@@ -27,11 +27,11 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
     public async Task<ServiceResult<List<AdminUserResponse>>> GetAllUsersAsync(CancellationToken ct = default)
     {
-        var users = await _userRepository.GetAllAsync(ct);
-        var result = new List<AdminUserResponse>(users.Count);
-        foreach (var user in users)
+        List<User> users = await _userRepository.GetAllAsync(ct);
+        List<AdminUserResponse> result = new List<AdminUserResponse>(users.Count);
+        foreach (User user in users)
         {
-            var role = await _userRepository.GetPrimaryRoleAsync(user);
+            string? role = await _userRepository.GetPrimaryRoleAsync(user);
             result.Add(user.ToAdminDto(role));
         }
         return result;
@@ -39,11 +39,11 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
     public async Task<ServiceResult<AdminUserResponse>> GetUserByIdAsync(int id, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(id, ct);
+        User? user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
-        var role = await _userRepository.GetPrimaryRoleAsync(user);
+        string? role = await _userRepository.GetPrimaryRoleAsync(user);
         return user.ToAdminDto(role);
     }
 
@@ -51,11 +51,11 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     {
         if (ValidateRole(request.Role) is { } roleError) return roleError;
 
-        var normalizedEmail = request.Email.ToUpperInvariant();
+        string normalizedEmail = request.Email.ToUpperInvariant();
         if (await _userRepository.EmailExistsAsync(normalizedEmail, ct))
             return new ServiceError(ErrorMessages.EmailAlreadyUsed);
 
-        var user = new User
+        User user = new User
         {
             UserName = request.Email,
             Email = request.Email,
@@ -64,11 +64,11 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
             Customer = new Customer()
         };
 
-        var (created, errors) = await _userRepository.CreateAsync(user, request.Password);
+        (bool created, IEnumerable<string>? errors) = await _userRepository.CreateAsync(user, request.Password);
         if (!created)
             return ServiceError.FromIdentityErrors(errors);
 
-        var (roleOk, roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
+        (bool roleOk, IEnumerable<string>? roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
         if (!roleOk)
             return ServiceError.FromIdentityErrors(roleErrors);
 
@@ -78,14 +78,14 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     public async Task<ServiceResult<AdminUserResponse>> UpdateUserAsync(
         int id, AdminUpdateUserRequest request, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(id, ct);
+        User? user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (ValidateRole(request.Role) is { } roleError) return roleError;
-        if (TryParseStatus(request.Status, out var newStatus) is { } statusError) return statusError;
+        if (TryParseStatus(request.Status, out UserStatus newStatus) is { } statusError) return statusError;
 
-        var normalizedEmail = request.Email.ToUpperInvariant();
+        string normalizedEmail = request.Email.ToUpperInvariant();
         if (await _userRepository.EmailExistsExceptAsync(normalizedEmail, id, ct))
             return new ServiceError(ErrorMessages.EmailAlreadyUsed);
 
@@ -98,12 +98,12 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
         user.Status = newStatus;
         user.UpdatedAt = DateTime.UtcNow;
 
-        var currentRoles = await _userRepository.GetRolesAsync(user);
+        IList<string> currentRoles = await _userRepository.GetRolesAsync(user);
         if (currentRoles.FirstOrDefault() != request.Role)
         {
             if (currentRoles.Count > 0)
                 await _userRepository.RemoveFromRolesAsync(user, currentRoles);
-            var (roleOk, roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
+            (bool roleOk, IEnumerable<string>? roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
             if (!roleOk)
                 return ServiceError.FromIdentityErrors(roleErrors);
         }
@@ -114,11 +114,11 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
 
     public async Task<ServiceResult> DeleteUserAsync(int id, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(id, ct);
+        User? user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
-        var (succeeded, errors) = await _userRepository.DeleteAsync(user);
+        (bool succeeded, IEnumerable<string>? errors) = await _userRepository.DeleteAsync(user);
         if (!succeeded)
             return ServiceError.FromIdentityErrors(errors);
 
@@ -128,17 +128,17 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     public async Task<ServiceResult<AdminUserResponse>> UpdateUserRoleAsync(
         int id, UpdateUserRoleRequest request, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(id, ct);
+        User? user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (ValidateRole(request.Role) is { } roleError) return roleError;
 
-        var currentRoles = await _userRepository.GetRolesAsync(user);
+        IList<string> currentRoles = await _userRepository.GetRolesAsync(user);
         if (currentRoles.Count > 0)
             await _userRepository.RemoveFromRolesAsync(user, currentRoles);
 
-        var (roleOk, roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
+        (bool roleOk, IEnumerable<string>? roleErrors) = await _userRepository.AddToRoleAsync(user, request.Role);
         if (!roleOk)
             return ServiceError.FromIdentityErrors(roleErrors);
 
@@ -150,9 +150,9 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
     public async Task<ServiceResult<AdminUserResponse>> UpdateUserStatusAsync(
         int id, UpdateUserStatusRequest request, CancellationToken ct = default)
     {
-        if (TryParseStatus(request.Status, out var newStatus) is { } statusError) return statusError;
+        if (TryParseStatus(request.Status, out UserStatus newStatus) is { } statusError) return statusError;
 
-        var user = await _userRepository.GetByIdAsync(id, ct);
+        User? user = await _userRepository.GetByIdAsync(id, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
@@ -160,7 +160,7 @@ public sealed class AdminService(IUserRepository userRepository) : IAdminService
         user.UpdatedAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync(ct);
 
-        var role = await _userRepository.GetPrimaryRoleAsync(user);
+        string? role = await _userRepository.GetPrimaryRoleAsync(user);
         return user.ToAdminDto(role);
     }
 }

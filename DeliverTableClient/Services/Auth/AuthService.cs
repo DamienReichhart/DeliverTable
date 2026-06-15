@@ -14,19 +14,19 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
 
     public async Task<AuthResponse> Login(LoginRequest loginRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Login, loginRequest);
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Login, loginRequest);
         return await HandleResponse(response);
     }
 
     public async Task<AuthResponse> Register(RegisterRequest registerRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Register, registerRequest);
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Register, registerRequest);
         return await HandleResponse(response);
     }
 
     public async Task<AuthResponse> RegisterRestaurant(RestaurantRegister registerRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.RestaurantRegister, registerRequest);
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.RestaurantRegister, registerRequest);
         return await HandleResponse(response);
     }
 
@@ -36,14 +36,14 @@ public class AuthService(HttpClient httpClient, ApiAuthStateProvider authStatePr
         {
             try
             {
-                var body = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(body);
-                var root = doc.RootElement;
+                string body = await response.Content.ReadAsStringAsync();
+                using JsonDocument doc = JsonDocument.Parse(body);
+                JsonElement root = doc.RootElement;
 
-                if (root.TryGetProperty("error", out var prop) && !string.IsNullOrWhiteSpace(prop.GetString()))
+                if (root.TryGetProperty("error", out JsonElement prop) && !string.IsNullOrWhiteSpace(prop.GetString()))
                     return new AuthResponse { Success = false, Error = prop.GetString()! };
 
-                if (root.TryGetProperty("Error", out var propPascal) && !string.IsNullOrWhiteSpace(propPascal.GetString()))
+                if (root.TryGetProperty("Error", out JsonElement propPascal) && !string.IsNullOrWhiteSpace(propPascal.GetString()))
                     return new AuthResponse { Success = false, Error = propPascal.GetString()! };
             }
             catch { }

@@ -11,7 +11,7 @@ public class RazorEmailTemplateRenderer : IEmailTemplateRenderer
 
     public RazorEmailTemplateRenderer()
     {
-        var templatesPath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email");
+        string templatesPath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email");
         _engine = new RazorLightEngineBuilder()
             .UseFileSystemProject(templatesPath)
             .UseMemoryCachingProvider()
@@ -39,13 +39,15 @@ public class RazorEmailTemplateRenderer : IEmailTemplateRenderer
             EmailJobType.DisputeWonRestaurant => await RenderTypedAsync<DisputeEmailData>("DisputeWonRestaurant", templateDataJson),
             EmailJobType.DisputeLostAdmin => await RenderTypedAsync<DisputeEmailData>("DisputeLostAdmin", templateDataJson),
             EmailJobType.DisputeLostRestaurant => await RenderTypedAsync<DisputeEmailData>("DisputeLostRestaurant", templateDataJson),
+            EmailJobType.CommissionStatementInvoice => await RenderTypedAsync<CommissionStatementInvoiceData>("CommissionStatementInvoice", templateDataJson),
+            EmailJobType.CommissionStatementCreditNote => await RenderTypedAsync<CommissionStatementCreditNoteData>("CommissionStatementCreditNote", templateDataJson),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown email job type")
         };
     }
 
     private async Task<string> RenderTypedAsync<T>(string templateName, string json)
     {
-        var data = JsonSerializer.Deserialize<T>(json)
+        T data = JsonSerializer.Deserialize<T>(json)
             ?? throw new InvalidOperationException($"Failed to deserialize template data for {templateName}");
         return await _engine.CompileRenderAsync($"{templateName}.cshtml", data);
     }

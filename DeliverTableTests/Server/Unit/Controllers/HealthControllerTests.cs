@@ -1,4 +1,4 @@
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Health;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -23,7 +23,7 @@ public class HealthControllerTests
     [Test]
     public async Task Get_ReturnsOkWithHealthResponse()
     {
-        var expected = new HealthResponse
+        HealthResponse expected = new HealthResponse
         {
             Status = nameof(HealthStatus.Healthy),
             TimestampUtc = DateTime.UtcNow
@@ -31,17 +31,17 @@ public class HealthControllerTests
         _healthService.GetHealthAsync(Arg.Any<CancellationToken>())
             .Returns(expected);
 
-        var result = await _sut.Get(CancellationToken.None);
+        IActionResult result = await _sut.Get(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var ok = (OkObjectResult)result;
+        OkObjectResult ok = (OkObjectResult)result;
         Assert.That(ok.Value, Is.SameAs(expected));
     }
 
     [Test]
     public async Task Get_ForwardsCancellationTokenToService()
     {
-        using var cts = new CancellationTokenSource();
+        using CancellationTokenSource cts = new CancellationTokenSource();
         _healthService.GetHealthAsync(Arg.Any<CancellationToken>())
             .Returns(new HealthResponse { Status = nameof(HealthStatus.Healthy), TimestampUtc = DateTime.UtcNow });
 

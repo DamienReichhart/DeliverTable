@@ -38,7 +38,7 @@ public class RestaurantAccountServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var result = await _sut.GetAccountAsync(99, 1, new TransactionQuery());
+        ServiceResult<RestaurantAccountDto> result = await _sut.GetAccountAsync(99, 1, new TransactionQuery());
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -47,10 +47,10 @@ public class RestaurantAccountServiceTests
     [Test]
     public async Task GetAccountAsync_WhenNotOwner_ReturnsError()
     {
-        var restaurant = CreateRestaurant(ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.GetAccountAsync(1, 999, new TransactionQuery());
+        ServiceResult<RestaurantAccountDto> result = await _sut.GetAccountAsync(1, 999, new TransactionQuery());
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -59,12 +59,12 @@ public class RestaurantAccountServiceTests
     [Test]
     public async Task GetAccountAsync_WhenOwner_ReturnsAccountWithBalance()
     {
-        var restaurant = CreateRestaurant(ownerId: 5, balance: 360m);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5, balance: 360m);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _transactionRepository.GetByRestaurantAsync(1, Arg.Any<TransactionQuery>(), Arg.Any<CancellationToken>())
             .Returns((new List<RestaurantTransaction>(), 0));
 
-        var result = await _sut.GetAccountAsync(1, 5, new TransactionQuery());
+        ServiceResult<RestaurantAccountDto> result = await _sut.GetAccountAsync(1, 5, new TransactionQuery());
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Balance, Is.EqualTo(360m));
@@ -75,7 +75,7 @@ public class RestaurantAccountServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var result = await _sut.WithdrawAsync(99, 1, new WithdrawRequest { Amount = 100 });
+        ServiceResult<RestaurantAccountDto> result = await _sut.WithdrawAsync(99, 1, new WithdrawRequest { Amount = 100 });
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -84,10 +84,10 @@ public class RestaurantAccountServiceTests
     [Test]
     public async Task WithdrawAsync_WhenNotOwner_ReturnsError()
     {
-        var restaurant = CreateRestaurant(ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.WithdrawAsync(1, 999, new WithdrawRequest { Amount = 100 });
+        ServiceResult<RestaurantAccountDto> result = await _sut.WithdrawAsync(1, 999, new WithdrawRequest { Amount = 100 });
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -96,10 +96,10 @@ public class RestaurantAccountServiceTests
     [Test]
     public async Task WithdrawAsync_WhenInsufficientBalance_ReturnsError()
     {
-        var restaurant = CreateRestaurant(ownerId: 5, balance: 50m);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5, balance: 50m);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.WithdrawAsync(1, 5, new WithdrawRequest { Amount = 100 });
+        ServiceResult<RestaurantAccountDto> result = await _sut.WithdrawAsync(1, 5, new WithdrawRequest { Amount = 100 });
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.InsufficientBalance));
@@ -108,12 +108,12 @@ public class RestaurantAccountServiceTests
     [Test]
     public async Task WithdrawAsync_WhenValid_DecreasesBalanceAndCreatesTransaction()
     {
-        var restaurant = CreateRestaurant(ownerId: 5, balance: 500m);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5, balance: 500m);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _transactionRepository.GetByRestaurantAsync(1, Arg.Any<TransactionQuery>(), Arg.Any<CancellationToken>())
             .Returns((new List<RestaurantTransaction>(), 0));
 
-        var result = await _sut.WithdrawAsync(1, 5, new WithdrawRequest { Amount = 200 });
+        ServiceResult<RestaurantAccountDto> result = await _sut.WithdrawAsync(1, 5, new WithdrawRequest { Amount = 200 });
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Balance, Is.EqualTo(300m));

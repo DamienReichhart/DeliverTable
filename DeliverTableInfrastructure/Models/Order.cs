@@ -78,5 +78,15 @@ public class Order
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    public DateTime? DeliveredAt { get; set; }
+
+    public int? CommissionStatementId { get; set; }
+    [ForeignKey(nameof(CommissionStatementId))]
+    public CommissionStatement? CommissionStatement { get; set; }
+
+    public int? CommissionRefundStatementId { get; set; }
+    [ForeignKey(nameof(CommissionRefundStatementId))]
+    public CommissionStatement? CommissionRefundStatement { get; set; }
+
     public List<Reclamation> Reclamations { get; set; } = [];
 }

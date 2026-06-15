@@ -1,6 +1,7 @@
 using DeliverTableInfrastructure.Data;
 using DeliverTableInfrastructure.Extensions;
 using DeliverTableInfrastructure.Messaging;
+using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Payments;
 using DeliverTableInfrastructure.Repositories.Interfaces;
@@ -11,9 +12,11 @@ using DeliverTableServer.Hubs;
 using DeliverTableServer.Hubs.Interfaces;
 using DeliverTableServer.Mappers;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos.Order;
 using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace DeliverTableServer.Services;
@@ -29,6 +32,7 @@ public class PaymentService(
     IEmailJobService emailJobService,
     IInvoiceService invoiceService,
     IDisputeService disputeService,
+    ICommissionStatementService commissionStatementService,
     IMessagePublisher publisher,
     IHubContext<OrderHub, IOrderHub> hubContext,
     DeliverTableContext dbContext,
@@ -43,18 +47,18 @@ public class PaymentService(
     {
         _logger.LogInformation("Creating PaymentIntent for order {OrderId}", orderId);
 
-        var order = await orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(orderId, ct);
         if (order is null) return new ServiceError(ErrorMessages.OrderNotFound);
         if (order.Status != OrderStatus.AwaitingPayment)
             return new ServiceError(ErrorMessages.OrderPaymentAlreadyProcessed);
 
-        var user = await userRepository.GetByIdAsync(order.CustomerId, ct);
+        User? user = await userRepository.GetByIdAsync(order.CustomerId, ct);
         if (user is null) return new ServiceError(ErrorMessages.PaymentIntentCreationFailed);
 
         string stripeCustomerId = user.StripeCustomerId ?? string.Empty;
         if (string.IsNullOrEmpty(stripeCustomerId))
         {
-            var customerResult = await stripe.CreateCustomerAsync(
+            StripeCustomerResult customerResult = await stripe.CreateCustomerAsync(
                 email: user.Email ?? string.Empty,
                 fullName: user.GetFullName(),
                 metadata: new Dictionary<string, string> { ["userId"] = user.Id.ToString() },
@@ -65,14 +69,14 @@ public class PaymentService(
         }
 
         long amountMinor = (long)Math.Round(order.TotalAmount * 100m, MidpointRounding.AwayFromZero);
-        var metadata = new Dictionary<string, string>
+        Dictionary<string, string> metadata = new Dictionary<string, string>
         {
             ["orderId"] = order.Id.ToString(),
             ["userId"] = user.Id.ToString(),
             ["restaurantId"] = order.RestaurantId.ToString(),
         };
 
-        var intent = await stripe.CreatePaymentIntentAsync(
+        StripePaymentIntentResult intent = await stripe.CreatePaymentIntentAsync(
             amountInMinorUnits: amountMinor,
             currency: "eur",
             stripeCustomerId: stripeCustomerId,
@@ -83,7 +87,7 @@ public class PaymentService(
         _logger.LogInformation("PaymentIntent {PaymentIntentId} created for order {OrderId}, amount {Amount}",
             intent.PaymentIntentId, order.Id, order.TotalAmount);
 
-        var payment = new Payment
+        Payment payment = new Payment
         {
             OrderId = order.Id,
             Provider = "Stripe",
@@ -101,14 +105,14 @@ public class PaymentService(
 
     public async Task<ServiceResult> CaptureAsync(int orderId, CancellationToken ct)
     {
-        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        Payment? payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
         if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
         try
         {
             _logger.LogInformation("Capturing payment intent {PaymentIntentId} for order {OrderId}",
                 payment.StripePaymentIntentId, orderId);
 
-            var capture = await stripe.CapturePaymentIntentAsync(
+            StripeCaptureResult capture = await stripe.CapturePaymentIntentAsync(
                 payment.StripePaymentIntentId,
                 idempotencyKey: $"order:{orderId}:capture",
                 ct);
@@ -120,7 +124,7 @@ public class PaymentService(
 
             // Eagerly mark order as Completed so late-cancellation logic in UpdateStatusAsync
             // doesn't miss the refund branch before the payment_intent.succeeded webhook arrives.
-            var order = await orderRepository.GetByIdAsync(orderId, ct);
+            Order? order = await orderRepository.GetByIdAsync(orderId, ct);
             if (order is not null && order.PaymentStatus == PaymentStatus.Authorized)
             {
                 order.PaymentStatus = PaymentStatus.Completed;
@@ -139,7 +143,7 @@ public class PaymentService(
 
     public async Task<ServiceResult> CancelAuthorizationAsync(int orderId, int customerId, CancellationToken ct)
     {
-        var order = await orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(orderId, ct);
         if (order is null) return new ServiceError(ErrorMessages.PaymentNotFound);
         if (order.CustomerId != customerId) return ServiceError.Forbidden(ErrorMessages.OrderAccessDenied);
         return await CancelAuthorizationAsync(orderId, ct);
@@ -147,7 +151,7 @@ public class PaymentService(
 
     public async Task<ServiceResult> CancelAuthorizationAsync(int orderId, CancellationToken ct)
     {
-        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        Payment? payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
         if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
         try
         {
@@ -174,19 +178,19 @@ public class PaymentService(
     {
         if (amount <= 0m) return new ServiceError(ErrorMessages.PaymentRefundFailed);
 
-        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        Payment? payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
         if (payment is null) return new ServiceError(ErrorMessages.PaymentNotFound);
 
         if (await disputeService.HasOpenDisputeForOrderAsync(orderId, ct))
             return new ServiceError(ErrorMessages.RefundBlockedByOpenDispute);
 
-        var alreadyRefunded = await paymentRepository.GetTotalRefundedAsync(payment.Id, ct);
-        var remaining = payment.Amount - alreadyRefunded;
+        decimal alreadyRefunded = await paymentRepository.GetTotalRefundedAsync(payment.Id, ct);
+        decimal remaining = payment.Amount - alreadyRefunded;
         if (remaining <= 0m) return new ServiceError(ErrorMessages.PaymentAlreadyRefunded);
         if (amount > remaining) return new ServiceError(ErrorMessages.PaymentRefundExceedsAmount);
 
         long amountMinor = (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero);
-        var idempotencyKey = $"order:{orderId}:refund:{DateTime.UtcNow.Ticks}";
+        string idempotencyKey = $"order:{orderId}:refund:{DateTime.UtcNow.Ticks}";
 
         _logger.LogInformation("Issuing refund of {Amount} for order {OrderId} via intent {PaymentIntentId}",
             amount, orderId, payment.StripePaymentIntentId);
@@ -203,7 +207,7 @@ public class PaymentService(
             return new ServiceError(ErrorMessages.PaymentRefundFailed + " " + ex.Message);
         }
 
-        var refund = new Refund
+        Refund refund = new Refund
         {
             PaymentId = payment.Id,
             StripeRefundId = stripeRefund.RefundId,
@@ -215,10 +219,10 @@ public class PaymentService(
         };
         await paymentRepository.AddRefundAsync(refund, ct);
 
-        var order = await orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(orderId, ct);
         if (order is not null)
         {
-            var totalAfter = alreadyRefunded + amount;
+            decimal totalAfter = alreadyRefunded + amount;
             order.PaymentStatus = totalAfter >= payment.Amount
                 ? PaymentStatus.Refunded
                 : PaymentStatus.PartiallyRefunded;
@@ -234,9 +238,9 @@ public class PaymentService(
     {
         _logger.LogInformation("Dispatching Stripe event {EventId} of type {EventType}", evt.Id, evt.Type);
 
-        using var tx = await _dbContext.Database.BeginTransactionAsync(ct);
+        using IDbContextTransaction tx = await _dbContext.Database.BeginTransactionAsync(ct);
 
-        var registered = await paymentRepository.TryRegisterProcessedEventAsync(evt.Id, evt.Type, ct);
+        bool registered = await paymentRepository.TryRegisterProcessedEventAsync(evt.Id, evt.Type, ct);
         if (!registered)
         {
             await tx.CommitAsync(ct);
@@ -245,7 +249,7 @@ public class PaymentService(
 
         // Collect deferred publish actions: they must run AFTER the transaction commits so that
         // RabbitMQ messages are never enqueued for DB writes that were ultimately rolled back.
-        var deferredPublishes = new List<Func<Task>>();
+        List<Func<Task>> deferredPublishes = new List<Func<Task>>();
 
         switch (evt.Type)
         {
@@ -295,7 +299,7 @@ public class PaymentService(
         await tx.CommitAsync(ct);
 
         // Execute email publishes after the transaction has committed.
-        foreach (var publish in deferredPublishes)
+        foreach (Func<Task> publish in deferredPublishes)
             await publish();
 
         return ServiceResult.Success();
@@ -304,12 +308,12 @@ public class PaymentService(
     private async Task HandleAuthorizationCompletedAsync(
         Stripe.PaymentIntent pi, List<Func<Task>> deferredPublishes, CancellationToken ct)
     {
-        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
+        Payment? payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
         if (payment is null) return;
         payment.AuthorizedAt = DateTime.UtcNow;
         await paymentRepository.UpdateAsync(payment, ct);
 
-        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
         if (order is null || order.Status != OrderStatus.AwaitingPayment) return;
 
         await loyaltyRepository.MarkPendingRedemptionsCommittedForOrderAsync(order.Id, ct);
@@ -321,58 +325,58 @@ public class PaymentService(
         order.UpdatedAt = DateTime.UtcNow;
         await orderRepository.UpdateAsync(order, ct);
 
-        var carts = await cartRepository.GetByCustomerAsync(order.CustomerId, ct);
-        foreach (var cart in carts)
+        List<Cart> carts = await cartRepository.GetByCustomerAsync(order.CustomerId, ct);
+        foreach (Cart cart in carts)
             await cartRepository.DeleteAsync(cart.Id, ct);
 
         // Load email data while still inside the transaction, then enqueue after commit.
-        var fullOrder = await orderRepository.GetByIdWithFullDetailsAsync(order.Id, ct);
+        Order? fullOrder = await orderRepository.GetByIdWithFullDetailsAsync(order.Id, ct);
         if (fullOrder?.Customer is not null && !string.IsNullOrWhiteSpace(fullOrder.Customer.Email))
         {
-            var customerName = fullOrder.Customer.GetFullName();
-            var email = fullOrder.Customer.Email;
-            var orderSnapshot = fullOrder;
+            string customerName = fullOrder.Customer.GetFullName();
+            string email = fullOrder.Customer.Email;
+            Order orderSnapshot = fullOrder;
             deferredPublishes.Add(() => emailJobService.QueueOrderConfirmationAsync(orderSnapshot, email, customerName));
         }
 
         if (fullOrder?.Restaurant is not null)
         {
-            var restaurantOwner = await userRepository.GetByIdAsync(fullOrder.Restaurant.OwnerId, ct);
+            User? restaurantOwner = await userRepository.GetByIdAsync(fullOrder.Restaurant.OwnerId, ct);
             if (restaurantOwner is not null && !string.IsNullOrWhiteSpace(restaurantOwner.Email))
             {
-                var ownerEmail = restaurantOwner.Email;
-                var restaurantName = fullOrder.Restaurant.Name;
-                var orderSnapshot = fullOrder;
+                string ownerEmail = restaurantOwner.Email;
+                string restaurantName = fullOrder.Restaurant.Name;
+                Order orderSnapshot = fullOrder;
                 deferredPublishes.Add(() => emailJobService.QueueNewOrderForRestaurantAsync(orderSnapshot, ownerEmail, restaurantName));
             }
         }
 
-        var invoicesResult = await invoiceService.CreatePendingInvoicesForCapturedOrderAsync(order.Id, ct);
+        ServiceResult<List<InvoiceJobMessage>> invoicesResult = await invoiceService.CreatePendingInvoicesForCapturedOrderAsync(order.Id, ct);
         if (invoicesResult is { IsSuccess: true, Value: not null })
         {
-            foreach (var msg in invoicesResult.Value)
+            foreach (InvoiceJobMessage msg in invoicesResult.Value)
             {
-                var captured = msg;
+                InvoiceJobMessage captured = msg;
                 deferredPublishes.Add(() => publisher.PublishAsync(MessagingExchanges.Invoice, captured, ct));
             }
         }
 
         if (fullOrder is not null)
         {
-            var orderDto = fullOrder.ToDto();
+            OrderDto orderDto = fullOrder.ToDto();
             deferredPublishes.Add(() => hubContext.Clients.Group($"restaurant_{orderDto.RestaurantId}").NewOrder(orderDto));
         }
     }
 
     private async Task HandleCaptureCompletedAsync(Stripe.PaymentIntent pi, CancellationToken ct)
     {
-        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
+        Payment? payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
         if (payment is null) return;
         payment.CapturedAt ??= DateTime.UtcNow;
         payment.Status = PaymentGatewayStatus.Succeeded;
         await paymentRepository.UpdateAsync(payment, ct);
 
-        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
         if (order is null) return;
         if (order.PaymentStatus != PaymentStatus.Refunded && order.PaymentStatus != PaymentStatus.PartiallyRefunded)
         {
@@ -384,13 +388,13 @@ public class PaymentService(
 
     private async Task HandlePaymentAbortedAsync(Stripe.PaymentIntent pi, bool failed, CancellationToken ct)
     {
-        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
+        Payment? payment = await paymentRepository.GetByStripePaymentIntentIdAsync(pi.Id, ct);
         if (payment is null) return;
         payment.Status = PaymentGatewayStatus.Canceled;
         payment.CanceledAt = DateTime.UtcNow;
         await paymentRepository.UpdateAsync(payment, ct);
 
-        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
         if (order is null || order.Status != OrderStatus.AwaitingPayment) return;
         await loyaltyRepository.MarkPendingRedemptionsReversedForOrderAsync(order.Id, ct);
         await discountRepository.MarkPendingRedemptionsReversedForOrderAsync(order.Id, ct);
@@ -402,17 +406,17 @@ public class PaymentService(
 
     private async Task HandleChargeRefundedAsync(Stripe.Charge charge, List<Func<Task>> deferredPublishes, CancellationToken ct)
     {
-        var payment = await paymentRepository.GetByStripePaymentIntentIdAsync(charge.PaymentIntentId, ct);
+        Payment? payment = await paymentRepository.GetByStripePaymentIntentIdAsync(charge.PaymentIntentId, ct);
         if (payment is null) return;
         if (charge.Refunds?.Data is null) return;
 
-        var newRefundIds = new List<int>();
+        List<int> newRefundIds = new List<int>();
 
-        foreach (var r in charge.Refunds.Data)
+        foreach (Stripe.Refund? r in charge.Refunds.Data)
         {
-            var existing = await paymentRepository.GetRefundByStripeIdAsync(r.Id, ct);
+            Refund? existing = await paymentRepository.GetRefundByStripeIdAsync(r.Id, ct);
             if (existing is not null) continue;
-            var refund = new Refund
+            Refund refund = new Refund
             {
                 PaymentId = payment.Id,
                 StripeRefundId = r.Id,
@@ -425,25 +429,32 @@ public class PaymentService(
             newRefundIds.Add(refund.Id);
         }
 
-        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
         if (order is null) return;
-        var totalRefunded = await paymentRepository.GetTotalRefundedAsync(payment.Id, ct);
+        decimal totalRefunded = await paymentRepository.GetTotalRefundedAsync(payment.Id, ct);
         order.PaymentStatus = totalRefunded >= payment.Amount
             ? PaymentStatus.Refunded
             : PaymentStatus.PartiallyRefunded;
         order.UpdatedAt = DateTime.UtcNow;
         await orderRepository.UpdateAsync(order, ct);
 
-        foreach (var newRefundId in newRefundIds)
+        foreach (int newRefundId in newRefundIds)
         {
-            var cnResult = await invoiceService.CreateCreditNotesForRefundAsync(newRefundId, ct);
+            ServiceResult<List<InvoiceJobMessage>> cnResult = await invoiceService.CreateCreditNotesForRefundAsync(newRefundId, ct);
             if (cnResult is { IsSuccess: true, Value: not null })
             {
-                foreach (var msg in cnResult.Value)
+                foreach (InvoiceJobMessage msg in cnResult.Value)
                 {
-                    var captured = msg;
+                    InvoiceJobMessage captured = msg;
                     deferredPublishes.Add(() => publisher.PublishAsync(MessagingExchanges.Invoice, captured, ct));
                 }
+            }
+
+            Refund? newRefund = await paymentRepository.GetRefundByIdAsync(newRefundId, ct);
+            if (newRefund is not null)
+            {
+                await commissionStatementService.HandleRefundForPriorPeriodAsync(
+                    order.Id, newRefund.Id, newRefund.StripeRefundId, newRefund.Amount, ct);
             }
         }
     }

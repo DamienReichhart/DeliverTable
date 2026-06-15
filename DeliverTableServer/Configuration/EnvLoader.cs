@@ -15,7 +15,7 @@ public static class EnvLoader
     /// </summary>
     public static void Load()
     {
-        var envInCur = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+        string envInCur = Path.Combine(Directory.GetCurrentDirectory(), ".env");
 
         if (File.Exists(envInCur))
             Env.Load(envInCur);

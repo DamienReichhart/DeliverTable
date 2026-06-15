@@ -59,9 +59,9 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
 
     public async Task<(List<Invoice> Items, int Total)> ListForRecipientUserAsync(int userId, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _dbContext.Invoices.Where(i => i.RecipientUserId == userId);
-        var total = await query.CountAsync(ct);
-        var items = await query.OrderByDescending(i => i.IssuedAt)
+        IQueryable<Invoice> query = _dbContext.Invoices.Where(i => i.RecipientUserId == userId);
+        int total = await query.CountAsync(ct);
+        List<Invoice> items = await query.OrderByDescending(i => i.IssuedAt)
                                .Paginate(page, pageSize)
                                .ToListAsync(ct);
         return (items, total);
@@ -69,9 +69,9 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
 
     public async Task<(List<Invoice> Items, int Total)> ListForRecipientRestaurantAsync(int restaurantId, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _dbContext.Invoices.Where(i => i.RecipientRestaurantId == restaurantId);
-        var total = await query.CountAsync(ct);
-        var items = await query.OrderByDescending(i => i.IssuedAt)
+        IQueryable<Invoice> query = _dbContext.Invoices.Where(i => i.RecipientRestaurantId == restaurantId);
+        int total = await query.CountAsync(ct);
+        List<Invoice> items = await query.OrderByDescending(i => i.IssuedAt)
                                .Paginate(page, pageSize)
                                .ToListAsync(ct);
         return (items, total);
@@ -79,7 +79,7 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
 
     public async Task<(List<Invoice> Items, int Total)> AdminListAsync(int? year, InvoiceKind? kind, InvoiceIssuerType? issuerType, int? restaurantId, string? customerEmailContains, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _dbContext.Invoices.Include(i => i.RecipientUser).AsQueryable();
+        IQueryable<Invoice> query = _dbContext.Invoices.Include(i => i.RecipientUser).AsQueryable();
         if (year.HasValue) query = query.Where(i => i.IssuedAt.Year == year.Value);
         if (kind.HasValue) query = query.Where(i => i.Kind == kind.Value);
         if (issuerType.HasValue) query = query.Where(i => i.IssuerType == issuerType.Value);
@@ -87,8 +87,8 @@ public class InvoiceRepository(DeliverTableContext dbContext) : IInvoiceReposito
         if (!string.IsNullOrEmpty(customerEmailContains))
             query = query.Where(i => i.RecipientUser != null && i.RecipientUser.Email != null && i.RecipientUser.Email.Contains(customerEmailContains));
 
-        var total = await query.CountAsync(ct);
-        var items = await query.OrderByDescending(i => i.IssuedAt)
+        int total = await query.CountAsync(ct);
+        List<Invoice> items = await query.OrderByDescending(i => i.IssuedAt)
                                .Paginate(page, pageSize)
                                .ToListAsync(ct);
         return (items, total);

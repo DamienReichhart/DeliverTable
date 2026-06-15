@@ -38,7 +38,7 @@ public partial class Live : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        var (paginatedResult, error) = await RestaurantService.GetConnectedUserRestaurants();
+        (DeliverTableSharedLibrary.Dtos.PaginatedResult<RestaurantDto>? paginatedResult, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await RestaurantService.GetConnectedUserRestaurants();
         if (error is null)
         {
             restaurants = paginatedResult?.Items?.ToArray() ?? [];
@@ -104,7 +104,7 @@ public partial class Live : ComponentBase, IDisposable
 
     public async Task MarkAsConfirmed(int orderId)
     {
-        var (updatedOrder, error) = await OrderService.UpdateOrderStatusAsync(orderId, nameof(OrderStatus.Confirmed));
+        (OrderDto? updatedOrder, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await OrderService.UpdateOrderStatusAsync(orderId, nameof(OrderStatus.Confirmed));
         if (error is null)
         {
             await LoadOrders();
@@ -113,7 +113,7 @@ public partial class Live : ComponentBase, IDisposable
 
     public async Task MarkAsPreparing(int orderId)
     {
-        var (updatedOrder, error) = await OrderService.UpdateOrderStatusAsync(orderId, nameof(OrderStatus.Preparing));
+        (OrderDto? updatedOrder, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await OrderService.UpdateOrderStatusAsync(orderId, nameof(OrderStatus.Preparing));
         if (error is null)
         {
             await LoadOrders();
@@ -127,7 +127,7 @@ public partial class Live : ComponentBase, IDisposable
 
         string status = nameof(OrderStatus.Ready);
 
-        var (updatedOrder, error) = await OrderService.UpdateOrderStatusAsync(orderId, status);
+        (OrderDto? updatedOrder, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await OrderService.UpdateOrderStatusAsync(orderId, status);
         if (error is null)
         {
             if (updatedOrder != null)
@@ -152,7 +152,7 @@ public partial class Live : ComponentBase, IDisposable
     {
         if (!SelectedRestaurant.HasValue) return;
 
-        var (paginatedResult, error) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
+        (DeliverTableSharedLibrary.Dtos.PaginatedResult<OrderDto>? paginatedResult, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
         {
             ToPrepare = true,
             PageNumber = 1,
@@ -171,7 +171,7 @@ public partial class Live : ComponentBase, IDisposable
     {
         if (!SelectedRestaurant.HasValue) return;
 
-        var (readyResult, readyError) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
+        (DeliverTableSharedLibrary.Dtos.PaginatedResult<OrderDto>? readyResult, DeliverTableSharedLibrary.Dtos.ErrorResponse? readyError) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
         {
             Status = nameof(OrderStatus.Ready),
             PageNumber = 1,
@@ -182,11 +182,10 @@ public partial class Live : ComponentBase, IDisposable
 
         if (readyError is null && readyResult?.Items != null)
         {
-            finishedOrders.AddRange(readyResult.Items);
-            finishedOrders = finishedOrders.OrderByDescending(o => o.CreatedAt).ToList();
+            finishedOrders = readyResult.Items;
         }
 
-        var (deliveredResult, deliveredError) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
+        (DeliverTableSharedLibrary.Dtos.PaginatedResult<OrderDto>? deliveredResult, DeliverTableSharedLibrary.Dtos.ErrorResponse? deliveredError) = await OrderService.GetRestaurantOrdersAsync(SelectedRestaurant.Value, new OrderQuery()
         {
             Status = nameof(OrderStatus.Delivered),
             PageNumber = 1,

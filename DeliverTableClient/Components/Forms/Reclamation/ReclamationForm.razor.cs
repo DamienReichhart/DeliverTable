@@ -50,19 +50,19 @@ public partial class ReclamationForm(IReclamationService reclamationService, Nav
 
     private async Task HandleItemChanges((CreateReclamationItemDto? ItemDto, IBrowserFile? file) data)
     {
-        var (itemDto, file) = data;
+        (CreateReclamationItemDto? itemDto, IBrowserFile? file) = data;
         if (itemDto is null)
             return;
 
-        var entryPrefix = $"Item_{itemDto.OrderItemId}_image";
+        string entryPrefix = $"Item_{itemDto.OrderItemId}_image";
         if (file != null)
         {
-            var fileExtension = Path.GetExtension(file.Name);
-            var entryName = $"{entryPrefix}{fileExtension}";
+            string fileExtension = Path.GetExtension(file.Name);
+            string entryName = $"{entryPrefix}{fileExtension}";
 
-            using var stream = new MemoryStream();
+            using MemoryStream stream = new MemoryStream();
             await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(stream);
-            var buffer = stream.ToArray();
+            byte[] buffer = stream.ToArray();
 
             ByteArrayContent byteArrayContent = new(buffer);
             _images.RemoveAll(i => i.Name.StartsWith(entryPrefix, StringComparison.Ordinal));
@@ -88,7 +88,7 @@ public partial class ReclamationForm(IReclamationService reclamationService, Nav
         _errorMessage = null;
         try
         {
-            var (_, error) = await reclamationService.CreateReclamationAsync(Reclamation, _images);
+            (ReclamationDto? _, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await reclamationService.CreateReclamationAsync(Reclamation, _images);
             if (error is null)
                 _isReclamationSend = true;
             else

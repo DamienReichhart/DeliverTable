@@ -24,27 +24,27 @@ public sealed class RestaurantService(
     public async Task<ServiceResult<PaginatedResult<RestaurantDto>>> GetAllAsync(
         RestaurantQuery query, CancellationToken ct = default)
     {
-        var data = await _restaurantRepository.GetAllAsync(query, ct);
+        (List<Restaurant> Items, int TotalCount) data = await _restaurantRepository.GetAllAsync(query, ct);
         return data.ToPaginatedResult(r => r.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<List<RestaurantMapDto>>> GetForMapAsync(
         RestaurantQuery query, CancellationToken ct = default)
     {
-        var restaurants = await _restaurantRepository.GetForMapAsync(query, ct);
+        List<Restaurant> restaurants = await _restaurantRepository.GetForMapAsync(query, ct);
         return restaurants.Select(r => r.ToMapDto()).ToList();
     }
 
     public async Task<ServiceResult<PaginatedResult<RestaurantDto>>> GetByOwnerAsync(
         int ownerId, RestaurantQuery query, CancellationToken ct = default)
     {
-        var data = await _restaurantRepository.GetByOwnerAsync(ownerId, query, ct);
+        (List<Restaurant> Items, int TotalCount) data = await _restaurantRepository.GetByOwnerAsync(ownerId, query, ct);
         return data.ToPaginatedResult(r => r.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<DetailedRestaurantDto>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(id, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(id, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
@@ -54,7 +54,7 @@ public sealed class RestaurantService(
     public async Task<ServiceResult<RestaurantDto>> CreateAsync(
         CreateRestaurantDto dto, int ownerId, CancellationToken ct = default)
     {
-        var legalAndCoords = await ValidateLegalAndLocateAsync(
+        ServiceResult<(double lat, double lon)> legalAndCoords = await ValidateLegalAndLocateAsync(
             dto.Siret, dto.LegalName, dto.LegalAddress, dto.LegalForm,
             dto.AdressLine1, dto.City, dto.ZipCode);
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
@@ -68,7 +68,7 @@ public sealed class RestaurantService(
         if (dto.IsVatRegistered && string.IsNullOrWhiteSpace(dto.VatNumber))
             return new ServiceError(ErrorMessages.VatNumberRequiredWhenVatRegistered);
 
-        var restaurant = new Restaurant
+        Restaurant restaurant = new Restaurant
         {
             Name = dto.Name,
             Description = dto.Description ?? string.Empty,
@@ -89,22 +89,22 @@ public sealed class RestaurantService(
             VatNumber = dto.IsVatRegistered ? dto.VatNumber : null,
         };
 
-        var created = await _restaurantRepository.CreateAsync(restaurant, ct);
+        Restaurant created = await _restaurantRepository.CreateAsync(restaurant, ct);
         return created.ToDto();
     }
 
     public async Task<ServiceResult<DetailedRestaurantDto>> UpdateAsync(
         int id, UpdateRestaurantDto dto, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(id, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(id, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
-        var legalAndCoords = await ValidateLegalAndLocateAsync(
+        ServiceResult<(double lat, double lon)> legalAndCoords = await ValidateLegalAndLocateAsync(
             dto.Siret, dto.LegalName, dto.LegalAddress, dto.LegalForm,
             dto.AdressLine1, dto.City, dto.ZipCode);
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
-        var coords = legalAndCoords.Value;
+        (double lat, double lon) coords = legalAndCoords.Value;
 
         if (dto.IsVatRegistered && string.IsNullOrWhiteSpace(dto.VatNumber))
             return new ServiceError(ErrorMessages.VatNumberRequiredWhenVatRegistered);
@@ -126,13 +126,13 @@ public sealed class RestaurantService(
         restaurant.IsVatRegistered = dto.IsVatRegistered;
         restaurant.VatNumber = dto.IsVatRegistered ? dto.VatNumber : null;
 
-        var updated = await _restaurantRepository.UpdateAsync(restaurant, ct);
+        Restaurant updated = await _restaurantRepository.UpdateAsync(restaurant, ct);
         return updated.ToDetailedDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _restaurantRepository.DeleteAsync(id, ct);
+        bool deleted = await _restaurantRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
@@ -140,7 +140,7 @@ public sealed class RestaurantService(
     }
 
     private static RestaurantType ParseRestaurantType(string? value) =>
-        Enum.TryParse<RestaurantType>(value, out var type) ? type : RestaurantType.Autre;
+        Enum.TryParse<RestaurantType>(value, out RestaurantType type) ? type : RestaurantType.Autre;
 
     public async Task<ServiceResult<(double lat, double lon)>> ValidateLegalAndLocateAsync(
         string siret, string? legalName, string? legalAddress, string? legalForm,
@@ -154,7 +154,7 @@ public sealed class RestaurantService(
             || string.IsNullOrWhiteSpace(legalForm))
             return new ServiceError(ErrorMessages.LegalFieldsRequired);
 
-        var coords = await _geoLocationService.GetCoordinatesAsync(addressLine1, city, zipCode);
+        (double lat, double lon)? coords = await _geoLocationService.GetCoordinatesAsync(addressLine1, city, zipCode);
         if (coords is null)
             return new ServiceError(ErrorMessages.AddressNotLocatable);
 

@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
@@ -26,7 +26,7 @@ public class AdminDiscountCodeControllerTests
     [Test]
     public async Task GetAll_ReturnsOk()
     {
-        var codes = new List<AdminDiscountCodeResponse>
+        List<AdminDiscountCodeResponse> codes = new List<AdminDiscountCodeResponse>
         {
             new() { Id = 1, Code = "CODE1" },
             new() { Id = 2, Code = "CODE2" }
@@ -34,7 +34,7 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminDiscountCodeResponse>>.Success(codes));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -45,10 +45,10 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminDiscountCodeResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -59,11 +59,11 @@ public class AdminDiscountCodeControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var code = new AdminDiscountCodeResponse { Id = 1, Code = "CODE1" };
+        AdminDiscountCodeResponse code = new AdminDiscountCodeResponse { Id = 1, Code = "CODE1" };
         _adminDiscountCodeService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDiscountCodeResponse>.Success(code));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -74,10 +74,10 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDiscountCodeResponse>.Failure(new ServiceError("Code promo introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -88,7 +88,7 @@ public class AdminDiscountCodeControllerTests
     [Test]
     public async Task Create_WhenSuccess_ReturnsCreated()
     {
-        var request = new AdminCreateDiscountCodeRequest
+        AdminCreateDiscountCodeRequest request = new AdminCreateDiscountCodeRequest
         {
             Code = "NEWCODE",
             DiscountType = DiscountType.Percentage,
@@ -98,21 +98,21 @@ public class AdminDiscountCodeControllerTests
             RestaurantId = 1,
             IsActive = true
         };
-        var response = new AdminDiscountCodeResponse { Id = 10, Code = "NEWCODE" };
+        AdminDiscountCodeResponse response = new AdminDiscountCodeResponse { Id = 10, Code = "NEWCODE" };
         _adminDiscountCodeService.CreateAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDiscountCodeResponse>.Success(response));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
-        var created = (CreatedAtActionResult)result;
+        CreatedAtActionResult created = (CreatedAtActionResult)result;
         Assert.That(created.ActionName, Is.EqualTo(nameof(AdminDiscountCodeController.GetById)));
     }
 
     [Test]
     public async Task Create_WhenError_ReturnsError()
     {
-        var request = new AdminCreateDiscountCodeRequest
+        AdminCreateDiscountCodeRequest request = new AdminCreateDiscountCodeRequest
         {
             Code = "CODE",
             RestaurantId = 99,
@@ -122,10 +122,10 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.CreateAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDiscountCodeResponse>.Failure(new ServiceError("Restaurant introuvable", 404)));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -136,7 +136,7 @@ public class AdminDiscountCodeControllerTests
     [Test]
     public async Task Update_WhenSuccess_ReturnsOk()
     {
-        var request = new AdminUpdateDiscountCodeRequest
+        AdminUpdateDiscountCodeRequest request = new AdminUpdateDiscountCodeRequest
         {
             Description = "Mis à jour",
             DiscountValue = 20m,
@@ -144,11 +144,11 @@ public class AdminDiscountCodeControllerTests
             ValidUntil = DateTime.UtcNow.AddDays(30),
             IsActive = true
         };
-        var response = new AdminDiscountCodeResponse { Id = 1, Description = "Mis à jour" };
+        AdminDiscountCodeResponse response = new AdminDiscountCodeResponse { Id = 1, Description = "Mis à jour" };
         _adminDiscountCodeService.UpdateAsync(1, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDiscountCodeResponse>.Success(response));
 
-        var result = await _sut.Update(1, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -156,7 +156,7 @@ public class AdminDiscountCodeControllerTests
     [Test]
     public async Task Update_WhenNotFound_Returns404()
     {
-        var request = new AdminUpdateDiscountCodeRequest
+        AdminUpdateDiscountCodeRequest request = new AdminUpdateDiscountCodeRequest
         {
             ValidFrom = DateTime.UtcNow,
             ValidUntil = DateTime.UtcNow.AddDays(30)
@@ -164,10 +164,10 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.UpdateAsync(99, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDiscountCodeResponse>.Failure(new ServiceError("Code promo introuvable", 404)));
 
-        var result = await _sut.Update(99, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(99, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -181,7 +181,7 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.DeleteAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -192,10 +192,10 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.DeleteAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Code promo introuvable", 404)));
 
-        var result = await _sut.Delete(99, CancellationToken.None);
+        IActionResult result = await _sut.Delete(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -206,7 +206,7 @@ public class AdminDiscountCodeControllerTests
     [Test]
     public async Task GetRedemptions_WhenSuccess_ReturnsOk()
     {
-        var redemptions = new List<AdminRedemptionResponse>
+        List<AdminRedemptionResponse> redemptions = new List<AdminRedemptionResponse>
         {
             new() { Id = 1, CustomerName = "Test User", OrderId = 100 },
             new() { Id = 2, CustomerName = "Test User", OrderId = 101 }
@@ -214,7 +214,7 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.GetRedemptionsAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminRedemptionResponse>>.Success(redemptions));
 
-        var result = await _sut.GetRedemptions(1, CancellationToken.None);
+        IActionResult result = await _sut.GetRedemptions(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -225,10 +225,10 @@ public class AdminDiscountCodeControllerTests
         _adminDiscountCodeService.GetRedemptionsAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminRedemptionResponse>>.Failure(new ServiceError("Code promo introuvable", 404)));
 
-        var result = await _sut.GetRedemptions(99, CancellationToken.None);
+        IActionResult result = await _sut.GetRedemptions(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 

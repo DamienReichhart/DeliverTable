@@ -20,19 +20,19 @@ public sealed class RatingClientService(HttpClient httpClient) : IRatingClientSe
     {
         try
         {
-            var response = await _httpClient.GetAsync(Url(orderId), ct);
+            HttpResponseMessage response = await _httpClient.GetAsync(Url(orderId), ct);
             if (response.StatusCode == HttpStatusCode.NotFound)
                 return (null, null);
 
             if (!response.IsSuccessStatusCode)
             {
-                var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
+                ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
                     cancellationToken: ct
                 );
                 return (null, error);
             }
 
-            var result = await response.Content.ReadFromJsonAsync<RatingDto>(
+            RatingDto? result = await response.Content.ReadFromJsonAsync<RatingDto>(
                 cancellationToken: ct
             );
             return (result, null);
@@ -49,16 +49,16 @@ public sealed class RatingClientService(HttpClient httpClient) : IRatingClientSe
         CancellationToken ct = default
     )
     {
-        var response = await _httpClient.PostAsJsonAsync(Url(orderId), request, ct);
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(Url(orderId), request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
                 cancellationToken: ct
             );
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<RatingDto>(cancellationToken: ct);
+        RatingDto? result = await response.Content.ReadFromJsonAsync<RatingDto>(cancellationToken: ct);
         return (result, null);
     }
 
@@ -68,16 +68,16 @@ public sealed class RatingClientService(HttpClient httpClient) : IRatingClientSe
         CancellationToken ct = default
     )
     {
-        var response = await _httpClient.PutAsJsonAsync(Url(orderId), request, ct);
+        HttpResponseMessage response = await _httpClient.PutAsJsonAsync(Url(orderId), request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
                 cancellationToken: ct
             );
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<RatingDto>(cancellationToken: ct);
+        RatingDto? result = await response.Content.ReadFromJsonAsync<RatingDto>(cancellationToken: ct);
         return (result, null);
     }
 
@@ -86,10 +86,10 @@ public sealed class RatingClientService(HttpClient httpClient) : IRatingClientSe
         CancellationToken ct = default
     )
     {
-        var response = await _httpClient.DeleteAsync(Url(orderId), ct);
+        HttpResponseMessage response = await _httpClient.DeleteAsync(Url(orderId), ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(
                 cancellationToken: ct
             );
             return (false, error);

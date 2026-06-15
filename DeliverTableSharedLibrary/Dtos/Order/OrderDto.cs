@@ -23,6 +23,7 @@ public class OrderDto
     public int? RestaurantTableId { get; set; }
     public bool IsEventBooking { get; set; }
     public int? EventId { get; set; }
+    public string EventName { get; set; } = string.Empty;
     public List<OrderItemDto> Items { get; set; } = [];
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

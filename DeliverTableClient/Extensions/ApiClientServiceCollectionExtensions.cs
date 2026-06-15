@@ -1,6 +1,7 @@
 using DeliverTableClient.Configuration;
 using DeliverTableClient.Configuration.Interfaces;
 using DeliverTableClient.Services;
+using DeliverTableClient.Services.CommissionStatement;
 using DeliverTableClient.Services.Dispute;
 using DeliverTableClient.Services.Interfaces;
 using DeliverTableClient.Services.Invoice;
@@ -26,14 +27,14 @@ public static class ApiClientServiceCollectionExtensions
     {
         services.AddSingleton<IApiClientOptions>(sp =>
         {
-            var appConfig = sp.GetRequiredService<IAppConfiguration>();
+            IAppConfiguration appConfig = sp.GetRequiredService<IAppConfiguration>();
             return new ApiClientOptions { BaseUrl = appConfig.ApiBaseUrl };
         });
 
         services.AddScoped(sp =>
         {
-            var options = sp.GetRequiredService<IApiClientOptions>();
-            var client = new HttpClient { BaseAddress = new Uri(options.BaseUrl) };
+            IApiClientOptions options = sp.GetRequiredService<IApiClientOptions>();
+            HttpClient client = new HttpClient { BaseAddress = new Uri(options.BaseUrl) };
             return client;
         });
 
@@ -47,11 +48,13 @@ public static class ApiClientServiceCollectionExtensions
         RegisterOrderHubClientService(services);
         RegisterRestaurantAccountService(services);
         RegisterPromotionService(services);
+        RegisterRestaurantOrderConfigService(services);
         RegisterDiscountCodeClientService(services);
         RegisterLoyaltyClientService(services);
         RegisterRatingClientService(services);
         RegisterPaymentService(services);
         RegisterInvoiceService(services);
+        RegisterCommissionStatementService(services);
         RegisterDisputeService(services);
         RegisterAdminDomainServices(services);
         RegisterReclamationServices(services);
@@ -112,6 +115,11 @@ public static class ApiClientServiceCollectionExtensions
         services.AddScoped<IPromotionService, PromotionService>();
     }
 
+    private static void RegisterRestaurantOrderConfigService(IServiceCollection services)
+    {
+        services.AddScoped<IRestaurantOrderConfigClientService, RestaurantOrderConfigClientService>();
+    }
+
     private static void RegisterDiscountCodeClientService(IServiceCollection services)
     {
         services.AddScoped<IDiscountCodeClientService, DiscountCodeClientService>();
@@ -135,6 +143,11 @@ public static class ApiClientServiceCollectionExtensions
     private static void RegisterInvoiceService(IServiceCollection services)
     {
         services.AddScoped<IInvoiceApiClient, InvoiceApiClient>();
+    }
+
+    private static void RegisterCommissionStatementService(IServiceCollection services)
+    {
+        services.AddScoped<ICommissionStatementApiClient, CommissionStatementApiClient>();
     }
 
     private static void RegisterDisputeService(IServiceCollection services)

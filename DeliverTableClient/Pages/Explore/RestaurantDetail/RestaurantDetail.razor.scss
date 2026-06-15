@@ -1,126 +1,191 @@
+@use "sass:color";
 @use '../../../Styles/abstracts/variables' as *;
 @use '../../../Styles/abstracts/mixins' as *;
 
+// =============================================================================
+// Restaurant detail page
+// =============================================================================
+
 .restaurant-detail-page {
-  max-width: 1200px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: $spacing-xl $spacing-md;
+  padding: $spacing-xl $spacing-md $spacing-3xl;
   display: flex;
   flex-direction: column;
   gap: $spacing-2xl;
 }
 
+// ── Loading / empty / error states ───────────────────────────────────────────
+
+.loading-container,
+.empty-state,
+.error-message {
+  &.centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-sm;
+    text-align: center;
+    padding: $spacing-3xl $spacing-lg;
+    color: $color-text-muted;
+
+    .app-icon {
+      font-size: 2.25rem;
+      color: rgba($color-coral-fire, 0.55);
+    }
+
+    p {
+      margin: 0;
+      font-size: $font-size-base;
+    }
+  }
+}
+
+.error-message.centered .app-icon {
+  color: rgba($color-error, 0.7);
+}
+
+// =============================================================================
+// Header / hero
+// =============================================================================
+
 .restaurant-header {
-  @include card;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: $spacing-lg;
-  padding: $spacing-xl;
-  background: $color-bg-white;
+  gap: $spacing-xl;
+  padding: $spacing-2xl;
   border-radius: $radius-xl;
+  overflow: hidden;
+  border: 1px solid rgba($color-coral-fire, 0.12);
+  background:
+    radial-gradient(circle at 100% 0%, rgba($color-amber-gold, 0.20), transparent 42%),
+    linear-gradient(135deg, rgba($color-coral-fire, 0.10), rgba($color-bg-white, 0.5));
+  box-shadow: $shadow-card;
 
   @media (min-width: $breakpoint-desktop) {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: $spacing-2xl;
+    padding: $spacing-3xl;
   }
 }
 
 .restaurant-header-info {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
 
-  .restaurant-type-badge {
-    display: inline-block;
-    padding: 0.25em 0.75em;
-    border-radius: $radius-sm;
-    font-family: $font-family-mono;
-    font-size: $font-size-xs;
-    font-weight: $font-weight-medium;
-    background: rgba($color-amber-gold, 0.12);
-    color: darken($color-amber-gold, 18%);
-    margin-bottom: $spacing-sm;
-  }
+.restaurant-type-badge {
+  @include label-mono;
+  align-self: flex-start;
+  padding: 0.35em 0.85em;
+  border-radius: $radius-md;
+  background: rgba($color-coral-fire, 0.12);
+  color: $color-primary-dark;
+}
 
-  h1 {
-    @include heading-display;
+.restaurant-header-info h1 {
+  @include heading-display;
+  font-size: $font-size-h2;
+  margin: 0;
+
+  @media (min-width: $breakpoint-desktop) {
     font-size: $font-size-h1;
-    margin: 0 0 $spacing-sm;
-    color: $color-text;
   }
+}
 
-  .restaurant-description {
-    color: $color-text;
-    font-size: $font-size-base;
-    margin: $spacing-sm 0 $spacing-md;
-    line-height: $line-height-base;
-    max-width: 800px;
+.restaurant-description {
+  color: $color-text;
+  font-size: $font-size-lg;
+  line-height: $line-height-base;
+  margin: 0;
+  max-width: 60ch;
+}
+
+.restaurant-address {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  margin: $spacing-xs 0 0;
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  line-height: 1.6;
+
+  .app-icon {
+    flex-shrink: 0;
+    margin-top: 0.15em;
+    color: $color-primary;
   }
+}
 
-  .restaurant-address {
-    display: flex;
-    align-items: flex-start;
-    gap: $spacing-xs;
-    color: $color-text-muted;
-    font-size: $font-size-sm;
-    line-height: 1.6;
-    margin: 0;
+// =============================================================================
+// Cart summary
+// =============================================================================
 
-    .app-icon {
-        color: $color-primary;
-        margin-top: 0.2rem;
-    }
+.cart-summary-bar {
+  flex-shrink: 0;
+
+  @media (min-width: $breakpoint-desktop) {
+    position: sticky;
+    top: $spacing-lg;
   }
 }
 
 .cart-mini {
-  @include card;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: $spacing-md;
-  background: $color-deep-charcoal;
-  color: $color-text-inverse;
-  border: none;
   padding: $spacing-lg;
   border-radius: $radius-lg;
+  background: $color-deep-charcoal;
+  color: $color-text-inverse;
   box-shadow: $shadow-lg;
 
-  @media (min-width: $breakpoint-mobile) {
-      flex-direction: row;
-      align-items: center;
-      min-width: 320px;
+  @media (min-width: $breakpoint-desktop) {
+    min-width: 280px;
   }
 
   .cart-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 
-      span {
-          font-size: $font-size-xs;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          opacity: 0.7;
-      }
+    span {
+      @include label-mono;
+      color: rgba($color-text-inverse, 0.6);
+    }
 
-      strong {
-          font-family: $font-family-display;
-          font-size: $font-size-lg;
-      }
+    strong {
+      font-family: $font-family-display;
+      font-size: $font-size-lg;
+      line-height: $line-height-tight;
+    }
   }
 
   .app-btn {
-      white-space: nowrap;
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
   }
 }
 
+// =============================================================================
+// Location map
+// =============================================================================
+
 .restaurant-location-map {
-  @include card;
+  height: 320px;
   border-radius: $radius-xl;
   overflow: hidden;
-  height: 300px;
-  padding: 0;
+  border: 1px solid $color-border;
+  box-shadow: $shadow-card;
 }
 
 .restaurant-detail-map-element {
@@ -128,92 +193,134 @@
   height: 100%;
 }
 
+// =============================================================================
 // Dishes section
-.dishes-section {
-  order: 1;
+// =============================================================================
 
-  h2 {
+.dishes-section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xl;
+
+  > h2 {
     @include heading-display;
-    font-size: $font-size-h2;
-    margin: 0 0 $spacing-xl;
+    font-size: $font-size-h3;
+    margin: 0;
+    position: relative;
     padding-bottom: $spacing-sm;
-    border-bottom: 2px solid $color-primary;
-    display: inline-block;
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 3rem;
+      height: 3px;
+      border-radius: $radius-full;
+      background: linear-gradient(90deg, $color-coral-fire, $color-amber-gold);
+    }
   }
 }
 
+// ── Filters toolbar ──────────────────────────────────────────────────────────
+
 .dishes-filters {
-  @include card;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: $spacing-lg;
-  margin-bottom: $spacing-2xl;
-  padding: $spacing-lg;
-  border-radius: $radius-lg;
-  background: rgba($color-bg-white, 0.5);
-  backdrop-filter: blur(8px);
+  gap: $spacing-md;
 }
 
 .filter-search {
-    flex: 1;
-    min-width: 250px;
-    padding: 0.75rem 1rem;
-    border-radius: $radius-md;
-    border: 1px solid $color-border;
-    font-family: $font-family-base;
-    font-size: $font-size-base;
-    display: flex;
-    align-items: center;
-    gap: $spacing-sm;
-    
-    &:focus {
-        outline: none;
-        border-color: $color-primary;
-        box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.1);
-    }
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex: 1;
+  min-width: 240px;
+  padding: 0.7rem 1rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-white;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus-within {
+    border-color: $color-border-focus;
+    box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.12);
+  }
+
+  .search-icon {
+    flex-shrink: 0;
+    color: $color-text-muted;
+  }
 }
 
 .filter-input {
   flex: 1;
-  min-width: 250px;
-  padding: 0.75rem 1rem;
-  border-radius: $radius-md;
-  border: 1px solid $color-border;
+  min-width: 0;
+  border: none;
+  background: transparent;
   font-family: $font-family-base;
   font-size: $font-size-base;
-  
+  color: $color-text;
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+
   &:focus {
-      outline: none;
-      border-color: $color-primary;
-      box-shadow: 0 0 0 3px rgba($color-coral-fire, 0.1);
+    outline: none;
   }
 }
 
-.filter-checkbox {
-    display: flex;
-    align-items: center;
-    gap: $spacing-xs;
-    cursor: pointer;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    color: $color-text;
-    user-select: none;
-
-    input {
-        accent-color: $color-primary;
-        width: 1.1rem;
-        height: 1.1rem;
-    }
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-sm;
 }
+
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: 0.5rem 0.9rem;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-white;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  user-select: none;
+  transition: all $transition-fast;
+
+  input {
+    accent-color: $color-primary;
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+  }
+
+  &:hover {
+    border-color: rgba($color-coral-fire, 0.4);
+  }
+
+  &:has(input:checked) {
+    background: rgba($color-coral-fire, 0.1);
+    border-color: $color-primary;
+    color: $color-primary-dark;
+  }
+}
+
+// ── Dishes grid ──────────────────────────────────────────────────────────────
 
 .dishes-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: $spacing-xl;
+  gap: $spacing-lg;
 
   @media (min-width: $breakpoint-desktop) {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 }
 
@@ -222,27 +329,31 @@
 }
 
 .dish-card {
-  @include card;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0;
-  border-radius: $radius-lg;
   background: $color-bg-white;
-  transition: all $transition-base;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  transition: transform $transition-base, box-shadow $transition-base, border-color $transition-base;
 
   &:hover {
-      box-shadow: $shadow-lg;
-      transform: translateY(-4px);
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+    border-color: rgba($color-coral-fire, 0.3);
+
+    .dish-card-img img {
+      transform: scale(1.06);
+    }
   }
 }
 
 .dish-card-img {
-  width: 100%;
-  height: 200px;
+  position: relative;
+  height: 180px;
   overflow: hidden;
   background: $color-bg-subtle;
-  position: relative;
 
   img {
     width: 100%;
@@ -250,39 +361,49 @@
     object-fit: cover;
     transition: transform $transition-slow;
   }
+}
 
-  .dish-card:hover & img {
-      transform: scale(1.05);
-  }
+.dish-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba($color-text-muted, 0.5);
+  background:
+    linear-gradient(135deg, rgba($color-amber-gold, 0.08), rgba($color-coral-fire, 0.06));
 }
 
 .dish-card-body {
-  padding: $spacing-lg;
   display: flex;
   flex-direction: column;
-  gap: $spacing-md;
+  gap: $spacing-sm;
   flex: 1;
+  padding: $spacing-lg;
 
   h3 {
     font-family: $font-family-display;
-    font-size: $font-size-h4;
+    font-size: $font-size-lg;
     color: $color-text;
     margin: 0;
-    line-height: 1.2;
-  }
-
-  .dish-description {
-    color: $color-text-muted;
-    font-size: $font-size-sm;
-    margin: 0;
-    line-height: 1.6;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    height: 3.2em;
+    line-height: 1.3;
   }
 }
+
+.dish-description {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  line-height: $line-height-base;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ── Dietary tags ─────────────────────────────────────────────────────────────
 
 .dish-tags {
   display: flex;
@@ -291,38 +412,42 @@
 }
 
 .tag {
-    font-size: 0.65rem;
-    font-weight: $font-weight-bold;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.2em 0.6em;
-    border-radius: $radius-sm;
-    
-    &--green {
-        background: rgba($color-success, 0.1);
-        color: darken($color-success, 10%);
-    }
-    
-    &--blue {
-        background: rgba(52, 152, 219, 0.1);
-        color: #2980b9;
-    }
-    
-    &--red {
-        background: rgba($color-error, 0.1);
-        color: $color-error;
-    }
-    
-    &--orange {
-        background: rgba($color-amber-gold, 0.15);
-        color: darken($color-amber-gold, 15%);
-    }
+  font-family: $font-family-mono;
+  font-size: 0.65rem;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25em 0.65em;
+  border-radius: $radius-sm;
+
+  &--green {
+    background: rgba($color-success, 0.14);
+    color: color.adjust($color-success, $lightness: -18%);
+  }
+
+  &--blue {
+    background: rgba(52, 152, 219, 0.12);
+    color: #2471a3;
+  }
+
+  &--red {
+    background: rgba($color-error, 0.12);
+    color: $color-error;
+  }
+
+  &--orange {
+    background: rgba($color-amber-gold, 0.18);
+    color: color.adjust($color-amber-gold, $lightness: -22%);
+  }
 }
+
+// ── Footer / price / add to cart ─────────────────────────────────────────────
 
 .dish-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: $spacing-sm;
   margin-top: auto;
   padding-top: $spacing-md;
   border-top: 1px solid $color-border;
@@ -330,9 +455,9 @@
 
 .dish-price {
   font-family: $font-family-display;
-  font-size: $font-size-h3;
+  font-size: $font-size-h4;
   font-weight: $font-weight-bold;
-  color: $color-primary;
+  color: $color-text;
 }
 
 .add-to-cart-controls {
@@ -342,76 +467,104 @@
 }
 
 .quantity-selector {
-    display: flex;
-    align-items: center;
-    background: $color-bg-subtle;
-    border-radius: $radius-md;
-    padding: 2px;
+  display: flex;
+  align-items: center;
+  background: $color-bg-subtle;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 2px;
 }
 
 .qty-btn {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: transparent;
-    color: $color-text;
-    font-weight: $font-weight-bold;
-    cursor: pointer;
-    border-radius: $radius-sm;
-    transition: background $transition-fast;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: $color-text;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-base;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  transition: background $transition-fast, color $transition-fast;
 
-    &:hover {
-        background: rgba($color-deep-charcoal, 0.05);
-    }
+  &:hover {
+    background: rgba($color-coral-fire, 0.12);
+    color: $color-primary-dark;
+  }
 }
 
 .qty-value {
-    min-width: 30px;
-    text-align: center;
-    font-family: $font-family-mono;
-    font-weight: $font-weight-semibold;
-    font-size: $font-size-sm;
+  min-width: 28px;
+  text-align: center;
+  font-family: $font-family-mono;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
 }
 
+// =============================================================================
+// Pagination
+// =============================================================================
+
 .pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: $spacing-lg;
-    margin-top: $spacing-2xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
 }
 
 .page-info {
-    font-family: $font-family-mono;
-    font-weight: $font-weight-semibold;
-    color: $color-text;
+  font-family: $font-family-mono;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
 }
+
+// =============================================================================
+// Toast
+// =============================================================================
 
 .toast-message {
-    position: fixed;
-    bottom: $spacing-xl;
-    right: $spacing-xl;
-    padding: $spacing-md $spacing-lg;
-    border-radius: $radius-lg;
-    color: white;
-    box-shadow: $shadow-lg;
-    z-index: 1000;
-    animation: slideIn 0.3s ease-out;
-    display: flex;
-    align-items: center;
-    gap: $spacing-sm;
-    font-weight: $font-weight-medium;
+  position: fixed;
+  bottom: $spacing-xl;
+  right: $spacing-xl;
+  z-index: $z-error-ui;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-lg;
+  color: $color-text-inverse;
+  font-weight: $font-weight-medium;
+  box-shadow: $shadow-lg;
+  animation: toast-slide-in $transition-base;
 
-    &.toast--success { background: $color-success; }
-    &.toast--error { background: $color-error; }
+  &.toast--success { background: color.adjust($color-success, $lightness: -8%); }
+  &.toast--error   { background: $color-error; }
 }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dish-card,
+  .dish-card-img img,
+  .toast-message {
+    transition: none;
+    animation: none;
+  }
 }
 
 // ── Plat du jour : hero + sections promotionnelles mises en évidence ──

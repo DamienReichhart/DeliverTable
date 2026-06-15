@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../abstracts/variables" as *;
 
 // ---------------------------------------------------------------------------
@@ -42,7 +43,7 @@
 
   &--warning {
     background: rgba($color-amber-gold, 0.1);
-    color: darken($color-amber-gold, 12%);
+    color: color.adjust($color-amber-gold, $lightness: -12%);
   }
 }
 

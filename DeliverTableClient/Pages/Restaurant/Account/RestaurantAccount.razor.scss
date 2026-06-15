@@ -1,3 +1,4 @@
+@use "sass:color";
 @use '../../../Styles/abstracts/variables' as *;
 @use '../../../Styles/abstracts/mixins' as *;
 
@@ -30,6 +31,50 @@
   @include heading-display;
   font-size: $font-size-h1;
   color: $color-deep-charcoal;
+}
+
+.special-dish-card {
+  @include card;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+}
+
+.special-dish-card__header h2 {
+  @include heading-display;
+  font-size: $font-size-h3;
+  margin: 0 0 $spacing-xs;
+}
+
+.special-dish-card__header p {
+  margin: 0;
+  color: $color-text-muted;
+}
+
+.special-dish-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  max-width: 520px;
+
+  label {
+    @include label-mono;
+    color: $color-text-muted;
+  }
+}
+
+.special-dish-card__current {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  align-items: center;
+  color: $color-text;
+}
+
+.special-dish-card__actions {
+  display: flex;
+  justify-content: flex-start;
 }
 
 // Withdraw card
@@ -106,7 +151,7 @@
 }
 
 .info-banner {
-  background: lighten($color-garden-sage, 40%);
+  background: color.adjust($color-garden-sage, $lightness: 40%);
   border: 1px solid $color-garden-sage;
   color: $color-garden-sage;
   padding: $spacing-sm $spacing-md;

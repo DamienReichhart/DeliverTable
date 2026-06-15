@@ -14,7 +14,7 @@ public sealed class TestDatabase : IDisposable
 
     public TestDatabase()
     {
-        var options = new DbContextOptionsBuilder<DeliverTableContext>()
+        DbContextOptions<DeliverTableContext> options = new DbContextOptionsBuilder<DeliverTableContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             // The in-memory provider does not support real transactions; suppress the warning
             // so that service code using BeginTransactionAsync works in unit tests.

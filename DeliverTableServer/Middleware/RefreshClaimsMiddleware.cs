@@ -3,6 +3,7 @@ using DeliverTableServer.Constants;
 using DeliverTableInfrastructure.Models;
 using DeliverTableSharedLibrary.Enums;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Principal;
 
 namespace DeliverTableServer.Middleware;
 
@@ -14,21 +15,21 @@ public sealed class RefreshClaimsMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, UserManager<User> userManager)
     {
-        var identity = context.User.Identity;
+        IIdentity? identity = context.User.Identity;
         if (identity is not { IsAuthenticated: true })
         {
             await next(context);
             return;
         }
 
-        var userIdClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId))
+        string? userIdClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out int userId))
         {
             await next(context);
             return;
         }
 
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        User? user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
@@ -42,13 +43,13 @@ public sealed class RefreshClaimsMiddleware(RequestDelegate next)
             return;
         }
 
-        var roles = await userManager.GetRolesAsync(user);
-        var currentRole = roles.FirstOrDefault();
+        IList<string> roles = await userManager.GetRolesAsync(user);
+        string? currentRole = roles.FirstOrDefault();
 
-        var claimsIdentity = (ClaimsIdentity)identity;
+        ClaimsIdentity claimsIdentity = (ClaimsIdentity)identity;
 
-        var existingRoleClaims = claimsIdentity.FindAll(ClaimTypes.Role).ToList();
-        foreach (var claim in existingRoleClaims)
+        List<Claim> existingRoleClaims = claimsIdentity.FindAll(ClaimTypes.Role).ToList();
+        foreach (Claim claim in existingRoleClaims)
         {
             claimsIdentity.RemoveClaim(claim);
         }

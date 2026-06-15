@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../abstracts/variables" as *;
 
 // ---------------------------------------------------------------------------
@@ -69,7 +70,7 @@
 
     &:hover {
       background: rgba($color-coral-fire, 0.06);
-      color: darken($color-coral-fire, 5%);
+      color: color.adjust($color-coral-fire, $lightness: -5%);
     }
   }
 

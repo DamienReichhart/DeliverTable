@@ -32,7 +32,7 @@ public class ApiRoutesTests
     [TestCase(nameof(ApiRoutes.Auth.Me), "api/v1/auth/me")]
     public void AuthFullPath_ShouldEqualExpectedRoute(string name, string expectedRoute)
     {
-        var actual = name switch
+        string actual = name switch
         {
             nameof(ApiRoutes.Auth.Login) => ApiRoutes.Auth.Login,
             nameof(ApiRoutes.Auth.Register) => ApiRoutes.Auth.Register,
@@ -92,9 +92,9 @@ public class ApiRoutesTests
     [Test]
     public void AllRoutes_ShouldBeRelative_NoLeadingSlash()
     {
-        var allRoutes = CollectAllRoutes();
+        List<string> allRoutes = CollectAllRoutes();
 
-        foreach (var route in allRoutes)
+        foreach (string route in allRoutes)
             Assert.That(route, Does.Not.StartWith("/"),
                 $"Route '{route}' must be relative (no leading slash)");
     }
@@ -102,9 +102,9 @@ public class ApiRoutesTests
     [Test]
     public void AllRoutes_ShouldBeLowerCase()
     {
-        var allRoutes = CollectAllRoutes();
+        List<string> allRoutes = CollectAllRoutes();
 
-        foreach (var route in allRoutes)
+        foreach (string route in allRoutes)
             Assert.That(route, Is.EqualTo(route.ToLowerInvariant()),
                 $"Route '{route}' contains uppercase characters");
     }

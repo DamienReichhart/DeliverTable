@@ -5,6 +5,7 @@ using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -28,8 +29,8 @@ public class AdminDishServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllDishes()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var dishes = new List<Dish>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<Dish> dishes = new List<Dish>
         {
             new() { Id = 1, Name = "Plat A", RestaurantId = 1, Restaurant = restaurant },
             new() { Id = 2, Name = "Plat B", RestaurantId = 1, Restaurant = restaurant }
@@ -37,7 +38,7 @@ public class AdminDishServiceTests
 
         _dishRepository.GetAllUnscopedAsync(Arg.Any<CancellationToken>()).Returns(dishes);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminDishResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -50,12 +51,12 @@ public class AdminDishServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsDish()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var dish = new Dish { Id = 1, Name = "Plat A", RestaurantId = 1, Restaurant = restaurant };
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Dish dish = new Dish { Id = 1, Name = "Plat A", RestaurantId = 1, Restaurant = restaurant };
 
         _dishRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(dish);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminDishResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -67,7 +68,7 @@ public class AdminDishServiceTests
     {
         _dishRepository.GetByIdWithRestaurantAsync(99, Arg.Any<CancellationToken>()).Returns((Dish?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminDishResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -81,18 +82,18 @@ public class AdminDishServiceTests
     [Test]
     public async Task CreateAsync_WhenRestaurantExists_CreatesDish()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _dishRepository.CreateAsync(Arg.Any<Dish>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var d = callInfo.Arg<Dish>();
+                Dish d = callInfo.Arg<Dish>();
                 d.Id = 10;
                 d.Restaurant = restaurant;
                 return d;
             });
 
-        var request = new AdminCreateDishRequest
+        AdminCreateDishRequest request = new AdminCreateDishRequest
         {
             Name = "Nouveau Plat",
             Description = "Description",
@@ -102,7 +103,7 @@ public class AdminDishServiceTests
             IsActive = true
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminDishResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Nouveau Plat"));
@@ -115,14 +116,14 @@ public class AdminDishServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminCreateDishRequest
+        AdminCreateDishRequest request = new AdminCreateDishRequest
         {
             Name = "Plat",
             BasePrice = 10m,
             RestaurantId = 99
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminDishResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -136,14 +137,14 @@ public class AdminDishServiceTests
     [Test]
     public async Task UpdateAsync_WhenExists_UpdatesAndReturns()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var dish = new Dish { Id = 1, Name = "Ancien", RestaurantId = 1, Restaurant = restaurant };
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Dish dish = new Dish { Id = 1, Name = "Ancien", RestaurantId = 1, Restaurant = restaurant };
 
         _dishRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(dish);
         _dishRepository.UpdateAsync(Arg.Any<Dish>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Dish>());
 
-        var request = new AdminUpdateDishRequest
+        AdminUpdateDishRequest request = new AdminUpdateDishRequest
         {
             Name = "Nouveau Nom",
             BasePrice = 15.00m,
@@ -151,7 +152,7 @@ public class AdminDishServiceTests
             IsActive = false
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminDishResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Nouveau Nom"));
@@ -165,13 +166,13 @@ public class AdminDishServiceTests
     {
         _dishRepository.GetByIdWithRestaurantAsync(99, Arg.Any<CancellationToken>()).Returns((Dish?)null);
 
-        var request = new AdminUpdateDishRequest
+        AdminUpdateDishRequest request = new AdminUpdateDishRequest
         {
             Name = "Name",
             BasePrice = 10m
         };
 
-        var result = await _sut.UpdateAsync(99, request);
+        ServiceResult<AdminDishResponse> result = await _sut.UpdateAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -187,7 +188,7 @@ public class AdminDishServiceTests
     {
         _dishRepository.DeleteAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1);
+        ServiceResult result = await _sut.DeleteAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -197,7 +198,7 @@ public class AdminDishServiceTests
     {
         _dishRepository.DeleteAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteAsync(99);
+        ServiceResult result = await _sut.DeleteAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

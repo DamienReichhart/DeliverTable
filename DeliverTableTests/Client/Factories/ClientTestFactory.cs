@@ -20,10 +20,10 @@ public static class ClientTestFactory
 
     private static string GenerateToken()
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your-test-secret-key-min-16-chars"));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your-test-secret-key-min-16-chars"));
+        SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var token = new JwtSecurityToken(
+        JwtSecurityToken token = new JwtSecurityToken(
             issuer: "test",
             audience: "test",
             claims: new[] { new Claim(ClaimTypes.Name, ValidUserName) },

@@ -14,9 +14,9 @@ using Microsoft.EntityFrameworkCore;
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 DotNetEnv.Env.Load();
-var env = WorkerEnvironment.Load();
+WorkerEnvironment env = WorkerEnvironment.Load();
 
-var builder = Host.CreateApplicationBuilder(args);
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSingleton(env);
 
@@ -26,7 +26,7 @@ builder.Services.AddDbContext<DeliverTableContext>(options =>
 );
 
 // RabbitMQ
-var rabbitMqConfig = new RabbitMqConfig
+RabbitMqConfig rabbitMqConfig = new RabbitMqConfig
 {
     Host = env.RabbitMqHost,
     Port = env.RabbitMqPort,
@@ -39,11 +39,11 @@ builder.Services.AddSingleton<IMessagePublisher>(sp =>
 );
 
 // Object storage
-var osConfig = env.ObjectStorage;
+ObjectStorageConfig osConfig = env.ObjectStorage;
 builder.Services.AddSingleton(osConfig);
 builder.Services.AddSingleton<IAmazonS3>(_ =>
 {
-    var s3Config = new AmazonS3Config
+    AmazonS3Config s3Config = new AmazonS3Config
     {
         ServiceURL = osConfig.ServiceUrl,
         ForcePathStyle = osConfig.ForcePathStyle,
@@ -56,16 +56,19 @@ builder.Services.AddScoped<IObjectStorageService, ObjectStorageService>();
 // Repositories
 builder.Services.AddScoped<IEmailJobRepository, EmailJobRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<ICommissionStatementRepository, CommissionStatementRepository>();
 
 // Worker services
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, RazorEmailTemplateRenderer>();
 builder.Services.AddSingleton<IInvoicePdfRenderer, InvoicePdfRenderer>();
+builder.Services.AddSingleton<ICommissionStatementPdfRenderer, CommissionStatementPdfRenderer>();
 
 // Background services
 builder.Services.AddHostedService<EmailJobConsumer>();
 builder.Services.AddHostedService<InvoiceJobConsumer>();
+builder.Services.AddHostedService<CommissionStatementJobConsumer>();
 builder.Services.AddHostedService<JobSweepService>();
 
-var host = builder.Build();
+IHost host = builder.Build();
 host.Run();
