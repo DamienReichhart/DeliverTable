@@ -1,0 +1,371 @@
+@page "/restaurant/{RestaurantId:int}/evenements"
+@inject IRestaurantEventService EventService
+@inject IRestaurantService RestaurantService
+@inject IDishService DishService
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = nameof(UserRole.RestaurantOwner))]
+@using DeliverTableSharedLibrary.Dtos.Dish
+@using DeliverTableSharedLibrary.Dtos.Event
+
+<PageTitle>Évènements — @(_restaurantName ?? "Restaurant") — DeliverTable</PageTitle>
+
+<div class="restaurant-events-page">
+    <div class="page-header">
+        <div>
+            <h1>Évènements</h1>
+            @if (_restaurantName is not null)
+            {
+                <p class="page-subtitle">@_restaurantName</p>
+            }
+            <p class="page-intro">Mettez en avant un menu spécial daté (Noël, Saint-Valentin, Pâques…) visible par vos clients pendant la période choisie.</p>
+        </div>
+        <div class="page-header-actions">
+            <button type="button" class="app-btn app-btn--primary" @onclick="ShowCreateForm">
+                Créer un évènement
+            </button>
+            <button type="button" class="app-btn app-btn--secondary" @onclick="GoBack">
+                Retour
+            </button>
+        </div>
+    </div>
+
+    @if (_showForm)
+    {
+        <div class="event-form-container">
+            <h2>@(_editingId.HasValue ? "Modifier l'évènement" : "Nouvel évènement")</h2>
+            <EditForm Model="_formModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-grid">
+                    <div class="form-group form-group--full">
+                        <label for="name">Titre de l'évènement</label>
+                        <InputText id="name" @bind-Value="_formModel.Name" class="form-control" />
+                        <small class="form-hint">Exemple : Menu spécial Noël. Ce titre s'affiche en tête sur la page du restaurant.</small>
+                    </div>
+
+                    <div class="form-group form-group--full">
+                        <label for="description">Description</label>
+                        <InputText id="description" @bind-Value="_formModel.Description" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="startsAt">Date de début</label>
+                        <InputDate id="startsAt" @bind-Value="_formModel.StartsAt" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endsAt">Date de fin</label>
+                        <InputDate id="endsAt" @bind-Value="_formModel.EndsAt" class="form-control" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <InputCheckbox @bind-Value="_formModel.IsActive" />
+                            <span>Actif (visible par les clients pendant la période)</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group form-group--full">
+                        <label>Plats spéciaux</label>
+                        @if (_dishes is null)
+                        {
+                            <p class="form-hint">Chargement des plats...</p>
+                        }
+                        else if (_dishes.Count == 0)
+                        {
+                            <p class="form-hint">Aucun plat dans la carte. Ajoutez d'abord des plats au restaurant.</p>
+                        }
+                        else
+                        {
+                            <div class="dish-picker">
+                                @foreach (var dish in _dishes)
+                                {
+                                    var selected = _selectedDishIds.Contains(dish.Id);
+                                    <div class="dish-picker-item @(selected ? "dish-picker-item--selected" : "")">
+                                        <label class="dish-picker-main">
+                                            <input type="checkbox"
+                                                   checked="@selected"
+                                                   @onchange="() => ToggleDish(dish.Id)" />
+                                            <span class="dish-picker-name">@dish.Name</span>
+                                            <span class="dish-picker-price">@FormatPrice(dish.BasePrice)</span>
+                                        </label>
+                                        @if (selected)
+                                        {
+                                            <div class="dish-picker-override">
+                                                <label>Prix spécial (optionnel)</label>
+                                                <InputNumber Value="_overridePrices.GetValueOrDefault(dish.Id)"
+                                                             ValueChanged="(decimal? v) => SetOverride(dish.Id, v)"
+                                                             ValueExpression="() => _overridePrices.GetValueOrDefault(dish.Id)"
+                                                             class="form-control form-control--sm" />
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            @if (_selectedDishIds.Count > 0)
+                            {
+                                <p class="form-hint">@_selectedDishIds.Count plat(s) sélectionné(s)</p>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="app-btn app-btn--primary" disabled="@_submitting">
+                        @(_editingId.HasValue ? "Modifier" : "Créer")
+                    </button>
+                    <button type="button" class="app-btn app-btn--secondary" @onclick="CancelForm">
+                        Annuler
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    }
+
+    @if (_loading)
+    {
+        <p>Chargement des évènements...</p>
+    }
+    else if (_error is not null)
+    {
+        <div class="error-message">
+            <p>@_error</p>
+        </div>
+    }
+    else if (_events is null || _events.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Aucun évènement pour le moment.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Période</th>
+                        <th>Plats</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var evt in _events)
+                    {
+                        <tr>
+                            <td><strong>@evt.Name</strong></td>
+                            <td>@evt.StartsAt.ToString("dd/MM/yyyy") — @evt.EndsAt.ToString("dd/MM/yyyy")</td>
+                            <td>@evt.MenuItems.Count</td>
+                            <td>
+                                <span class="status-badge status--@GetStatusClass(evt)">
+                                    @GetStatusLabel(evt)
+                                </span>
+                            </td>
+                            <td class="actions-cell">
+                                <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="() => EditEvent(evt)">
+                                    Modifier
+                                </button>
+                                <button type="button" class="app-btn app-btn--danger app-btn--sm" @onclick="() => DeleteEvent(evt.Id)">
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int RestaurantId { get; set; }
+
+    private List<RestaurantEventResponse>? _events;
+    private string? _restaurantName;
+    private bool _loading = true;
+    private string? _error;
+    private bool _showForm;
+    private bool _submitting;
+    private int? _editingId;
+    private CreateRestaurantEventRequest _formModel = new();
+    private List<DishDto>? _dishes;
+    private HashSet<int> _selectedDishIds = [];
+    private Dictionary<int, decimal?> _overridePrices = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (restaurant, _) = await RestaurantService.GetRestaurantById(RestaurantId);
+        _restaurantName = restaurant?.Name;
+
+        await LoadEvents();
+        await LoadDishes();
+    }
+
+    private async Task LoadDishes()
+    {
+        var (result, _) = await DishService.GetDishesByRestaurantId(RestaurantId, new DishQuery());
+        _dishes = result?.Items.ToList() ?? [];
+    }
+
+    private async Task LoadEvents()
+    {
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        var (result, error) = await EventService.GetByRestaurantAsync(RestaurantId);
+        if (error is not null)
+            _error = error.Error;
+        else
+            _events = result;
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void ShowCreateForm()
+    {
+        _editingId = null;
+        _formModel = new CreateRestaurantEventRequest
+        {
+            StartsAt = DateTime.Today,
+            EndsAt = DateTime.Today.AddDays(7),
+            IsActive = true
+        };
+        _selectedDishIds = [];
+        _overridePrices = [];
+        _showForm = true;
+    }
+
+    private void EditEvent(RestaurantEventResponse evt)
+    {
+        _editingId = evt.Id;
+        _formModel = new CreateRestaurantEventRequest
+        {
+            Name = evt.Name,
+            Description = evt.Description,
+            StartsAt = evt.StartsAt,
+            EndsAt = evt.EndsAt,
+            MaxGuests = evt.MaxGuests,
+            IsActive = evt.IsActive
+        };
+        _selectedDishIds = [..evt.MenuItems.Select(mi => mi.DishId)];
+        _overridePrices = evt.MenuItems
+            .Where(mi => mi.OverridePrice.HasValue)
+            .ToDictionary(mi => mi.DishId, mi => mi.OverridePrice);
+        _showForm = true;
+    }
+
+    private void ToggleDish(int dishId)
+    {
+        if (!_selectedDishIds.Remove(dishId))
+            _selectedDishIds.Add(dishId);
+        else
+            _overridePrices.Remove(dishId);
+    }
+
+    private void SetOverride(int dishId, decimal? value)
+    {
+        if (value.HasValue)
+            _overridePrices[dishId] = value;
+        else
+            _overridePrices.Remove(dishId);
+    }
+
+    private void CancelForm()
+    {
+        _showForm = false;
+        _editingId = null;
+        _error = null;
+    }
+
+    private List<EventMenuItemRequest> BuildMenuItems() =>
+        _selectedDishIds
+            .Select(id => new EventMenuItemRequest { DishId = id, OverridePrice = _overridePrices.GetValueOrDefault(id) })
+            .ToList();
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _error = null;
+
+        if (_editingId.HasValue)
+        {
+            var updateRequest = new UpdateRestaurantEventRequest
+            {
+                Name = _formModel.Name,
+                Description = _formModel.Description,
+                StartsAt = _formModel.StartsAt,
+                EndsAt = _formModel.EndsAt,
+                MaxGuests = _formModel.MaxGuests,
+                IsActive = _formModel.IsActive,
+                MenuItems = BuildMenuItems()
+            };
+
+            var (_, error) = await EventService.UpdateAsync(_editingId.Value, updateRequest);
+            if (error is not null)
+            {
+                _error = error.Error;
+                _submitting = false;
+                return;
+            }
+        }
+        else
+        {
+            _formModel.MenuItems = BuildMenuItems();
+            var (_, error) = await EventService.CreateAsync(RestaurantId, _formModel);
+            if (error is not null)
+            {
+                _error = error.Error;
+                _submitting = false;
+                return;
+            }
+        }
+
+        _showForm = false;
+        _editingId = null;
+        _submitting = false;
+        await LoadEvents();
+    }
+
+    private async Task DeleteEvent(int eventId)
+    {
+        var (success, error) = await EventService.DeleteAsync(eventId);
+        if (!success)
+        {
+            _error = error?.Error ?? "Erreur lors de la suppression.";
+            StateHasChanged();
+        }
+        else
+        {
+            await LoadEvents();
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/mes-restaurants");
+
+    private static string FormatPrice(decimal value) =>
+        value.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"));
+
+    private static string GetStatusLabel(RestaurantEventResponse evt)
+    {
+        var now = DateTime.UtcNow;
+        if (now < evt.StartsAt) return "À venir";
+        if (now > evt.EndsAt) return "Terminé";
+        if (evt.IsActive) return "En cours";
+        return "Inactif";
+    }
+
+    private static string GetStatusClass(RestaurantEventResponse evt)
+    {
+        var now = DateTime.UtcNow;
+        if (now < evt.StartsAt) return "upcoming";
+        if (now > evt.EndsAt) return "expired";
+        if (evt.IsActive) return "active";
+        return "inactive";
+    }
+}

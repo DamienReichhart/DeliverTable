@@ -1,0 +1,234 @@
+@use '../../../Styles/abstracts/variables' as *;
+@use '../../../Styles/abstracts/mixins' as *;
+
+.restaurant-events-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-lg $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.page-intro {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+  margin: $spacing-xs 0 0;
+  max-width: 640px;
+}
+
+.event-form-container {
+  background: $color-bg-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+
+  h2 {
+    margin-bottom: $spacing-md;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    @include label-mono;
+    color: $color-text-muted;
+  }
+}
+
+.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+
+  span {
+    color: $color-text;
+    font-size: $font-size-sm;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+}
+
+.form-hint {
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+  margin: $spacing-xs 0 0;
+}
+
+// Table
+.table-container {
+  overflow-x: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-white;
+  box-shadow: $shadow-card;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+
+  thead {
+    background: rgba($color-deep-charcoal, 0.03);
+
+    th {
+      @include label-mono;
+      color: $color-text-muted;
+      padding: $spacing-sm $spacing-md;
+      text-align: left;
+      border-bottom: 1px solid $color-border;
+      white-space: nowrap;
+
+      &:last-child { text-align: right; }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid $color-border;
+    transition: background-color $transition-fast;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: $color-bg-subtle; }
+  }
+
+  tbody td {
+    padding: $spacing-sm $spacing-md;
+    vertical-align: middle;
+    white-space: nowrap;
+
+    &:last-child { text-align: right; }
+  }
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-xs;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: 600;
+}
+
+.status--active {
+  background: rgba(#22c55e, 0.1);
+  color: #16a34a;
+}
+
+.status--expired {
+  background: rgba(#ef4444, 0.1);
+  color: #dc2626;
+}
+
+.status--upcoming {
+  background: rgba(#3b82f6, 0.1);
+  color: #2563eb;
+}
+
+.status--inactive {
+  background: rgba(#6b7280, 0.1);
+  color: #4b5563;
+}
+
+// Dish picker
+.dish-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: $spacing-sm;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: $spacing-xs;
+}
+
+.dish-picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $color-coral-fire;
+    background: rgba($color-coral-fire, 0.03);
+  }
+
+  &--selected {
+    border-color: $color-coral-fire;
+    background: rgba($color-coral-fire, 0.06);
+  }
+}
+
+.dish-picker-main {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    accent-color: $color-coral-fire;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+}
+
+.dish-picker-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: $font-size-sm;
+}
+
+.dish-picker-price {
+  @include label-mono;
+  color: $color-text-muted;
+  font-size: $font-size-xs;
+  flex-shrink: 0;
+}
+
+.dish-picker-override {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  label {
+    @include label-mono;
+    color: $color-text-muted;
+    font-size: $font-size-xs;
+  }
+}
+
+.form-control--sm {
+  max-width: 140px;
+  padding: $spacing-xs $spacing-sm;
+}

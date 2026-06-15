@@ -99,42 +99,6 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
             .Where(o => o.Status == status && o.CreatedAt < threshold)
             .ToListAsync(ct);
 
-    private IQueryable<Order> ApplySorting(IQueryable<Order> query, OrderQuery request)
-    {
-        string property = request.SortBy switch
-        {
-            "CreatedAt" => nameof(Order.CreatedAt),
-            "Status" => nameof(Order.Status),
-            "Id" => nameof(Order.Id),
-            "OrderType" => nameof(Order.OrderType),
-            "PaymentStatus" => nameof(Order.PaymentStatus),
-            "TotalAmount" => nameof(Order.TotalAmount),
-            "OriginalAmount" => nameof(Order.OriginalAmount),
-            "DiscountAmount" => nameof(Order.DiscountAmount),
-            "LoyaltyPointsUsed" => nameof(Order.LoyaltyPointsUsed),
-            "LoyaltyPointsEarned" => nameof(Order.LoyaltyPointsEarned),
-            "GuestCount" => nameof(Order.GuestCount),
-            "DeliveryAddress" => nameof(Order.DeliveryAddress),
-            "Notes" => nameof(Order.Notes),
-            "ScheduledAt" => nameof(Order.ScheduledAt),
-            "RestaurantTableId" => nameof(Order.RestaurantTableId),
-            "IsEventBooking" => nameof(Order.IsEventBooking),
-            "EventId" => nameof(Order.EventId),
-            _ => nameof(Order.CreatedAt)
-        };
-
-        if (request.SortDesc is true)
-        {
-            query = query.OrderByDescending(o => o.CreatedAt);
-        }
-        else
-        {
-            query = query.OrderBy(o => o.CreatedAt);
-        }
-
-        return query;
-    }
-
     public async Task<int> CountScheduledDineInOverlappingAsync(
         int restaurantId,
         DateTime startsAt,
@@ -169,5 +133,70 @@ public class OrderRepository(DeliverTableContext dbContext) : IOrderRepository
                 && o.Status != OrderStatus.Cancelled
                 && o.Status != OrderStatus.Refused)
             .SumAsync(o => (o.GuestCount + 1) / 2, ct);
+    }
+
+    private IQueryable<Order> ApplySorting(IQueryable<Order> query, OrderQuery request)
+    {
+        string property = request.SortBy switch
+        {
+            "CreatedAt" => nameof(Order.CreatedAt),
+            "Status" => nameof(Order.Status),
+            "Id" => nameof(Order.Id),
+            "OrderType" => nameof(Order.OrderType),
+            "PaymentStatus" => nameof(Order.PaymentStatus),
+            "TotalAmount" => nameof(Order.TotalAmount),
+            "OriginalAmount" => nameof(Order.OriginalAmount),
+            "DiscountAmount" => nameof(Order.DiscountAmount),
+            "LoyaltyPointsUsed" => nameof(Order.LoyaltyPointsUsed),
+            "LoyaltyPointsEarned" => nameof(Order.LoyaltyPointsEarned),
+            "GuestCount" => nameof(Order.GuestCount),
+            "DeliveryAddress" => nameof(Order.DeliveryAddress),
+            "Notes" => nameof(Order.Notes),
+            "ScheduledAt" => nameof(Order.ScheduledAt),
+            "RestaurantTableId" => nameof(Order.RestaurantTableId),
+            "IsEventBooking" => nameof(Order.IsEventBooking),
+            "EventId" => nameof(Order.EventId),
+            _ => nameof(Order.CreatedAt)
+        };
+
+        query = (property, request.SortDesc) switch
+        {
+            (nameof(Order.Status), true) => query.OrderByDescending(o => o.Status),
+            (nameof(Order.Status), false) => query.OrderBy(o => o.Status),
+            (nameof(Order.Id), true) => query.OrderByDescending(o => o.Id),
+            (nameof(Order.Id), false) => query.OrderBy(o => o.Id),
+            (nameof(Order.OrderType), true) => query.OrderByDescending(o => o.OrderType),
+            (nameof(Order.OrderType), false) => query.OrderBy(o => o.OrderType),
+            (nameof(Order.PaymentStatus), true) => query.OrderByDescending(o => o.PaymentStatus),
+            (nameof(Order.PaymentStatus), false) => query.OrderBy(o => o.PaymentStatus),
+            (nameof(Order.TotalAmount), true) => query.OrderByDescending(o => o.TotalAmount),
+            (nameof(Order.TotalAmount), false) => query.OrderBy(o => o.TotalAmount),
+            (nameof(Order.OriginalAmount), true) => query.OrderByDescending(o => o.OriginalAmount),
+            (nameof(Order.OriginalAmount), false) => query.OrderBy(o => o.OriginalAmount),
+            (nameof(Order.DiscountAmount), true) => query.OrderByDescending(o => o.DiscountAmount),
+            (nameof(Order.DiscountAmount), false) => query.OrderBy(o => o.DiscountAmount),
+            (nameof(Order.LoyaltyPointsUsed), true) => query.OrderByDescending(o => o.LoyaltyPointsUsed),
+            (nameof(Order.LoyaltyPointsUsed), false) => query.OrderBy(o => o.LoyaltyPointsUsed),
+            (nameof(Order.LoyaltyPointsEarned), true) => query.OrderByDescending(o => o.LoyaltyPointsEarned),
+            (nameof(Order.LoyaltyPointsEarned), false) => query.OrderBy(o => o.LoyaltyPointsEarned),
+            (nameof(Order.GuestCount), true) => query.OrderByDescending(o => o.GuestCount),
+            (nameof(Order.GuestCount), false) => query.OrderBy(o => o.GuestCount),
+            (nameof(Order.DeliveryAddress), true) => query.OrderByDescending(o => o.DeliveryAddress),
+            (nameof(Order.DeliveryAddress), false) => query.OrderBy(o => o.DeliveryAddress),
+            (nameof(Order.Notes), true) => query.OrderByDescending(o => o.Notes),
+            (nameof(Order.Notes), false) => query.OrderBy(o => o.Notes),
+            (nameof(Order.ScheduledAt), true) => query.OrderByDescending(o => o.ScheduledAt),
+            (nameof(Order.ScheduledAt), false) => query.OrderBy(o => o.ScheduledAt),
+            (nameof(Order.RestaurantTableId), true) => query.OrderByDescending(o => o.RestaurantTableId),
+            (nameof(Order.RestaurantTableId), false) => query.OrderBy(o => o.RestaurantTableId),
+            (nameof(Order.IsEventBooking), true) => query.OrderByDescending(o => o.IsEventBooking),
+            (nameof(Order.IsEventBooking), false) => query.OrderBy(o => o.IsEventBooking),
+            (nameof(Order.EventId), true) => query.OrderByDescending(o => o.EventId),
+            (nameof(Order.EventId), false) => query.OrderBy(o => o.EventId),
+            (_, true) => query.OrderByDescending(o => o.CreatedAt),
+            _ => query.OrderBy(o => o.CreatedAt)
+        };
+
+        return query;
     }
 }

@@ -9,6 +9,8 @@ namespace DeliverTableInfrastructure.Repositories.Interfaces;
 public interface IEventRepository
 {
     Task<List<Event>> GetAllAsync(CancellationToken ct = default);
+    Task<List<Event>> GetByRestaurantAsync(int restaurantId, CancellationToken ct = default);
+    Task<List<Event>> GetActiveByRestaurantAsync(int restaurantId, DateTime nowUtc, CancellationToken ct = default);
     Task<Event?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<Event> CreateAsync(Event evt, CancellationToken ct = default);
     Task<Event> UpdateAsync(Event evt, CancellationToken ct = default);

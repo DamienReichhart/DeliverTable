@@ -97,6 +97,7 @@ public static class ErrorMessages
     public const string EventNotFound = "Événement introuvable";
     public const string InvalidEventDates = "La date de fin doit être postérieure à la date de début de l'événement";
     public const string EventMenuItemNotFound = "Élément du menu événementiel introuvable";
+    public const string EventDishNotFromRestaurant = "Un des plats sélectionnés n'appartient pas à ce restaurant";
     public const string EventBookingPolicyNotFound = "Politique de réservation introuvable";
 
     // Notifications

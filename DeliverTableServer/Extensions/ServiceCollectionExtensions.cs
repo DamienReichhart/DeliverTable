@@ -74,6 +74,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IRestaurantAccountService, RestaurantAccountService>();
         services.AddScoped<IPromotionService, PromotionService>();
+        services.AddScoped<IRestaurantEventService, RestaurantEventService>();
         services.AddScoped<IDiscountCodeService, DiscountCodeService>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
         services.AddScoped<IEmailJobService, EmailJobService>();
@@ -82,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<ICommissionStatementService, CommissionStatementService>();
         services.AddScoped<IDisputeService, DisputeService>();
+        services.AddScoped<IRestaurantOrderConfigService, RestaurantOrderConfigService>();
         services.AddScoped<IReclamationService, ReclamationService>();
         services.AddScoped<IRestaurantOrderConfigService, RestaurantOrderConfigService>();
     }

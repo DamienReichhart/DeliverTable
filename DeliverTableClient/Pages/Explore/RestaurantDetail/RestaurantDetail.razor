@@ -1,5 +1,6 @@
 @page "/restaurant/{Id:int}"
 @inject IRestaurantService RestaurantService
+@inject IRestaurantEventService EventService
 @inject IDishService DishService
 @inject ICartService CartService
 @inject NavigationManager Nav
@@ -8,6 +9,7 @@
 @using DeliverTableSharedLibrary.Dtos.Restaurant
 @using DeliverTableSharedLibrary.Dtos.Dish
 @using DeliverTableSharedLibrary.Dtos.Cart
+@using DeliverTableSharedLibrary.Dtos.Event
 
 <PageTitle>@(_restaurant?.Name ?? "Restaurant") — DeliverTable</PageTitle>
 
@@ -95,23 +97,113 @@
                 </div>
             </div>
 
+            @foreach (var evt in _events)
+            {
+                <section class="special-dishes-section event-section">
+                    <div class="special-dishes-header">
+                        <span class="special-dishes-kicker">Évènement</span>
+                        <h2>@evt.Name</h2>
+                        <p class="event-period">
+                            <Blazicon Svg="Lucide.CalendarDays" class="app-icon" />
+                            <span>Du @evt.StartsAt.ToString("dd/MM/yyyy") au @evt.EndsAt.ToString("dd/MM/yyyy")</span>
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(evt.Description))
+                        {
+                            <p>@evt.Description</p>
+                        }
+                    </div>
+
+                    @if (evt.MenuItems.Count > 0)
+                    {
+                        <div class="dishes-grid dishes-grid--special">
+                            @foreach (var item in evt.MenuItems)
+                            {
+                                var dish = item.Dish;
+                                var price = item.OverridePrice ?? dish.BasePrice;
+                                <div class="dish-card dish-card--special">
+                                    <div class="dish-card-img">
+                                        @if (!string.IsNullOrEmpty(dish.Image))
+                                        {
+                                            <img src="@dish.Image" alt="@dish.Name" loading="lazy" />
+                                        }
+                                        else
+                                        {
+                                            <div class="dish-placeholder">
+                                                <Blazicon Svg="Lucide.CameraOff" />
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="dish-card-body">
+                                        <span class="special-dish-pill">@evt.Name</span>
+                                        <h3>@dish.Name</h3>
+                                        <p class="dish-description">@dish.Description</p>
+                                        <div class="dish-tags">
+                                            @if (dish.IsVegetarian)
+                                            {
+                                                <span class="tag tag--green">Végétarien</span>
+                                            }
+                                            @if (dish.IsVegan)
+                                            {
+                                                <span class="tag tag--green">Végan</span>
+                                            }
+                                            @if (dish.IsGlutenFree)
+                                            {
+                                                <span class="tag tag--blue">Sans gluten</span>
+                                            }
+                                            @if (dish.IsAllergenHazard)
+                                            {
+                                                <span class="tag tag--red">Allergènes</span>
+                                            }
+                                        </div>
+                                        <div class="dish-card-footer">
+                                            <span class="dish-price">
+                                                @price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
+                                                @if (item.OverridePrice.HasValue && item.OverridePrice.Value != dish.BasePrice)
+                                                {
+                                                    <span class="dish-price-original">@dish.BasePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                                                }
+                                            </span>
+
+                                            <AuthorizeView Roles="@nameof(UserRole.Customer)">
+                                                <div class="add-to-cart-controls">
+                                                    <div class="quantity-selector">
+                                                        <button type="button" class="qty-btn" @onclick="() => DecrementQuantity(dish.Id)">−</button>
+                                                        <span class="qty-value">@GetQuantity(dish.Id)</span>
+                                                        <button type="button" class="qty-btn" @onclick="() => IncrementQuantity(dish.Id)">+</button>
+                                                    </div>
+                                                    <button type="button" class="app-btn app-btn--primary app-btn--sm"
+                                                            @onclick="() => AddToCart(dish)" disabled="@_addingToCart">
+                                                        <Blazicon Svg="Lucide.Plus" />
+                                                    </button>
+                                                </div>
+                                            </AuthorizeView>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+
             @if (_dishesLoading)
             {
                 <div class="loading-container centered">
                     <p>Chargement des délices...</p>
                 </div>
             }
-            else if (_dishes is null || _dishes.Items.Count == 0)
+            else if (_dishes is null || VisibleDishes.Count == 0)
             {
                 <div class="empty-state centered">
                     <Blazicon Svg="Lucide.Utensils" class="app-icon" />
-                    <p>Aucun plat disponible pour le moment.</p>
+                    <p>@(_events.Count > 0 ? "Aucun autre plat disponible dans la carte pour le moment." : "Aucun plat disponible pour le moment.")</p>
                 </div>
             }
             else
             {
                 <div class="dishes-grid">
-                    @foreach (var dish in _dishes.Items)
+                    @foreach (var dish in VisibleDishes)
                     {
                         <div class="dish-card">
                             <div class="dish-card-img">
@@ -201,7 +293,8 @@
     private bool _filterVegetarian;
     private bool _filterVegan;
     private bool _filterGlutenFree;
-
+    private List<RestaurantEventResponse> _events = [];
+    private HashSet<int> _eventDishIds = [];
     private Dictionary<int, int> _quantities = new();
     private bool _mapInitialized;
 
@@ -219,6 +312,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadRestaurant();
+        await LoadEvents();
         await Task.WhenAll(LoadDishes(), LoadCart());
     }
 
@@ -236,6 +330,29 @@
         }
         _loading = false;
     }
+
+    private async Task LoadEvents()
+    {
+        try
+        {
+            var (events, _) = await EventService.GetActiveByRestaurantAsync(Id);
+            _events = events ?? [];
+
+            // Avoid showing event dishes twice (once in the event section, once in the full menu).
+            _eventDishIds = _events
+                .SelectMany(e => e.MenuItems.Select(mi => mi.DishId))
+                .ToHashSet();
+        }
+        catch
+        {
+            _events = [];
+            _eventDishIds = [];
+        }
+    }
+
+    private IReadOnlyList<DishDto> VisibleDishes => _dishes is null
+        ? []
+        : _dishes.Items.Where(dish => !_eventDishIds.Contains(dish.Id)).ToList();
 
     private async Task LoadDishes()
     {

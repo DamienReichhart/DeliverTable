@@ -230,6 +230,16 @@ public static class ApiRoutes
         public const string ById = Base + "/" + ByIdRoute;
     }
 
+    /// <summary>Event routes (RestaurantOwner for management, public for active events).</summary>
+    public static class Event
+    {
+        public const string RestaurantBaseRoute = VersionnedBase + "/restaurant/{id:int}/events";
+        public const string ActiveRoute = VersionnedBase + "/restaurant/{id:int}/events/active";
+        public const string Base = VersionnedBase + "/event";
+        public const string ByIdRoute = "{id:int}";
+        public const string ById = Base + "/" + ByIdRoute;
+    }
+
     /// <summary>Discount code routes (RestaurantOwner).</summary>
     public static class DiscountCode
     {
