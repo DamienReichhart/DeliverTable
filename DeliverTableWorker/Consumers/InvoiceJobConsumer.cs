@@ -54,7 +54,7 @@ public sealed class InvoiceJobConsumer(
 
     private async Task ConnectAndConsumeAsync(CancellationToken ct)
     {
-        var factory = new ConnectionFactory
+        ConnectionFactory factory = new ConnectionFactory
         {
             HostName = env.RabbitMqHost,
             Port = env.RabbitMqPort,
@@ -68,7 +68,7 @@ public sealed class InvoiceJobConsumer(
         await _channel.BasicQosAsync(0, 1, false, ct);
         await DeclareTopologyAsync(ct);
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
+        AsyncEventingBasicConsumer consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (_, ea) =>
         {
             try
@@ -107,7 +107,7 @@ public sealed class InvoiceJobConsumer(
 
     private async Task DeclareTopologyAsync(CancellationToken ct)
     {
-        var channel = _channel ?? throw new InvalidOperationException("Channel not initialized");
+        IChannel channel = _channel ?? throw new InvalidOperationException("Channel not initialized");
 
         await channel.ExchangeDeclareAsync(
             exchange: MainExchange,
@@ -129,8 +129,8 @@ public sealed class InvoiceJobConsumer(
 
     private async Task HandleMessageAsync(BasicDeliverEventArgs ea, CancellationToken ct)
     {
-        var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-        var message = JsonSerializer.Deserialize<InvoiceJobMessage>(json);
+        string json = Encoding.UTF8.GetString(ea.Body.ToArray());
+        InvoiceJobMessage? message = JsonSerializer.Deserialize<InvoiceJobMessage>(json);
 
         if (message is null)
         {
@@ -153,13 +153,13 @@ public sealed class InvoiceJobConsumer(
 
     public async Task HandleAsync(InvoiceJobMessage msg, CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var invoiceRepo = scope.ServiceProvider.GetRequiredService<IInvoiceRepository>();
-        var renderer = scope.ServiceProvider.GetRequiredService<IInvoicePdfRenderer>();
-        var storage = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
-        var emailJobRepo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
+        using IServiceScope scope = scopeFactory.CreateScope();
+        IInvoiceRepository invoiceRepo = scope.ServiceProvider.GetRequiredService<IInvoiceRepository>();
+        IInvoicePdfRenderer renderer = scope.ServiceProvider.GetRequiredService<IInvoicePdfRenderer>();
+        IObjectStorageService storage = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
+        IEmailJobRepository emailJobRepo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
 
-        var invoice = await invoiceRepo.GetByIdWithLinesAndRecipientsAsync(msg.InvoiceId, ct);
+        Invoice? invoice = await invoiceRepo.GetByIdWithLinesAndRecipientsAsync(msg.InvoiceId, ct);
         if (invoice is null)
         {
             logger.LogWarning("Invoice {Id} not found, skipping", msg.InvoiceId);
@@ -168,18 +168,18 @@ public sealed class InvoiceJobConsumer(
 
         try
         {
-            var pdfBytes = renderer.Render(invoice);
+            byte[] pdfBytes = renderer.Render(invoice);
             string fileName = $"{invoice.Number}.pdf";
             string folder = $"invoices/{invoice.IssuedAt:yyyy}/{invoice.IssuedAt:MM}";
-            var key = await storage.UploadAsync(pdfBytes, "application/pdf", folder, fileName, ct);
+            string key = await storage.UploadAsync(pdfBytes, "application/pdf", folder, fileName, ct);
 
             invoice.StoragePath = key;
             invoice.Status = InvoiceStatus.Generated;
             invoice.FailureReason = null;
             await invoiceRepo.UpdateAsync(invoice, ct);
 
-            var recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson);
-            var (emailAddress, recipientName, jobType) = ResolveEmailTarget(invoice, recipient);
+            InvoiceLegalSnapshotDto? recipient = JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson);
+            (string? emailAddress, string? recipientName, EmailJobType jobType) = ResolveEmailTarget(invoice, recipient);
 
             if (emailAddress is null)
             {
@@ -191,8 +191,8 @@ public sealed class InvoiceJobConsumer(
                 return;
             }
 
-            var templateData = BuildTemplateData(invoice, jobType);
-            var emailJob = new EmailJob
+            object templateData = BuildTemplateData(invoice, jobType);
+            EmailJob emailJob = new EmailJob
             {
                 Type = jobType,
                 Status = EmailJobStatus.Pending,
@@ -235,7 +235,7 @@ public sealed class InvoiceJobConsumer(
     private static (string? Email, string? Name, EmailJobType JobType) ResolveEmailTarget(
         Invoice invoice, InvoiceLegalSnapshotDto? recipient)
     {
-        var isCustomerKind =
+        bool isCustomerKind =
             invoice.Kind == InvoiceKind.OrderInvoiceToCustomer
             || invoice.Kind == InvoiceKind.CreditNoteToCustomer;
 
@@ -243,29 +243,29 @@ public sealed class InvoiceJobConsumer(
         {
             // Prefer the dedicated Email field; fall back to Address for pre-existing snapshots,
             // then to the navigation-property email as a last resort.
-            var snapshotEmail = !string.IsNullOrWhiteSpace(recipient?.Email)
+            string? snapshotEmail = !string.IsNullOrWhiteSpace(recipient?.Email)
                 ? recipient.Email
                 : recipient?.Address;
-            var email = !string.IsNullOrWhiteSpace(snapshotEmail)
+            string? email = !string.IsNullOrWhiteSpace(snapshotEmail)
                 ? snapshotEmail
                 : invoice.RecipientUser?.Email;
-            var name = recipient?.Name;
+            string? name = recipient?.Name;
             return (email, name, EmailJobType.InvoiceReadyCustomer);
         }
         else
         {
             // For restaurant invoices, use the owner's email from navigation property
-            var ownerEmail = invoice.RecipientRestaurant?.Owner?.Email;
-            var name = invoice.RecipientRestaurant?.Owner?.GetFullName() ?? recipient?.Name;
+            string? ownerEmail = invoice.RecipientRestaurant?.Owner?.Email;
+            string? name = invoice.RecipientRestaurant?.Owner?.GetFullName() ?? recipient?.Name;
             return (ownerEmail, name, EmailJobType.InvoiceReadyRestaurant);
         }
     }
 
     private static object BuildTemplateData(Invoice invoice, EmailJobType jobType)
     {
-        var totalTtc = invoice.TotalTtc.ToString("0.00");
-        var issuedAt = invoice.IssuedAt.ToString("dd/MM/yyyy");
-        var orderId = invoice.OrderId.ToString();
+        string totalTtc = invoice.TotalTtc.ToString("0.00");
+        string issuedAt = invoice.IssuedAt.ToString("dd/MM/yyyy");
+        string orderId = invoice.OrderId.ToString();
 
         if (jobType == EmailJobType.InvoiceReadyCustomer)
         {

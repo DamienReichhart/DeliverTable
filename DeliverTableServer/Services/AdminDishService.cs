@@ -16,14 +16,14 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
 
     public async Task<ServiceResult<List<AdminDishResponse>>> GetAllAsync(CancellationToken ct = default)
     {
-        var dishes = await _dishRepository.GetAllUnscopedAsync(ct);
-        var result = dishes.Select(d => d.ToAdminDto()).ToList();
+        List<Dish> dishes = await _dishRepository.GetAllUnscopedAsync(ct);
+        List<AdminDishResponse> result = dishes.Select(d => d.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminDishResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var dish = await _dishRepository.GetByIdWithRestaurantAsync(id, ct);
+        Dish? dish = await _dishRepository.GetByIdWithRestaurantAsync(id, ct);
         if (dish is null)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
@@ -33,11 +33,11 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
     public async Task<ServiceResult<AdminDishResponse>> CreateAsync(
         AdminCreateDishRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
-        var dish = new Dish
+        Dish dish = new Dish
         {
             Name = request.Name,
             Description = request.Description ?? "",
@@ -51,14 +51,14 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
             IsActive = request.IsActive
         };
 
-        var created = await _dishRepository.CreateAsync(dish, ct);
+        Dish created = await _dishRepository.CreateAsync(dish, ct);
         return created.ToAdminDto();
     }
 
     public async Task<ServiceResult<AdminDishResponse>> UpdateAsync(
         int id, AdminUpdateDishRequest request, CancellationToken ct = default)
     {
-        var dish = await _dishRepository.GetByIdWithRestaurantAsync(id, ct);
+        Dish? dish = await _dishRepository.GetByIdWithRestaurantAsync(id, ct);
         if (dish is null)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
@@ -73,13 +73,13 @@ public sealed class AdminDishService(IDishRepository dishRepository, IRestaurant
         dish.IsActive = request.IsActive;
         dish.UpdatedAt = DateTime.UtcNow;
 
-        var updated = await _dishRepository.UpdateAsync(dish, ct);
+        Dish updated = await _dishRepository.UpdateAsync(dish, ct);
         return updated.ToAdminDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _dishRepository.DeleteAsync(id, ct);
+        bool deleted = await _dishRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 

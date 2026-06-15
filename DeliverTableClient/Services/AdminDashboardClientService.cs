@@ -13,11 +13,11 @@ public sealed class AdminDashboardClientService(HttpClient httpClient) : IAdminD
     public async Task<(AdminDashboardStatsResponse? Stats, ErrorResponse? Error)> GetStatsAsync(
         CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.Dashboard, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Admin.Dashboard, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var stats = await response.Content.ReadFromJsonAsync<AdminDashboardStatsResponse>(cancellationToken: ct);
+        AdminDashboardStatsResponse? stats = await response.Content.ReadFromJsonAsync<AdminDashboardStatsResponse>(cancellationToken: ct);
         return stats is not null
             ? (stats, null)
             : (null, new ErrorResponse { Error = "Impossible de lire les statistiques du tableau de bord", Status = (int)response.StatusCode });
@@ -26,11 +26,11 @@ public sealed class AdminDashboardClientService(HttpClient httpClient) : IAdminD
     public async Task<(AdminDashboardAnalyticsResponse? Analytics, ErrorResponse? Error)> GetAnalyticsAsync(
         CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.DashboardAnalytics, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Admin.DashboardAnalytics, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var analytics =
+        AdminDashboardAnalyticsResponse? analytics =
             await response.Content.ReadFromJsonAsync<AdminDashboardAnalyticsResponse>(cancellationToken: ct);
         return analytics is not null
             ? (analytics, null)
@@ -46,7 +46,7 @@ public sealed class AdminDashboardClientService(HttpClient httpClient) : IAdminD
     {
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
         }
         catch

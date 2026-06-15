@@ -27,7 +27,7 @@ namespace DeliverTableClient.Services
 
                 string url = $"{ApiRoutes.Dish.DishesByRestaurantId.Replace("{id:int}", restaurantId.ToString())}{queryString}";
 
-                var result = await _httpClient.GetFromJsonAsync<PaginatedResult<DishDto>>(url, cancellationToken);
+                PaginatedResult<DishDto>? result = await _httpClient.GetFromJsonAsync<PaginatedResult<DishDto>>(url, cancellationToken);
                 return (result, null);
             }
             catch (Exception ex)
@@ -48,7 +48,7 @@ namespace DeliverTableClient.Services
                 if (!string.IsNullOrEmpty(query.IsGlutenFree.ToString())) queryString += $"&IsGlutenFree={Uri.EscapeDataString(query.IsGlutenFree.ToString() ?? "")}";
 
                 string url = ApiRoutes.Dish.Base + queryString;
-                var result = await _httpClient.GetFromJsonAsync<PaginatedResult<DishDto>>(url, cancellationToken);
+                PaginatedResult<DishDto>? result = await _httpClient.GetFromJsonAsync<PaginatedResult<DishDto>>(url, cancellationToken);
                 return (result, null);
             }
             catch (Exception ex)
@@ -61,9 +61,9 @@ namespace DeliverTableClient.Services
         {
             try
             {
-                using var content = BuildDishFormContent(createDto, image);
+                using MultipartFormDataContent content = BuildDishFormContent(createDto, image);
                 string url = ApiRoutes.Dish.DishesByRestaurantId.Replace("{id:int}", restaurantId.ToString());
-                var response = await _httpClient.PostAsync(url, content, cancellationToken);
+                HttpResponseMessage response = await _httpClient.PostAsync(url, content, cancellationToken);
                 return await ReadDishResponse(response, cancellationToken);
             }
             catch (Exception ex)
@@ -76,9 +76,9 @@ namespace DeliverTableClient.Services
         {
             try
             {
-                using var content = BuildDishFormContent(updateDto, image);
+                using MultipartFormDataContent content = BuildDishFormContent(updateDto, image);
                 string url = $"{ApiRoutes.Dish.Base}/{dishId}";
-                var response = await _httpClient.PutAsync(url, content, cancellationToken);
+                HttpResponseMessage response = await _httpClient.PutAsync(url, content, cancellationToken);
                 return await ReadDishResponse(response, cancellationToken);
             }
             catch (Exception ex)
@@ -89,7 +89,7 @@ namespace DeliverTableClient.Services
 
         private static MultipartFormDataContent BuildDishFormContent(CreateDishDto dto, IBrowserFile? image)
         {
-            var content = new MultipartFormDataContent
+            MultipartFormDataContent content = new MultipartFormDataContent
             {
                 { new StringContent(dto.Name ?? string.Empty), nameof(CreateDishDto.Name) },
                 { new StringContent(dto.Description ?? string.Empty), nameof(CreateDishDto.Description) },
@@ -104,7 +104,7 @@ namespace DeliverTableClient.Services
 
             if (image is not null)
             {
-                var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: MaxUploadBytes));
+                StreamContent fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: MaxUploadBytes));
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(image.ContentType);
                 content.Add(fileContent, "image", image.Name);
             }
@@ -116,11 +116,11 @@ namespace DeliverTableClient.Services
         {
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<DishDto>(cancellationToken: cancellationToken);
+                DishDto? result = await response.Content.ReadFromJsonAsync<DishDto>(cancellationToken: cancellationToken);
                 return (result, null);
             }
 
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
             return (null, error ?? new ErrorResponse { Error = "Unknown error occurred" });
         }
 
@@ -129,7 +129,7 @@ namespace DeliverTableClient.Services
             try
             {
                 string url = $"{ApiRoutes.Dish.Base}/{dishId}";
-                var response = await _httpClient.DeleteAsync(url, cancellationToken);
+                HttpResponseMessage response = await _httpClient.DeleteAsync(url, cancellationToken);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -137,7 +137,7 @@ namespace DeliverTableClient.Services
                 }
                 else
                 {
-                    var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
+                    ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: cancellationToken);
                     return error ?? new ErrorResponse { Error = "Unknown error occurred" };
                 }
             }

@@ -6,6 +6,7 @@ using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -29,8 +30,8 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllPromotions()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var promotions = new List<Promotion>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<Promotion> promotions = new List<Promotion>
         {
             new() { Id = 1, Name = "Promo A", RestaurantId = 1, Restaurant = restaurant },
             new() { Id = 2, Name = "Promo B", RestaurantId = 1, Restaurant = restaurant }
@@ -38,7 +39,7 @@ public class AdminPromotionServiceTests
 
         _promotionRepository.GetAllUnscopedAsync(Arg.Any<CancellationToken>()).Returns(promotions);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminPromotionResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -51,13 +52,13 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsPromotion()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var promotion = CreatePromotion(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Promotion promotion = CreatePromotion(id: 1, restaurantId: 1);
         promotion.Restaurant = restaurant;
 
         _promotionRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(promotion);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminPromotionResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -69,7 +70,7 @@ public class AdminPromotionServiceTests
     {
         _promotionRepository.GetByIdWithRestaurantAsync(99, Arg.Any<CancellationToken>()).Returns((Promotion?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminPromotionResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -83,18 +84,18 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task CreateAsync_WhenRestaurantExists_CreatesPromotion()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _promotionRepository.CreateAsync(Arg.Any<Promotion>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var p = callInfo.Arg<Promotion>();
+                Promotion p = callInfo.Arg<Promotion>();
                 p.Id = 10;
                 p.Restaurant = restaurant;
                 return p;
             });
 
-        var request = new AdminCreatePromotionRequest
+        AdminCreatePromotionRequest request = new AdminCreatePromotionRequest
         {
             Name = "Nouvelle Promo",
             Description = "Description",
@@ -107,7 +108,7 @@ public class AdminPromotionServiceTests
             IsActive = true
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Nouvelle Promo"));
@@ -120,7 +121,7 @@ public class AdminPromotionServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminCreatePromotionRequest
+        AdminCreatePromotionRequest request = new AdminCreatePromotionRequest
         {
             Name = "Promo",
             RestaurantId = 99,
@@ -128,7 +129,7 @@ public class AdminPromotionServiceTests
             EndsAt = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -138,10 +139,10 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task CreateAsync_WhenInvalidDates_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new AdminCreatePromotionRequest
+        AdminCreatePromotionRequest request = new AdminCreatePromotionRequest
         {
             Name = "Promo",
             RestaurantId = 1,
@@ -149,7 +150,7 @@ public class AdminPromotionServiceTests
             EndsAt = DateTime.UtcNow
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -159,10 +160,10 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task CreateAsync_WhenPercentageOver100_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new AdminCreatePromotionRequest
+        AdminCreatePromotionRequest request = new AdminCreatePromotionRequest
         {
             Name = "Promo",
             RestaurantId = 1,
@@ -172,7 +173,7 @@ public class AdminPromotionServiceTests
             EndsAt = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -186,15 +187,15 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task UpdateAsync_WhenExists_UpdatesAndReturns()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var promotion = CreatePromotion(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Promotion promotion = CreatePromotion(id: 1, restaurantId: 1);
         promotion.Restaurant = restaurant;
 
         _promotionRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(promotion);
         _promotionRepository.UpdateAsync(Arg.Any<Promotion>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Promotion>());
 
-        var request = new AdminUpdatePromotionRequest
+        AdminUpdatePromotionRequest request = new AdminUpdatePromotionRequest
         {
             Name = "Nouveau Nom",
             DiscountType = DiscountType.FixedAmount,
@@ -204,7 +205,7 @@ public class AdminPromotionServiceTests
             IsActive = false
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Nouveau Nom"));
@@ -218,14 +219,14 @@ public class AdminPromotionServiceTests
     {
         _promotionRepository.GetByIdWithRestaurantAsync(99, Arg.Any<CancellationToken>()).Returns((Promotion?)null);
 
-        var request = new AdminUpdatePromotionRequest
+        AdminUpdatePromotionRequest request = new AdminUpdatePromotionRequest
         {
             Name = "Name",
             StartsAt = DateTime.UtcNow,
             EndsAt = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.UpdateAsync(99, request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.UpdateAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -235,20 +236,20 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task UpdateAsync_WhenInvalidDates_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var promotion = CreatePromotion(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Promotion promotion = CreatePromotion(id: 1, restaurantId: 1);
         promotion.Restaurant = restaurant;
 
         _promotionRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(promotion);
 
-        var request = new AdminUpdatePromotionRequest
+        AdminUpdatePromotionRequest request = new AdminUpdatePromotionRequest
         {
             Name = "Promo",
             StartsAt = DateTime.UtcNow.AddDays(30),
             EndsAt = DateTime.UtcNow
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -258,13 +259,13 @@ public class AdminPromotionServiceTests
     [Test]
     public async Task UpdateAsync_WhenPercentageOver100_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var promotion = CreatePromotion(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Promotion promotion = CreatePromotion(id: 1, restaurantId: 1);
         promotion.Restaurant = restaurant;
 
         _promotionRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(promotion);
 
-        var request = new AdminUpdatePromotionRequest
+        AdminUpdatePromotionRequest request = new AdminUpdatePromotionRequest
         {
             Name = "Promo",
             DiscountType = DiscountType.Percentage,
@@ -273,7 +274,7 @@ public class AdminPromotionServiceTests
             EndsAt = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminPromotionResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -289,7 +290,7 @@ public class AdminPromotionServiceTests
     {
         _promotionRepository.DeleteAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1);
+        ServiceResult result = await _sut.DeleteAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -299,7 +300,7 @@ public class AdminPromotionServiceTests
     {
         _promotionRepository.DeleteAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteAsync(99);
+        ServiceResult result = await _sut.DeleteAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

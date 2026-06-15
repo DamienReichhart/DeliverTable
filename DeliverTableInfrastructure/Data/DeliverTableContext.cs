@@ -4,6 +4,7 @@ using DeliverTableSharedLibrary.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace DeliverTableInfrastructure.Data;
 
@@ -46,11 +47,11 @@ public partial class DeliverTableContext(DbContextOptions<DeliverTableContext> o
 
     public override Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
-        var entries = ChangeTracker.Entries()
+        IEnumerable<EntityEntry> entries = ChangeTracker.Entries()
             .Where(e => e.Entity is ITrackable &&
                         (e.State == EntityState.Added || e.State == EntityState.Modified));
 
-        foreach (var entry in entries)
+        foreach (EntityEntry? entry in entries)
         {
             ((ITrackable)entry.Entity).Updated = DateTime.UtcNow;
 

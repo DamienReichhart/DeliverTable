@@ -13,11 +13,11 @@ public sealed class AdminDishClientService(HttpClient httpClient) : IAdminDishCl
     public async Task<(List<AdminDishResponse>? Dishes, ErrorResponse? Error)> GetAllAsync(
         CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.Dishes, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Admin.Dishes, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var items = await response.Content.ReadFromJsonAsync<List<AdminDishResponse>>(cancellationToken: ct);
+        List<AdminDishResponse>? items = await response.Content.ReadFromJsonAsync<List<AdminDishResponse>>(cancellationToken: ct);
         return items is not null
             ? (items, null)
             : (null, new ErrorResponse { Error = "Impossible de lire la liste des plats", Status = (int)response.StatusCode });
@@ -26,39 +26,39 @@ public sealed class AdminDishClientService(HttpClient httpClient) : IAdminDishCl
     public async Task<(AdminDishResponse? Dish, ErrorResponse? Error)> GetByIdAsync(
         int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync($"{ApiRoutes.Admin.Dishes}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync($"{ApiRoutes.Admin.Dishes}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminDishResponse>(cancellationToken: ct);
+        AdminDishResponse? item = await response.Content.ReadFromJsonAsync<AdminDishResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(AdminDishResponse? Dish, ErrorResponse? Error)> CreateAsync(
         AdminCreateDishRequest request, CancellationToken ct = default)
     {
-        using var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Admin.Dishes, request, ct);
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(ApiRoutes.Admin.Dishes, request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminDishResponse>(cancellationToken: ct);
+        AdminDishResponse? item = await response.Content.ReadFromJsonAsync<AdminDishResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(AdminDishResponse? Dish, ErrorResponse? Error)> UpdateAsync(
         int id, AdminUpdateDishRequest request, CancellationToken ct = default)
     {
-        using var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Admin.Dishes}/{id}", request, ct);
+        using HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Admin.Dishes}/{id}", request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminDishResponse>(cancellationToken: ct);
+        AdminDishResponse? item = await response.Content.ReadFromJsonAsync<AdminDishResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(bool Success, ErrorResponse? Error)> DeleteAsync(int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.Dishes}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.Dishes}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (false, await ReadError(response, ct));
 
@@ -69,7 +69,7 @@ public sealed class AdminDishClientService(HttpClient httpClient) : IAdminDishCl
     {
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
         }
         catch

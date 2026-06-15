@@ -56,14 +56,14 @@ public sealed class OrderService(
     public async Task<ServiceResult<CreateOrderResponse>> CreateFromCartAsync(
         int customerId, CreateOrderRequest request, CancellationToken ct = default)
     {
-        var customer = await _userRepository.GetByIdAsync(customerId, ct);
+        User? customer = await _userRepository.GetByIdAsync(customerId, ct);
         if (customer is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (!BillingAddressHelper.HasCompleteBillingAddress(customer))
             return new ServiceError(ErrorMessages.BillingAddressIncomplete);
 
-        if (!Enum.TryParse<OrderType>(request.OrderType, out var orderType))
+        if (!Enum.TryParse<OrderType>(request.OrderType, out OrderType orderType))
             return new ServiceError(ErrorMessages.InvalidOrderType(OrderTypeNames));
 
         if (request.IsEventBooking && request.GuestCount > 500)
@@ -78,14 +78,14 @@ public sealed class OrderService(
         if (request.ScheduledAt.HasValue && request.ScheduledAt.Value <= DateTime.UtcNow)
             return new ServiceError(ErrorMessages.ScheduledAtMustBeFuture);
 
-        var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         if (!restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotActive);
 
-        var eventBookingResult = await ResolveEventBookingAsync(
+        ServiceResult<(bool IsEventBooking, int? EventId)> eventBookingResult = await ResolveEventBookingAsync(
             customerId,
             request,
             orderType,
@@ -94,16 +94,16 @@ public sealed class OrderService(
         if (!eventBookingResult.IsSuccess)
             return eventBookingResult.Error!;
 
-        var (isEventBooking, eventId) = eventBookingResult.Value;
+        (bool isEventBooking, int? eventId) = eventBookingResult.Value;
 
         if (request.ScheduledAt.HasValue && !isEventBooking)
         {
-            var orderRule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(request.RestaurantId, ct);
-            var slotStartsAt = request.ScheduledAt.Value;
-            var slotDurationMinutes = GetSlotDurationMinutes(orderRule);
-            var slotEndsAt = slotStartsAt.AddMinutes(slotDurationMinutes);
+            OrderRule? orderRule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(request.RestaurantId, ct);
+            DateTime slotStartsAt = request.ScheduledAt.Value;
+            int slotDurationMinutes = GetSlotDurationMinutes(orderRule);
+            DateTime slotEndsAt = slotStartsAt.AddMinutes(slotDurationMinutes);
 
-            var isBlocked = await _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+            bool isBlocked = await _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
                 request.RestaurantId,
                 slotStartsAt,
                 slotEndsAt,
@@ -114,16 +114,16 @@ public sealed class OrderService(
 
             if (orderType == OrderType.DineIn)
             {
-                var capacityPerSlot = await GetTablesCapacityPerSlotAsync(request.RestaurantId, orderRule, ct);
+                int capacityPerSlot = await GetTablesCapacityPerSlotAsync(request.RestaurantId, orderRule, ct);
 
                 if (capacityPerSlot <= 0)
                     return new ServiceError(ErrorMessages.TablesCapacityFull, 400);
 
-                var requiredTableUnits = GetRequiredTableUnits(request.GuestCount);
+                int requiredTableUnits = GetRequiredTableUnits(request.GuestCount);
                 if (requiredTableUnits > capacityPerSlot)
                     return new ServiceError(ErrorMessages.TablesCapacityFull, 400);
 
-                var reservedTableUnits = await _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+                int reservedTableUnits = await _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
                     request.RestaurantId,
                     slotStartsAt,
                     slotEndsAt,
@@ -134,11 +134,11 @@ public sealed class OrderService(
             }
         }
 
-        var cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, request.RestaurantId, ct);
+        Cart? cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, request.RestaurantId, ct);
         if (cart is null || cart.Items.Count == 0)
             return new ServiceError(ErrorMessages.CartEmpty);
 
-        var orderItems = cart.Items.Select(ci => new OrderItem
+        List<OrderItem> orderItems = cart.Items.Select(ci => new OrderItem
         {
             DishId = ci.DishId,
             DishName = ci.Dish?.Name ?? string.Empty,
@@ -147,28 +147,28 @@ public sealed class OrderService(
             SpecialInstructions = ci.SpecialInstructions
         }).ToList();
 
-        var originalAmount = orderItems.Sum(oi => oi.UnitPrice * oi.Quantity);
-        var orderDiscounts = new List<OrderDiscount>();
+        decimal originalAmount = orderItems.Sum(oi => oi.UnitPrice * oi.Quantity);
+        List<OrderDiscount> orderDiscounts = new List<OrderDiscount>();
 
         await ApplyPromotionsAsync(request.RestaurantId, originalAmount, cart.Items, orderDiscounts, ct);
 
-        var discountCodesResult = await ApplyDiscountCodesAsync(
+        ServiceResult<List<DiscountCode>> discountCodesResult = await ApplyDiscountCodesAsync(
             request.DiscountCodes, request.RestaurantId, customerId, originalAmount, orderDiscounts, ct);
         if (!discountCodesResult.IsSuccess)
             return discountCodesResult.Error!;
-        var appliedDiscountCodes = discountCodesResult.Value!;
+        List<DiscountCode> appliedDiscountCodes = discountCodesResult.Value!;
 
-        var loyaltyResult = await ApplyLoyaltyPointsAsync(
+        ServiceResult<int> loyaltyResult = await ApplyLoyaltyPointsAsync(
             request.RestaurantId, customerId, request.LoyaltyPointsToRedeem, originalAmount, orderDiscounts, ct);
         if (!loyaltyResult.IsSuccess)
             return loyaltyResult.Error!;
-        var loyaltyPointsUsed = loyaltyResult.Value!;
+        int loyaltyPointsUsed = loyaltyResult.Value!;
 
         CapDiscountsAtOrderTotal(orderDiscounts, originalAmount);
-        var discountAmount = orderDiscounts.Sum(d => d.Amount);
-        var totalAmount = originalAmount - discountAmount;
+        decimal discountAmount = orderDiscounts.Sum(d => d.Amount);
+        decimal totalAmount = originalAmount - discountAmount;
 
-        var order = new Order
+        Order order = new Order
         {
             CustomerId = customerId,
             RestaurantId = request.RestaurantId,
@@ -191,10 +191,10 @@ public sealed class OrderService(
             Discounts = orderDiscounts
         };
 
-        var created = await _orderRepository.CreateAsync(order, ct);
+        Order created = await _orderRepository.CreateAsync(order, ct);
         await TrackDiscountCodeRedemptionsAsync(appliedDiscountCodes, customerId, created.Id, ct);
 
-        var intentResult = await _paymentService.CreateIntentAsync(created.Id, ct);
+        ServiceResult<CreateIntentResult> intentResult = await _paymentService.CreateIntentAsync(created.Id, ct);
         if (!intentResult.IsSuccess)
             return intentResult.Error!;
 
@@ -208,7 +208,7 @@ public sealed class OrderService(
 
     public async Task<ServiceResult<OrderDto>> GetByIdAsync(int orderId, int userId, CancellationToken ct = default)
     {
-        var order = await _orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null)
             return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
@@ -221,19 +221,19 @@ public sealed class OrderService(
     public async Task<ServiceResult<PaginatedResult<OrderDto>>> GetCustomerOrdersAsync(
         int customerId, OrderQuery query, CancellationToken ct = default)
     {
-        var data = await _orderRepository.GetByCustomerAsync(customerId, query, ct);
+        (List<Order> Items, int TotalCount) data = await _orderRepository.GetByCustomerAsync(customerId, query, ct);
         return data.ToPaginatedResult(o => o.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<PaginatedResult<OrderDto>>> GetRestaurantOrdersAsync(
         int restaurantId, int ownerId, OrderQuery query, CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        var data = await _orderRepository.GetByRestaurantAsync(restaurantId, query, ct);
+        (List<Order> Items, int TotalCount) data = await _orderRepository.GetByRestaurantAsync(restaurantId, query, ct);
         return data.ToPaginatedResult(o => o.ToDto(), query.PageNumber, query.PageSize);
     }
 
@@ -241,41 +241,41 @@ public sealed class OrderService(
         int orderId, UpdateOrderStatusRequest request, CancellationToken ct = default)
     {
         // On récupère la commande avec les détails (incluant le restaurant)
-        var order = await _orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null)
             return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
-        if (!Enum.TryParse<OrderStatus>(request.Status, out var newStatus))
+        if (!Enum.TryParse<OrderStatus>(request.Status, out OrderStatus newStatus))
             return new ServiceError(ErrorMessages.InvalidOrderStatus(OrderStatusNames));
 
         if (order.Status == OrderStatus.Pending && newStatus == OrderStatus.Confirmed)
         {
-            var capture = await _paymentService.CaptureAsync(order.Id, ct);
+            ServiceResult capture = await _paymentService.CaptureAsync(order.Id, ct);
             if (!capture.IsSuccess) return capture.Error!;
         }
         else if (order.Status == OrderStatus.Pending &&
                  (newStatus == OrderStatus.Refused || newStatus == OrderStatus.Cancelled))
         {
-            var cancel = await _paymentService.CancelAuthorizationAsync(order.Id, ct);
+            ServiceResult cancel = await _paymentService.CancelAuthorizationAsync(order.Id, ct);
             if (!cancel.IsSuccess) return cancel.Error!;
         }
         else if (IsLateCancellation(order.Status, newStatus) && order.PaymentStatus == PaymentStatus.Completed)
         {
-            var refund = await _paymentService.RefundAsync(order.Id, order.TotalAmount, "order_cancelled", null, ct);
+            ServiceResult<RefundDto> refund = await _paymentService.RefundAsync(order.Id, order.TotalAmount, "order_cancelled", null, ct);
             if (!refund.IsSuccess) return refund.Error!;
         }
 
         order.Status = newStatus;
         if (newStatus == OrderStatus.Delivered)
             order.DeliveredAt = DateTime.UtcNow;
-        var updated = await _orderRepository.UpdateAsync(order, ct);
+        Order updated = await _orderRepository.UpdateAsync(order, ct);
 
         if (newStatus == OrderStatus.Delivered)
             await ProcessDeliveryAsync(order, ct);
 
         await SendStatusEmailAsync(order, newStatus, ct);
 
-        var orderDto = updated.ToDto();
+        OrderDto orderDto = updated.ToDto();
         if (newStatus == OrderStatus.Cancelled)
         {
             await _orderHubContext.Clients.Group($"restaurant_{orderDto.RestaurantId}").CancelOrder(orderDto);
@@ -290,7 +290,7 @@ public sealed class OrderService(
 
     public async Task<ServiceResult<OrderDto>> CancelOrderAsync(int orderId, int customerId, CancellationToken ct = default)
     {
-        var order = await _orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await _orderRepository.GetByIdAsync(orderId, ct);
         if (order is null)
             return ServiceError.NotFound(ErrorMessages.OrderNotFound);
 
@@ -308,11 +308,11 @@ public sealed class OrderService(
 
     private async Task SendStatusEmailAsync(Order order, OrderStatus status, CancellationToken ct)
     {
-        var customer = await _userRepository.GetByIdAsync(order.CustomerId, ct);
+        User? customer = await _userRepository.GetByIdAsync(order.CustomerId, ct);
         if (customer is null || string.IsNullOrWhiteSpace(customer.Email))
             return;
 
-        var customerName = customer.GetFullName();
+        string customerName = customer.GetFullName();
 
         switch (status)
         {
@@ -332,10 +332,10 @@ public sealed class OrderService(
         int restaurantId, decimal originalAmount, ICollection<CartItem> cartItems,
         List<OrderDiscount> orderDiscounts, CancellationToken ct)
     {
-        var promotions = await _promotionRepository.GetActiveByRestaurantAsync(restaurantId, ct);
-        foreach (var promotion in promotions)
+        List<Promotion> promotions = await _promotionRepository.GetActiveByRestaurantAsync(restaurantId, ct);
+        foreach (Promotion promotion in promotions)
         {
-            var discount = CalculatePromotionDiscount(promotion, originalAmount, cartItems);
+            decimal discount = CalculatePromotionDiscount(promotion, originalAmount, cartItems);
             if (discount > 0)
                 orderDiscounts.Add(BuildOrderDiscount(OrderDiscountSource.Promotion, promotion.Id, promotion.Name, discount));
         }
@@ -345,13 +345,13 @@ public sealed class OrderService(
         List<string> codes, int restaurantId, int customerId, decimal originalAmount,
         List<OrderDiscount> orderDiscounts, CancellationToken ct)
     {
-        var appliedCodes = new List<DiscountCode>();
-        foreach (var codeStr in codes.Where(c => !string.IsNullOrWhiteSpace(c)))
+        List<DiscountCode> appliedCodes = new List<DiscountCode>();
+        foreach (string? codeStr in codes.Where(c => !string.IsNullOrWhiteSpace(c)))
         {
-            var discountCode = await _discountCodeRepository.GetByCodeAndRestaurantAsync(
+            DiscountCode? discountCode = await _discountCodeRepository.GetByCodeAndRestaurantAsync(
                 codeStr, restaurantId, ct);
 
-            var now = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
             if (discountCode is null || !discountCode.IsActive ||
                 now < discountCode.ValidFrom || now > discountCode.ValidUntil)
                 return new ServiceError(ErrorMessages.DiscountCodeInvalid);
@@ -360,7 +360,7 @@ public sealed class OrderService(
                 discountCode.CurrentRedemptions >= discountCode.MaxRedemptions.Value)
                 return new ServiceError(ErrorMessages.DiscountCodeMaxRedemptions);
 
-            var userRedemptions = await _discountCodeRepository.GetRedemptionCountByUserAsync(
+            int userRedemptions = await _discountCodeRepository.GetRedemptionCountByUserAsync(
                 discountCode.Id, customerId, ct);
             if (userRedemptions >= discountCode.PerUserLimit)
                 return new ServiceError(ErrorMessages.DiscountCodePerUserLimit);
@@ -368,7 +368,7 @@ public sealed class OrderService(
             if (discountCode.MinOrderAmount.HasValue && originalAmount < discountCode.MinOrderAmount.Value)
                 return new ServiceError(ErrorMessages.DiscountCodeMinOrderNotMet);
 
-            var codeDiscount = discountCode.DiscountType == DiscountType.Percentage
+            decimal codeDiscount = discountCode.DiscountType == DiscountType.Percentage
                 ? originalAmount * (discountCode.DiscountValue / 100)
                 : discountCode.DiscountValue;
 
@@ -428,7 +428,7 @@ public sealed class OrderService(
 
         if (request.EventId.HasValue)
         {
-            var existingEvent = await _eventRepository.GetByIdAsync(request.EventId.Value, ct);
+            Event? existingEvent = await _eventRepository.GetByIdAsync(request.EventId.Value, ct);
             if (existingEvent is null || !existingEvent.IsActive || existingEvent.RestaurantId != restaurantId)
                 return ServiceError.NotFound(ErrorMessages.EventNotFound);
 
@@ -450,7 +450,7 @@ public sealed class OrderService(
         if (!IsScheduledWithinWindow(request.ScheduledAt, request.EventStartsAt.Value, request.EventEndsAt.Value))
             return new ServiceError(ErrorMessages.ScheduledAtOutsideEventWindow, 400);
 
-        var createdEvent = await _eventRepository.CreateAsync(new Event
+        Event createdEvent = await _eventRepository.CreateAsync(new Event
         {
             RestaurantId = restaurantId,
             CreatedByUserId = customerId,
@@ -473,24 +473,24 @@ public sealed class OrderService(
         if (pointsToRedeem <= 0)
             return 0;
 
-        var program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
+        LoyaltyProgram? program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
         if (program is null || !program.IsActive)
             return 0;
 
-        var account = await _loyaltyRepository.GetAccountAsync(program.Id, customerId, ct);
+        LoyaltyAccount? account = await _loyaltyRepository.GetAccountAsync(program.Id, customerId, ct);
         if (account is null || account.PointsBalance < pointsToRedeem)
             return new ServiceError(ErrorMessages.InsufficientLoyaltyPoints);
 
-        var pointsEuroValue = pointsToRedeem * program.EurosPerPoint;
+        decimal pointsEuroValue = pointsToRedeem * program.EurosPerPoint;
 
-        var currentDiscountTotal = orderDiscounts.Sum(d => d.Amount);
-        var maxLoyaltyDiscount = Math.Max(0, originalAmount - currentDiscountTotal);
+        decimal currentDiscountTotal = orderDiscounts.Sum(d => d.Amount);
+        decimal maxLoyaltyDiscount = Math.Max(0, originalAmount - currentDiscountTotal);
         pointsEuroValue = Math.Min(pointsEuroValue, maxLoyaltyDiscount);
 
         if (pointsEuroValue <= 0)
             return 0;
 
-        var actualPointsUsed = program.EurosPerPoint > 0
+        int actualPointsUsed = program.EurosPerPoint > 0
             ? (int)Math.Ceiling(pointsEuroValue / program.EurosPerPoint)
             : pointsToRedeem;
         actualPointsUsed = Math.Min(actualPointsUsed, pointsToRedeem);
@@ -527,17 +527,17 @@ public sealed class OrderService(
 
     private static void CapDiscountsAtOrderTotal(List<OrderDiscount> orderDiscounts, decimal originalAmount)
     {
-        var rawDiscountSum = orderDiscounts.Sum(d => d.Amount);
+        decimal rawDiscountSum = orderDiscounts.Sum(d => d.Amount);
         if (rawDiscountSum <= originalAmount || rawDiscountSum <= 0m) return;
 
-        var scale = originalAmount / rawDiscountSum;
-        foreach (var d in orderDiscounts)
+        decimal scale = originalAmount / rawDiscountSum;
+        foreach (OrderDiscount d in orderDiscounts)
             d.Amount = Math.Round(d.Amount * scale, 2, MidpointRounding.AwayFromZero);
 
-        var drift = originalAmount - orderDiscounts.Sum(d => d.Amount);
+        decimal drift = originalAmount - orderDiscounts.Sum(d => d.Amount);
         if (drift == 0m) return;
 
-        var largest = orderDiscounts
+        OrderDiscount largest = orderDiscounts
             .OrderByDescending(d => Math.Abs(d.Amount))
             .First();
         largest.Amount += drift;
@@ -546,7 +546,7 @@ public sealed class OrderService(
     private async Task TrackDiscountCodeRedemptionsAsync(
         List<DiscountCode> appliedCodes, int customerId, int orderId, CancellationToken ct)
     {
-        foreach (var dc in appliedCodes)
+        foreach (DiscountCode dc in appliedCodes)
         {
             await _discountCodeRepository.CreateRedemptionAsync(new DiscountCodeRedemption
             {
@@ -560,9 +560,9 @@ public sealed class OrderService(
 
     private async Task ProcessDeliveryAsync(Order order, CancellationToken ct)
     {
-        var restaurant = order.Restaurant;
-        var commission = order.TotalAmount * _commissionRate;
-        var netAmount = order.TotalAmount - commission;
+        Restaurant restaurant = order.Restaurant;
+        decimal commission = order.TotalAmount * _commissionRate;
+        decimal netAmount = order.TotalAmount - commission;
 
         restaurant.Balance += netAmount;
         await _restaurantRepository.UpdateAsync(restaurant, ct);
@@ -583,15 +583,15 @@ public sealed class OrderService(
 
     private async Task EarnLoyaltyPointsAsync(Order order, CancellationToken ct)
     {
-        var loyaltyProgram = await _loyaltyRepository.GetByRestaurantAsync(order.RestaurantId, ct);
+        LoyaltyProgram? loyaltyProgram = await _loyaltyRepository.GetByRestaurantAsync(order.RestaurantId, ct);
         if (loyaltyProgram is null || !loyaltyProgram.IsActive)
             return;
 
-        var pointsEarned = (int)Math.Floor(order.OriginalAmount * loyaltyProgram.PointsPerEuro);
+        int pointsEarned = (int)Math.Floor(order.OriginalAmount * loyaltyProgram.PointsPerEuro);
         if (pointsEarned <= 0)
             return;
 
-        var loyaltyAccount = await _loyaltyRepository.GetAccountAsync(loyaltyProgram.Id, order.CustomerId, ct);
+        LoyaltyAccount? loyaltyAccount = await _loyaltyRepository.GetAccountAsync(loyaltyProgram.Id, order.CustomerId, ct);
         if (loyaltyAccount is null)
         {
             loyaltyAccount = new LoyaltyAccount
@@ -641,8 +641,8 @@ public sealed class OrderService(
                     : promotion.DiscountValue;
 
             case PromotionType.ItemBased:
-                var promotionDishIds = promotion.PromotionDishes.Select(pd => pd.DishId).ToHashSet();
-                var matchingSubtotal = cartItems
+                HashSet<int> promotionDishIds = promotion.PromotionDishes.Select(pd => pd.DishId).ToHashSet();
+                decimal matchingSubtotal = cartItems
                     .Where(ci => promotionDishIds.Contains(ci.DishId))
                     .Sum(ci => ci.UnitPrice * ci.Quantity);
                 if (matchingSubtotal == 0) return 0;

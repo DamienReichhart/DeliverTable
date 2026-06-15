@@ -15,14 +15,14 @@ public sealed class RestaurantAccountService(HttpClient httpClient) : IRestauran
     {
         try
         {
-            var queryParams = new List<string>
+            List<string> queryParams = new List<string>
             {
                 $"PageNumber={query.PageNumber}",
                 $"PageSize={query.PageSize}"
             };
 
-            var url = $"{ApiRoutes.RestaurantAccount.BaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
-            var result = await _httpClient.GetFromJsonAsync<RestaurantAccountDto>(url, ct);
+            string url = $"{ApiRoutes.RestaurantAccount.BaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
+            RestaurantAccountDto? result = await _httpClient.GetFromJsonAsync<RestaurantAccountDto>(url, ct);
             return (result, null);
         }
         catch (Exception ex)
@@ -34,16 +34,16 @@ public sealed class RestaurantAccountService(HttpClient httpClient) : IRestauran
     public async Task<(RestaurantAccountDto?, ErrorResponse?)> WithdrawAsync(
         int restaurantId, WithdrawRequest request, CancellationToken ct = default)
     {
-        var withdrawUrl = $"{ApiRoutes.RestaurantAccount.BaseRoute.Replace("{id:int}", restaurantId.ToString())}/{ApiRoutes.RestaurantAccount.WithdrawRoute}";
-        var response = await _httpClient.PostAsJsonAsync(withdrawUrl, request, ct);
+        string withdrawUrl = $"{ApiRoutes.RestaurantAccount.BaseRoute.Replace("{id:int}", restaurantId.ToString())}/{ApiRoutes.RestaurantAccount.WithdrawRoute}";
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(withdrawUrl, request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<RestaurantAccountDto>(cancellationToken: ct);
+        RestaurantAccountDto? result = await response.Content.ReadFromJsonAsync<RestaurantAccountDto>(cancellationToken: ct);
         return (result, null);
     }
 }

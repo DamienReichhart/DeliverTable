@@ -38,8 +38,8 @@ namespace DeliverTableClient.Components.Dish
             error = null;
             try
             {
-                var query = new DishQuery { PageSize = 100 };
-                var (result, errorResult) = await DishService.GetDishesByRestaurantId(RestaurantId, query);
+                DishQuery query = new DishQuery { PageSize = 100 };
+                (PaginatedResult<DishDto>? result, ErrorResponse? errorResult) = await DishService.GetDishesByRestaurantId(RestaurantId, query);
 
                 if (errorResult != null)
                 {
@@ -148,7 +148,7 @@ namespace DeliverTableClient.Components.Dish
             if (confirm)
             {
                 error = null;
-                var errorResponse = await DishService.DeleteDish(id);
+                ErrorResponse? errorResponse = await DishService.DeleteDish(id);
 
                 if (errorResponse != null)
                 {

@@ -12,14 +12,14 @@ public static class BillingAddressHelper
 
     public static string FormatBillingAddressForSnapshot(User user)
     {
-        var lines = new List<string>();
+        List<string> lines = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(user.BillingAddressLine1))
             lines.Add(user.BillingAddressLine1.Trim());
         if (!string.IsNullOrWhiteSpace(user.BillingAddressLine2))
             lines.Add(user.BillingAddressLine2.Trim());
 
-        var postalCity = string.Join(" ", new[]
+        string postalCity = string.Join(" ", new[]
         {
             (user.BillingPostalCode ?? string.Empty).Trim(),
             (user.BillingCity ?? string.Empty).Trim(),

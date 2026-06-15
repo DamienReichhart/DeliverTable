@@ -31,8 +31,8 @@ public class UserRepository(
 
     public async Task<List<User>> ListByRoleAsync(string roleName, CancellationToken ct = default)
     {
-        var normalizedRole = roleName.ToUpperInvariant();
-        var query =
+        string normalizedRole = roleName.ToUpperInvariant();
+        IQueryable<User> query =
             from user in _dbContext.Users
             join userRole in _dbContext.UserRoles on user.Id equals userRole.UserId
             join role in _dbContext.Roles on userRole.RoleId equals role.Id
@@ -44,25 +44,25 @@ public class UserRepository(
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> CreateAsync(User user, string password)
     {
-        var result = await _userManager.CreateAsync(user, password);
+        IdentityResult result = await _userManager.CreateAsync(user, password);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> DeleteAsync(User user)
     {
-        var result = await _userManager.DeleteAsync(user);
+        IdentityResult result = await _userManager.DeleteAsync(user);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> AddToRoleAsync(User user, string role)
     {
-        var result = await _userManager.AddToRoleAsync(user, role);
+        IdentityResult result = await _userManager.AddToRoleAsync(user, role);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> RemoveFromRolesAsync(User user, IList<string> roles)
     {
-        var result = await _userManager.RemoveFromRolesAsync(user, roles);
+        IdentityResult result = await _userManager.RemoveFromRolesAsync(user, roles);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
 
@@ -71,7 +71,7 @@ public class UserRepository(
 
     public async Task<string?> GetPrimaryRoleAsync(User user)
     {
-        var roles = await _userManager.GetRolesAsync(user);
+        IList<string> roles = await _userManager.GetRolesAsync(user);
         return roles.FirstOrDefault();
     }
 
@@ -81,7 +81,7 @@ public class UserRepository(
     public async Task<(bool Succeeded, IEnumerable<string> Errors)> ChangePasswordAsync(
         User user, string currentPassword, string newPassword)
     {
-        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        IdentityResult result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
         return (result.Succeeded, result.Errors.Select(e => e.Description));
     }
 

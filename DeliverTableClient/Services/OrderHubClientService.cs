@@ -21,7 +21,7 @@ public sealed class OrderHubClientService : IOrderHubClientService
     {
         _jsRuntime = jsRuntime;
 
-        var hubUrl = $"{configuration.ApiBaseUrl.TrimEnd('/')}/{ApiRoutes.LiveOrdersHub}";
+        string hubUrl = $"{configuration.ApiBaseUrl.TrimEnd('/')}/{ApiRoutes.LiveOrdersHub}";
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(hubUrl, options =>

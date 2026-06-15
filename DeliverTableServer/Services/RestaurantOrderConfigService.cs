@@ -32,13 +32,13 @@ public sealed class RestaurantOrderConfigService(
         int ownerId,
         CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        var blockedSlots = await _orderConfigRepository.GetBlockedSlotsByRestaurantAsync(restaurantId, ct);
-        var response = blockedSlots.Select(slot => slot.ToAdminDto()).ToList();
+        List<OrderBlockedSlot> blockedSlots = await _orderConfigRepository.GetBlockedSlotsByRestaurantAsync(restaurantId, ct);
+        List<AdminBlockedSlotResponse> response = blockedSlots.Select(slot => slot.ToAdminDto()).ToList();
 
         return response;
     }
@@ -49,7 +49,7 @@ public sealed class RestaurantOrderConfigService(
         AdminCreateBlockedSlotRequest request,
         CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
@@ -57,7 +57,7 @@ public sealed class RestaurantOrderConfigService(
         if (request.EndsAt <= request.StartsAt)
             return new ServiceError(ErrorMessages.InvalidBlockedSlotDates, 400);
 
-        var overlapExists = await _orderConfigRepository.ExistsBlockedSlotOverlapAsync(
+        bool overlapExists = await _orderConfigRepository.ExistsBlockedSlotOverlapAsync(
             restaurantId,
             request.RestaurantTableId,
             request.StartsAt,
@@ -67,7 +67,7 @@ public sealed class RestaurantOrderConfigService(
         if (overlapExists)
             return new ServiceError(ErrorMessages.BlockedSlotOverlapExists, 400);
 
-        var blockedSlot = new OrderBlockedSlot
+        OrderBlockedSlot blockedSlot = new OrderBlockedSlot
         {
             RestaurantId = restaurantId,
             RestaurantTableId = request.RestaurantTableId,
@@ -76,7 +76,7 @@ public sealed class RestaurantOrderConfigService(
             Reason = request.Reason
         };
 
-        var createdBlockedSlot = await _orderConfigRepository.CreateBlockedSlotAsync(blockedSlot, ct);
+        OrderBlockedSlot createdBlockedSlot = await _orderConfigRepository.CreateBlockedSlotAsync(blockedSlot, ct);
         return createdBlockedSlot.ToAdminDto();
     }
 
@@ -86,16 +86,16 @@ public sealed class RestaurantOrderConfigService(
         int ownerId,
         CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        var blockedSlot = await _orderConfigRepository.GetBlockedSlotByIdAsync(slotId, ct);
+        OrderBlockedSlot? blockedSlot = await _orderConfigRepository.GetBlockedSlotByIdAsync(slotId, ct);
         if (blockedSlot is null || blockedSlot.RestaurantId != restaurantId)
             return new ServiceError(ErrorMessages.BlockedSlotNotFound, 404);
 
-        var isDeleted = await _orderConfigRepository.DeleteBlockedSlotAsync(slotId, ct);
+        bool isDeleted = await _orderConfigRepository.DeleteBlockedSlotAsync(slotId, ct);
         if (!isDeleted)
             return new ServiceError(ErrorMessages.BlockedSlotNotFound, 404);
 
@@ -107,12 +107,12 @@ public sealed class RestaurantOrderConfigService(
         int ownerId,
         CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
         if (restaurant is null || !restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
 
-        var rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
-        var fallbackCount = await _restaurantRepository.CountActiveTablesByMaxCapacityAsync(restaurantId, 2, ct);
+        OrderRule? rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
+        int fallbackCount = await _restaurantRepository.CountActiveTablesByMaxCapacityAsync(restaurantId, 2, ct);
 
         return new TablesCapacityResponse
         {
@@ -128,12 +128,12 @@ public sealed class RestaurantOrderConfigService(
         UpdateTablesCapacityRequest request,
         CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        var rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
+        OrderRule? rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
         if (rule is null)
         {
             rule = new OrderRule
@@ -154,7 +154,7 @@ public sealed class RestaurantOrderConfigService(
             await _orderConfigRepository.UpdateRuleAsync(rule, ct);
         }
 
-        var fallbackCount = await _restaurantRepository.CountActiveTablesByMaxCapacityAsync(restaurantId, 2, ct);
+        int fallbackCount = await _restaurantRepository.CountActiveTablesByMaxCapacityAsync(restaurantId, 2, ct);
 
         return new TablesCapacityResponse
         {
@@ -169,14 +169,14 @@ public sealed class RestaurantOrderConfigService(
         int ownerId,
         CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        var rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
-        var slotDuration = rule?.SlotDurationMinutes is > 0 ? rule.SlotDurationMinutes.Value : 60;
-        var days = ParseOpeningHours(rule?.AvailabilityRanges);
+        OrderRule? rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
+        int slotDuration = rule?.SlotDurationMinutes is > 0 ? rule.SlotDurationMinutes.Value : 60;
+        List<OpeningDayScheduleDto> days = ParseOpeningHours(rule?.AvailabilityRanges);
 
         return new RestaurantOpeningHoursResponse
         {
@@ -192,7 +192,7 @@ public sealed class RestaurantOrderConfigService(
         UpdateRestaurantOpeningHoursRequest request,
         CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
@@ -204,9 +204,9 @@ public sealed class RestaurantOrderConfigService(
         if (!ValidateOpeningHours(request.Days))
             return new ServiceError(ErrorMessages.InvalidOpeningHours, 400);
 
-        var serializedDays = JsonSerializer.Serialize(request.Days);
+        string serializedDays = JsonSerializer.Serialize(request.Days);
 
-        var rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
+        OrderRule? rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
         if (rule is null)
         {
             rule = new OrderRule
@@ -241,20 +241,20 @@ public sealed class RestaurantOrderConfigService(
         RestaurantAvailableSlotsQuery query,
         CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(restaurantId, ct);
         if (restaurant is null || !restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotFound, 404);
 
-        var rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
-        var slotDurationMinutes = rule?.SlotDurationMinutes is > 0 ? rule.SlotDurationMinutes.Value : 60;
-        var days = ParseOpeningHours(rule?.AvailabilityRanges);
+        OrderRule? rule = await _orderConfigRepository.GetRuleByRestaurantIdAsync(restaurantId, ct);
+        int slotDurationMinutes = rule?.SlotDurationMinutes is > 0 ? rule.SlotDurationMinutes.Value : 60;
+        List<OpeningDayScheduleDto> days = ParseOpeningHours(rule?.AvailabilityRanges);
 
-        var date = query.Date.Date;
+        DateTime date = query.Date.Date;
         // Le client encode les jours avec 0 = Lundi .. 6 = Dimanche, alors que
         // DateTime.DayOfWeek encode 0 = Dimanche .. 6 = Samedi. On convertit.
-        var clientDayOfWeek = ((int)date.DayOfWeek + 6) % 7;
-        var daySchedule = days.FirstOrDefault(d => d.DayOfWeek == clientDayOfWeek);
-        var availableSlots = new List<AvailableSlotDto>();
+        int clientDayOfWeek = ((int)date.DayOfWeek + 6) % 7;
+        OpeningDayScheduleDto? daySchedule = days.FirstOrDefault(d => d.DayOfWeek == clientDayOfWeek);
+        List<AvailableSlotDto> availableSlots = new List<AvailableSlotDto>();
 
         if (daySchedule is null || daySchedule.Slots.Count == 0)
         {
@@ -267,8 +267,8 @@ public sealed class RestaurantOrderConfigService(
             };
         }
 
-        var tablesCapacity = await GetTablesCapacityPerSlotAsync(restaurantId, rule, ct);
-        var requiredTableUnits = GetRequiredTableUnits(query.GuestCount);
+        int tablesCapacity = await GetTablesCapacityPerSlotAsync(restaurantId, rule, ct);
+        int requiredTableUnits = GetRequiredTableUnits(query.GuestCount);
 
         if (tablesCapacity <= 0 || requiredTableUnits > tablesCapacity)
         {
@@ -281,34 +281,34 @@ public sealed class RestaurantOrderConfigService(
             };
         }
 
-        var evaluatedSlots = 0;
+        int evaluatedSlots = 0;
 
-        foreach (var range in daySchedule.Slots)
+        foreach (OpeningHourSlotDto range in daySchedule.Slots)
         {
             if (evaluatedSlots >= MaxSlotEvaluations)
                 break;
 
-            if (!TimeOnly.TryParse(range.StartTime, out var startTime)
-                || !TimeOnly.TryParse(range.EndTime, out var endTime)
+            if (!TimeOnly.TryParse(range.StartTime, out TimeOnly startTime)
+                || !TimeOnly.TryParse(range.EndTime, out TimeOnly endTime)
                 || endTime <= startTime)
             {
                 continue;
             }
 
-            var rangeStart = DateTime.SpecifyKind(date.Add(startTime.ToTimeSpan()), DateTimeKind.Unspecified);
-            var rangeEnd = DateTime.SpecifyKind(date.Add(endTime.ToTimeSpan()), DateTimeKind.Unspecified);
+            DateTime rangeStart = DateTime.SpecifyKind(date.Add(startTime.ToTimeSpan()), DateTimeKind.Unspecified);
+            DateTime rangeEnd = DateTime.SpecifyKind(date.Add(endTime.ToTimeSpan()), DateTimeKind.Unspecified);
 
-            for (var slotStart = rangeStart;
+            for (DateTime slotStart = rangeStart;
                  slotStart.AddMinutes(slotDurationMinutes) <= rangeEnd && evaluatedSlots < MaxSlotEvaluations;
                  slotStart = slotStart.AddMinutes(slotDurationMinutes))
             {
                 evaluatedSlots++;
-                var slotEnd = slotStart.AddMinutes(slotDurationMinutes);
+                DateTime slotEnd = slotStart.AddMinutes(slotDurationMinutes);
 
-                var slotStartUtc = TimeZoneInfo.ConvertTimeToUtc(slotStart, TimeZoneInfo.Local);
-                var slotEndUtc = TimeZoneInfo.ConvertTimeToUtc(slotEnd, TimeZoneInfo.Local);
+                DateTime slotStartUtc = TimeZoneInfo.ConvertTimeToUtc(slotStart, TimeZoneInfo.Local);
+                DateTime slotEndUtc = TimeZoneInfo.ConvertTimeToUtc(slotEnd, TimeZoneInfo.Local);
 
-                var isBlocked = await _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
+                bool isBlocked = await _orderConfigRepository.IsRestaurantLevelSlotBlockedAsync(
                     restaurantId,
                     slotStartUtc,
                     slotEndUtc,
@@ -317,7 +317,7 @@ public sealed class RestaurantOrderConfigService(
                 if (isBlocked)
                     continue;
 
-                var reservedTableUnits = await _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
+                int reservedTableUnits = await _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
                     restaurantId,
                     slotStartUtc,
                     slotEndUtc,
@@ -350,7 +350,7 @@ public sealed class RestaurantOrderConfigService(
 
         try
         {
-            var parsed = JsonSerializer.Deserialize<List<OpeningDayScheduleDto>>(rawAvailabilityRanges);
+            List<OpeningDayScheduleDto>? parsed = JsonSerializer.Deserialize<List<OpeningDayScheduleDto>>(rawAvailabilityRanges);
             if (parsed is null || parsed.Count == 0)
                 return BuildDefaultDays();
 
@@ -364,8 +364,8 @@ public sealed class RestaurantOrderConfigService(
 
     private static List<OpeningDayScheduleDto> BuildDefaultDays()
     {
-        var result = new List<OpeningDayScheduleDto>(7);
-        for (var day = 0; day <= 6; day++)
+        List<OpeningDayScheduleDto> result = new List<OpeningDayScheduleDto>(7);
+        for (int day = 0; day <= 6; day++)
         {
             result.Add(new OpeningDayScheduleDto
             {
@@ -379,15 +379,15 @@ public sealed class RestaurantOrderConfigService(
 
     private static List<OpeningDayScheduleDto> NormalizeDays(List<OpeningDayScheduleDto> days)
     {
-        var byDay = days
+        Dictionary<int, OpeningDayScheduleDto> byDay = days
             .Where(d => d.DayOfWeek is >= 0 and <= 6)
             .GroupBy(d => d.DayOfWeek)
             .ToDictionary(g => g.Key, g => g.First());
 
-        var result = new List<OpeningDayScheduleDto>(7);
-        for (var day = 0; day <= 6; day++)
+        List<OpeningDayScheduleDto> result = new List<OpeningDayScheduleDto>(7);
+        for (int day = 0; day <= 6; day++)
         {
-            if (byDay.TryGetValue(day, out var value))
+            if (byDay.TryGetValue(day, out OpeningDayScheduleDto? value))
             {
                 value.Slots ??= [];
                 result.Add(value);
@@ -406,18 +406,18 @@ public sealed class RestaurantOrderConfigService(
         if (days.Count == 0)
             return true;
 
-        var groupedDays = days.GroupBy(d => d.DayOfWeek);
+        IEnumerable<IGrouping<int, OpeningDayScheduleDto>> groupedDays = days.GroupBy(d => d.DayOfWeek);
         if (groupedDays.Any(g => g.Key < 0 || g.Key > 6 || g.Count() > 1))
             return false;
 
-        foreach (var day in days)
+        foreach (OpeningDayScheduleDto day in days)
         {
-            var parsedRanges = new List<(TimeOnly Start, TimeOnly End)>();
+            List<(TimeOnly Start, TimeOnly End)> parsedRanges = new List<(TimeOnly Start, TimeOnly End)>();
 
-            foreach (var slot in day.Slots)
+            foreach (OpeningHourSlotDto slot in day.Slots)
             {
-                if (!TimeOnly.TryParse(slot.StartTime, out var start)
-                    || !TimeOnly.TryParse(slot.EndTime, out var end)
+                if (!TimeOnly.TryParse(slot.StartTime, out TimeOnly start)
+                    || !TimeOnly.TryParse(slot.EndTime, out TimeOnly end)
                     || end <= start)
                 {
                     return false;
@@ -427,7 +427,7 @@ public sealed class RestaurantOrderConfigService(
             }
 
             parsedRanges = parsedRanges.OrderBy(r => r.Start).ToList();
-            for (var i = 1; i < parsedRanges.Count; i++)
+            for (int i = 1; i < parsedRanges.Count; i++)
             {
                 if (parsedRanges[i].Start < parsedRanges[i - 1].End)
                     return false;

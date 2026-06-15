@@ -19,7 +19,7 @@ public class InvoicePdfRendererTests
     [Test]
     public void Render_BasicInvoice_ProducesValidPdf()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Number = "TEST-000001",
             Kind = InvoiceKind.OrderInvoiceToCustomer,
@@ -50,7 +50,7 @@ public class InvoicePdfRendererTests
             },
         };
 
-        var pdf = new InvoicePdfRenderer().Render(invoice);
+        byte[] pdf = new InvoicePdfRenderer().Render(invoice);
 
         Assert.That(pdf, Is.Not.Null);
         Assert.That(pdf.Length, Is.GreaterThan(1000));
@@ -63,7 +63,7 @@ public class InvoicePdfRendererTests
     [Test]
     public void Render_CreditNote_IncludesAvoirLabel()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Number = "AV-TEST-000002",
             Kind = InvoiceKind.CreditNoteToCustomer,
@@ -92,7 +92,7 @@ public class InvoicePdfRendererTests
             },
         };
 
-        var pdf = new InvoicePdfRenderer().Render(invoice);
+        byte[] pdf = new InvoicePdfRenderer().Render(invoice);
 
         Assert.That(pdf.Length, Is.GreaterThan(1000));
     }
@@ -100,8 +100,8 @@ public class InvoicePdfRendererTests
     [Test]
     public void Render_VatExemptInvoice_IncludesExemptionClause()
     {
-        var invoice = BuildSampleInvoice(vatRate: 0m);
-        var pdf = new InvoicePdfRenderer().Render(invoice);
+        Invoice invoice = BuildSampleInvoice(vatRate: 0m);
+        byte[] pdf = new InvoicePdfRenderer().Render(invoice);
 
         // Minimal smoke: a valid non-trivial PDF is produced.
         Assert.That(pdf, Is.Not.Null);
@@ -113,7 +113,7 @@ public class InvoicePdfRendererTests
     [Test]
     public void Render_TotalsEqualSumOfLines()
     {
-        var invoice = BuildSampleInvoice(vatRate: 20m);
+        Invoice invoice = BuildSampleInvoice(vatRate: 20m);
 
         // Verify invoice totals are consistent with line-level values before rendering.
         Assert.That(invoice.TotalHt, Is.EqualTo(invoice.Lines.Sum(l => l.LineHt)));
@@ -121,14 +121,14 @@ public class InvoicePdfRendererTests
         Assert.That(invoice.TotalTtc, Is.EqualTo(invoice.Lines.Sum(l => l.LineTtc)));
 
         // Also confirm a PDF is produced without throwing.
-        var pdf = new InvoicePdfRenderer().Render(invoice);
+        byte[] pdf = new InvoicePdfRenderer().Render(invoice);
         Assert.That(pdf.Length, Is.GreaterThan(1000));
     }
 
     [Test]
     public void Render_InvoiceWithDiscountLines_ProducesValidPdf()
     {
-        var invoice = new Invoice
+        Invoice invoice = new Invoice
         {
             Number = "TEST-DISC-000001",
             Kind = InvoiceKind.OrderInvoiceToCustomer,
@@ -159,7 +159,7 @@ public class InvoicePdfRendererTests
         invoice.TotalVat = invoice.Lines.Sum(l => l.LineVat);
         invoice.TotalTtc = invoice.Lines.Sum(l => l.LineTtc);
 
-        var pdf = new InvoicePdfRenderer().Render(invoice);
+        byte[] pdf = new InvoicePdfRenderer().Render(invoice);
 
         Assert.That(pdf, Is.Not.Null);
         Assert.That(pdf.Length, Is.GreaterThan(1000));
@@ -172,10 +172,10 @@ public class InvoicePdfRendererTests
     private static Invoice BuildSampleInvoice(decimal vatRate)
     {
         const decimal unitHt = 10m;
-        var unitTtc = Math.Round(unitHt * (1 + vatRate / 100m), 2, MidpointRounding.AwayFromZero);
-        var lineVat = Math.Round(unitTtc - unitHt, 2, MidpointRounding.AwayFromZero);
+        decimal unitTtc = Math.Round(unitHt * (1 + vatRate / 100m), 2, MidpointRounding.AwayFromZero);
+        decimal lineVat = Math.Round(unitTtc - unitHt, 2, MidpointRounding.AwayFromZero);
 
-        var line = new InvoiceLine
+        InvoiceLine line = new InvoiceLine
         {
             Description = "Plat test",
             Quantity = 1m,

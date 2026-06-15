@@ -71,7 +71,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task ResolveReclamation_WhenPendingAndOwnerMatches_ReturnsUpdatedDto()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Pending);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Pending);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
         _reclamationRepository.UpdateReclamationStatus(ReclamationId, ReclamationStatus.Resolved)
             .Returns(BuildReclamation(ReclamationStatus.Resolved));
@@ -96,7 +96,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task ResolveReclamation_WhenStatusIsNotPending_Returns409()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Resolved);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Resolved);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
 
         ServiceResult<ReclamationDto> result = await _sut.ResolveReclamation(ReclamationId, OwnerId);
@@ -109,7 +109,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task ResolveReclamation_WhenOwnerDoesNotOwnRestaurant_Returns403()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Pending);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Pending);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
 
         ServiceResult<ReclamationDto> result = await _sut.ResolveReclamation(ReclamationId, ownerId: 999);
@@ -124,7 +124,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task ContestReclamation_WhenResolvedAndCustomerMatches_ReturnsUpdatedDto()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Resolved);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Resolved);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
         _reclamationRepository.UpdateReclamationStatus(ReclamationId, ReclamationStatus.Contested)
             .Returns(BuildReclamation(ReclamationStatus.Contested));
@@ -154,7 +154,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task ContestReclamation_WhenStatusIsNotResolved_Returns409()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Pending);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Pending);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
 
         ServiceResult<ReclamationDto> result = await _sut.ContestReclamation(ReclamationId, CustomerId);
@@ -167,7 +167,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task ContestReclamation_WhenCustomerIsNotOrderOwner_Returns403()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Resolved);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Resolved);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
 
         ServiceResult<ReclamationDto> result = await _sut.ContestReclamation(ReclamationId, customerId: 999);
@@ -182,7 +182,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task CompleteReclamation_WhenContested_ReturnsUpdatedDto()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Contested);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Contested);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
         _reclamationRepository.UpdateReclamationStatus(ReclamationId, ReclamationStatus.Completed)
             .Returns(BuildReclamation(ReclamationStatus.Completed));
@@ -207,7 +207,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task CompleteReclamation_WhenStatusIsNotContested_Returns409()
     {
-        var reclamation = BuildReclamation(ReclamationStatus.Resolved);
+        Reclamation reclamation = BuildReclamation(ReclamationStatus.Resolved);
         _reclamationRepository.GetReclamationById(ReclamationId).Returns(reclamation);
 
         ServiceResult<ReclamationDto> result = await _sut.CompleteReclamation(ReclamationId);
@@ -222,7 +222,7 @@ public class ReclamationServiceTests
     [Test]
     public async Task GetReclamationsByRestaurantOwner_ReturnsMappedDtos()
     {
-        var reclamations = new List<Reclamation>
+        List<Reclamation> reclamations = new List<Reclamation>
         {
             BuildReclamation(ReclamationStatus.Pending),
             BuildReclamation(ReclamationStatus.Resolved)

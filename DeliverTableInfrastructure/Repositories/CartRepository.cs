@@ -55,7 +55,7 @@ public class CartRepository(DeliverTableContext dbContext) : ICartRepository
 
     public async Task<bool> DeleteAsync(int cartId, CancellationToken ct = default)
     {
-        var cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId, ct);
+        Cart? cart = await _dbContext.Carts.FirstOrDefaultAsync(c => c.Id == cartId, ct);
         if (cart is null) return false;
 
         _dbContext.Carts.Remove(cart);
@@ -90,7 +90,7 @@ public class CartRepository(DeliverTableContext dbContext) : ICartRepository
 
     public async Task<bool> RemoveItemAsync(int cartItemId, CancellationToken ct = default)
     {
-        var item = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemId, ct);
+        CartItem? item = await _dbContext.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemId, ct);
         if (item is null) return false;
 
         _dbContext.CartItems.Remove(item);

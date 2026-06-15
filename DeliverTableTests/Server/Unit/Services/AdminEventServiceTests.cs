@@ -6,6 +6,7 @@ using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -31,10 +32,10 @@ public class AdminEventServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllEvents()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var events = new List<Event>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<Event> events = new List<Event>
         {
             new()
             {
@@ -52,7 +53,7 @@ public class AdminEventServiceTests
 
         _eventRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(events);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminEventResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -65,10 +66,10 @@ public class AdminEventServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsEvent()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var evt = new Event
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Event evt = new Event
         {
             Id = 1,
             Name = "Événement A",
@@ -82,7 +83,7 @@ public class AdminEventServiceTests
 
         _eventRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(evt);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminEventResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -95,7 +96,7 @@ public class AdminEventServiceTests
     {
         _eventRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Event?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminEventResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -109,23 +110,23 @@ public class AdminEventServiceTests
     [Test]
     public async Task CreateAsync_WhenValid_CreatesEvent()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
 
         _userRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(user);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _eventRepository.CreateAsync(Arg.Any<Event>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var e = callInfo.Arg<Event>();
+                Event e = callInfo.Arg<Event>();
                 e.Id = 10;
                 e.CreatedByUser = user;
                 e.Restaurant = restaurant;
                 return e;
             });
 
-        var request = new AdminCreateEventRequest
+        AdminCreateEventRequest request = new AdminCreateEventRequest
         {
             Name = "Nouvel Événement",
             Description = "Description",
@@ -138,7 +139,7 @@ public class AdminEventServiceTests
             CreatedByUserId = 5
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminEventResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Nouvel Événement"));
@@ -148,11 +149,11 @@ public class AdminEventServiceTests
     [Test]
     public async Task CreateAsync_WhenInvalidDates_ReturnsError()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
         _userRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(user);
 
-        var request = new AdminCreateEventRequest
+        AdminCreateEventRequest request = new AdminCreateEventRequest
         {
             Name = "Événement",
             StartsAt = DateTime.UtcNow.AddDays(2),
@@ -160,7 +161,7 @@ public class AdminEventServiceTests
             CreatedByUserId = 5
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminEventResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -172,7 +173,7 @@ public class AdminEventServiceTests
     {
         _userRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((User?)null);
 
-        var request = new AdminCreateEventRequest
+        AdminCreateEventRequest request = new AdminCreateEventRequest
         {
             Name = "Événement",
             StartsAt = DateTime.UtcNow,
@@ -180,7 +181,7 @@ public class AdminEventServiceTests
             CreatedByUserId = 99
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminEventResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -189,12 +190,12 @@ public class AdminEventServiceTests
     [Test]
     public async Task CreateAsync_WhenRestaurantNotFound_Returns404()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
         _userRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(user);
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminCreateEventRequest
+        AdminCreateEventRequest request = new AdminCreateEventRequest
         {
             Name = "Événement",
             StartsAt = DateTime.UtcNow,
@@ -203,7 +204,7 @@ public class AdminEventServiceTests
             RestaurantId = 99
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminEventResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -213,19 +214,19 @@ public class AdminEventServiceTests
     [Test]
     public async Task CreateAsync_WhenNoRestaurant_CreatesEvent()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
         _userRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(user);
         _eventRepository.CreateAsync(Arg.Any<Event>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var e = callInfo.Arg<Event>();
+                Event e = callInfo.Arg<Event>();
                 e.Id = 10;
                 e.CreatedByUser = user;
                 return e;
             });
 
-        var request = new AdminCreateEventRequest
+        AdminCreateEventRequest request = new AdminCreateEventRequest
         {
             Name = "Événement sans restaurant",
             StartsAt = DateTime.UtcNow,
@@ -234,7 +235,7 @@ public class AdminEventServiceTests
             RestaurantId = null
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminEventResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.RestaurantId, Is.Null);
@@ -247,10 +248,10 @@ public class AdminEventServiceTests
     [Test]
     public async Task UpdateAsync_WhenExists_UpdatesAndReturns()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var evt = new Event
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Event evt = new Event
         {
             Id = 1,
             Name = "Ancien",
@@ -267,7 +268,7 @@ public class AdminEventServiceTests
         _eventRepository.UpdateAsync(Arg.Any<Event>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Event>());
 
-        var request = new AdminUpdateEventRequest
+        AdminUpdateEventRequest request = new AdminUpdateEventRequest
         {
             Name = "Nouveau Nom",
             StartsAt = DateTime.UtcNow.AddDays(1),
@@ -278,7 +279,7 @@ public class AdminEventServiceTests
             RestaurantId = 1
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminEventResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Nouveau Nom"));
@@ -292,14 +293,14 @@ public class AdminEventServiceTests
     {
         _eventRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Event?)null);
 
-        var request = new AdminUpdateEventRequest
+        AdminUpdateEventRequest request = new AdminUpdateEventRequest
         {
             Name = "Name",
             StartsAt = DateTime.UtcNow,
             EndsAt = DateTime.UtcNow.AddHours(1)
         };
 
-        var result = await _sut.UpdateAsync(99, request);
+        ServiceResult<AdminEventResponse> result = await _sut.UpdateAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -309,9 +310,9 @@ public class AdminEventServiceTests
     [Test]
     public async Task UpdateAsync_WhenInvalidDates_ReturnsError()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 5;
-        var evt = new Event
+        Event evt = new Event
         {
             Id = 1,
             Name = "Événement",
@@ -323,14 +324,14 @@ public class AdminEventServiceTests
 
         _eventRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(evt);
 
-        var request = new AdminUpdateEventRequest
+        AdminUpdateEventRequest request = new AdminUpdateEventRequest
         {
             Name = "Name",
             StartsAt = DateTime.UtcNow.AddDays(2),
             EndsAt = DateTime.UtcNow.AddDays(1)
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminEventResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -346,7 +347,7 @@ public class AdminEventServiceTests
     {
         _eventRepository.DeleteAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1);
+        ServiceResult result = await _sut.DeleteAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -356,7 +357,7 @@ public class AdminEventServiceTests
     {
         _eventRepository.DeleteAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteAsync(99);
+        ServiceResult result = await _sut.DeleteAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

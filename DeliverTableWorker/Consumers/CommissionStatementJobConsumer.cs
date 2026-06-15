@@ -70,7 +70,7 @@ public sealed class CommissionStatementJobConsumer(
 
     private async Task ConnectAndConsumeAsync(CancellationToken ct)
     {
-        var factory = new ConnectionFactory
+        ConnectionFactory factory = new ConnectionFactory
         {
             HostName = env.RabbitMqHost,
             Port = env.RabbitMqPort,
@@ -84,7 +84,7 @@ public sealed class CommissionStatementJobConsumer(
         await _channel.BasicQosAsync(0, 1, false, ct);
         await DeclareTopologyAsync(ct);
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
+        AsyncEventingBasicConsumer consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (_, ea) =>
         {
             try
@@ -126,7 +126,7 @@ public sealed class CommissionStatementJobConsumer(
 
     private async Task DeclareTopologyAsync(CancellationToken ct)
     {
-        var channel = _channel ?? throw new InvalidOperationException("Channel not initialized");
+        IChannel channel = _channel ?? throw new InvalidOperationException("Channel not initialized");
 
         await channel.ExchangeDeclareAsync(
             exchange: MainExchange,
@@ -148,8 +148,8 @@ public sealed class CommissionStatementJobConsumer(
 
     private async Task HandleMessageAsync(BasicDeliverEventArgs ea, CancellationToken ct)
     {
-        var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-        var message = JsonSerializer.Deserialize<CommissionStatementJobMessage>(json);
+        string json = Encoding.UTF8.GetString(ea.Body.ToArray());
+        CommissionStatementJobMessage? message = JsonSerializer.Deserialize<CommissionStatementJobMessage>(json);
 
         if (message is null)
         {
@@ -178,13 +178,13 @@ public sealed class CommissionStatementJobConsumer(
 
     public async Task HandleAsync(CommissionStatementJobMessage msg, CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var statementRepo = scope.ServiceProvider.GetRequiredService<ICommissionStatementRepository>();
-        var renderer = scope.ServiceProvider.GetRequiredService<ICommissionStatementPdfRenderer>();
-        var storage = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
-        var emailJobRepo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
+        using IServiceScope scope = scopeFactory.CreateScope();
+        ICommissionStatementRepository statementRepo = scope.ServiceProvider.GetRequiredService<ICommissionStatementRepository>();
+        ICommissionStatementPdfRenderer renderer = scope.ServiceProvider.GetRequiredService<ICommissionStatementPdfRenderer>();
+        IObjectStorageService storage = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
+        IEmailJobRepository emailJobRepo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
 
-        var statement = await statementRepo.GetByIdWithLinesAndRecipientAsync(
+        CommissionStatement? statement = await statementRepo.GetByIdWithLinesAndRecipientAsync(
             msg.CommissionStatementId,
             ct
         );
@@ -199,18 +199,18 @@ public sealed class CommissionStatementJobConsumer(
 
         try
         {
-            var pdfBytes = renderer.Render(statement);
+            byte[] pdfBytes = renderer.Render(statement);
             string fileName = $"{statement.Number}.pdf";
             string folder =
                 $"commission-statements/{statement.PeriodYear}/{statement.PeriodMonth:D2}";
-            var key = await storage.UploadAsync(pdfBytes, "application/pdf", folder, fileName, ct);
+            string key = await storage.UploadAsync(pdfBytes, "application/pdf", folder, fileName, ct);
 
             statement.StoragePath = key;
             statement.Status = CommissionStatementStatus.Generated;
             statement.FailureReason = null;
             await statementRepo.UpdateAsync(statement, ct);
 
-            var recipientEmail =
+            string? recipientEmail =
                 statement.RecipientEmailSnapshot
                 ?? statement.RecipientRestaurant?.Owner?.Email;
 
@@ -224,10 +224,10 @@ public sealed class CommissionStatementJobConsumer(
                 return;
             }
 
-            var recipientName = statement.RecipientRestaurant?.Name ?? "";
-            var (subject, jobType, templateData) = BuildEmailJob(statement);
+            string recipientName = statement.RecipientRestaurant?.Name ?? "";
+            (string? subject, EmailJobType jobType, object? templateData) = BuildEmailJob(statement);
 
-            var emailJob = new EmailJob
+            EmailJob emailJob = new EmailJob
             {
                 Type = jobType,
                 Status = EmailJobStatus.Pending,
@@ -275,16 +275,16 @@ public sealed class CommissionStatementJobConsumer(
         CommissionStatement statement
     )
     {
-        var issuedAt = statement.IssuedAt.ToString("dd/MM/yyyy");
-        var totalTtc = statement.TotalTtc.ToString("0.00");
-        var mois = MoisFrancais(statement.PeriodMonth);
+        string issuedAt = statement.IssuedAt.ToString("dd/MM/yyyy");
+        string totalTtc = statement.TotalTtc.ToString("0.00");
+        string mois = MoisFrancais(statement.PeriodMonth);
 
         if (statement.Kind == CommissionStatementKind.Invoice)
         {
-            var periodLabel = $"{mois} {statement.PeriodYear}";
-            var subject =
+            string periodLabel = $"{mois} {statement.PeriodYear}";
+            string subject =
                 $"Votre relevé de commissions de {mois} {statement.PeriodYear} est disponible";
-            var data = new CommissionStatementInvoiceData(
+            CommissionStatementInvoiceData data = new CommissionStatementInvoiceData(
                 statement.Number,
                 periodLabel,
                 issuedAt,
@@ -295,10 +295,10 @@ public sealed class CommissionStatementJobConsumer(
         }
         else
         {
-            var firstLine = statement.Lines.FirstOrDefault();
-            var orderNumber = firstLine?.OrderNumber ?? "";
-            var subject = $"Avoir sur commissions — commande {orderNumber}";
-            var data = new CommissionStatementCreditNoteData(
+            CommissionStatementLine? firstLine = statement.Lines.FirstOrDefault();
+            string orderNumber = firstLine?.OrderNumber ?? "";
+            string subject = $"Avoir sur commissions — commande {orderNumber}";
+            CommissionStatementCreditNoteData data = new CommissionStatementCreditNoteData(
                 statement.Number,
                 orderNumber,
                 issuedAt,

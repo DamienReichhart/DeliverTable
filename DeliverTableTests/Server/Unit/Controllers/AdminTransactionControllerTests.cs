@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +25,7 @@ public class AdminTransactionControllerTests
     [Test]
     public async Task GetAll_ReturnsOk()
     {
-        var transactions = new List<AdminTransactionResponse>
+        List<AdminTransactionResponse> transactions = new List<AdminTransactionResponse>
         {
             new() { Id = 1, Type = "OrderCommission" },
             new() { Id = 2, Type = "Withdrawal" }
@@ -33,7 +33,7 @@ public class AdminTransactionControllerTests
         _adminTransactionService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminTransactionResponse>>.Success(transactions));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -44,10 +44,10 @@ public class AdminTransactionControllerTests
         _adminTransactionService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminTransactionResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -58,11 +58,11 @@ public class AdminTransactionControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var transaction = new AdminTransactionResponse { Id = 1, Type = "OrderCommission" };
+        AdminTransactionResponse transaction = new AdminTransactionResponse { Id = 1, Type = "OrderCommission" };
         _adminTransactionService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminTransactionResponse>.Success(transaction));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -73,10 +73,10 @@ public class AdminTransactionControllerTests
         _adminTransactionService.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminTransactionResponse>.Failure(new ServiceError("Transaction introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 

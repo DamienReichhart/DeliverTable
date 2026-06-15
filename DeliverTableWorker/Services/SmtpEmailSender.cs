@@ -16,16 +16,16 @@ public class SmtpEmailSender(WorkerEnvironment env, ILogger<SmtpEmailSender> log
         CancellationToken ct = default
     )
     {
-        var message = new MimeMessage();
+        MimeMessage message = new MimeMessage();
         message.From.Add(new MailboxAddress(env.SmtpFromName, env.SmtpFromEmail));
         message.To.Add(new MailboxAddress(toName ?? to, to));
         message.Subject = subject;
 
-        var htmlPart = new TextPart("html") { Text = htmlBody };
+        TextPart htmlPart = new TextPart("html") { Text = htmlBody };
 
         if (attachment is not null)
         {
-            var multipart = new Multipart("mixed");
+            Multipart multipart = new Multipart("mixed");
             multipart.Add(htmlPart);
             multipart.Add(new MimePart("application", "pdf")
             {
@@ -41,7 +41,7 @@ public class SmtpEmailSender(WorkerEnvironment env, ILogger<SmtpEmailSender> log
             message.Body = htmlPart;
         }
 
-        using var client = new SmtpClient();
+        using SmtpClient client = new SmtpClient();
         await client.ConnectAsync(env.SmtpHost, env.SmtpPort, SecureSocketOptions.SslOnConnect, ct);
         await client.AuthenticateAsync(env.SmtpUser, env.SmtpPassword, ct);
         await client.SendAsync(message, ct);

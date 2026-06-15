@@ -8,6 +8,7 @@ using DeliverTableSharedLibrary.Dtos.Promotion;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableSharedLibrary.Dtos;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -31,10 +32,10 @@ public class PromotionServiceTests
     [Test]
     public async Task CreateAsync_WithValidAutomaticPromotion_ReturnsSuccess()
     {
-        var restaurant = CreateRestaurant(ownerId: 1);
+        Restaurant restaurant = CreateRestaurant(ownerId: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new CreatePromotionRequest
+        CreatePromotionRequest request = new CreatePromotionRequest
         {
             Name = "Promo Été",
             Description = "Réduction estivale",
@@ -48,13 +49,13 @@ public class PromotionServiceTests
         _promotionRepository.CreateAsync(Arg.Any<Promotion>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var p = callInfo.ArgAt<Promotion>(0);
+                Promotion p = callInfo.ArgAt<Promotion>(0);
                 p.Id = 42;
                 p.PromotionDishes ??= [];
                 return p;
             });
 
-        var result = await _sut.CreateAsync(1, 1, request);
+        ServiceResult<PromotionDto> result = await _sut.CreateAsync(1, 1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(42));
@@ -68,7 +69,7 @@ public class PromotionServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new CreatePromotionRequest
+        CreatePromotionRequest request = new CreatePromotionRequest
         {
             Name = "Promo",
             PromotionType = nameof(PromotionType.Automatic),
@@ -78,7 +79,7 @@ public class PromotionServiceTests
             EndsAt = new DateTime(2026, 8, 31)
         };
 
-        var result = await _sut.CreateAsync(99, 1, request);
+        ServiceResult<PromotionDto> result = await _sut.CreateAsync(99, 1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -88,10 +89,10 @@ public class PromotionServiceTests
     [Test]
     public async Task CreateAsync_WhenNotOwner_ReturnsError()
     {
-        var restaurant = CreateRestaurant(ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new CreatePromotionRequest
+        CreatePromotionRequest request = new CreatePromotionRequest
         {
             Name = "Promo",
             PromotionType = nameof(PromotionType.Automatic),
@@ -101,7 +102,7 @@ public class PromotionServiceTests
             EndsAt = new DateTime(2026, 8, 31)
         };
 
-        var result = await _sut.CreateAsync(1, 999, request);
+        ServiceResult<PromotionDto> result = await _sut.CreateAsync(1, 999, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -110,10 +111,10 @@ public class PromotionServiceTests
     [Test]
     public async Task CreateAsync_WithInvalidDates_ReturnsError()
     {
-        var restaurant = CreateRestaurant(ownerId: 1);
+        Restaurant restaurant = CreateRestaurant(ownerId: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new CreatePromotionRequest
+        CreatePromotionRequest request = new CreatePromotionRequest
         {
             Name = "Promo",
             PromotionType = nameof(PromotionType.Automatic),
@@ -123,7 +124,7 @@ public class PromotionServiceTests
             EndsAt = new DateTime(2026, 6, 1)
         };
 
-        var result = await _sut.CreateAsync(1, 1, request);
+        ServiceResult<PromotionDto> result = await _sut.CreateAsync(1, 1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.InvalidPromotionDates));
@@ -132,15 +133,15 @@ public class PromotionServiceTests
     [Test]
     public async Task CreateAsync_WithItemBasedAndInvalidDish_ReturnsError()
     {
-        var restaurant = CreateRestaurant(ownerId: 1);
+        Restaurant restaurant = CreateRestaurant(ownerId: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
         // Restaurant 1 only has dish 5 — dish 10 does not belong to it
-        var restaurantDishes = new List<Dish> { new() { Id = 5, RestaurantId = 1, Name = "Plat local" } };
+        List<Dish> restaurantDishes = new List<Dish> { new() { Id = 5, RestaurantId = 1, Name = "Plat local" } };
         _dishRepository.GetByRestaurantIdAsync(Arg.Any<DishQuery>(), 1, Arg.Any<CancellationToken>())
             .Returns((restaurantDishes, 1));
 
-        var request = new CreatePromotionRequest
+        CreatePromotionRequest request = new CreatePromotionRequest
         {
             Name = "Promo Item",
             PromotionType = nameof(PromotionType.ItemBased),
@@ -151,7 +152,7 @@ public class PromotionServiceTests
             DishIds = [10]
         };
 
-        var result = await _sut.CreateAsync(1, 1, request);
+        ServiceResult<PromotionDto> result = await _sut.CreateAsync(1, 1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.PromotionDishNotFromRestaurant));
@@ -160,10 +161,10 @@ public class PromotionServiceTests
     [Test]
     public async Task GetByRestaurantAsync_WhenOwner_ReturnsPaginatedResult()
     {
-        var restaurant = CreateRestaurant(ownerId: 1);
+        Restaurant restaurant = CreateRestaurant(ownerId: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var promotions = new List<Promotion>
+        List<Promotion> promotions = new List<Promotion>
         {
             new()
             {
@@ -182,7 +183,7 @@ public class PromotionServiceTests
         _promotionRepository.GetByRestaurantAsync(1, Arg.Any<PromotionQuery>(), Arg.Any<CancellationToken>())
             .Returns((promotions, 1));
 
-        var result = await _sut.GetByRestaurantAsync(1, 1, new PromotionQuery());
+        ServiceResult<PaginatedResult<PromotionDto>> result = await _sut.GetByRestaurantAsync(1, 1, new PromotionQuery());
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.TotalCount, Is.EqualTo(1));
@@ -193,10 +194,10 @@ public class PromotionServiceTests
     [Test]
     public async Task GetByRestaurantAsync_WhenNotOwner_ReturnsError()
     {
-        var restaurant = CreateRestaurant(ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.GetByRestaurantAsync(1, 999, new PromotionQuery());
+        ServiceResult<PaginatedResult<PromotionDto>> result = await _sut.GetByRestaurantAsync(1, 999, new PromotionQuery());
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -205,13 +206,13 @@ public class PromotionServiceTests
     [Test]
     public async Task UpdateAsync_WithValidData_ReturnsUpdatedPromotion()
     {
-        var promotion = CreatePromotion(restaurantId: 1);
+        Promotion promotion = CreatePromotion(restaurantId: 1);
         _promotionRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(promotion);
 
-        var restaurant = CreateRestaurant(ownerId: 1);
+        Restaurant restaurant = CreateRestaurant(ownerId: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new UpdatePromotionRequest
+        UpdatePromotionRequest request = new UpdatePromotionRequest
         {
             Name = "Promo Mise à jour",
             Description = "Nouvelle description",
@@ -226,7 +227,7 @@ public class PromotionServiceTests
         _promotionRepository.UpdateAsync(Arg.Any<Promotion>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.ArgAt<Promotion>(0));
 
-        var result = await _sut.UpdateAsync(1, 1, request);
+        ServiceResult<PromotionDto> result = await _sut.UpdateAsync(1, 1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Promo Mise à jour"));
@@ -239,7 +240,7 @@ public class PromotionServiceTests
     {
         _promotionRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Promotion?)null);
 
-        var request = new UpdatePromotionRequest
+        UpdatePromotionRequest request = new UpdatePromotionRequest
         {
             Name = "Promo",
             PromotionType = nameof(PromotionType.Automatic),
@@ -249,7 +250,7 @@ public class PromotionServiceTests
             EndsAt = new DateTime(2026, 8, 31)
         };
 
-        var result = await _sut.UpdateAsync(99, 1, request);
+        ServiceResult<PromotionDto> result = await _sut.UpdateAsync(99, 1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -259,15 +260,15 @@ public class PromotionServiceTests
     [Test]
     public async Task DeleteAsync_WhenOwner_ReturnsSuccess()
     {
-        var promotion = CreatePromotion(restaurantId: 1);
+        Promotion promotion = CreatePromotion(restaurantId: 1);
         _promotionRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(promotion);
 
-        var restaurant = CreateRestaurant(ownerId: 1);
+        Restaurant restaurant = CreateRestaurant(ownerId: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
         _promotionRepository.DeleteAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1, 1);
+        ServiceResult result = await _sut.DeleteAsync(1, 1);
 
         Assert.That(result.IsSuccess, Is.True);
         await _promotionRepository.Received(1).DeleteAsync(1, Arg.Any<CancellationToken>());
@@ -276,13 +277,13 @@ public class PromotionServiceTests
     [Test]
     public async Task DeleteAsync_WhenNotOwner_ReturnsError()
     {
-        var promotion = CreatePromotion(restaurantId: 1);
+        Promotion promotion = CreatePromotion(restaurantId: 1);
         _promotionRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(promotion);
 
-        var restaurant = CreateRestaurant(ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.DeleteAsync(1, 999);
+        ServiceResult result = await _sut.DeleteAsync(1, 999);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

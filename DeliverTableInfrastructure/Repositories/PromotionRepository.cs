@@ -28,19 +28,19 @@ public class PromotionRepository(DeliverTableContext dbContext) : IPromotionRepo
     public async Task<(List<Promotion> Items, int TotalCount)> GetByRestaurantAsync(
         int restaurantId, PromotionQuery query, CancellationToken ct = default)
     {
-        var q = _dbContext.Promotions
+        IOrderedQueryable<Promotion> q = _dbContext.Promotions
             .Include(p => p.PromotionDishes)
             .Where(p => p.RestaurantId == restaurantId)
             .OrderByDescending(p => p.CreatedAt);
 
-        var totalCount = await q.CountAsync(ct);
-        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
+        int totalCount = await q.CountAsync(ct);
+        List<Promotion> items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
     public async Task<List<Promotion>> GetActiveByRestaurantAsync(int restaurantId, CancellationToken ct = default)
     {
-        var now = DateTime.UtcNow;
+        DateTime now = DateTime.UtcNow;
         return await _dbContext.Promotions
             .Include(p => p.PromotionDishes)
             .Where(p => p.RestaurantId == restaurantId && p.IsActive && p.StartsAt <= now && p.EndsAt >= now)
@@ -57,7 +57,7 @@ public class PromotionRepository(DeliverTableContext dbContext) : IPromotionRepo
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var promotion = await _dbContext.Promotions.FindAsync([id], ct);
+        Promotion? promotion = await _dbContext.Promotions.FindAsync([id], ct);
         if (promotion is null) return false;
         _dbContext.Promotions.Remove(promotion);
         await _dbContext.SaveChangesAsync(ct);

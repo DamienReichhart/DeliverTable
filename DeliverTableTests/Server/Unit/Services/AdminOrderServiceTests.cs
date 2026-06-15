@@ -6,6 +6,7 @@ using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -27,10 +28,10 @@ public class AdminOrderServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllOrders()
     {
-        var customer = CreateValidUser();
+        User customer = CreateValidUser();
         customer.Id = 1;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var orders = new List<Order>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<Order> orders = new List<Order>
         {
             new()
             {
@@ -48,7 +49,7 @@ public class AdminOrderServiceTests
 
         _orderRepository.GetAllUnscopedAsync(Arg.Any<CancellationToken>()).Returns(orders);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminOrderResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -61,10 +62,10 @@ public class AdminOrderServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsOrder()
     {
-        var customer = CreateValidUser();
+        User customer = CreateValidUser();
         customer.Id = 1;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var order = new Order
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Order order = new Order
         {
             Id = 1,
             CustomerId = 1,
@@ -85,7 +86,7 @@ public class AdminOrderServiceTests
 
         _orderRepository.GetByIdWithFullDetailsAsync(1, Arg.Any<CancellationToken>()).Returns(order);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminOrderResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -101,7 +102,7 @@ public class AdminOrderServiceTests
     {
         _orderRepository.GetByIdWithFullDetailsAsync(99, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminOrderResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -115,10 +116,10 @@ public class AdminOrderServiceTests
     [Test]
     public async Task UpdateStatusAsync_WhenValidStatus_UpdatesAndReturns()
     {
-        var customer = CreateValidUser();
+        User customer = CreateValidUser();
         customer.Id = 1;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var order = new Order
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Order order = new Order
         {
             Id = 1,
             CustomerId = 1,
@@ -134,9 +135,9 @@ public class AdminOrderServiceTests
         _orderRepository.UpdateAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Order>());
 
-        var request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
+        AdminUpdateOrderStatusRequest request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
 
-        var result = await _sut.UpdateStatusAsync(1, request);
+        ServiceResult<AdminOrderResponse> result = await _sut.UpdateStatusAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Status, Is.EqualTo(nameof(OrderStatus.Confirmed)));
@@ -147,9 +148,9 @@ public class AdminOrderServiceTests
     {
         _orderRepository.GetByIdWithFullDetailsAsync(99, Arg.Any<CancellationToken>()).Returns((Order?)null);
 
-        var request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
+        AdminUpdateOrderStatusRequest request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
 
-        var result = await _sut.UpdateStatusAsync(99, request);
+        ServiceResult<AdminOrderResponse> result = await _sut.UpdateStatusAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -159,10 +160,10 @@ public class AdminOrderServiceTests
     [Test]
     public async Task UpdateStatusAsync_WhenInvalidStatus_Returns400()
     {
-        var customer = CreateValidUser();
+        User customer = CreateValidUser();
         customer.Id = 1;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var order = new Order
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Order order = new Order
         {
             Id = 1,
             CustomerId = 1,
@@ -176,9 +177,9 @@ public class AdminOrderServiceTests
 
         _orderRepository.GetByIdWithFullDetailsAsync(1, Arg.Any<CancellationToken>()).Returns(order);
 
-        var request = new AdminUpdateOrderStatusRequest { Status = "InvalidStatus" };
+        AdminUpdateOrderStatusRequest request = new AdminUpdateOrderStatusRequest { Status = "InvalidStatus" };
 
-        var result = await _sut.UpdateStatusAsync(1, request);
+        ServiceResult<AdminOrderResponse> result = await _sut.UpdateStatusAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));

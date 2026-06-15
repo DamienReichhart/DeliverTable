@@ -27,7 +27,7 @@ public partial class OrderReclamation : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        var (order, orderError) = await OrderService.GetOrderByIdAsync(OrderId);
+        (OrderDto? order, DeliverTableSharedLibrary.Dtos.ErrorResponse? orderError) = await OrderService.GetOrderByIdAsync(OrderId);
         if (orderError is not null)
         {
             _errorMessage = orderError.Error;
@@ -37,7 +37,7 @@ public partial class OrderReclamation : ComponentBase
 
         _orderDto = order;
 
-        var (reclamation, reclamationError) = await ReclamationService.GetByOrderIdAsync(OrderId);
+        (ReclamationDto? reclamation, DeliverTableSharedLibrary.Dtos.ErrorResponse? reclamationError) = await ReclamationService.GetByOrderIdAsync(OrderId);
         if (reclamationError is not null)
         {
             _errorMessage = reclamationError.Error;
@@ -56,7 +56,7 @@ public partial class OrderReclamation : ComponentBase
         _contestSuccess = null;
         _contestError = null;
 
-        var (updated, error) = await ReclamationService.ContestAsync(_existingReclamation.ReclamationId);
+        (ReclamationDto? updated, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await ReclamationService.ContestAsync(_existingReclamation.ReclamationId);
         if (updated is not null)
         {
             _existingReclamation = updated;

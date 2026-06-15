@@ -32,14 +32,14 @@ public class DisputeService(
     public async Task<ServiceResult<Dispute>> HandleCreatedAsync(
         Stripe.Dispute stripeDispute, List<Func<Task>> deferredPublishes, CancellationToken ct)
     {
-        var existing = await disputeRepository.GetByStripeDisputeIdAsync(stripeDispute.Id, ct);
+        Dispute? existing = await disputeRepository.GetByStripeDisputeIdAsync(stripeDispute.Id, ct);
         if (existing is not null)
         {
             logger.LogInformation("Dispute {StripeDisputeId} already exists, skipping", stripeDispute.Id);
             return ServiceResult<Dispute>.Success(existing);
         }
 
-        var payment = await paymentRepository.GetByStripeChargeIdAsync(stripeDispute.ChargeId, ct);
+        Payment? payment = await paymentRepository.GetByStripeChargeIdAsync(stripeDispute.ChargeId, ct);
         if (payment is null)
         {
             logger.LogWarning(
@@ -48,17 +48,17 @@ public class DisputeService(
             return new ServiceError(ErrorMessages.DisputePaymentNotFound);
         }
 
-        var order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(payment.OrderId, ct);
         if (order is null)
             return new ServiceError(ErrorMessages.OrderNotFound);
 
-        var restaurant = await restaurantRepository.GetByIdWithOwnerAsync(order.RestaurantId, ct);
+        Restaurant? restaurant = await restaurantRepository.GetByIdWithOwnerAsync(order.RestaurantId, ct);
         if (restaurant is null)
             return new ServiceError(ErrorMessages.RestaurantNotFound);
 
         decimal amount = stripeDispute.Amount / 100m;
 
-        var dispute = new Dispute
+        Dispute dispute = new Dispute
         {
             StripeDisputeId = stripeDispute.Id,
             PaymentId = payment.Id,
@@ -96,7 +96,7 @@ public class DisputeService(
 
     public async Task<ServiceResult> HandleUpdatedAsync(Stripe.Dispute stripeDispute, CancellationToken ct)
     {
-        var dispute = await disputeRepository.GetByStripeDisputeIdAsync(stripeDispute.Id, ct);
+        Dispute? dispute = await disputeRepository.GetByStripeDisputeIdAsync(stripeDispute.Id, ct);
         if (dispute is null)
         {
             logger.LogWarning("Dispute update for unknown StripeDisputeId {Id}", stripeDispute.Id);
@@ -112,7 +112,7 @@ public class DisputeService(
     public async Task<ServiceResult> HandleClosedAsync(
         Stripe.Dispute stripeDispute, List<Func<Task>> deferredPublishes, CancellationToken ct)
     {
-        var dispute = await disputeRepository.GetByStripeDisputeIdAsync(stripeDispute.Id, ct);
+        Dispute? dispute = await disputeRepository.GetByStripeDisputeIdAsync(stripeDispute.Id, ct);
         if (dispute is null)
             return new ServiceError(ErrorMessages.DisputeNotFound);
 
@@ -124,7 +124,7 @@ public class DisputeService(
             return ServiceResult.Success();
         }
 
-        var status = (stripeDispute.Status ?? string.Empty).ToLowerInvariant();
+        string status = (stripeDispute.Status ?? string.Empty).ToLowerInvariant();
         string eventKey;
 
         Restaurant? restaurant = null;
@@ -183,11 +183,11 @@ public class DisputeService(
     public async Task<ServiceResult<PaginatedResult<AdminDisputeRowDto>>> ListForAdminAsync(
         DisputeAdminFilter filter, CancellationToken ct)
     {
-        var (items, total) = await disputeRepository.AdminListAsync(
+        (List<Dispute>? items, int total) = await disputeRepository.AdminListAsync(
             filter.State, filter.RestaurantId, filter.OrderId, filter.Year,
             filter.Page, filter.PageSize, ct);
 
-        var rows = items.Select(d => new AdminDisputeRowDto(
+        List<AdminDisputeRowDto> rows = items.Select(d => new AdminDisputeRowDto(
             d.Id,
             d.StripeDisputeId,
             d.OrderId,
@@ -216,15 +216,15 @@ public class DisputeService(
     {
         if (!isAdmin)
         {
-            var resto = await restaurantRepository.GetByIdAsync(restaurantId, ct);
+            Restaurant? resto = await restaurantRepository.GetByIdAsync(restaurantId, ct);
             if (resto is null)
                 return new ServiceError(ErrorMessages.RestaurantNotFound);
             if (resto.OwnerId != userId)
                 return ServiceError.Forbidden(ErrorMessages.DisputeAccessDenied);
         }
 
-        var (items, total) = await disputeRepository.ListForRestaurantAsync(restaurantId, page, pageSize, ct);
-        var rows = items.Select(d => new DisputeRowDto(
+        (List<Dispute>? items, int total) = await disputeRepository.ListForRestaurantAsync(restaurantId, page, pageSize, ct);
+        List<DisputeRowDto> rows = items.Select(d => new DisputeRowDto(
             d.Id,
             d.StripeDisputeId,
             d.OrderId,
@@ -248,15 +248,15 @@ public class DisputeService(
     public async Task<ServiceResult<AdminDisputeDetailDto>> GetAdminDetailAsync(
         int disputeId, CancellationToken ct)
     {
-        var dispute = await disputeRepository.GetByIdAsync(disputeId, ct);
+        Dispute? dispute = await disputeRepository.GetByIdAsync(disputeId, ct);
         if (dispute is null)
             return ServiceError.NotFound(ErrorMessages.DisputeNotFound);
 
-        var payment = await paymentRepository.GetByIdAsync(dispute.PaymentId, ct);
+        Payment? payment = await paymentRepository.GetByIdAsync(dispute.PaymentId, ct);
         string stripeChargeId = payment?.StripeChargeId ?? string.Empty;
         decimal paymentAmount = payment?.Amount ?? 0m;
 
-        var header = new AdminDisputeRowDto(
+        AdminDisputeRowDto header = new AdminDisputeRowDto(
             dispute.Id,
             dispute.StripeDisputeId,
             dispute.OrderId,
@@ -297,7 +297,7 @@ public class DisputeService(
         List<Func<Task>> deferredPublishes,
         CancellationToken ct)
     {
-        var notificationPayload = JsonSerializer.Serialize(new
+        string notificationPayload = JsonSerializer.Serialize(new
         {
             disputeId = dispute.Id,
             stripeDisputeId = dispute.StripeDisputeId,
@@ -316,9 +316,9 @@ public class DisputeService(
                 restaurant.OwnerId, NotificationType.Dispute, notificationPayload, ct);
         }
 
-        var (adminType, adminSubject) = ResolveAdminTemplate(eventKey, dispute.OrderId);
-        var (restoType, restoSubject) = ResolveRestaurantTemplate(eventKey, dispute.OrderId);
-        var templateData = BuildTemplateData(dispute, restaurant);
+        (EmailJobType adminType, string? adminSubject) = ResolveAdminTemplate(eventKey, dispute.OrderId);
+        (EmailJobType restoType, string? restoSubject) = ResolveRestaurantTemplate(eventKey, dispute.OrderId);
+        DisputeEmailData templateData = BuildTemplateData(dispute, restaurant);
 
         await QueueEmailAsync(adminType, env.AdminDisputeEmail, null, adminSubject, templateData, deferredPublishes, ct);
 
@@ -339,7 +339,7 @@ public class DisputeService(
         List<Func<Task>> deferredPublishes,
         CancellationToken ct)
     {
-        var job = new EmailJob
+        EmailJob job = new EmailJob
         {
             Type = type,
             Status = EmailJobStatus.Pending,

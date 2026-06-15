@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.DiscountCode;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -27,12 +27,12 @@ public class DiscountCodeControllerTests
     public async Task Create_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var request = new CreateDiscountCodeRequest();
-        var dto = new DiscountCodeDto { Id = 1, RestaurantId = 10, Code = "PROMO10" };
+        CreateDiscountCodeRequest request = new CreateDiscountCodeRequest();
+        DiscountCodeDto dto = new DiscountCodeDto { Id = 1, RestaurantId = 10, Code = "PROMO10" };
         _discountCodeService.CreateAsync(10, 5, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DiscountCodeDto>.Success(dto));
 
-        var result = await _sut.Create(10, request, CancellationToken.None);
+        IActionResult result = await _sut.Create(10, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -41,8 +41,8 @@ public class DiscountCodeControllerTests
     public async Task GetByRestaurant_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var query = new DiscountCodeQuery();
-        var paginated = new PaginatedResult<DiscountCodeDto>
+        DiscountCodeQuery query = new DiscountCodeQuery();
+        PaginatedResult<DiscountCodeDto> paginated = new PaginatedResult<DiscountCodeDto>
         {
             Items = [new DiscountCodeDto { Id = 1, Code = "PROMO10" }],
             TotalCount = 1,
@@ -52,7 +52,7 @@ public class DiscountCodeControllerTests
         _discountCodeService.GetByRestaurantAsync(10, 5, query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<DiscountCodeDto>>.Success(paginated));
 
-        var result = await _sut.GetByRestaurant(10, query, CancellationToken.None);
+        IActionResult result = await _sut.GetByRestaurant(10, query, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -61,12 +61,12 @@ public class DiscountCodeControllerTests
     public async Task Update_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var request = new UpdateDiscountCodeRequest();
-        var dto = new DiscountCodeDto { Id = 1, Code = "PROMO20" };
+        UpdateDiscountCodeRequest request = new UpdateDiscountCodeRequest();
+        DiscountCodeDto dto = new DiscountCodeDto { Id = 1, Code = "PROMO20" };
         _discountCodeService.UpdateAsync(1, 5, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DiscountCodeDto>.Success(dto));
 
-        var result = await _sut.Update(1, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -78,7 +78,7 @@ public class DiscountCodeControllerTests
         _discountCodeService.DeleteAsync(1, 5, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }

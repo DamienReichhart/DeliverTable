@@ -7,6 +7,7 @@ using DeliverTableSharedLibrary.Dtos.Restaurant;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -30,7 +31,7 @@ public class RestaurantServiceTests
     [Test]
     public async Task CreateAsync_InvalidSiret_ReturnsError()
     {
-        var request = new CreateRestaurantDto
+        CreateRestaurantDto request = new CreateRestaurantDto
         {
             Name = "X",
             Description = "Une description",
@@ -46,7 +47,7 @@ public class RestaurantServiceTests
             IsVatRegistered = true,
         };
 
-        var result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
+        ServiceResult<RestaurantDto> result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.SiretInvalid));
@@ -55,7 +56,7 @@ public class RestaurantServiceTests
     [Test]
     public async Task CreateAsync_MissingLegalFields_ReturnsError()
     {
-        var request = new CreateRestaurantDto
+        CreateRestaurantDto request = new CreateRestaurantDto
         {
             Name = "X",
             Description = "Une description",
@@ -71,7 +72,7 @@ public class RestaurantServiceTests
             IsVatRegistered = true,
         };
 
-        var result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
+        ServiceResult<RestaurantDto> result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.LegalFieldsRequired));
@@ -80,7 +81,7 @@ public class RestaurantServiceTests
     [Test]
     public async Task CreateAsync_ValidLegalData_Persists()
     {
-        var request = new CreateRestaurantDto
+        CreateRestaurantDto request = new CreateRestaurantDto
         {
             Name = "Valid Restaurant",
             Description = "Une description valide",
@@ -101,7 +102,7 @@ public class RestaurantServiceTests
             .GetCoordinatesAsync(request.AdressLine1, request.City, request.ZipCode)
             .Returns((48.85, 2.35));
 
-        var createdRestaurant = CreateRestaurant(id: 99, ownerId: 1);
+        Restaurant createdRestaurant = CreateRestaurant(id: 99, ownerId: 1);
         createdRestaurant.Siret = request.Siret;
         createdRestaurant.LegalName = request.LegalName;
         createdRestaurant.LegalAddress = request.LegalAddress;
@@ -112,7 +113,7 @@ public class RestaurantServiceTests
             .CreateAsync(Arg.Any<Restaurant>(), Arg.Any<CancellationToken>())
             .Returns(createdRestaurant);
 
-        var result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
+        ServiceResult<RestaurantDto> result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _restaurantRepository.Received(1).CreateAsync(
@@ -128,7 +129,7 @@ public class RestaurantServiceTests
     [Test]
     public async Task CreateAsync_IsVatRegisteredTrueWithoutVatNumber_ReturnsError()
     {
-        var request = new CreateRestaurantDto
+        CreateRestaurantDto request = new CreateRestaurantDto
         {
             Name = "X",
             Description = "Une description",
@@ -149,7 +150,7 @@ public class RestaurantServiceTests
             .GetCoordinatesAsync(request.AdressLine1, request.City, request.ZipCode)
             .Returns((48.85, 2.35));
 
-        var result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
+        ServiceResult<RestaurantDto> result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.VatNumberRequiredWhenVatRegistered));
@@ -158,7 +159,7 @@ public class RestaurantServiceTests
     [Test]
     public async Task CreateAsync_IsVatRegisteredTrueWithVatNumber_PersistsVatNumber()
     {
-        var request = new CreateRestaurantDto
+        CreateRestaurantDto request = new CreateRestaurantDto
         {
             Name = "Valid Restaurant",
             Description = "Une description",
@@ -179,12 +180,12 @@ public class RestaurantServiceTests
             .GetCoordinatesAsync(request.AdressLine1, request.City, request.ZipCode)
             .Returns((48.85, 2.35));
 
-        var createdRestaurant = CreateRestaurant(id: 99, ownerId: 1);
+        Restaurant createdRestaurant = CreateRestaurant(id: 99, ownerId: 1);
         _restaurantRepository
             .CreateAsync(Arg.Any<Restaurant>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Restaurant>());
 
-        var result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
+        ServiceResult<RestaurantDto> result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _restaurantRepository.Received(1).CreateAsync(
@@ -197,7 +198,7 @@ public class RestaurantServiceTests
     [Test]
     public async Task CreateAsync_IsVatRegisteredFalseWithStaleVatNumber_PersistsAsNull()
     {
-        var request = new CreateRestaurantDto
+        CreateRestaurantDto request = new CreateRestaurantDto
         {
             Name = "Valid Restaurant",
             Description = "Une description",
@@ -222,7 +223,7 @@ public class RestaurantServiceTests
             .CreateAsync(Arg.Any<Restaurant>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Restaurant>());
 
-        var result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
+        ServiceResult<RestaurantDto> result = await _sut.CreateAsync(request, ownerId: 1, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _restaurantRepository.Received(1).CreateAsync(
@@ -239,10 +240,10 @@ public class RestaurantServiceTests
     [Test]
     public async Task UpdateAsync_InvalidSiret_ReturnsError()
     {
-        var existing = CreateRestaurant(id: 1);
+        Restaurant existing = CreateRestaurant(id: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
 
-        var request = new UpdateRestaurantDto
+        UpdateRestaurantDto request = new UpdateRestaurantDto
         {
             Name = "X",
             Description = "Une description",
@@ -258,7 +259,7 @@ public class RestaurantServiceTests
             IsVatRegistered = true,
         };
 
-        var result = await _sut.UpdateAsync(1, request, CancellationToken.None);
+        ServiceResult<DetailedRestaurantDto> result = await _sut.UpdateAsync(1, request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.SiretInvalid));
@@ -267,10 +268,10 @@ public class RestaurantServiceTests
     [Test]
     public async Task UpdateAsync_MissingLegalFields_ReturnsError()
     {
-        var existing = CreateRestaurant(id: 1);
+        Restaurant existing = CreateRestaurant(id: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
 
-        var request = new UpdateRestaurantDto
+        UpdateRestaurantDto request = new UpdateRestaurantDto
         {
             Name = "X",
             Description = "Une description",
@@ -286,7 +287,7 @@ public class RestaurantServiceTests
             IsVatRegistered = false,
         };
 
-        var result = await _sut.UpdateAsync(1, request, CancellationToken.None);
+        ServiceResult<DetailedRestaurantDto> result = await _sut.UpdateAsync(1, request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.LegalFieldsRequired));
@@ -295,10 +296,10 @@ public class RestaurantServiceTests
     [Test]
     public async Task UpdateAsync_ValidLegalData_Persists()
     {
-        var existing = CreateRestaurant(id: 1);
+        Restaurant existing = CreateRestaurant(id: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
 
-        var request = new UpdateRestaurantDto
+        UpdateRestaurantDto request = new UpdateRestaurantDto
         {
             Name = "Updated Restaurant",
             Description = "Une description mise à jour",
@@ -322,7 +323,7 @@ public class RestaurantServiceTests
             .UpdateAsync(Arg.Any<Restaurant>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Restaurant>());
 
-        var result = await _sut.UpdateAsync(1, request, CancellationToken.None);
+        ServiceResult<DetailedRestaurantDto> result = await _sut.UpdateAsync(1, request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _restaurantRepository.Received(1).UpdateAsync(
@@ -338,14 +339,14 @@ public class RestaurantServiceTests
     [Test]
     public async Task UpdateAsync_IsVatRegisteredTrueWithoutVatNumber_ReturnsError()
     {
-        var existing = CreateRestaurant(id: 1);
+        Restaurant existing = CreateRestaurant(id: 1);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
 
         _geoLocationService
             .GetCoordinatesAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns((48.85, 2.35));
 
-        var request = new UpdateRestaurantDto
+        UpdateRestaurantDto request = new UpdateRestaurantDto
         {
             Name = "X",
             Description = "Une description",
@@ -362,7 +363,7 @@ public class RestaurantServiceTests
             VatNumber = null,
         };
 
-        var result = await _sut.UpdateAsync(1, request, CancellationToken.None);
+        ServiceResult<DetailedRestaurantDto> result = await _sut.UpdateAsync(1, request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.VatNumberRequiredWhenVatRegistered));
@@ -371,7 +372,7 @@ public class RestaurantServiceTests
     [Test]
     public async Task UpdateAsync_IsVatRegisteredFalseWithStaleVatNumber_PersistsAsNull()
     {
-        var existing = CreateRestaurant(id: 1);
+        Restaurant existing = CreateRestaurant(id: 1);
         existing.VatNumber = "FR99999999999";
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(existing);
 
@@ -383,7 +384,7 @@ public class RestaurantServiceTests
             .UpdateAsync(Arg.Any<Restaurant>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Restaurant>());
 
-        var request = new UpdateRestaurantDto
+        UpdateRestaurantDto request = new UpdateRestaurantDto
         {
             Name = "Updated",
             Description = "desc",
@@ -400,7 +401,7 @@ public class RestaurantServiceTests
             VatNumber = "FR12345678901",
         };
 
-        var result = await _sut.UpdateAsync(1, request, CancellationToken.None);
+        ServiceResult<DetailedRestaurantDto> result = await _sut.UpdateAsync(1, request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _restaurantRepository.Received(1).UpdateAsync(

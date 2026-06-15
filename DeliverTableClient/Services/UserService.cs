@@ -13,15 +13,15 @@ public sealed class UserService(HttpClient httpClient) : IUserService
     public async Task<(UserResponse? User, ErrorResponse? Error)> GetProfileAsync(
         CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Auth.Me, cancellationToken);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Auth.Me, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await ReadError(response, cancellationToken);
+            ErrorResponse error = await ReadError(response, cancellationToken);
             return (null, error);
         }
 
-        var user = await response.Content.ReadFromJsonAsync<UserResponse>(cancellationToken: cancellationToken);
+        UserResponse? user = await response.Content.ReadFromJsonAsync<UserResponse>(cancellationToken: cancellationToken);
 
         if (user is null)
         {
@@ -34,26 +34,26 @@ public sealed class UserService(HttpClient httpClient) : IUserService
     public async Task<(ConnectionResponse? Connection, ErrorResponse? Error)> UpdateProfileAsync(
         UpdateProfileRequest request, CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.UpdateProfile, request, cancellationToken);
+        using HttpResponseMessage response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.UpdateProfile, request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await ReadError(response, cancellationToken);
+            ErrorResponse error = await ReadError(response, cancellationToken);
             return (null, error);
         }
 
-        var connection = await response.Content.ReadFromJsonAsync<ConnectionResponse>(cancellationToken: cancellationToken);
+        ConnectionResponse? connection = await response.Content.ReadFromJsonAsync<ConnectionResponse>(cancellationToken: cancellationToken);
         return (connection, null);
     }
 
     public async Task<(bool Success, ErrorResponse? Error)> ChangePasswordAsync(
         ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.ChangePassword, request, cancellationToken);
+        using HttpResponseMessage response = await _httpClient.PutAsJsonAsync(ApiRoutes.Auth.ChangePassword, request, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await ReadError(response, cancellationToken);
+            ErrorResponse error = await ReadError(response, cancellationToken);
             return (false, error);
         }
 
@@ -64,7 +64,7 @@ public sealed class UserService(HttpClient httpClient) : IUserService
     {
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
         }
         catch

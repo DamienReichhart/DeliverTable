@@ -95,7 +95,7 @@ public class LoyaltyRepository(DeliverTableContext dbContext) : ILoyaltyReposito
 
     public async Task<bool> DeleteProgramAsync(int id, CancellationToken ct = default)
     {
-        var program = await _dbContext.LoyaltyPrograms.FindAsync([id], ct);
+        LoyaltyProgram? program = await _dbContext.LoyaltyPrograms.FindAsync([id], ct);
         if (program is null) return false;
         _dbContext.LoyaltyPrograms.Remove(program);
         await _dbContext.SaveChangesAsync(ct);
@@ -104,11 +104,11 @@ public class LoyaltyRepository(DeliverTableContext dbContext) : ILoyaltyReposito
 
     public async Task MarkPendingRedemptionsCommittedForOrderAsync(int orderId, CancellationToken ct = default)
     {
-        var rows = await _dbContext.LoyaltyTransactions
+        List<LoyaltyTransaction> rows = await _dbContext.LoyaltyTransactions
             .Where(lt => lt.OrderId == orderId && lt.Status == LoyaltyRedemptionStatus.Pending)
             .ToListAsync(ct);
 
-        foreach (var row in rows)
+        foreach (LoyaltyTransaction? row in rows)
         {
             row.Status = LoyaltyRedemptionStatus.Committed;
         }
@@ -118,12 +118,12 @@ public class LoyaltyRepository(DeliverTableContext dbContext) : ILoyaltyReposito
 
     public async Task MarkPendingRedemptionsReversedForOrderAsync(int orderId, CancellationToken ct = default)
     {
-        var rows = await _dbContext.LoyaltyTransactions
+        List<LoyaltyTransaction> rows = await _dbContext.LoyaltyTransactions
             .Include(lt => lt.LoyaltyAccount)
             .Where(lt => lt.OrderId == orderId && lt.Status == LoyaltyRedemptionStatus.Pending)
             .ToListAsync(ct);
 
-        foreach (var row in rows)
+        foreach (LoyaltyTransaction? row in rows)
         {
             row.Status = LoyaltyRedemptionStatus.Reversed;
 

@@ -15,11 +15,11 @@ public class MonthlyCommissionStatementJobTests
     [Test]
     public async Task Execute_DelegatesToService_WithPreviousMonth()
     {
-        var service = Substitute.For<ICommissionStatementService>();
+        ICommissionStatementService service = Substitute.For<ICommissionStatementService>();
         service.GenerateForPeriodAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
                .Returns(ServiceResult<CommissionStatementGenerationResultDto>.Success(new()));
 
-        var sut = new MonthlyCommissionStatementJob(service, NullLoggerFactory.Instance)
+        MonthlyCommissionStatementJob sut = new MonthlyCommissionStatementJob(service, NullLoggerFactory.Instance)
         {
             UtcNowOverride = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc),
         };
@@ -32,11 +32,11 @@ public class MonthlyCommissionStatementJobTests
     [Test]
     public async Task Execute_HandlesDstTransition_Correctly()
     {
-        var service = Substitute.For<ICommissionStatementService>();
+        ICommissionStatementService service = Substitute.For<ICommissionStatementService>();
         service.GenerateForPeriodAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
                .Returns(ServiceResult<CommissionStatementGenerationResultDto>.Success(new()));
 
-        var sut = new MonthlyCommissionStatementJob(service, NullLoggerFactory.Instance)
+        MonthlyCommissionStatementJob sut = new MonthlyCommissionStatementJob(service, NullLoggerFactory.Instance)
         {
             UtcNowOverride = new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc),
         };

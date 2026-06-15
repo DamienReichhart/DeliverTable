@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +25,7 @@ public class AdminRatingControllerTests
     [Test]
     public async Task GetRestaurantRatings_ReturnsOk()
     {
-        var ratings = new List<AdminRestaurantRatingResponse>
+        List<AdminRestaurantRatingResponse> ratings = new List<AdminRestaurantRatingResponse>
         {
             new() { Id = 1, Rating = 5, Comment = "Excellent" },
             new() { Id = 2, Rating = 3, Comment = "Moyen" }
@@ -33,7 +33,7 @@ public class AdminRatingControllerTests
         _adminRatingService.GetRestaurantRatingsAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminRestaurantRatingResponse>>.Success(ratings));
 
-        var result = await _sut.GetRestaurantRatings(CancellationToken.None);
+        IActionResult result = await _sut.GetRestaurantRatings(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -44,10 +44,10 @@ public class AdminRatingControllerTests
         _adminRatingService.GetRestaurantRatingsAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminRestaurantRatingResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetRestaurantRatings(CancellationToken.None);
+        IActionResult result = await _sut.GetRestaurantRatings(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -61,7 +61,7 @@ public class AdminRatingControllerTests
         _adminRatingService.DeleteAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -72,10 +72,10 @@ public class AdminRatingControllerTests
         _adminRatingService.DeleteAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Avis introuvable", 404)));
 
-        var result = await _sut.Delete(99, CancellationToken.None);
+        IActionResult result = await _sut.Delete(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 

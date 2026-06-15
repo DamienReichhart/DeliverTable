@@ -6,6 +6,7 @@ using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -29,8 +30,8 @@ public class AdminLoyaltyServiceTests
     [Test]
     public async Task GetAllProgramsAsync_ReturnsAllPrograms()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var programs = new List<LoyaltyProgram>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<LoyaltyProgram> programs = new List<LoyaltyProgram>
         {
             new() { Id = 1, RestaurantId = 1, Restaurant = restaurant, Accounts = [new() { Id = 1 }] },
             new() { Id = 2, RestaurantId = 1, Restaurant = restaurant, Accounts = [] }
@@ -38,7 +39,7 @@ public class AdminLoyaltyServiceTests
 
         _loyaltyRepository.GetAllProgramsUnscopedAsync(Arg.Any<CancellationToken>()).Returns(programs);
 
-        var result = await _sut.GetAllProgramsAsync();
+        ServiceResult<List<AdminLoyaltyProgramResponse>> result = await _sut.GetAllProgramsAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -53,14 +54,14 @@ public class AdminLoyaltyServiceTests
     [Test]
     public async Task GetProgramByIdAsync_WhenExists_ReturnsProgram()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var program = CreateLoyaltyProgram(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        LoyaltyProgram program = CreateLoyaltyProgram(id: 1, restaurantId: 1);
         program.Restaurant = restaurant;
         program.Accounts = [new() { Id = 1 }, new() { Id = 2 }];
 
         _loyaltyRepository.GetProgramByIdWithAccountsAsync(1, Arg.Any<CancellationToken>()).Returns(program);
 
-        var result = await _sut.GetProgramByIdAsync(1);
+        ServiceResult<AdminLoyaltyProgramResponse> result = await _sut.GetProgramByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -74,7 +75,7 @@ public class AdminLoyaltyServiceTests
         _loyaltyRepository.GetProgramByIdWithAccountsAsync(99, Arg.Any<CancellationToken>())
             .Returns((LoyaltyProgram?)null);
 
-        var result = await _sut.GetProgramByIdAsync(99);
+        ServiceResult<AdminLoyaltyProgramResponse> result = await _sut.GetProgramByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -88,19 +89,19 @@ public class AdminLoyaltyServiceTests
     [Test]
     public async Task CreateProgramAsync_WhenRestaurantExists_CreatesProgram()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns((LoyaltyProgram?)null);
         _loyaltyRepository.CreateAsync(Arg.Any<LoyaltyProgram>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var p = callInfo.Arg<LoyaltyProgram>();
+                LoyaltyProgram p = callInfo.Arg<LoyaltyProgram>();
                 p.Id = 10;
                 p.Restaurant = restaurant;
                 return p;
             });
 
-        var request = new AdminCreateLoyaltyProgramRequest
+        AdminCreateLoyaltyProgramRequest request = new AdminCreateLoyaltyProgramRequest
         {
             PointsPerEuro = 2.0m,
             EurosPerPoint = 0.05m,
@@ -108,7 +109,7 @@ public class AdminLoyaltyServiceTests
             IsActive = true
         };
 
-        var result = await _sut.CreateProgramAsync(request);
+        ServiceResult<AdminLoyaltyProgramResponse> result = await _sut.CreateProgramAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.PointsPerEuro, Is.EqualTo(2.0m));
@@ -121,14 +122,14 @@ public class AdminLoyaltyServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminCreateLoyaltyProgramRequest
+        AdminCreateLoyaltyProgramRequest request = new AdminCreateLoyaltyProgramRequest
         {
             PointsPerEuro = 1.0m,
             EurosPerPoint = 0.10m,
             RestaurantId = 99
         };
 
-        var result = await _sut.CreateProgramAsync(request);
+        ServiceResult<AdminLoyaltyProgramResponse> result = await _sut.CreateProgramAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -138,19 +139,19 @@ public class AdminLoyaltyServiceTests
     [Test]
     public async Task CreateProgramAsync_WhenProgramAlreadyExists_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _loyaltyRepository.GetByRestaurantAsync(1, Arg.Any<CancellationToken>())
             .Returns(CreateLoyaltyProgram(id: 1, restaurantId: 1));
 
-        var request = new AdminCreateLoyaltyProgramRequest
+        AdminCreateLoyaltyProgramRequest request = new AdminCreateLoyaltyProgramRequest
         {
             PointsPerEuro = 1.0m,
             EurosPerPoint = 0.10m,
             RestaurantId = 1
         };
 
-        var result = await _sut.CreateProgramAsync(request);
+        ServiceResult<AdminLoyaltyProgramResponse> result = await _sut.CreateProgramAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -164,8 +165,8 @@ public class AdminLoyaltyServiceTests
     [Test]
     public async Task UpdateProgramAsync_WhenExists_UpdatesAndReturns()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var program = CreateLoyaltyProgram(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        LoyaltyProgram program = CreateLoyaltyProgram(id: 1, restaurantId: 1);
         program.Restaurant = restaurant;
         program.Accounts = [];
 
@@ -173,14 +174,14 @@ public class AdminLoyaltyServiceTests
         _loyaltyRepository.UpdateAsync(Arg.Any<LoyaltyProgram>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<LoyaltyProgram>());
 
-        var request = new AdminUpdateLoyaltyProgramRequest
+        AdminUpdateLoyaltyProgramRequest request = new AdminUpdateLoyaltyProgramRequest
         {
             PointsPerEuro = 3.0m,
             EurosPerPoint = 0.02m,
             IsActive = false
         };
 
-        var result = await _sut.UpdateProgramAsync(1, request);
+        ServiceResult<AdminLoyaltyProgramResponse> result = await _sut.UpdateProgramAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.PointsPerEuro, Is.EqualTo(3.0m));
@@ -194,13 +195,13 @@ public class AdminLoyaltyServiceTests
         _loyaltyRepository.GetProgramByIdWithAccountsAsync(99, Arg.Any<CancellationToken>())
             .Returns((LoyaltyProgram?)null);
 
-        var request = new AdminUpdateLoyaltyProgramRequest
+        AdminUpdateLoyaltyProgramRequest request = new AdminUpdateLoyaltyProgramRequest
         {
             PointsPerEuro = 1.0m,
             EurosPerPoint = 0.10m
         };
 
-        var result = await _sut.UpdateProgramAsync(99, request);
+        ServiceResult<AdminLoyaltyProgramResponse> result = await _sut.UpdateProgramAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -216,7 +217,7 @@ public class AdminLoyaltyServiceTests
     {
         _loyaltyRepository.DeleteProgramAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteProgramAsync(1);
+        ServiceResult result = await _sut.DeleteProgramAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -226,7 +227,7 @@ public class AdminLoyaltyServiceTests
     {
         _loyaltyRepository.DeleteProgramAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteProgramAsync(99);
+        ServiceResult result = await _sut.DeleteProgramAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -240,14 +241,14 @@ public class AdminLoyaltyServiceTests
     [Test]
     public async Task GetAccountsAsync_WhenProgramExists_ReturnsAccounts()
     {
-        var program = CreateLoyaltyProgram(id: 1, restaurantId: 1);
+        LoyaltyProgram program = CreateLoyaltyProgram(id: 1, restaurantId: 1);
         program.Accounts = [];
         _loyaltyRepository.GetProgramByIdWithAccountsAsync(1, Arg.Any<CancellationToken>()).Returns(program);
 
-        var customer = CreateValidUser();
+        User customer = CreateValidUser();
         customer.FirstName = "Jean";
         customer.LastName = "Dupont";
-        var accounts = new List<LoyaltyAccount>
+        List<LoyaltyAccount> accounts = new List<LoyaltyAccount>
         {
             new() { Id = 1, LoyaltyProgramId = 1, CustomerId = 1, Customer = customer, PointsBalance = 100 },
             new() { Id = 2, LoyaltyProgramId = 1, CustomerId = 2, Customer = customer, PointsBalance = 50 }
@@ -255,7 +256,7 @@ public class AdminLoyaltyServiceTests
 
         _loyaltyRepository.GetAccountsByProgramIdAsync(1, Arg.Any<CancellationToken>()).Returns(accounts);
 
-        var result = await _sut.GetAccountsAsync(1);
+        ServiceResult<List<AdminLoyaltyAccountResponse>> result = await _sut.GetAccountsAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -268,7 +269,7 @@ public class AdminLoyaltyServiceTests
         _loyaltyRepository.GetProgramByIdWithAccountsAsync(99, Arg.Any<CancellationToken>())
             .Returns((LoyaltyProgram?)null);
 
-        var result = await _sut.GetAccountsAsync(99);
+        ServiceResult<List<AdminLoyaltyAccountResponse>> result = await _sut.GetAccountsAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -282,7 +283,7 @@ public class AdminLoyaltyServiceTests
     [Test]
     public async Task GetTransactionsAsync_ReturnsTransactions()
     {
-        var transactions = new List<LoyaltyTransaction>
+        List<LoyaltyTransaction> transactions = new List<LoyaltyTransaction>
         {
             new() { Id = 1, LoyaltyAccountId = 1, Type = LoyaltyTransactionType.Earn, Points = 10 },
             new() { Id = 2, LoyaltyAccountId = 1, Type = LoyaltyTransactionType.Redeem, Points = -5, OrderId = 42 }
@@ -290,7 +291,7 @@ public class AdminLoyaltyServiceTests
 
         _loyaltyRepository.GetTransactionsByAccountIdAsync(1, Arg.Any<CancellationToken>()).Returns(transactions);
 
-        var result = await _sut.GetTransactionsAsync(1);
+        ServiceResult<List<AdminLoyaltyTransactionResponse>> result = await _sut.GetTransactionsAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));

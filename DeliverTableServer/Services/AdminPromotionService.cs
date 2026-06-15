@@ -17,14 +17,14 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
 
     public async Task<ServiceResult<List<AdminPromotionResponse>>> GetAllAsync(CancellationToken ct = default)
     {
-        var promotions = await _promotionRepository.GetAllUnscopedAsync(ct);
-        var result = promotions.Select(p => p.ToAdminDto()).ToList();
+        List<Promotion> promotions = await _promotionRepository.GetAllUnscopedAsync(ct);
+        List<AdminPromotionResponse> result = promotions.Select(p => p.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminPromotionResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var promotion = await _promotionRepository.GetByIdWithRestaurantAsync(id, ct);
+        Promotion? promotion = await _promotionRepository.GetByIdWithRestaurantAsync(id, ct);
         if (promotion is null)
             return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
@@ -34,7 +34,7 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
     public async Task<ServiceResult<AdminPromotionResponse>> CreateAsync(
         AdminCreatePromotionRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
@@ -44,7 +44,7 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
         if (DiscountValidationHelper.ValidatePercentageDiscount(request.DiscountType, request.DiscountValue) is { } pctError)
             return pctError;
 
-        var promotion = new Promotion
+        Promotion promotion = new Promotion
         {
             Name = request.Name,
             Description = request.Description ?? "",
@@ -58,14 +58,14 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
             IsActive = request.IsActive
         };
 
-        var created = await _promotionRepository.CreateAsync(promotion, ct);
+        Promotion created = await _promotionRepository.CreateAsync(promotion, ct);
         return created.ToAdminDto();
     }
 
     public async Task<ServiceResult<AdminPromotionResponse>> UpdateAsync(
         int id, AdminUpdatePromotionRequest request, CancellationToken ct = default)
     {
-        var promotion = await _promotionRepository.GetByIdWithRestaurantAsync(id, ct);
+        Promotion? promotion = await _promotionRepository.GetByIdWithRestaurantAsync(id, ct);
         if (promotion is null)
             return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
@@ -86,13 +86,13 @@ public sealed class AdminPromotionService(IPromotionRepository promotionReposito
         promotion.IsActive = request.IsActive;
         promotion.UpdatedAt = DateTime.UtcNow;
 
-        var updated = await _promotionRepository.UpdateAsync(promotion, ct);
+        Promotion updated = await _promotionRepository.UpdateAsync(promotion, ct);
         return updated.ToAdminDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _promotionRepository.DeleteAsync(id, ct);
+        bool deleted = await _promotionRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 

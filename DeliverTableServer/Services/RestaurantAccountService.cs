@@ -27,13 +27,13 @@ public sealed class RestaurantAccountService(
     public async Task<ServiceResult<RestaurantAccountDto>> GetAccountAsync(
         int restaurantId, int ownerId, TransactionQuery query, CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
-        var restaurant = ownershipResult.Value!;
+        Restaurant restaurant = ownershipResult.Value!;
 
-        var data = await _transactionRepository.GetByRestaurantAsync(restaurantId, query, ct);
+        (List<RestaurantTransaction> Items, int TotalCount) data = await _transactionRepository.GetByRestaurantAsync(restaurantId, query, ct);
 
         return new RestaurantAccountDto
         {
@@ -45,11 +45,11 @@ public sealed class RestaurantAccountService(
     public async Task<ServiceResult<RestaurantAccountDto>> WithdrawAsync(
         int restaurantId, int ownerId, WithdrawRequest request, CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
-        var restaurant = ownershipResult.Value!;
+        Restaurant restaurant = ownershipResult.Value!;
 
         if (request.Amount > restaurant.Balance)
             return new ServiceError(ErrorMessages.InsufficientBalance);
@@ -57,7 +57,7 @@ public sealed class RestaurantAccountService(
         restaurant.Balance -= request.Amount;
         await _restaurantRepository.UpdateAsync(restaurant, ct);
 
-        var transaction = new RestaurantTransaction
+        RestaurantTransaction transaction = new RestaurantTransaction
         {
             RestaurantId = restaurantId,
             OrderId = null,

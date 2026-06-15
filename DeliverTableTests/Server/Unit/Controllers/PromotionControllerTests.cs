@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Promotion;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -27,12 +27,12 @@ public class PromotionControllerTests
     public async Task Create_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var request = new CreatePromotionRequest();
-        var dto = new PromotionDto { Id = 1, RestaurantId = 10, Name = "Promo été" };
+        CreatePromotionRequest request = new CreatePromotionRequest();
+        PromotionDto dto = new PromotionDto { Id = 1, RestaurantId = 10, Name = "Promo été" };
         _promotionService.CreateAsync(10, 5, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PromotionDto>.Success(dto));
 
-        var result = await _sut.Create(10, request, CancellationToken.None);
+        IActionResult result = await _sut.Create(10, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -42,7 +42,7 @@ public class PromotionControllerTests
     {
         AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
-        var result = await _sut.Create(10, new CreatePromotionRequest(), CancellationToken.None);
+        IActionResult result = await _sut.Create(10, new CreatePromotionRequest(), CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }
@@ -51,8 +51,8 @@ public class PromotionControllerTests
     public async Task GetByRestaurant_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var query = new PromotionQuery();
-        var paginated = new PaginatedResult<PromotionDto>
+        PromotionQuery query = new PromotionQuery();
+        PaginatedResult<PromotionDto> paginated = new PaginatedResult<PromotionDto>
         {
             Items = [new PromotionDto { Id = 1, Name = "Promo" }],
             TotalCount = 1,
@@ -62,7 +62,7 @@ public class PromotionControllerTests
         _promotionService.GetByRestaurantAsync(10, 5, query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<PromotionDto>>.Success(paginated));
 
-        var result = await _sut.GetByRestaurant(10, query, CancellationToken.None);
+        IActionResult result = await _sut.GetByRestaurant(10, query, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -71,12 +71,12 @@ public class PromotionControllerTests
     public async Task Update_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var request = new UpdatePromotionRequest();
-        var dto = new PromotionDto { Id = 1, Name = "Promo mise à jour" };
+        UpdatePromotionRequest request = new UpdatePromotionRequest();
+        PromotionDto dto = new PromotionDto { Id = 1, Name = "Promo mise à jour" };
         _promotionService.UpdateAsync(1, 5, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PromotionDto>.Success(dto));
 
-        var result = await _sut.Update(1, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -88,7 +88,7 @@ public class PromotionControllerTests
         _promotionService.DeleteAsync(1, 5, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -100,7 +100,7 @@ public class PromotionControllerTests
         _promotionService.DeleteAsync(1, 5, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Promotion introuvable", 404)));
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));

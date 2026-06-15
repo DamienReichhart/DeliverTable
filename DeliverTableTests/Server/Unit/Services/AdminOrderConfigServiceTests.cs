@@ -5,6 +5,7 @@ using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -28,8 +29,8 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task GetAllRulesAsync_ReturnsAllRules()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var rules = new List<OrderRule>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<OrderRule> rules = new List<OrderRule>
         {
             new() { Id = 1, RestaurantId = 1, Restaurant = restaurant, AllowPreorder = true },
             new() { Id = 2, RestaurantId = 1, Restaurant = restaurant, AllowDelivery = true }
@@ -37,7 +38,7 @@ public class AdminOrderConfigServiceTests
 
         _orderConfigRepository.GetAllRulesAsync(Arg.Any<CancellationToken>()).Returns(rules);
 
-        var result = await _sut.GetAllRulesAsync();
+        ServiceResult<List<AdminOrderRuleResponse>> result = await _sut.GetAllRulesAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -50,8 +51,8 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task GetRuleByIdAsync_WhenExists_ReturnsRule()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var rule = new OrderRule
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        OrderRule rule = new OrderRule
         {
             Id = 1,
             RestaurantId = 1,
@@ -62,7 +63,7 @@ public class AdminOrderConfigServiceTests
 
         _orderConfigRepository.GetRuleByIdAsync(1, Arg.Any<CancellationToken>()).Returns(rule);
 
-        var result = await _sut.GetRuleByIdAsync(1);
+        ServiceResult<AdminOrderRuleResponse> result = await _sut.GetRuleByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -75,7 +76,7 @@ public class AdminOrderConfigServiceTests
     {
         _orderConfigRepository.GetRuleByIdAsync(99, Arg.Any<CancellationToken>()).Returns((OrderRule?)null);
 
-        var result = await _sut.GetRuleByIdAsync(99);
+        ServiceResult<AdminOrderRuleResponse> result = await _sut.GetRuleByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -89,18 +90,18 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task CreateRuleAsync_WhenValid_CreatesRule()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _orderConfigRepository.CreateRuleAsync(Arg.Any<OrderRule>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var r = callInfo.Arg<OrderRule>();
+                OrderRule r = callInfo.Arg<OrderRule>();
                 r.Id = 10;
                 r.Restaurant = restaurant;
                 return r;
             });
 
-        var request = new AdminCreateOrderRuleRequest
+        AdminCreateOrderRuleRequest request = new AdminCreateOrderRuleRequest
         {
             RestaurantId = 1,
             MinConfirmAmount = 20m,
@@ -112,7 +113,7 @@ public class AdminOrderConfigServiceTests
             AllowDelivery = false
         };
 
-        var result = await _sut.CreateRuleAsync(request);
+        ServiceResult<AdminOrderRuleResponse> result = await _sut.CreateRuleAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.MinConfirmAmount, Is.EqualTo(20m));
@@ -125,13 +126,13 @@ public class AdminOrderConfigServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminCreateOrderRuleRequest
+        AdminCreateOrderRuleRequest request = new AdminCreateOrderRuleRequest
         {
             RestaurantId = 99,
             AllowPreorder = true
         };
 
-        var result = await _sut.CreateRuleAsync(request);
+        ServiceResult<AdminOrderRuleResponse> result = await _sut.CreateRuleAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -145,8 +146,8 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task UpdateRuleAsync_WhenExists_UpdatesAndReturns()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var rule = new OrderRule
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        OrderRule rule = new OrderRule
         {
             Id = 1,
             RestaurantId = 1,
@@ -159,7 +160,7 @@ public class AdminOrderConfigServiceTests
         _orderConfigRepository.UpdateRuleAsync(Arg.Any<OrderRule>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<OrderRule>());
 
-        var request = new AdminUpdateOrderRuleRequest
+        AdminUpdateOrderRuleRequest request = new AdminUpdateOrderRuleRequest
         {
             MinConfirmAmount = 25m,
             MinLeadTimeHours = 3,
@@ -170,7 +171,7 @@ public class AdminOrderConfigServiceTests
             AllowDelivery = true
         };
 
-        var result = await _sut.UpdateRuleAsync(1, request);
+        ServiceResult<AdminOrderRuleResponse> result = await _sut.UpdateRuleAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.MinConfirmAmount, Is.EqualTo(25m));
@@ -184,12 +185,12 @@ public class AdminOrderConfigServiceTests
     {
         _orderConfigRepository.GetRuleByIdAsync(99, Arg.Any<CancellationToken>()).Returns((OrderRule?)null);
 
-        var request = new AdminUpdateOrderRuleRequest
+        AdminUpdateOrderRuleRequest request = new AdminUpdateOrderRuleRequest
         {
             AllowPreorder = true
         };
 
-        var result = await _sut.UpdateRuleAsync(99, request);
+        ServiceResult<AdminOrderRuleResponse> result = await _sut.UpdateRuleAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -205,7 +206,7 @@ public class AdminOrderConfigServiceTests
     {
         _orderConfigRepository.DeleteRuleAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteRuleAsync(1);
+        ServiceResult result = await _sut.DeleteRuleAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -215,7 +216,7 @@ public class AdminOrderConfigServiceTests
     {
         _orderConfigRepository.DeleteRuleAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteRuleAsync(99);
+        ServiceResult result = await _sut.DeleteRuleAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -229,8 +230,8 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task GetAllBlockedSlotsAsync_ReturnsAllSlots()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var slots = new List<OrderBlockedSlot>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<OrderBlockedSlot> slots = new List<OrderBlockedSlot>
         {
             new()
             {
@@ -246,7 +247,7 @@ public class AdminOrderConfigServiceTests
 
         _orderConfigRepository.GetAllBlockedSlotsAsync(Arg.Any<CancellationToken>()).Returns(slots);
 
-        var result = await _sut.GetAllBlockedSlotsAsync();
+        ServiceResult<List<AdminBlockedSlotResponse>> result = await _sut.GetAllBlockedSlotsAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -259,8 +260,8 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task GetBlockedSlotByIdAsync_WhenExists_ReturnsSlot()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var slot = new OrderBlockedSlot
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        OrderBlockedSlot slot = new OrderBlockedSlot
         {
             Id = 1,
             RestaurantId = 1,
@@ -272,7 +273,7 @@ public class AdminOrderConfigServiceTests
 
         _orderConfigRepository.GetBlockedSlotByIdAsync(1, Arg.Any<CancellationToken>()).Returns(slot);
 
-        var result = await _sut.GetBlockedSlotByIdAsync(1);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.GetBlockedSlotByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -286,7 +287,7 @@ public class AdminOrderConfigServiceTests
         _orderConfigRepository.GetBlockedSlotByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns((OrderBlockedSlot?)null);
 
-        var result = await _sut.GetBlockedSlotByIdAsync(99);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.GetBlockedSlotByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -300,18 +301,18 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task CreateBlockedSlotAsync_WhenValid_CreatesSlot()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _orderConfigRepository.CreateBlockedSlotAsync(Arg.Any<OrderBlockedSlot>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var s = callInfo.Arg<OrderBlockedSlot>();
+                OrderBlockedSlot s = callInfo.Arg<OrderBlockedSlot>();
                 s.Id = 10;
                 s.Restaurant = restaurant;
                 return s;
             });
 
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             RestaurantId = 1,
             StartsAt = DateTime.UtcNow.AddDays(1),
@@ -319,7 +320,7 @@ public class AdminOrderConfigServiceTests
             Reason = "Fermeture exceptionnelle"
         };
 
-        var result = await _sut.CreateBlockedSlotAsync(request);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.CreateBlockedSlotAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Reason, Is.EqualTo("Fermeture exceptionnelle"));
@@ -328,7 +329,7 @@ public class AdminOrderConfigServiceTests
     [Test]
     public async Task CreateBlockedSlotAsync_WhenInvalidDates_ReturnsError()
     {
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             RestaurantId = 1,
             StartsAt = DateTime.UtcNow.AddDays(2),
@@ -336,7 +337,7 @@ public class AdminOrderConfigServiceTests
             Reason = "Test"
         };
 
-        var result = await _sut.CreateBlockedSlotAsync(request);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.CreateBlockedSlotAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -348,14 +349,14 @@ public class AdminOrderConfigServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             RestaurantId = 99,
             StartsAt = DateTime.UtcNow,
             EndsAt = DateTime.UtcNow.AddHours(1)
         };
 
-        var result = await _sut.CreateBlockedSlotAsync(request);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.CreateBlockedSlotAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -371,7 +372,7 @@ public class AdminOrderConfigServiceTests
     {
         _orderConfigRepository.DeleteBlockedSlotAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteBlockedSlotAsync(1);
+        ServiceResult result = await _sut.DeleteBlockedSlotAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -381,7 +382,7 @@ public class AdminOrderConfigServiceTests
     {
         _orderConfigRepository.DeleteBlockedSlotAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteBlockedSlotAsync(99);
+        ServiceResult result = await _sut.DeleteBlockedSlotAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

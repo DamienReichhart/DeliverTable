@@ -13,24 +13,24 @@ public class DishRepository(DeliverTableContext dbContext) : IDishRepository
 
     public async Task<(List<Dish> Items, int TotalCount)> GetAllAsync(DishQuery query, CancellationToken ct = default)
     {
-        var q = _dbContext.Dishes.AsQueryable();
+        IQueryable<Dish> q = _dbContext.Dishes.AsQueryable();
         q = ApplyFilters(q, query);
         q = q.OrderBy(d => d.Id);
 
-        var totalCount = await q.CountAsync(ct);
-        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
+        int totalCount = await q.CountAsync(ct);
+        List<Dish> items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
     public async Task<(List<Dish> Items, int TotalCount)> GetByRestaurantIdAsync(
         DishQuery query, int restaurantId, CancellationToken ct = default)
     {
-        var q = _dbContext.Dishes.Where(d => d.RestaurantId == restaurantId);
+        IQueryable<Dish> q = _dbContext.Dishes.Where(d => d.RestaurantId == restaurantId);
         q = ApplyFilters(q, query);
         q = q.OrderBy(d => d.Id);
 
-        var totalCount = await q.CountAsync(ct);
-        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
+        int totalCount = await q.CountAsync(ct);
+        List<Dish> items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
@@ -53,7 +53,7 @@ public class DishRepository(DeliverTableContext dbContext) : IDishRepository
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var dish = await _dbContext.Dishes.FindAsync([id], ct);
+        Dish? dish = await _dbContext.Dishes.FindAsync([id], ct);
         if (dish is null) return false;
 
         _dbContext.Dishes.Remove(dish);

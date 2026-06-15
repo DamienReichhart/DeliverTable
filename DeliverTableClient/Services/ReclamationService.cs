@@ -33,39 +33,39 @@ public class ReclamationService(HttpClient httpClient) : IReclamationService
             content.Add(image.Content, image.Name, image.Name);
         }
 
-        var response = await _httpClient.PostAsync(ApiRoutes.Reclamation.Base, content, ct);
+        HttpResponseMessage response = await _httpClient.PostAsync(ApiRoutes.Reclamation.Base, content, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Une erreur est survenue lors de l'envoi de la réclamation." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
+        ReclamationDto? result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(ReclamationDto?, ErrorResponse?)> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
     {
-        var response = await _httpClient.GetAsync($"{ApiRoutes.Reclamation.Base}/order/{orderId}", ct);
+        HttpResponseMessage response = await _httpClient.GetAsync($"{ApiRoutes.Reclamation.Base}/order/{orderId}", ct);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
             return (null, null);
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de charger la réclamation liée à cette commande." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
+        ReclamationDto? result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(List<ReclamationDto>?, ErrorResponse?)> GetAllAsync(ReclamationQuery query, CancellationToken ct = default)
     {
-        var queryParams = new List<string>
+        List<string> queryParams = new List<string>
         {
             $"PageNumber={query.PageNumber}",
             $"PageSize={query.PageSize}"
@@ -78,15 +78,15 @@ public class ReclamationService(HttpClient httpClient) : IReclamationService
         if (!string.IsNullOrWhiteSpace(query.Content))
             queryParams.Add($"Content={Uri.EscapeDataString(query.Content)}");
 
-        var response = await _httpClient.GetAsync($"{ApiRoutes.Reclamation.Base}?{string.Join("&", queryParams)}", ct);
+        HttpResponseMessage response = await _httpClient.GetAsync($"{ApiRoutes.Reclamation.Base}?{string.Join("&", queryParams)}", ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de charger les réclamations." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<List<ReclamationDto>>(cancellationToken: ct);
+        List<ReclamationDto>? result = await response.Content.ReadFromJsonAsync<List<ReclamationDto>>(cancellationToken: ct);
         return (result, null);
     }
 
@@ -95,24 +95,24 @@ public class ReclamationService(HttpClient httpClient) : IReclamationService
         UpdateReclamationDto reclamation,
         CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}", reclamation, ct);
+        HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}", reclamation, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de mettre à jour la réclamation." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
+        ReclamationDto? result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(bool Success, ErrorResponse? Error)> DeleteAsync(int reclamationId, CancellationToken ct = default)
     {
-        var response = await _httpClient.DeleteAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}", ct);
+        HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}", ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de supprimer la réclamation." };
             return (false, error);
         }
@@ -122,71 +122,71 @@ public class ReclamationService(HttpClient httpClient) : IReclamationService
 
     public async Task<(List<ReclamationDto>?, ErrorResponse?)> GetByRestaurantOwnerAsync(CancellationToken ct = default)
     {
-        var response = await _httpClient.GetAsync(ApiRoutes.Reclamation.MyRestaurant, ct);
+        HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Reclamation.MyRestaurant, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de charger les réclamations de votre restaurant." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<List<ReclamationDto>>(cancellationToken: ct);
+        List<ReclamationDto>? result = await response.Content.ReadFromJsonAsync<List<ReclamationDto>>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(ReclamationDto?, ErrorResponse?)> RefundAsync(int reclamationId, RefundReclamationDto dto, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/refund", dto, ct);
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/refund", dto, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de traiter le remboursement." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
+        ReclamationDto? result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(ReclamationDto?, ErrorResponse?)> ResolveAsync(int reclamationId, CancellationToken ct = default)
     {
-        var response = await _httpClient.PatchAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/resolve", null, ct);
+        HttpResponseMessage response = await _httpClient.PatchAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/resolve", null, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de résoudre la réclamation." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
+        ReclamationDto? result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(ReclamationDto?, ErrorResponse?)> ContestAsync(int reclamationId, CancellationToken ct = default)
     {
-        var response = await _httpClient.PatchAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/contest", null, ct);
+        HttpResponseMessage response = await _httpClient.PatchAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/contest", null, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de contester la réclamation." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
+        ReclamationDto? result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(ReclamationDto?, ErrorResponse?)> CompleteAsync(int reclamationId, CancellationToken ct = default)
     {
-        var response = await _httpClient.PatchAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/complete", null, ct);
+        HttpResponseMessage response = await _httpClient.PatchAsync($"{ApiRoutes.Reclamation.Base}/{reclamationId}/complete", null, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
+            ErrorResponse error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct)
                 ?? new ErrorResponse { Error = "Impossible de clôturer la réclamation." };
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
+        ReclamationDto? result = await response.Content.ReadFromJsonAsync<ReclamationDto>(cancellationToken: ct);
         return (result, null);
     }
 }

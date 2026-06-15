@@ -21,8 +21,8 @@ public static class AppConfigurationServiceCollectionExtensions
 
         services.AddSingleton<IAppConfiguration>(sp =>
         {
-            var env = sp.GetRequiredService<IWebAssemblyHostEnvironment>();
-            var httpClient = new HttpClient { BaseAddress = new Uri(env.BaseAddress) };
+            IWebAssemblyHostEnvironment env = sp.GetRequiredService<IWebAssemblyHostEnvironment>();
+            HttpClient httpClient = new HttpClient { BaseAddress = new Uri(env.BaseAddress) };
             return new AppConfigurationImplementation(httpClient, env, env.BaseAddress);
         });
 

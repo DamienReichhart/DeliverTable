@@ -27,9 +27,9 @@ public class AdminRestaurantServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllRestaurants()
     {
-        var owner = CreateValidUser();
+        User owner = CreateValidUser();
         owner.Id = 5;
-        var restaurants = new List<Restaurant>
+        List<Restaurant> restaurants = new List<Restaurant>
         {
             CreateRestaurant(id: 1, ownerId: 5),
             CreateRestaurant(id: 2, ownerId: 5)
@@ -39,7 +39,7 @@ public class AdminRestaurantServiceTests
 
         _restaurantRepository.GetAllUnscopedAsync(Arg.Any<CancellationToken>()).Returns(restaurants);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminRestaurantResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -52,14 +52,14 @@ public class AdminRestaurantServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsRestaurant()
     {
-        var owner = CreateValidUser();
+        User owner = CreateValidUser();
         owner.Id = 5;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         restaurant.Owner = owner;
 
         _restaurantRepository.GetByIdWithOwnerAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminRestaurantResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -71,7 +71,7 @@ public class AdminRestaurantServiceTests
     {
         _restaurantRepository.GetByIdWithOwnerAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminRestaurantResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -85,16 +85,16 @@ public class AdminRestaurantServiceTests
     [Test]
     public async Task UpdateAsync_WhenExists_UpdatesAndReturns()
     {
-        var owner = CreateValidUser();
+        User owner = CreateValidUser();
         owner.Id = 5;
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         restaurant.Owner = owner;
 
         _restaurantRepository.GetByIdWithOwnerAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _restaurantRepository.UpdateAsync(Arg.Any<Restaurant>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<Restaurant>());
 
-        var request = new AdminUpdateRestaurantRequest
+        AdminUpdateRestaurantRequest request = new AdminUpdateRestaurantRequest
         {
             Name = "Updated Name",
             AdressLine1 = "10 Rue Nouvelle",
@@ -104,7 +104,7 @@ public class AdminRestaurantServiceTests
             IsActive = false
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminRestaurantResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Name, Is.EqualTo("Updated Name"));
@@ -117,7 +117,7 @@ public class AdminRestaurantServiceTests
     {
         _restaurantRepository.GetByIdWithOwnerAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminUpdateRestaurantRequest
+        AdminUpdateRestaurantRequest request = new AdminUpdateRestaurantRequest
         {
             Name = "Name",
             AdressLine1 = "Addr",
@@ -126,7 +126,7 @@ public class AdminRestaurantServiceTests
             Country = "FR"
         };
 
-        var result = await _sut.UpdateAsync(99, request);
+        ServiceResult<AdminRestaurantResponse> result = await _sut.UpdateAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -142,7 +142,7 @@ public class AdminRestaurantServiceTests
     {
         _restaurantRepository.DeleteAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1);
+        ServiceResult result = await _sut.DeleteAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -152,7 +152,7 @@ public class AdminRestaurantServiceTests
     {
         _restaurantRepository.DeleteAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteAsync(99);
+        ServiceResult result = await _sut.DeleteAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

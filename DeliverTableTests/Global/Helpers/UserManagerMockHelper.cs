@@ -17,7 +17,7 @@ public static class UserManagerMockHelper
     /// </summary>
     public static UserManager<User> Create()
     {
-        var store = Substitute.For<IUserStore<User>>();
+        IUserStore<User> store = Substitute.For<IUserStore<User>>();
 
         return Substitute.For<UserManager<User>>(
             store,

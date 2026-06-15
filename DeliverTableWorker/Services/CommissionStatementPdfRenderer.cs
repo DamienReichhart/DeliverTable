@@ -30,26 +30,26 @@ public sealed class CommissionStatementPdfRenderer : ICommissionStatementPdfRend
 
     public byte[] Render(CommissionStatement statement)
     {
-        var issuer =
+        InvoiceLegalSnapshotDto issuer =
             JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(statement.IssuerLegalSnapshotJson)
             ?? new InvoiceLegalSnapshotDto("", "", "", "", "", "");
-        var recipient =
+        InvoiceLegalSnapshotDto recipient =
             JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(statement.RecipientSnapshotJson)
             ?? new InvoiceLegalSnapshotDto("", "", "", "", "", "");
 
-        var isCreditNote = statement.Kind == CommissionStatementKind.CreditNote;
-        var title = isCreditNote ? "AVOIR DE COMMISSIONS" : "RELEVÉ DE COMMISSIONS";
+        bool isCreditNote = statement.Kind == CommissionStatementKind.CreditNote;
+        string title = isCreditNote ? "AVOIR DE COMMISSIONS" : "RELEVÉ DE COMMISSIONS";
 
-        var year = statement.PeriodYear;
-        var month = statement.PeriodMonth;
-        var mois = MoisFrancais(month);
-        var lastDay = DateTime.DaysInMonth(year, month);
-        var periodBanner = $"Période du 1er {mois} {year} au {lastDay} {mois} {year}";
+        int year = statement.PeriodYear;
+        int month = statement.PeriodMonth;
+        string mois = MoisFrancais(month);
+        int lastDay = DateTime.DaysInMonth(year, month);
+        string periodBanner = $"Période du 1er {mois} {year} au {lastDay} {mois} {year}";
 
-        var vatRate = statement.Lines.Count > 0 ? statement.Lines[0].VatRate : 20m;
-        var vatLabel = $"TVA ({vatRate:0.#}%)";
+        decimal vatRate = statement.Lines.Count > 0 ? statement.Lines[0].VatRate : 20m;
+        string vatLabel = $"TVA ({vatRate:0.#}%)";
 
-        var doc = Document.Create(container =>
+        Document doc = Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -121,7 +121,7 @@ public sealed class CommissionStatementPdfRenderer : ICommissionStatementPdfRend
                                     h.Cell().AlignRight().Text("Commission TTC").Bold();
                                 });
 
-                                foreach (var line in statement.Lines.OrderBy(l => l.SortOrder))
+                                foreach (CommissionStatementLine? line in statement.Lines.OrderBy(l => l.SortOrder))
                                 {
                                     table.Cell().Text(line.OrderNumber);
                                     table.Cell()
@@ -171,7 +171,7 @@ public sealed class CommissionStatementPdfRenderer : ICommissionStatementPdfRend
                             .FontSize(8);
                         if (!string.IsNullOrEmpty(issuer.Name))
                         {
-                            var legalLine = issuer.Name;
+                            string legalLine = issuer.Name;
                             if (!string.IsNullOrEmpty(issuer.LegalForm))
                                 legalLine += $" — {issuer.LegalForm}";
                             if (!string.IsNullOrEmpty(issuer.Siret))

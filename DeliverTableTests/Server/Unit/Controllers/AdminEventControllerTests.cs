@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
@@ -26,7 +26,7 @@ public class AdminEventControllerTests
     [Test]
     public async Task GetAll_ReturnsOk()
     {
-        var events = new List<AdminEventResponse>
+        List<AdminEventResponse> events = new List<AdminEventResponse>
         {
             new() { Id = 1, Name = "Événement A" },
             new() { Id = 2, Name = "Événement B" }
@@ -34,7 +34,7 @@ public class AdminEventControllerTests
         _adminEventService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminEventResponse>>.Success(events));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -45,10 +45,10 @@ public class AdminEventControllerTests
         _adminEventService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminEventResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -59,11 +59,11 @@ public class AdminEventControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var evt = new AdminEventResponse { Id = 1, Name = "Événement A" };
+        AdminEventResponse evt = new AdminEventResponse { Id = 1, Name = "Événement A" };
         _adminEventService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminEventResponse>.Success(evt));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -74,10 +74,10 @@ public class AdminEventControllerTests
         _adminEventService.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminEventResponse>.Failure(new ServiceError("Événement introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -88,7 +88,7 @@ public class AdminEventControllerTests
     [Test]
     public async Task Create_WhenSuccess_ReturnsCreated()
     {
-        var request = new AdminCreateEventRequest
+        AdminCreateEventRequest request = new AdminCreateEventRequest
         {
             Name = "Nouvel Événement",
             StartsAt = DateTime.UtcNow.AddDays(1),
@@ -96,21 +96,21 @@ public class AdminEventControllerTests
             CreatedByUserId = 5,
             IsActive = true
         };
-        var response = new AdminEventResponse { Id = 10, Name = "Nouvel Événement" };
+        AdminEventResponse response = new AdminEventResponse { Id = 10, Name = "Nouvel Événement" };
         _adminEventService.CreateAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminEventResponse>.Success(response));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
-        var created = (CreatedAtActionResult)result;
+        CreatedAtActionResult created = (CreatedAtActionResult)result;
         Assert.That(created.ActionName, Is.EqualTo(nameof(AdminEventController.GetById)));
     }
 
     [Test]
     public async Task Create_WhenError_ReturnsError()
     {
-        var request = new AdminCreateEventRequest
+        AdminCreateEventRequest request = new AdminCreateEventRequest
         {
             Name = "Événement",
             StartsAt = DateTime.UtcNow.AddDays(2),
@@ -120,10 +120,10 @@ public class AdminEventControllerTests
         _adminEventService.CreateAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminEventResponse>.Failure(new ServiceError("Dates invalides", 400)));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 
@@ -134,18 +134,18 @@ public class AdminEventControllerTests
     [Test]
     public async Task Update_WhenSuccess_ReturnsOk()
     {
-        var request = new AdminUpdateEventRequest
+        AdminUpdateEventRequest request = new AdminUpdateEventRequest
         {
             Name = "Mis à jour",
             StartsAt = DateTime.UtcNow.AddDays(1),
             EndsAt = DateTime.UtcNow.AddDays(1).AddHours(2),
             IsActive = true
         };
-        var response = new AdminEventResponse { Id = 1, Name = "Mis à jour" };
+        AdminEventResponse response = new AdminEventResponse { Id = 1, Name = "Mis à jour" };
         _adminEventService.UpdateAsync(1, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminEventResponse>.Success(response));
 
-        var result = await _sut.Update(1, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -153,7 +153,7 @@ public class AdminEventControllerTests
     [Test]
     public async Task Update_WhenNotFound_Returns404()
     {
-        var request = new AdminUpdateEventRequest
+        AdminUpdateEventRequest request = new AdminUpdateEventRequest
         {
             Name = "Name",
             StartsAt = DateTime.UtcNow,
@@ -162,10 +162,10 @@ public class AdminEventControllerTests
         _adminEventService.UpdateAsync(99, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminEventResponse>.Failure(new ServiceError("Événement introuvable", 404)));
 
-        var result = await _sut.Update(99, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(99, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -179,7 +179,7 @@ public class AdminEventControllerTests
         _adminEventService.DeleteAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -190,10 +190,10 @@ public class AdminEventControllerTests
         _adminEventService.DeleteAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Événement introuvable", 404)));
 
-        var result = await _sut.Delete(99, CancellationToken.None);
+        IActionResult result = await _sut.Delete(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
