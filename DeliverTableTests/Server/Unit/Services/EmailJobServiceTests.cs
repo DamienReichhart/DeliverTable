@@ -3,6 +3,7 @@ using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Enums;
 using Microsoft.Extensions.Logging;
@@ -34,9 +35,9 @@ public class EmailJobServiceTests
     [Test]
     public async Task QueueOrderConfirmationAsync_CreatesJobAndPublishes_ReturnsSuccess()
     {
-        var order = CreateTestOrder();
+        Order order = CreateTestOrder();
 
-        var result = await _sut.QueueOrderConfirmationAsync(order, "client@test.com", "Jean Dupont");
+        ServiceResult result = await _sut.QueueOrderConfirmationAsync(order, "client@test.com", "Jean Dupont");
 
         Assert.That(result.IsSuccess, Is.True);
         await _emailJobRepository.Received(1).CreateAsync(
@@ -51,7 +52,7 @@ public class EmailJobServiceTests
     [Test]
     public async Task QueueOrderConfirmationAsync_SetsCorrectJobProperties()
     {
-        var order = CreateTestOrder();
+        Order order = CreateTestOrder();
         EmailJob? capturedJob = null;
         await _emailJobRepository.CreateAsync(
             Arg.Do<EmailJob>(j => capturedJob = j),
@@ -67,7 +68,7 @@ public class EmailJobServiceTests
         Assert.That(capturedJob.Status, Is.EqualTo(EmailJobStatus.Pending));
         Assert.That(capturedJob.MaxRetries, Is.EqualTo(5));
 
-        var templateData = JsonDocument.Parse(capturedJob.TemplateData);
+        JsonDocument templateData = JsonDocument.Parse(capturedJob.TemplateData);
         Assert.That(templateData.RootElement.GetProperty("OrderId").GetInt32(), Is.EqualTo(order.Id));
         Assert.That(templateData.RootElement.GetProperty("RestaurantName").GetString(), Is.EqualTo("Test Restaurant"));
     }
@@ -75,11 +76,11 @@ public class EmailJobServiceTests
     [Test]
     public async Task QueueOrderConfirmationAsync_WhenPublishFails_StillReturnsSuccess()
     {
-        var order = CreateTestOrder();
+        Order order = CreateTestOrder();
         _messagePublisher.PublishAsync("email", Arg.Any<EmailJobMessage>())
             .ThrowsAsync(new Exception("RabbitMQ down"));
 
-        var result = await _sut.QueueOrderConfirmationAsync(order, "client@test.com", "Jean Dupont");
+        ServiceResult result = await _sut.QueueOrderConfirmationAsync(order, "client@test.com", "Jean Dupont");
 
         Assert.That(result.IsSuccess, Is.True);
         await _emailJobRepository.Received(1).CreateAsync(Arg.Any<EmailJob>(), Arg.Any<CancellationToken>());
@@ -92,7 +93,7 @@ public class EmailJobServiceTests
     [Test]
     public async Task QueuePasswordResetAsync_CreatesJobAndPublishes_ReturnsSuccess()
     {
-        var result = await _sut.QueuePasswordResetAsync("user@test.com", "Jean", "https://reset.link/token");
+        ServiceResult result = await _sut.QueuePasswordResetAsync("user@test.com", "Jean", "https://reset.link/token");
 
         Assert.That(result.IsSuccess, Is.True);
         await _emailJobRepository.Received(1).CreateAsync(
@@ -112,7 +113,7 @@ public class EmailJobServiceTests
     [Test]
     public async Task QueueWelcomeEmailAsync_CreatesJobAndPublishes_ReturnsSuccess()
     {
-        var result = await _sut.QueueWelcomeEmailAsync("new@test.com", "Marie");
+        ServiceResult result = await _sut.QueueWelcomeEmailAsync("new@test.com", "Marie");
 
         Assert.That(result.IsSuccess, Is.True);
         await _emailJobRepository.Received(1).CreateAsync(
@@ -131,7 +132,7 @@ public class EmailJobServiceTests
 
     private static Order CreateTestOrder()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         return new Order
         {
             Id = 42,

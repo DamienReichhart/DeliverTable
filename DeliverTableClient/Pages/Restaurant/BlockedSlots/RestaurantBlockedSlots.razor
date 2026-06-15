@@ -104,49 +104,45 @@
         </div>
     </div>
 
-    @if (_showCreateForm)
-    {
-        <div class="slot-form-container">
-            <h2>Nouveau créneau bloqué</h2>
-
+    @* ── Bloquer un créneau (modal) ── *@
+    <AdminFormModal IsVisible="@_showCreateForm" Title="Bloquer un créneau" OnClose="CloseCreateForm">
+        <ChildContent>
             <EditForm Model="_createRequest" OnValidSubmit="CreateBlockedSlot">
                 <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="startsAt">Début</label>
-                        <InputDate id="startsAt" @bind-Value="_startsAtDate" class="form-control" />
+                <div class="adm-form-row">
+                    <div class="adm-form-group">
+                        <label class="adm-form-label" for="slot-start">Date de début</label>
+                        <InputDate id="slot-start" @bind-Value="_createRequest.StartsAt"
+                                   Type="InputDateType.DateTimeLocal" class="adm-form-input" />
+                        <ValidationMessage For="@(() => _createRequest.StartsAt)" class="adm-form-error" />
                     </div>
-
-                    <div class="form-group">
-                        <label for="startsAtTime">Heure début (HH:mm)</label>
-                        <InputText id="startsAtTime" @bind-Value="_startsAtTime" class="form-control" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="endsAt">Fin</label>
-                        <InputDate id="endsAt" @bind-Value="_endsAtDate" class="form-control" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="endsAtTime">Heure fin (HH:mm)</label>
-                        <InputText id="endsAtTime" @bind-Value="_endsAtTime" class="form-control" />
-                    </div>
-
-                    <div class="form-group form-group--full">
-                        <label for="reason">Raison (optionnel)</label>
-                        <InputText id="reason" @bind-Value="_createRequest.Reason" class="form-control" />
+                    <div class="adm-form-group">
+                        <label class="adm-form-label" for="slot-end">Date de fin</label>
+                        <InputDate id="slot-end" @bind-Value="_createRequest.EndsAt"
+                                   Type="InputDateType.DateTimeLocal" class="adm-form-input" />
+                        <ValidationMessage For="@(() => _createRequest.EndsAt)" class="adm-form-error" />
                     </div>
                 </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="app-btn app-btn--primary" disabled="@_saving">Créer</button>
-                    <button type="button" class="app-btn app-btn--secondary" @onclick="CloseCreateForm">Annuler</button>
+                <div class="adm-form-group">
+                    <label class="adm-form-label" for="slot-reason">Raison</label>
+                    <InputTextArea id="slot-reason" @bind-Value="_createRequest.Reason"
+                                   class="adm-form-input" placeholder="Raison du blocage" rows="2" />
+                </div>
+                @if (_error is not null)
+                {
+                    <div class="adm-form-error">@_error</div>
+                }
+                <div class="adm-form-actions">
+                    <button type="button" class="app-btn app-btn--secondary app-btn--sm" @onclick="CloseCreateForm" disabled="@_saving">
+                        Annuler
+                    </button>
+                    <button type="submit" class="app-btn app-btn--sm" disabled="@_saving">
+                        @(_saving ? "Création..." : "Bloquer")
+                    </button>
                 </div>
             </EditForm>
-        </div>
-    }
+        </ChildContent>
+    </AdminFormModal>
 
     @if (_loading)
     {
@@ -214,10 +210,6 @@
     private List<OpeningDayScheduleDto> _openingHoursDays = BuildDefaultOpeningDays();
 
     private AdminCreateBlockedSlotRequest _createRequest = new();
-    private DateTime _startsAtDate = DateTime.Today;
-    private DateTime _endsAtDate = DateTime.Today;
-    private string _startsAtTime = "12:00";
-    private string _endsAtTime = "13:00";
 
     protected override async Task OnInitializedAsync()
     {
@@ -282,11 +274,13 @@
 
     private void OpenCreateForm()
     {
-        _createRequest = new AdminCreateBlockedSlotRequest { RestaurantId = RestaurantId };
-        _startsAtDate = DateTime.Today;
-        _endsAtDate = DateTime.Today;
-        _startsAtTime = "12:00";
-        _endsAtTime = "13:00";
+        var start = DateTime.Today.AddHours(12);
+        _createRequest = new AdminCreateBlockedSlotRequest
+        {
+            RestaurantId = RestaurantId,
+            StartsAt = start,
+            EndsAt = start.AddHours(1)
+        };
         _showCreateForm = true;
         _error = null;
     }
@@ -302,19 +296,15 @@
         _saving = true;
         _error = null;
 
-        if (!TryBuildDateTime(_startsAtDate, _startsAtTime, out var startsAt)
-            || !TryBuildDateTime(_endsAtDate, _endsAtTime, out var endsAt))
+        var request = new AdminCreateBlockedSlotRequest
         {
-            _error = "Format d'heure invalide. Utilisez HH:mm.";
-            _saving = false;
-            return;
-        }
+            RestaurantId = RestaurantId,
+            StartsAt = DateTime.SpecifyKind(_createRequest.StartsAt, DateTimeKind.Local).ToUniversalTime(),
+            EndsAt = DateTime.SpecifyKind(_createRequest.EndsAt, DateTimeKind.Local).ToUniversalTime(),
+            Reason = _createRequest.Reason
+        };
 
-        _createRequest.RestaurantId = RestaurantId;
-        _createRequest.StartsAt = startsAt.ToUniversalTime();
-        _createRequest.EndsAt = endsAt.ToUniversalTime();
-
-        var (created, error) = await OrderConfigService.CreateBlockedSlotAsync(RestaurantId, _createRequest);
+        var (created, error) = await OrderConfigService.CreateBlockedSlotAsync(RestaurantId, request);
 
         if (created is null)
         {
@@ -455,15 +445,4 @@
     }
 
     private void GoBack() => Nav.NavigateTo("/mes-restaurants");
-
-    private static bool TryBuildDateTime(DateTime datePart, string timePart, out DateTime value)
-    {
-        value = default;
-
-        if (!TimeOnly.TryParse(timePart, out var time))
-            return false;
-
-        value = datePart.Date.Add(time.ToTimeSpan());
-        return true;
-    }
 }

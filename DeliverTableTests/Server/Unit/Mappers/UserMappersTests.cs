@@ -1,5 +1,7 @@
+using DeliverTableInfrastructure.Models;
 using DeliverTableServer.Mappers;
 using DeliverTableSharedLibrary.Constants.Enums;
+using DeliverTableSharedLibrary.Dtos.Auth;
 using DeliverTableTests.Server.Factories;
 
 namespace DeliverTableTests.Server.Unit.Mappers;
@@ -10,12 +12,12 @@ public class UserMappersTests
     [Test]
     public void ToDto_MapsAllFieldsCorrectly()
     {
-        var user = ServerEntityFactory.CreateValidUser("map@example.com");
+        User user = ServerEntityFactory.CreateValidUser("map@example.com");
         user.Id = 99;
         user.FirstName = "Marie";
         user.LastName = "Curie";
 
-        var dto = user.ToDto(nameof(UserRole.Customer));
+        UserResponse dto = user.ToDto(nameof(UserRole.Customer));
 
         Assert.Multiple(() =>
         {
@@ -30,10 +32,10 @@ public class UserMappersTests
     [Test]
     public void ToDto_ReplacesNullEmailWithEmptyString()
     {
-        var user = ServerEntityFactory.CreateValidUser();
+        User user = ServerEntityFactory.CreateValidUser();
         user.Email = null;
 
-        var dto = user.ToDto(nameof(UserRole.Customer));
+        UserResponse dto = user.ToDto(nameof(UserRole.Customer));
 
         Assert.That(dto.Email, Is.EqualTo(string.Empty));
     }
@@ -44,9 +46,9 @@ public class UserMappersTests
     [TestCase(nameof(UserRole.Administrator))]
     public void ToDto_PreservesRole(string role)
     {
-        var user = ServerEntityFactory.CreateValidUser();
+        User user = ServerEntityFactory.CreateValidUser();
 
-        var dto = user.ToDto(role);
+        UserResponse dto = user.ToDto(role);
 
         Assert.That(dto.Role, Is.EqualTo(role));
     }

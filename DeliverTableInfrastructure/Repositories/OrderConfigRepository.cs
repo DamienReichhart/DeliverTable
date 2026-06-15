@@ -45,7 +45,7 @@ public class OrderConfigRepository(DeliverTableContext dbContext) : IOrderConfig
 
     public async Task<bool> DeleteRuleAsync(int id, CancellationToken ct = default)
     {
-        var rule = await _dbContext.OrderRules.FindAsync([id], ct);
+        OrderRule? rule = await _dbContext.OrderRules.FindAsync([id], ct);
         if (rule is null) return false;
 
         _dbContext.OrderRules.Remove(rule);
@@ -83,7 +83,7 @@ public class OrderConfigRepository(DeliverTableContext dbContext) : IOrderConfig
 
     public async Task<bool> DeleteBlockedSlotAsync(int id, CancellationToken ct = default)
     {
-        var slot = await _dbContext.OrderBlockedSlots.FindAsync([id], ct);
+        OrderBlockedSlot? slot = await _dbContext.OrderBlockedSlots.FindAsync([id], ct);
         if (slot is null) return false;
 
         _dbContext.OrderBlockedSlots.Remove(slot);

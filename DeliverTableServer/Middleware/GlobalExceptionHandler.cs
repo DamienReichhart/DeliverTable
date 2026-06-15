@@ -1,3 +1,4 @@
+using DeliverTableServer.Common;
 using DeliverTableServer.Constants;
 using DeliverTableSharedLibrary.Dtos;
 using Microsoft.AspNetCore.Diagnostics;
@@ -19,9 +20,12 @@ public class GlobalExceptionHandler(
     {
         _logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
 
-        var (statusCode, message) = exception switch
+        (int statusCode, string? message) = exception switch
         {
             KeyNotFoundException => (StatusCodes.Status404NotFound, ErrorMessages.ResourceNotFound),
+            BadHttpRequestException => (StatusCodes.Status400BadRequest, exception.Message),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, ErrorMessages.Unauthorized),
+            ForbidException => (StatusCodes.Status403Forbidden, ErrorMessages.Forbidden),
             _ => (StatusCodes.Status500InternalServerError,
                   _environment.IsDevelopment() ? exception.Message : ErrorMessages.InternalServerError)
         };

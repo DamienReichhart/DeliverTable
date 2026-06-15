@@ -20,6 +20,8 @@ public static class ErrorMessages
     public const string AddressNotLocatable = "Impossible de localiser l'adresse fournie.";
     public const string ResourceNotFound = "Ressource non trouvée";
     public const string InternalServerError = "Une erreur interne est survenue";
+    public const string Unauthorized = "Accès non autorisé";
+    public const string Forbidden = "Accès refusé";
 
     public static string InvalidRole(string validValues) =>
         $"Rôle invalide. Valeurs possibles : {validValues}";

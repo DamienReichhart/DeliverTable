@@ -13,11 +13,11 @@ public sealed class AdminRestaurantClientService(HttpClient httpClient) : IAdmin
     public async Task<(List<AdminRestaurantResponse>? Restaurants, ErrorResponse? Error)> GetAllAsync(
         CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.Restaurants, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Admin.Restaurants, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var items = await response.Content.ReadFromJsonAsync<List<AdminRestaurantResponse>>(cancellationToken: ct);
+        List<AdminRestaurantResponse>? items = await response.Content.ReadFromJsonAsync<List<AdminRestaurantResponse>>(cancellationToken: ct);
         return items is not null
             ? (items, null)
             : (null, new ErrorResponse { Error = "Impossible de lire la liste des restaurants", Status = (int)response.StatusCode });
@@ -26,28 +26,28 @@ public sealed class AdminRestaurantClientService(HttpClient httpClient) : IAdmin
     public async Task<(AdminRestaurantResponse? Restaurant, ErrorResponse? Error)> GetByIdAsync(
         int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync($"{ApiRoutes.Admin.Restaurants}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync($"{ApiRoutes.Admin.Restaurants}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminRestaurantResponse>(cancellationToken: ct);
+        AdminRestaurantResponse? item = await response.Content.ReadFromJsonAsync<AdminRestaurantResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(AdminRestaurantResponse? Restaurant, ErrorResponse? Error)> UpdateAsync(
         int id, AdminUpdateRestaurantRequest request, CancellationToken ct = default)
     {
-        using var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Admin.Restaurants}/{id}", request, ct);
+        using HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Admin.Restaurants}/{id}", request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminRestaurantResponse>(cancellationToken: ct);
+        AdminRestaurantResponse? item = await response.Content.ReadFromJsonAsync<AdminRestaurantResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(bool Success, ErrorResponse? Error)> DeleteAsync(int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.Restaurants}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.Restaurants}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (false, await ReadError(response, ct));
 
@@ -58,7 +58,7 @@ public sealed class AdminRestaurantClientService(HttpClient httpClient) : IAdmin
     {
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
         }
         catch

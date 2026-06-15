@@ -33,12 +33,12 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
     public async Task<(List<Models.DiscountCode> Items, int TotalCount)> GetByRestaurantAsync(
         int restaurantId, DiscountCodeQuery query, CancellationToken ct = default)
     {
-        var q = _dbContext.DiscountCodes
+        IOrderedQueryable<DiscountCode> q = _dbContext.DiscountCodes
             .Where(dc => dc.RestaurantId == restaurantId)
             .OrderByDescending(dc => dc.CreatedAt);
 
-        var totalCount = await q.CountAsync(ct);
-        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
+        int totalCount = await q.CountAsync(ct);
+        List<DiscountCode> items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 
@@ -58,7 +58,7 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var code = await _dbContext.DiscountCodes.FindAsync([id], ct);
+        DiscountCode? code = await _dbContext.DiscountCodes.FindAsync([id], ct);
         if (code is null) return false;
         _dbContext.DiscountCodes.Remove(code);
         await _dbContext.SaveChangesAsync(ct);
@@ -100,11 +100,11 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
 
     public async Task MarkPendingRedemptionsCommittedForOrderAsync(int orderId, CancellationToken ct = default)
     {
-        var rows = await _dbContext.DiscountCodeRedemptions
+        List<DiscountCodeRedemption> rows = await _dbContext.DiscountCodeRedemptions
             .Where(r => r.OrderId == orderId && r.Status == DiscountRedemptionStatus.Pending)
             .ToListAsync(ct);
 
-        foreach (var row in rows)
+        foreach (DiscountCodeRedemption? row in rows)
         {
             row.Status = DiscountRedemptionStatus.Committed;
         }
@@ -114,11 +114,11 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
 
     public async Task MarkPendingRedemptionsReversedForOrderAsync(int orderId, CancellationToken ct = default)
     {
-        var rows = await _dbContext.DiscountCodeRedemptions
+        List<DiscountCodeRedemption> rows = await _dbContext.DiscountCodeRedemptions
             .Where(r => r.OrderId == orderId && r.Status == DiscountRedemptionStatus.Pending)
             .ToListAsync(ct);
 
-        foreach (var row in rows)
+        foreach (DiscountCodeRedemption? row in rows)
         {
             row.Status = DiscountRedemptionStatus.Reversed;
         }
@@ -128,12 +128,12 @@ public class DiscountCodeRepository(DeliverTableContext dbContext) : IDiscountCo
 
     public async Task IncrementRedemptionCountersForCommittedAsync(int orderId, CancellationToken ct = default)
     {
-        var rows = await _dbContext.DiscountCodeRedemptions
+        List<DiscountCodeRedemption> rows = await _dbContext.DiscountCodeRedemptions
             .Include(r => r.DiscountCode)
             .Where(r => r.OrderId == orderId && r.Status == DiscountRedemptionStatus.Committed)
             .ToListAsync(ct);
 
-        foreach (var row in rows)
+        foreach (DiscountCodeRedemption? row in rows)
         {
             row.DiscountCode.CurrentRedemptions++;
             row.DiscountCode.UpdatedAt = DateTime.UtcNow;

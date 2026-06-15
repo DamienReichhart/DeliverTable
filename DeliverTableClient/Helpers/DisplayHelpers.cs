@@ -77,8 +77,8 @@ public static class DisplayHelpers
 
     public static string GetInitials(string firstName, string lastName)
     {
-        var first = string.IsNullOrEmpty(firstName) ? "" : firstName[..1].ToUpperInvariant();
-        var last = string.IsNullOrEmpty(lastName) ? "" : lastName[..1].ToUpperInvariant();
+        string first = string.IsNullOrEmpty(firstName) ? "" : firstName[..1].ToUpperInvariant();
+        string last = string.IsNullOrEmpty(lastName) ? "" : lastName[..1].ToUpperInvariant();
         return $"{first}{last}";
     }
 }

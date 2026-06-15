@@ -1,0 +1,27 @@
+using DeliverTableServer.Common;
+using DeliverTableServer.Extensions;
+using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Constants;
+using DeliverTableSharedLibrary.Constants.Enums;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace DeliverTableServer.Features.Payment;
+
+[ApiController]
+[Route(ApiRoutes.Payment.Base)]
+[Authorize]
+public class PaymentController(IPaymentService paymentService) : ControllerBase
+{
+    private readonly IPaymentService _paymentService = paymentService;
+
+    [HttpPost(ApiRoutes.Payment.CancelRoute)]
+    [Authorize(Roles = nameof(UserRole.Customer))]
+    public async Task<IActionResult> Cancel([FromRoute] int orderId, CancellationToken ct)
+    {
+        if (!this.TryGetUserId(out int userId)) return Unauthorized();
+
+        ServiceResult result = await _paymentService.CancelAuthorizationAsync(orderId, userId, ct);
+        return result.ToNoContentResult();
+    }
+}

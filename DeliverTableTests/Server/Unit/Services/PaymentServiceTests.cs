@@ -11,6 +11,7 @@ using DeliverTableServer.Hubs;
 using DeliverTableServer.Hubs.Interfaces;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
+using DeliverTableSharedLibrary.Dtos.Payment;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Factories;
 using DeliverTableTests.Server.Fixtures;
@@ -78,8 +79,8 @@ public class PaymentServiceTests
     [Test]
     public async Task CreateIntentAsync_NewStripeCustomer_PersistsCustomerIdAndCreatesIntent()
     {
-        var user = new User { Id = 1, Email = "a@b.fr", FirstName = "A", LastName = "B" };
-        var order = new Order
+        User user = new User { Id = 1, Email = "a@b.fr", FirstName = "A", LastName = "B" };
+        Order order = new Order
         {
             Id = 10,
             CustomerId = 1,
@@ -100,7 +101,7 @@ public class PaymentServiceTests
                  Arg.Any<CancellationToken>())
                .Returns(new StripePaymentIntentResult("pi_1", "pi_1_secret_abc", "requires_payment_method"));
 
-        var result = await _sut.CreateIntentAsync(10, CancellationToken.None);
+        ServiceResult<CreateIntentResult> result = await _sut.CreateIntentAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.ClientSecret, Is.EqualTo("pi_1_secret_abc"));
@@ -117,7 +118,7 @@ public class PaymentServiceTests
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>())
             .Returns(new Order { Id = 10, Status = OrderStatus.Confirmed });
 
-        var result = await _sut.CreateIntentAsync(10, CancellationToken.None);
+        ServiceResult<CreateIntentResult> result = await _sut.CreateIntentAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
     }
@@ -125,7 +126,7 @@ public class PaymentServiceTests
     [Test]
     public async Task CaptureAsync_HappyPath_CapturesIntentAndUpdatesPayment()
     {
-        var payment = new Payment
+        Payment payment = new Payment
         {
             Id = 1,
             OrderId = 10,
@@ -137,7 +138,7 @@ public class PaymentServiceTests
         _stripe.CapturePaymentIntentAsync("pi_cap", "order:10:capture", Arg.Any<CancellationToken>())
                .Returns(new StripeCaptureResult("pi_cap", "succeeded"));
 
-        var result = await _sut.CaptureAsync(10, CancellationToken.None);
+        ServiceResult result = await _sut.CaptureAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(payment.CapturedAt, Is.Not.Null);
@@ -147,7 +148,7 @@ public class PaymentServiceTests
     [Test]
     public async Task CaptureAsync_SetsOrderPaymentStatusToCompleted()
     {
-        var payment = new Payment
+        Payment payment = new Payment
         {
             Id = 1,
             OrderId = 10,
@@ -155,14 +156,14 @@ public class PaymentServiceTests
             Status = PaymentGatewayStatus.RequiresConfirmation,
             Amount = 20m,
         };
-        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Authorized };
+        Order order = new Order { Id = 10, PaymentStatus = PaymentStatus.Authorized };
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _orderRepo.UpdateAsync(order, Arg.Any<CancellationToken>()).Returns(order);
         _stripe.CapturePaymentIntentAsync("pi_cap2", "order:10:capture", Arg.Any<CancellationToken>())
                .Returns(new StripeCaptureResult("pi_cap2", "succeeded"));
 
-        var result = await _sut.CaptureAsync(10, CancellationToken.None);
+        ServiceResult result = await _sut.CaptureAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(order.PaymentStatus, Is.EqualTo(PaymentStatus.Completed));
@@ -172,12 +173,12 @@ public class PaymentServiceTests
     [Test]
     public async Task CaptureAsync_StripeFails_ReturnsErrorAndDoesNotUpdate()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_fail" };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_fail" };
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _stripe.CapturePaymentIntentAsync("pi_fail", Arg.Any<string>(), Arg.Any<CancellationToken>())
                .Throws(new Stripe.StripeException("boom"));
 
-        var result = await _sut.CaptureAsync(10, CancellationToken.None);
+        ServiceResult result = await _sut.CaptureAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         await _paymentRepo.DidNotReceive().UpdateAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
@@ -186,12 +187,12 @@ public class PaymentServiceTests
     [Test]
     public async Task CancelAuthorizationAsync_CancelsIntentAndUpdatesPayment()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_c" };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_c" };
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _stripe.CancelPaymentIntentAsync("pi_c", "order:10:cancel-auth", Arg.Any<CancellationToken>())
                .Returns(new StripeCancelResult("pi_c", "canceled"));
 
-        var result = await _sut.CancelAuthorizationAsync(10, CancellationToken.None);
+        ServiceResult result = await _sut.CancelAuthorizationAsync(10, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(payment.Status, Is.EqualTo(PaymentGatewayStatus.Canceled));
@@ -201,14 +202,14 @@ public class PaymentServiceTests
     [Test]
     public async Task CancelAuthorizationAsync_WithCustomerId_OrderOwnedByCustomer_Succeeds()
     {
-        var order = new Order { Id = 10, CustomerId = 5 };
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_c" };
+        Order order = new Order { Id = 10, CustomerId = 5 };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_c" };
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _stripe.CancelPaymentIntentAsync("pi_c", "order:10:cancel-auth", Arg.Any<CancellationToken>())
                .Returns(new StripeCancelResult("pi_c", "canceled"));
 
-        var result = await _sut.CancelAuthorizationAsync(10, 5, CancellationToken.None);
+        ServiceResult result = await _sut.CancelAuthorizationAsync(10, 5, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(payment.Status, Is.EqualTo(PaymentGatewayStatus.Canceled));
@@ -217,10 +218,10 @@ public class PaymentServiceTests
     [Test]
     public async Task CancelAuthorizationAsync_OrderNotOwnedByCustomer_ReturnsError()
     {
-        var order = new Order { Id = 10, CustomerId = 99 };
+        Order order = new Order { Id = 10, CustomerId = 99 };
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
 
-        var result = await _sut.CancelAuthorizationAsync(10, customerId: 5, CancellationToken.None);
+        ServiceResult result = await _sut.CancelAuthorizationAsync(10, customerId: 5, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.OrderAccessDenied));
@@ -230,8 +231,8 @@ public class PaymentServiceTests
     [Test]
     public async Task RefundAsync_HappyPath_PersistsRefundAndUpdatesOrderStatus()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
-        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
+        Order order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(0m);
@@ -240,7 +241,7 @@ public class PaymentServiceTests
         _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>())
                     .Returns(ci => ci.Arg<Refund>());
 
-        var result = await _sut.RefundAsync(10, 25m, "customer request", adminUserId: 99, CancellationToken.None);
+        ServiceResult<RefundDto> result = await _sut.RefundAsync(10, 25m, "customer request", adminUserId: 99, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Amount, Is.EqualTo(25m));
@@ -250,8 +251,8 @@ public class PaymentServiceTests
     [Test]
     public async Task RefundAsync_FullRefund_SetsStatusRefunded()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
-        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
+        Order order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(0m);
@@ -267,11 +268,11 @@ public class PaymentServiceTests
     [Test]
     public async Task RefundAsync_AmountExceedsRemaining_ReturnsError()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 50m };
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(45m);
 
-        var result = await _sut.RefundAsync(10, 10m, "x", adminUserId: 99, CancellationToken.None);
+        ServiceResult<RefundDto> result = await _sut.RefundAsync(10, 10m, "x", adminUserId: 99, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Does.Contain("dépasse"));
@@ -282,11 +283,11 @@ public class PaymentServiceTests
     [Test]
     public async Task RefundAsync_WithOpenDispute_ReturnsBlockedError()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_d", Amount = 50m };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_d", Amount = 50m };
         _paymentRepo.GetByOrderIdAsync(10, Arg.Any<CancellationToken>()).Returns(payment);
         _disputeService.HasOpenDisputeForOrderAsync(10, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.RefundAsync(10, 10m, "test", adminUserId: 99, CancellationToken.None);
+        ServiceResult<RefundDto> result = await _sut.RefundAsync(10, 10m, "test", adminUserId: 99, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.RefundBlockedByOpenDispute));
@@ -297,11 +298,11 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_DuplicateEvent_ReturnsSuccessWithoutWork()
     {
-        var evt = new Stripe.Event { Id = "evt_dup", Type = "payment_intent.succeeded" };
+        Stripe.Event evt = new Stripe.Event { Id = "evt_dup", Type = "payment_intent.succeeded" };
         _paymentRepo.TryRegisterProcessedEventAsync("evt_dup", "payment_intent.succeeded", Arg.Any<CancellationToken>())
                     .Returns(false);
 
-        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+        ServiceResult result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _paymentRepo.DidNotReceive().GetByStripePaymentIntentIdAsync(
@@ -311,16 +312,16 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_AmountCapturableUpdated_TransitionsOrderAndCommitsRedemptions()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_x", Status = PaymentGatewayStatus.RequiresConfirmation };
-        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, PaymentStatus = PaymentStatus.Pending, CustomerId = 2 };
-        var pi = new Stripe.PaymentIntent { Id = "pi_x" };
-        var evt = new Stripe.Event { Id = "evt_1", Type = "payment_intent.amount_capturable_updated", Data = new Stripe.EventData { Object = pi } };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_x", Status = PaymentGatewayStatus.RequiresConfirmation };
+        Order order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, PaymentStatus = PaymentStatus.Pending, CustomerId = 2 };
+        Stripe.PaymentIntent pi = new Stripe.PaymentIntent { Id = "pi_x" };
+        Stripe.Event evt = new Stripe.Event { Id = "evt_1", Type = "payment_intent.amount_capturable_updated", Data = new Stripe.EventData { Object = pi } };
         _paymentRepo.TryRegisterProcessedEventAsync("evt_1", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
         _paymentRepo.GetByStripePaymentIntentIdAsync("pi_x", Arg.Any<CancellationToken>()).Returns(payment);
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _cartRepo.GetByCustomerAsync(2, Arg.Any<CancellationToken>()).Returns(new List<Cart>());
 
-        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+        ServiceResult result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(order.Status, Is.EqualTo(OrderStatus.Pending));
@@ -331,10 +332,10 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_PaymentFailed_CancelsOrderAndReverses()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_f" };
-        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment };
-        var pi = new Stripe.PaymentIntent { Id = "pi_f" };
-        var evt = new Stripe.Event { Id = "evt_f", Type = "payment_intent.payment_failed", Data = new Stripe.EventData { Object = pi } };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_f" };
+        Order order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment };
+        Stripe.PaymentIntent pi = new Stripe.PaymentIntent { Id = "pi_f" };
+        Stripe.Event evt = new Stripe.Event { Id = "evt_f", Type = "payment_intent.payment_failed", Data = new Stripe.EventData { Object = pi } };
         _paymentRepo.TryRegisterProcessedEventAsync("evt_f", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
         _paymentRepo.GetByStripePaymentIntentIdAsync("pi_f", Arg.Any<CancellationToken>()).Returns(payment);
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
@@ -348,9 +349,9 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_ChargeRefunded_UpsertsRefundAndUpdatesStatus()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 100m };
-        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
-        var charge = new Stripe.Charge
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 100m };
+        Order order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        Stripe.Charge charge = new Stripe.Charge
         {
             Id = "ch_1",
             PaymentIntentId = "pi_r",
@@ -362,7 +363,7 @@ public class PaymentServiceTests
                 }
             }
         };
-        var evt = new Stripe.Event { Id = "evt_ref", Type = "charge.refunded", Data = new Stripe.EventData { Object = charge } };
+        Stripe.Event evt = new Stripe.Event { Id = "evt_ref", Type = "charge.refunded", Data = new Stripe.EventData { Object = charge } };
         _paymentRepo.TryRegisterProcessedEventAsync("evt_ref", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
         _paymentRepo.GetByStripePaymentIntentIdAsync("pi_r", Arg.Any<CancellationToken>()).Returns(payment);
         _paymentRepo.GetRefundByStripeIdAsync("re_1", Arg.Any<CancellationToken>()).Returns((DeliverTableInfrastructure.Models.Refund?)null);
@@ -384,8 +385,8 @@ public class PaymentServiceTests
         // but the payment repo then throws during handler execution.
         // The exception should propagate so that Stripe can retry the webhook.
         // With real DB + transaction this means the ProcessedStripeEvent row is also rolled back.
-        var pi = new Stripe.PaymentIntent { Id = "pi_throw" };
-        var evt = new Stripe.Event
+        Stripe.PaymentIntent pi = new Stripe.PaymentIntent { Id = "pi_throw" };
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_throw",
             Type = "payment_intent.succeeded",
@@ -411,16 +412,16 @@ public class PaymentServiceTests
         // In this unit test (mocked repos) we verify that:
         //   - the exception propagates (Stripe can retry),
         //   - email queuing never fires (publishes are deferred until after commit).
-        var payment = new Payment
+        Payment payment = new Payment
         {
             Id = 1,
             OrderId = 10,
             StripePaymentIntentId = "pi_partial",
             Status = PaymentGatewayStatus.RequiresConfirmation
         };
-        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, CustomerId = 2 };
-        var pi = new Stripe.PaymentIntent { Id = "pi_partial" };
-        var evt = new Stripe.Event
+        Order order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, CustomerId = 2 };
+        Stripe.PaymentIntent pi = new Stripe.PaymentIntent { Id = "pi_partial" };
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_partial",
             Type = "payment_intent.amount_capturable_updated",
@@ -453,16 +454,16 @@ public class PaymentServiceTests
         // When payment_intent.amount_capturable_updated is handled successfully,
         // IncrementRedemptionCountersForCommittedAsync must be called so that
         // CurrentRedemptions is only bumped at actual payment commit (not at order creation).
-        var payment = new Payment
+        Payment payment = new Payment
         {
             Id = 1,
             OrderId = 10,
             StripePaymentIntentId = "pi_dc",
             Status = PaymentGatewayStatus.RequiresConfirmation
         };
-        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, CustomerId = 3 };
-        var pi = new Stripe.PaymentIntent { Id = "pi_dc" };
-        var evt = new Stripe.Event
+        Order order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, CustomerId = 3 };
+        Stripe.PaymentIntent pi = new Stripe.PaymentIntent { Id = "pi_dc" };
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_dc",
             Type = "payment_intent.amount_capturable_updated",
@@ -478,7 +479,7 @@ public class PaymentServiceTests
         _cartRepo.GetByCustomerAsync(3, Arg.Any<CancellationToken>())
                  .Returns(new List<Cart>());
 
-        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+        ServiceResult result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _discountRepo.Received(1).IncrementRedemptionCountersForCommittedAsync(10, Arg.Any<CancellationToken>());
@@ -488,11 +489,11 @@ public class PaymentServiceTests
     public async Task HandleStripeEventAsync_UnknownEventType_ReturnsSuccess()
     {
         // Unknown event types must be acknowledged (return 200) and logged (not asserted here).
-        var evt = new Stripe.Event { Id = "evt_unknown", Type = "some.unknown.event" };
+        Stripe.Event evt = new Stripe.Event { Id = "evt_unknown", Type = "some.unknown.event" };
         _paymentRepo.TryRegisterProcessedEventAsync("evt_unknown", Arg.Any<string>(), Arg.Any<CancellationToken>())
                     .Returns(true);
 
-        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+        ServiceResult result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         // No handler should have been invoked — no payment lookup.
@@ -503,10 +504,10 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleAuthorizationCompletedAsync_QueuesInvoiceCreation()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_x" };
-        var order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, PaymentStatus = PaymentStatus.Pending, CustomerId = 2 };
-        var pi = new Stripe.PaymentIntent { Id = "pi_x" };
-        var evt = new Stripe.Event { Id = "evt_auth", Type = "payment_intent.amount_capturable_updated", Data = new Stripe.EventData { Object = pi } };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_x" };
+        Order order = new Order { Id = 10, Status = OrderStatus.AwaitingPayment, PaymentStatus = PaymentStatus.Pending, CustomerId = 2 };
+        Stripe.PaymentIntent pi = new Stripe.PaymentIntent { Id = "pi_x" };
+        Stripe.Event evt = new Stripe.Event { Id = "evt_auth", Type = "payment_intent.amount_capturable_updated", Data = new Stripe.EventData { Object = pi } };
 
         _paymentRepo.TryRegisterProcessedEventAsync("evt_auth", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
         _paymentRepo.GetByStripePaymentIntentIdAsync("pi_x", Arg.Any<CancellationToken>()).Returns(payment);
@@ -528,9 +529,9 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleChargeRefundedAsync_QueuesCreditNoteCreation()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 100m };
-        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
-        var charge = new Stripe.Charge
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_r", Amount = 100m };
+        Order order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        Stripe.Charge charge = new Stripe.Charge
         {
             Id = "ch_1",
             PaymentIntentId = "pi_r",
@@ -542,12 +543,12 @@ public class PaymentServiceTests
                 },
             },
         };
-        var evt = new Stripe.Event { Id = "evt_ref2", Type = "charge.refunded", Data = new Stripe.EventData { Object = charge } };
+        Stripe.Event evt = new Stripe.Event { Id = "evt_ref2", Type = "charge.refunded", Data = new Stripe.EventData { Object = charge } };
 
         _paymentRepo.TryRegisterProcessedEventAsync("evt_ref2", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
         _paymentRepo.GetByStripePaymentIntentIdAsync("pi_r", Arg.Any<CancellationToken>()).Returns(payment);
         _paymentRepo.GetRefundByStripeIdAsync("re_new", Arg.Any<CancellationToken>()).Returns((Refund?)null);
-        _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>()).Returns(ci => { var r = ci.Arg<Refund>(); r.Id = 555; return r; });
+        _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>()).Returns(ci => { Refund r = ci.Arg<Refund>(); r.Id = 555; return r; });
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>()).Returns(25m);
         _invoiceService.CreateCreditNotesForRefundAsync(555, Arg.Any<CancellationToken>())
@@ -565,7 +566,7 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_ChargeDisputeCreated_DispatchesToDisputeService()
     {
-        var stripeDispute = new Stripe.Dispute
+        Stripe.Dispute stripeDispute = new Stripe.Dispute
         {
             Id = "dp_1",
             ChargeId = "ch_1",
@@ -574,7 +575,7 @@ public class PaymentServiceTests
             Reason = "fraudulent",
             Created = DateTime.UtcNow,
         };
-        var evt = new Stripe.Event
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_disp_c",
             Type = "charge.dispute.created",
@@ -585,7 +586,7 @@ public class PaymentServiceTests
         _disputeService.HandleCreatedAsync(stripeDispute, Arg.Any<List<Func<Task>>>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<Dispute>.Success(new Dispute { Id = 1 }));
 
-        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+        ServiceResult result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _disputeService.Received(1).HandleCreatedAsync(
@@ -595,8 +596,8 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_ChargeDisputeUpdated_DispatchesToHandleUpdated()
     {
-        var stripeDispute = new Stripe.Dispute { Id = "dp_2" };
-        var evt = new Stripe.Event
+        Stripe.Dispute stripeDispute = new Stripe.Dispute { Id = "dp_2" };
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_disp_u",
             Type = "charge.dispute.updated",
@@ -615,8 +616,8 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_ChargeDisputeClosed_DispatchesToHandleClosed()
     {
-        var stripeDispute = new Stripe.Dispute { Id = "dp_3", Status = "won" };
-        var evt = new Stripe.Event
+        Stripe.Dispute stripeDispute = new Stripe.Dispute { Id = "dp_3", Status = "won" };
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_disp_cl",
             Type = "charge.dispute.closed",
@@ -636,7 +637,7 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleStripeEventAsync_ChargeDisputeWarning_AcksWithoutDispatch()
     {
-        var evt = new Stripe.Event
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_w",
             Type = "charge.dispute.warning_needs_response",
@@ -645,7 +646,7 @@ public class PaymentServiceTests
         _paymentRepo.TryRegisterProcessedEventAsync("evt_w", "charge.dispute.warning_needs_response", Arg.Any<CancellationToken>())
             .Returns(true);
 
-        var result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
+        ServiceResult result = await _sut.HandleStripeEventAsync(evt, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _disputeService.DidNotReceive().HandleCreatedAsync(
@@ -659,11 +660,11 @@ public class PaymentServiceTests
     [Test]
     public async Task HandleChargeRefundedAsync_CallsCommissionStatementHandlerForNewRefund()
     {
-        var payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_cs", Amount = 100m };
-        var order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
-        var refund = new Refund { Id = 77, PaymentId = 1, StripeRefundId = "re_abc", Amount = 30m, Currency = "EUR" };
+        Payment payment = new Payment { Id = 1, OrderId = 10, StripePaymentIntentId = "pi_cs", Amount = 100m };
+        Order order = new Order { Id = 10, PaymentStatus = PaymentStatus.Completed };
+        Refund refund = new Refund { Id = 77, PaymentId = 1, StripeRefundId = "re_abc", Amount = 30m, Currency = "EUR" };
 
-        var charge = new Stripe.Charge
+        Stripe.Charge charge = new Stripe.Charge
         {
             Id = "ch_cs",
             PaymentIntentId = "pi_cs",
@@ -675,7 +676,7 @@ public class PaymentServiceTests
                 },
             },
         };
-        var evt = new Stripe.Event
+        Stripe.Event evt = new Stripe.Event
         {
             Id = "evt_cs",
             Type = "charge.refunded",
@@ -689,7 +690,7 @@ public class PaymentServiceTests
         _paymentRepo.GetRefundByStripeIdAsync("re_abc", Arg.Any<CancellationToken>())
             .Returns((Refund?)null);
         _paymentRepo.AddRefundAsync(Arg.Any<Refund>(), Arg.Any<CancellationToken>())
-            .Returns(ci => { var r = ci.Arg<Refund>(); r.Id = 77; return r; });
+            .Returns(ci => { Refund r = ci.Arg<Refund>(); r.Id = 77; return r; });
         _paymentRepo.GetTotalRefundedAsync(1, Arg.Any<CancellationToken>())
             .Returns(30m);
         _paymentRepo.GetRefundByIdAsync(77, Arg.Any<CancellationToken>())

@@ -11,11 +11,11 @@ public class CommissionStatementApiClient(HttpClient http, IJSRuntime js) : ICom
 {
     public async Task<CommissionStatementGenerationResultDto?> RunAsync(int? year, int? month)
     {
-        var url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.CommissionStatementsRunRoute}";
-        var body = (year.HasValue || month.HasValue)
+        string url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.CommissionStatementsRunRoute}";
+        object? body = (year.HasValue || month.HasValue)
             ? (object?)new { year, month }
             : null;
-        var response = await http.PostAsJsonAsync(url, body);
+        HttpResponseMessage response = await http.PostAsJsonAsync(url, body);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<CommissionStatementGenerationResultDto>();
     }
@@ -23,7 +23,7 @@ public class CommissionStatementApiClient(HttpClient http, IJSRuntime js) : ICom
     public async Task<PaginatedResult<AdminCommissionStatementRowDto>?> AdminListAsync(
         int? year, CommissionStatementKind? kind, int? restaurantId, int page, int pageSize)
     {
-        var qs = new List<string>
+        List<string> qs = new List<string>
         {
             $"page={page}",
             $"pageSize={pageSize}",
@@ -32,29 +32,29 @@ public class CommissionStatementApiClient(HttpClient http, IJSRuntime js) : ICom
         if (kind.HasValue) qs.Add($"kind={kind.Value}");
         if (restaurantId.HasValue) qs.Add($"restaurantId={restaurantId.Value}");
 
-        var url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.CommissionStatementsRoute}?{string.Join("&", qs)}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.CommissionStatementsRoute}?{string.Join("&", qs)}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaginatedResult<AdminCommissionStatementRowDto>>();
     }
 
     public async Task<AdminCommissionStatementDetailDto?> AdminGetAsync(int id)
     {
-        var url = $"{ApiRoutes.Admin.Base}/commission-statements/{id}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Admin.Base}/commission-statements/{id}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<AdminCommissionStatementDetailDto>();
     }
 
     public async Task DownloadPdfAsync(int id)
     {
-        var url = $"{ApiRoutes.Admin.Base}/commission-statements/{id}/pdf";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Admin.Base}/commission-statements/{id}/pdf";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return;
 
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
-        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+        string contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+        string fileName = response.Content.Headers.ContentDisposition?.FileNameStar
             ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
             ?? $"releve-{id}.pdf";
 
@@ -63,21 +63,21 @@ public class CommissionStatementApiClient(HttpClient http, IJSRuntime js) : ICom
 
     public async Task<PaginatedResult<AdminCommissionStatementRowDto>?> GetForRestaurantAsync(int restaurantId, int page, int pageSize)
     {
-        var url = $"{ApiRoutes.CommissionStatement.Base}/restaurant/{restaurantId}?page={page}&pageSize={pageSize}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.CommissionStatement.Base}/restaurant/{restaurantId}?page={page}&pageSize={pageSize}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaginatedResult<AdminCommissionStatementRowDto>>();
     }
 
     public async Task DownloadOwnerPdfAsync(int id)
     {
-        var url = $"{ApiRoutes.CommissionStatement.Base}/{id}/pdf";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.CommissionStatement.Base}/{id}/pdf";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return;
 
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
-        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+        string contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+        string fileName = response.Content.Headers.ContentDisposition?.FileNameStar
             ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
             ?? $"releve-commissions-{id}.pdf";
 

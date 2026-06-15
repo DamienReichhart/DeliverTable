@@ -62,7 +62,7 @@ public class EmailJobConsumer(
 
     private async Task ConnectAndConsumeAsync(CancellationToken ct)
     {
-        var factory = new ConnectionFactory
+        ConnectionFactory factory = new ConnectionFactory
         {
             HostName = env.RabbitMqHost,
             Port = env.RabbitMqPort,
@@ -76,7 +76,7 @@ public class EmailJobConsumer(
         await _channel.BasicQosAsync(0, 1, false, ct);
         await DeclareTopologyAsync(ct);
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
+        AsyncEventingBasicConsumer consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (_, ea) =>
         {
             try
@@ -116,7 +116,7 @@ public class EmailJobConsumer(
 
     private async Task DeclareTopologyAsync(CancellationToken ct)
     {
-        var channel = _channel ?? throw new InvalidOperationException("Channel not initialized");
+        IChannel channel = _channel ?? throw new InvalidOperationException("Channel not initialized");
 
         // Main exchange and queue
         await channel.ExchangeDeclareAsync(
@@ -126,7 +126,7 @@ public class EmailJobConsumer(
             cancellationToken: ct
         );
 
-        var mainQueueArgs = new Dictionary<string, object?>
+        Dictionary<string, object?> mainQueueArgs = new Dictionary<string, object?>
         {
             { "x-dead-letter-exchange", DlxExchange },
         };
@@ -153,8 +153,8 @@ public class EmailJobConsumer(
         // Retry queues with escalating TTLs
         for (int i = 0; i < RetryDelaysSeconds.Length; i++)
         {
-            var retryQueue = $"delivertable.jobs.email.retry.{i + 1}";
-            var retryArgs = new Dictionary<string, object?>
+            string retryQueue = $"delivertable.jobs.email.retry.{i + 1}";
+            Dictionary<string, object?> retryArgs = new Dictionary<string, object?>
             {
                 { "x-message-ttl", RetryDelaysSeconds[i] * 1000 },
                 { "x-dead-letter-exchange", MainExchange },
@@ -203,8 +203,8 @@ public class EmailJobConsumer(
 
     private async Task HandleMessageAsync(BasicDeliverEventArgs ea, CancellationToken ct)
     {
-        var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-        var message = JsonSerializer.Deserialize<EmailJobMessage>(json);
+        string json = Encoding.UTF8.GetString(ea.Body.ToArray());
+        EmailJobMessage? message = JsonSerializer.Deserialize<EmailJobMessage>(json);
 
         if (message is null)
         {
@@ -213,9 +213,9 @@ public class EmailJobConsumer(
             return;
         }
 
-        using var scope = scopeFactory.CreateScope();
-        var repo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
-        var job = await repo.GetByIdAsync(message.JobId, ct);
+        using IServiceScope scope = scopeFactory.CreateScope();
+        IEmailJobRepository repo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
+        EmailJob? job = await repo.GetByIdAsync(message.JobId, ct);
 
         // Idempotency check
         if (
@@ -293,13 +293,13 @@ public class EmailJobConsumer(
                 await repo.UpdateAsync(job, ct);
 
                 // Publish to retry queue via DLX exchange
-                var retryRoutingKey = $"email.retry.{job.RetryCount}";
-                var properties = new BasicProperties
+                string retryRoutingKey = $"email.retry.{job.RetryCount}";
+                BasicProperties properties = new BasicProperties
                 {
                     Persistent = true,
                     ContentType = "application/json",
                 };
-                var body = Encoding.UTF8.GetBytes(
+                byte[] body = Encoding.UTF8.GetBytes(
                     JsonSerializer.Serialize(new EmailJobMessage(job.Id))
                 );
 
@@ -346,17 +346,17 @@ public class EmailJobConsumer(
     public async Task ProcessJobAsync(EmailJob job, IServiceScope scope, CancellationToken ct)
     {
         // Render template
-        var htmlBody = await templateRenderer.RenderAsync(job.Type, job.TemplateData, ct);
+        string htmlBody = await templateRenderer.RenderAsync(job.Type, job.TemplateData, ct);
 
         // Resolve attachment if the job carries a storage path
         AttachmentPayload? attachment = null;
         if (!string.IsNullOrEmpty(job.AttachmentStoragePath))
         {
-            var storage = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
-            var blob = await storage.GetObjectAsync(job.AttachmentStoragePath, ct);
+            IObjectStorageService storage = scope.ServiceProvider.GetRequiredService<IObjectStorageService>();
+            ObjectStorageResult? blob = await storage.GetObjectAsync(job.AttachmentStoragePath, ct);
             if (blob is not null)
             {
-                using var ms = new MemoryStream();
+                using MemoryStream ms = new MemoryStream();
                 await blob.Content.CopyToAsync(ms, ct);
                 attachment = new AttachmentPayload(
                     ms.ToArray(),
@@ -373,7 +373,7 @@ public class EmailJobConsumer(
         await _rateLimiter.WaitAsync(ct);
         try
         {
-            var now = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
             if ((now - _windowStart).TotalSeconds >= 60)
             {
                 _windowStart = now;
@@ -382,7 +382,7 @@ public class EmailJobConsumer(
 
             if (_sendsInWindow >= env.SmtpMaxSendsPerMinute)
             {
-                var waitTime = _windowStart.AddSeconds(60) - now;
+                TimeSpan waitTime = _windowStart.AddSeconds(60) - now;
                 if (waitTime > TimeSpan.Zero)
                 {
                     logger.LogInformation(

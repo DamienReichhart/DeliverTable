@@ -3,8 +3,11 @@ using DeliverTableInfrastructure.Messaging.Messages;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableInfrastructure.Services.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Services;
+using DeliverTableSharedLibrary.Dtos;
+using DeliverTableSharedLibrary.Dtos.CommissionStatement;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Global.Helpers;
 using DeliverTableTests.Server.Factories;
@@ -34,7 +37,7 @@ public class CommissionStatementServiceTests
         _publisher = Substitute.For<IMessagePublisher>();
         _objectStorage = Substitute.For<IObjectStorageService>();
 
-        var env = AppEnvironmentTestHelper.SetupEnvironment();
+        AppEnvironment env = AppEnvironmentTestHelper.SetupEnvironment();
 
         _sut = new CommissionStatementService(
             _repo,
@@ -56,8 +59,8 @@ public class CommissionStatementServiceTests
     {
         // Arrange
         const int restaurantId = 7;
-        var restaurant = BuildRestaurant(restaurantId);
-        var order = BuildDeliveredOrder(restaurantId, 100m, new DateTime(2026, 5, 15, 12, 0, 0, DateTimeKind.Utc));
+        Restaurant restaurant = BuildRestaurant(restaurantId);
+        Order order = BuildDeliveredOrder(restaurantId, 100m, new DateTime(2026, 5, 15, 12, 0, 0, DateTimeKind.Utc));
 
         _repo.ListRestaurantIdsWithEligibleOrdersAsync(
                 Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
@@ -80,12 +83,12 @@ public class CommissionStatementServiceTests
             .Returns(x => x.Arg<CommissionStatement>());
 
         // Act
-        var result = await _sut.GenerateForPeriodAsync(2026, 5, CancellationToken.None);
+        ServiceResult<CommissionStatementGenerationResultDto> result = await _sut.GenerateForPeriodAsync(2026, 5, CancellationToken.None);
 
         // Assert
         Assert.That(result.IsSuccess, Is.True);
 
-        var dto = result.Value!;
+        CommissionStatementGenerationResultDto dto = result.Value!;
         Assert.That(dto.StatementsCreated, Is.EqualTo(1));
 
         await _repo.Received(1).CreateAsync(
@@ -115,7 +118,7 @@ public class CommissionStatementServiceTests
         _repo.ListEligibleOrdersForRestaurantAsync(7, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Order>());
 
-        var r = await _sut.GenerateForPeriodAsync(2026, 5, default);
+        ServiceResult<CommissionStatementGenerationResultDto> r = await _sut.GenerateForPeriodAsync(2026, 5, default);
 
         Assert.That(r.Value!.StatementsCreated, Is.EqualTo(0));
         Assert.That(r.Value.RestaurantsSkipped, Is.EqualTo(1));
@@ -130,7 +133,7 @@ public class CommissionStatementServiceTests
             .Returns(new List<int> { 7 });
         _repo.InvoiceExistsForPeriodAsync(7, 2026, 5, Arg.Any<CancellationToken>()).Returns(true);
 
-        var r = await _sut.GenerateForPeriodAsync(2026, 5, default);
+        ServiceResult<CommissionStatementGenerationResultDto> r = await _sut.GenerateForPeriodAsync(2026, 5, default);
 
         Assert.That(r.Value!.RestaurantsSkipped, Is.EqualTo(1));
         await _repo.DidNotReceiveWithAnyArgs().CreateAsync(default!, default);
@@ -145,7 +148,7 @@ public class CommissionStatementServiceTests
         _repo.InvoiceExistsForPeriodAsync(7, 2026, 5, Arg.Any<CancellationToken>()).Returns(false);
         _restaurantRepo.GetByIdWithOwnerAsync(7, Arg.Any<CancellationToken>()).Returns(BuildRestaurant(7));
 
-        var order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10, 12, 0, 0, DateTimeKind.Utc));
+        Order order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10, 12, 0, 0, DateTimeKind.Utc));
         order.Payments.Add(BuildPaymentWithRefund(amount: 100m, refund: 30m));
 
         _repo.ListEligibleOrdersForRestaurantAsync(7, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
@@ -165,7 +168,7 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task GenerateForPeriodAsync_ReturnsBadRequest_WhenInvalidMonth()
     {
-        var r = await _sut.GenerateForPeriodAsync(2026, 13, default);
+        ServiceResult<CommissionStatementGenerationResultDto> r = await _sut.GenerateForPeriodAsync(2026, 13, default);
         Assert.That(r.IsSuccess, Is.False);
         Assert.That(r.Error!.StatusCode, Is.EqualTo(400));
     }
@@ -174,11 +177,11 @@ public class CommissionStatementServiceTests
     public async Task GenerateForPeriodAsync_SnapshotsCommissionRate_OnEachLine()
     {
         // Use 0.15 rate and no VAT for this test — set vars AFTER the base SetupEnvironment
-        var env = AppEnvironmentTestHelper.SetupEnvironment();
+        AppEnvironment env = AppEnvironmentTestHelper.SetupEnvironment();
         Environment.SetEnvironmentVariable("PLATFORM_COMMISSION_RATE", "0.15");
         Environment.SetEnvironmentVariable("PLATFORM_VAT_APPLICABLE", "false");
         env = AppEnvironment.Load();
-        var sut = new CommissionStatementService(
+        CommissionStatementService sut = new CommissionStatementService(
             _repo, _restaurantRepo, _orderRepo, _publisher, _objectStorage, env,
             NullLogger<CommissionStatementService>.Instance);
 
@@ -205,11 +208,11 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task HandleRefundForPriorPeriod_NoOp_WhenOrderHasNoStatement()
     {
-        var order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10));
+        Order order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10));
         order.CommissionStatementId = null;
         _orderRepo.GetByIdAsync(order.Id, default).Returns(order);
 
-        var r = await _sut.HandleRefundForPriorPeriodAsync(order.Id, refundId: 99, "re_x", 30m, default);
+        ServiceResult r = await _sut.HandleRefundForPriorPeriodAsync(order.Id, refundId: 99, "re_x", 30m, default);
 
         Assert.That(r.IsSuccess, Is.True);
         await _repo.DidNotReceiveWithAnyArgs().CreateAsync(default!, default);
@@ -218,12 +221,12 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task HandleRefundForPriorPeriod_NoOp_WhenRefundEventAlreadyProcessed()
     {
-        var order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10));
+        Order order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10));
         order.CommissionStatementId = 42;
         _orderRepo.GetByIdAsync(order.Id, default).Returns(order);
         _repo.FindLineByRefundEventIdAsync("re_x", default).Returns(new CommissionStatementLine());
 
-        var r = await _sut.HandleRefundForPriorPeriodAsync(order.Id, refundId: 99, "re_x", 30m, default);
+        ServiceResult r = await _sut.HandleRefundForPriorPeriodAsync(order.Id, refundId: 99, "re_x", 30m, default);
 
         Assert.That(r.IsSuccess, Is.True);
         await _repo.DidNotReceiveWithAnyArgs().CreateAsync(default!, default);
@@ -232,10 +235,10 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task HandleRefundForPriorPeriod_CreatesCreditNote_UsingSnapshottedRate()
     {
-        var order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10));
+        Order order = BuildDeliveredOrder(7, 100m, new DateTime(2026, 5, 10));
         order.CommissionStatementId = 42;
 
-        var originalStatement = CommissionStatementFactory.CreateInvoice(7, 2026, 5);
+        CommissionStatement originalStatement = CommissionStatementFactory.CreateInvoice(7, 2026, 5);
         originalStatement.Id = 42;
         originalStatement.Lines.Add(new CommissionStatementLine
         {
@@ -253,7 +256,7 @@ public class CommissionStatementServiceTests
             .Returns(x => x.Arg<CommissionStatement>());
 
         // env is 0.10m / 20% — credit note must use snapshotted 0.20 / 20%
-        var r = await _sut.HandleRefundForPriorPeriodAsync(order.Id, refundId: 1, "re_x", refundedAmount: 30m, default);
+        ServiceResult r = await _sut.HandleRefundForPriorPeriodAsync(order.Id, refundId: 1, "re_x", refundedAmount: 30m, default);
 
         Assert.That(r.IsSuccess, Is.True);
         await _repo.Received(1).CreateAsync(Arg.Is<CommissionStatement>(s =>
@@ -276,9 +279,9 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task AdminListAsync_ReturnsPagedRows_WithCorrectMapping()
     {
-        var restaurant = BuildRestaurant(3);
+        Restaurant restaurant = BuildRestaurant(3);
         restaurant.Name = "Test Restaurant";
-        var statement = new CommissionStatement
+        CommissionStatement statement = new CommissionStatement
         {
             Id = 10,
             Number = "COMM-2026-04-000010",
@@ -296,13 +299,13 @@ public class CommissionStatementServiceTests
         _repo.AdminListAsync(2026, CommissionStatementKind.Invoice, null, 1, 50, default)
              .ReturnsForAnyArgs((new List<CommissionStatement> { statement }, 1));
 
-        var result = await _sut.AdminListAsync(2026, CommissionStatementKind.Invoice, null, 1, 50, default);
+        ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>> result = await _sut.AdminListAsync(2026, CommissionStatementKind.Invoice, null, 1, 50, default);
 
         Assert.That(result.IsSuccess, Is.True);
-        var page = result.Value!;
+        PaginatedResult<AdminCommissionStatementRowDto> page = result.Value!;
         Assert.That(page.TotalCount, Is.EqualTo(1));
         Assert.That(page.Items, Has.Count.EqualTo(1));
-        var row = page.Items[0];
+        AdminCommissionStatementRowDto row = page.Items[0];
         Assert.That(row.Id, Is.EqualTo(10));
         Assert.That(row.RecipientRestaurantName, Is.EqualTo("Test Restaurant"));
         Assert.That(row.HasPdf, Is.True);
@@ -313,9 +316,9 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task AdminGetDetailAsync_ReturnsDetail_WhenStatementExists()
     {
-        var restaurant = BuildRestaurant(3);
+        Restaurant restaurant = BuildRestaurant(3);
         restaurant.Name = "Detail Restaurant";
-        var statement = new CommissionStatement
+        CommissionStatement statement = new CommissionStatement
         {
             Id = 11,
             Number = "COMM-2026-04-000011",
@@ -334,10 +337,10 @@ public class CommissionStatementServiceTests
         _repo.GetByIdWithLinesAndRecipientAsync(11, default)
              .ReturnsForAnyArgs(statement);
 
-        var result = await _sut.AdminGetDetailAsync(11, default);
+        ServiceResult<AdminCommissionStatementDetailDto> result = await _sut.AdminGetDetailAsync(11, default);
 
         Assert.That(result.IsSuccess, Is.True);
-        var dto = result.Value!;
+        AdminCommissionStatementDetailDto dto = result.Value!;
         Assert.That(dto.Id, Is.EqualTo(11));
         Assert.That(dto.RecipientRestaurantName, Is.EqualTo("Detail Restaurant"));
         Assert.That(dto.TotalHt, Is.EqualTo(100m));
@@ -349,7 +352,7 @@ public class CommissionStatementServiceTests
         _repo.GetByIdWithLinesAndRecipientAsync(999, default)
              .ReturnsForAnyArgs((CommissionStatement?)null);
 
-        var result = await _sut.AdminGetDetailAsync(999, default);
+        ServiceResult<AdminCommissionStatementDetailDto> result = await _sut.AdminGetDetailAsync(999, default);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -360,7 +363,7 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task AdminGetPdfAsync_ReturnsPdf_WhenStoragePathExists()
     {
-        var statement = new CommissionStatement
+        CommissionStatement statement = new CommissionStatement
         {
             Id = 12,
             Number = "COMM-2026-04-000012",
@@ -368,12 +371,12 @@ public class CommissionStatementServiceTests
         };
         _repo.GetByIdAsync(12, default).ReturnsForAnyArgs(statement);
 
-        var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF header
-        var stream = new MemoryStream(pdfBytes);
+        byte[] pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF header
+        MemoryStream stream = new MemoryStream(pdfBytes);
         _objectStorage.GetObjectAsync("statements/12.pdf", default)
                       .ReturnsForAnyArgs(new ObjectStorageResult(stream, "application/pdf", pdfBytes.Length));
 
-        var result = await _sut.AdminGetPdfAsync(12, default);
+        ServiceResult<(byte[] Pdf, string FileName)> result = await _sut.AdminGetPdfAsync(12, default);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Pdf, Is.EqualTo(pdfBytes));
@@ -383,10 +386,10 @@ public class CommissionStatementServiceTests
     [Test]
     public async Task AdminGetPdfAsync_ReturnsNotFound_WhenStoragePathIsNull()
     {
-        var statement = new CommissionStatement { Id = 13, Number = "COMM-2026-04-000013", StoragePath = null };
+        CommissionStatement statement = new CommissionStatement { Id = 13, Number = "COMM-2026-04-000013", StoragePath = null };
         _repo.GetByIdAsync(13, default).ReturnsForAnyArgs(statement);
 
-        var result = await _sut.AdminGetPdfAsync(13, default);
+        ServiceResult<(byte[] Pdf, string FileName)> result = await _sut.AdminGetPdfAsync(13, default);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -399,13 +402,13 @@ public class CommissionStatementServiceTests
     {
         const int restaurantId = 5;
         const int ownerId = 10;
-        var restaurant = BuildRestaurant(restaurantId);
+        Restaurant restaurant = BuildRestaurant(restaurantId);
         restaurant.OwnerId = ownerId;
         _restaurantRepo.GetByIdAsync(restaurantId, Arg.Any<CancellationToken>()).Returns(restaurant);
         _repo.AdminListAsync(null, null, restaurantId, 1, 50, Arg.Any<CancellationToken>())
              .ReturnsForAnyArgs((new List<CommissionStatement>(), 0));
 
-        var result = await _sut.ListForRestaurantAsync(restaurantId, userId: ownerId, isAdmin: false, 1, 50, default);
+        ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>> result = await _sut.ListForRestaurantAsync(restaurantId, userId: ownerId, isAdmin: false, 1, 50, default);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -414,11 +417,11 @@ public class CommissionStatementServiceTests
     public async Task ListForRestaurantAsync_DeniesNonOwner()
     {
         const int restaurantId = 5;
-        var restaurant = BuildRestaurant(restaurantId);
+        Restaurant restaurant = BuildRestaurant(restaurantId);
         restaurant.OwnerId = 10;
         _restaurantRepo.GetByIdAsync(restaurantId, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.ListForRestaurantAsync(restaurantId, userId: 99, isAdmin: false, 1, 50, default);
+        ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>> result = await _sut.ListForRestaurantAsync(restaurantId, userId: 99, isAdmin: false, 1, 50, default);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
@@ -431,7 +434,7 @@ public class CommissionStatementServiceTests
         _repo.AdminListAsync(null, null, restaurantId, 1, 50, Arg.Any<CancellationToken>())
              .ReturnsForAnyArgs((new List<CommissionStatement>(), 0));
 
-        var result = await _sut.ListForRestaurantAsync(restaurantId, userId: 999, isAdmin: true, 1, 50, default);
+        ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>> result = await _sut.ListForRestaurantAsync(restaurantId, userId: 999, isAdmin: true, 1, 50, default);
 
         Assert.That(result.IsSuccess, Is.True);
         await _restaurantRepo.DidNotReceiveWithAnyArgs().GetByIdAsync(default, default);
@@ -442,13 +445,13 @@ public class CommissionStatementServiceTests
     {
         const int statementId = 20;
         const int restaurantId = 5;
-        var statement = new CommissionStatement { Id = statementId, RecipientRestaurantId = restaurantId };
-        var restaurant = BuildRestaurant(restaurantId);
+        CommissionStatement statement = new CommissionStatement { Id = statementId, RecipientRestaurantId = restaurantId };
+        Restaurant restaurant = BuildRestaurant(restaurantId);
         restaurant.OwnerId = 10;
         _repo.GetByIdAsync(statementId, Arg.Any<CancellationToken>()).Returns(statement);
         _restaurantRepo.GetByIdAsync(restaurantId, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.GetPdfForOwnerAsync(statementId, userId: 99, isAdmin: false, isRestaurantOwner: true, default);
+        ServiceResult<(byte[] Pdf, string FileName)> result = await _sut.GetPdfForOwnerAsync(statementId, userId: 99, isAdmin: false, isRestaurantOwner: true, default);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(403));
@@ -458,7 +461,7 @@ public class CommissionStatementServiceTests
 
     private static Restaurant BuildRestaurant(int id)
     {
-        var restaurant = CreateRestaurant(id: id, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: id, ownerId: 10);
         restaurant.LegalName = "Restaurant SAS";
         restaurant.LegalForm = "SAS";
         restaurant.Siret = "73282932000074";

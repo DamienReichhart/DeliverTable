@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Order;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -31,7 +31,7 @@ public class OrderControllerTests
     public async Task CreateOrder_HappyPath_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "10", nameof(UserRole.Customer));
-        var request = new CreateOrderRequest
+        CreateOrderRequest request = new CreateOrderRequest
         {
             RestaurantId = 1,
             OrderType = nameof(OrderType.Delivery),
@@ -39,16 +39,16 @@ public class OrderControllerTests
             DiscountCodes = [],
             LoyaltyPointsToRedeem = 0
         };
-        var response = new CreateOrderResponse(42, "pi_secret", "pk_test", 70m, "EUR");
+        CreateOrderResponse response = new CreateOrderResponse(42, "pi_secret", "pk_test", 70m, "EUR");
         _orderService.CreateFromCartAsync(10, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<CreateOrderResponse>.Success(response));
 
-        var result = await _sut.CreateOrder(request, CancellationToken.None);
+        IActionResult result = await _sut.CreateOrder(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var ok = (OkObjectResult)result;
+        OkObjectResult ok = (OkObjectResult)result;
         Assert.That(ok.Value, Is.InstanceOf<CreateOrderResponse>());
-        var value = (CreateOrderResponse)ok.Value!;
+        CreateOrderResponse value = (CreateOrderResponse)ok.Value!;
         Assert.That(value.OrderId, Is.EqualTo(42));
         Assert.That(value.ClientSecret, Is.EqualTo("pi_secret"));
     }
@@ -57,7 +57,7 @@ public class OrderControllerTests
     public async Task CreateOrder_ServiceError_ReturnsErrorResult()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "10", nameof(UserRole.Customer));
-        var request = new CreateOrderRequest
+        CreateOrderRequest request = new CreateOrderRequest
         {
             RestaurantId = 1,
             OrderType = nameof(OrderType.Delivery),
@@ -68,10 +68,10 @@ public class OrderControllerTests
         _orderService.CreateFromCartAsync(10, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<CreateOrderResponse>.Failure(new ServiceError("Panier vide", 400)));
 
-        var result = await _sut.CreateOrder(request, CancellationToken.None);
+        IActionResult result = await _sut.CreateOrder(request, CancellationToken.None);
 
         Assert.That(result, Is.Not.InstanceOf<OkObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 
@@ -79,7 +79,7 @@ public class OrderControllerTests
     public async Task CreateOrder_UnauthenticatedUser_ReturnsUnauthorized()
     {
         AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
-        var request = new CreateOrderRequest
+        CreateOrderRequest request = new CreateOrderRequest
         {
             RestaurantId = 1,
             OrderType = nameof(OrderType.Delivery),
@@ -88,7 +88,7 @@ public class OrderControllerTests
             LoyaltyPointsToRedeem = 0
         };
 
-        var result = await _sut.CreateOrder(request, CancellationToken.None);
+        IActionResult result = await _sut.CreateOrder(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }
@@ -99,11 +99,11 @@ public class OrderControllerTests
     public async Task GetById_WhenExists_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "10", nameof(UserRole.Customer));
-        var dto = new OrderDto { Id = 1, Status = nameof(OrderStatus.AwaitingPayment) };
+        OrderDto dto = new OrderDto { Id = 1, Status = nameof(OrderStatus.AwaitingPayment) };
         _orderService.GetByIdAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<OrderDto>.Success(dto));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -115,10 +115,10 @@ public class OrderControllerTests
         _orderService.GetByIdAsync(99, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<OrderDto>.Failure(new ServiceError("Commande introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.Not.InstanceOf<OkObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -128,7 +128,7 @@ public class OrderControllerTests
     public async Task GetMyOrders_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "10", nameof(UserRole.Customer));
-        var paginated = new PaginatedResult<OrderDto>
+        PaginatedResult<OrderDto> paginated = new PaginatedResult<OrderDto>
         {
             Items = [new OrderDto { Id = 1, Status = nameof(OrderStatus.Pending) }],
             TotalCount = 1,
@@ -138,7 +138,7 @@ public class OrderControllerTests
         _orderService.GetCustomerOrdersAsync(10, Arg.Any<OrderQuery>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<OrderDto>>.Success(paginated));
 
-        var result = await _sut.GetMyOrders(new OrderQuery(), CancellationToken.None);
+        IActionResult result = await _sut.GetMyOrders(new OrderQuery(), CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -149,11 +149,11 @@ public class OrderControllerTests
     public async Task CancelOrder_HappyPath_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "10", nameof(UserRole.Customer));
-        var dto = new OrderDto { Id = 1, Status = nameof(OrderStatus.Cancelled) };
+        OrderDto dto = new OrderDto { Id = 1, Status = nameof(OrderStatus.Cancelled) };
         _orderService.CancelOrderAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<OrderDto>.Success(dto));
 
-        var result = await _sut.CancelOrder(1, CancellationToken.None);
+        IActionResult result = await _sut.CancelOrder(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -165,10 +165,10 @@ public class OrderControllerTests
         _orderService.CancelOrderAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<OrderDto>.Failure(new ServiceError("Annulation impossible", 400)));
 
-        var result = await _sut.CancelOrder(1, CancellationToken.None);
+        IActionResult result = await _sut.CancelOrder(1, CancellationToken.None);
 
         Assert.That(result, Is.Not.InstanceOf<OkObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 }

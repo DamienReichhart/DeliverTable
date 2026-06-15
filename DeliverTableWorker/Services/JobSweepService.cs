@@ -1,5 +1,6 @@
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Messaging.Messages;
+using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableSharedLibrary.Enums;
 
@@ -34,17 +35,17 @@ public class JobSweepService(
 
     private async Task SweepAsync(CancellationToken ct)
     {
-        using var scope = scopeFactory.CreateScope();
-        var repo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
-        var now = DateTime.UtcNow;
+        using IServiceScope scope = scopeFactory.CreateScope();
+        IEmailJobRepository repo = scope.ServiceProvider.GetRequiredService<IEmailJobRepository>();
+        DateTime now = DateTime.UtcNow;
 
-        var stalePending = await repo.GetStaleJobsByStatusAsync(
+        List<EmailJob> stalePending = await repo.GetStaleJobsByStatusAsync(
             EmailJobStatus.Pending,
             now - PendingThreshold,
             ct
         );
 
-        foreach (var job in stalePending)
+        foreach (EmailJob job in stalePending)
         {
             try
             {
@@ -61,13 +62,13 @@ public class JobSweepService(
             }
         }
 
-        var staleProcessing = await repo.GetStaleJobsByStatusAsync(
+        List<EmailJob> staleProcessing = await repo.GetStaleJobsByStatusAsync(
             EmailJobStatus.Processing,
             now - ProcessingThreshold,
             ct
         );
 
-        foreach (var job in staleProcessing)
+        foreach (EmailJob job in staleProcessing)
         {
             job.Status = EmailJobStatus.Pending;
             job.RetryCount++;

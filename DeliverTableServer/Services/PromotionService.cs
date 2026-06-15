@@ -27,25 +27,25 @@ public sealed class PromotionService(
     public async Task<ServiceResult<PromotionDto>> CreateAsync(
         int restaurantId, int ownerId, CreatePromotionRequest request, CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out var promotionType))
+        if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out PromotionType promotionType))
             return new ServiceError(ErrorMessages.InvalidFields);
 
-        var discountError = DiscountValidationHelper.ValidateDiscountType(
-            request.DiscountType, request.DiscountValue, out var discountType);
+        ServiceError? discountError = DiscountValidationHelper.ValidateDiscountType(
+            request.DiscountType, request.DiscountValue, out DiscountType discountType);
         if (discountError is not null) return discountError;
 
-        var dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
+        ServiceError? dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
         if (dateError is not null) return dateError;
 
         if (await ValidateItemBasedDishesAsync(promotionType, restaurantId, request.DishIds, ct) is { } itemError)
             return itemError;
 
-        var promotion = new Promotion
+        Promotion promotion = new Promotion
         {
             RestaurantId = restaurantId,
             Name = request.Name,
@@ -59,43 +59,43 @@ public sealed class PromotionService(
             PromotionDishes = request.DishIds.Select(id => new PromotionDish { DishId = id }).ToList()
         };
 
-        var created = await _promotionRepository.CreateAsync(promotion, ct);
+        Promotion created = await _promotionRepository.CreateAsync(promotion, ct);
         return created.ToDto();
     }
 
     public async Task<ServiceResult<PaginatedResult<PromotionDto>>> GetByRestaurantAsync(
         int restaurantId, int ownerId, PromotionQuery query, CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        var data = await _promotionRepository.GetByRestaurantAsync(restaurantId, query, ct);
+        (List<Promotion> Items, int TotalCount) data = await _promotionRepository.GetByRestaurantAsync(restaurantId, query, ct);
         return data.ToPaginatedResult(p => p.ToDto(), query.PageNumber, query.PageSize);
     }
 
     public async Task<ServiceResult<PromotionDto>> UpdateAsync(
         int promotionId, int ownerId, UpdatePromotionRequest request, CancellationToken ct = default)
     {
-        var promotion = await _promotionRepository.GetByIdAsync(promotionId, ct);
+        Promotion? promotion = await _promotionRepository.GetByIdAsync(promotionId, ct);
         if (promotion is null)
             return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, promotion.RestaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
-        var restaurant = ownershipResult.Value!;
+        Restaurant restaurant = ownershipResult.Value!;
 
-        if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out var promotionType))
+        if (!Enum.TryParse<PromotionType>(request.PromotionType, ignoreCase: true, out PromotionType promotionType))
             return new ServiceError(ErrorMessages.InvalidFields);
 
-        var discountError = DiscountValidationHelper.ValidateDiscountType(
-            request.DiscountType, request.DiscountValue, out var discountType);
+        ServiceError? discountError = DiscountValidationHelper.ValidateDiscountType(
+            request.DiscountType, request.DiscountValue, out DiscountType discountType);
         if (discountError is not null) return discountError;
 
-        var dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
+        ServiceError? dateError = DiscountValidationHelper.ValidateDateRange(request.StartsAt, request.EndsAt);
         if (dateError is not null) return dateError;
 
         if (await ValidateItemBasedDishesAsync(promotionType, restaurant.Id, request.DishIds, ct) is { } itemError)
@@ -113,17 +113,17 @@ public sealed class PromotionService(
         promotion.PromotionDishes.Clear();
         promotion.PromotionDishes.AddRange(request.DishIds.Select(id => new PromotionDish { DishId = id }));
 
-        var updated = await _promotionRepository.UpdateAsync(promotion, ct);
+        Promotion updated = await _promotionRepository.UpdateAsync(promotion, ct);
         return updated.ToDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int promotionId, int ownerId, CancellationToken ct = default)
     {
-        var promotion = await _promotionRepository.GetByIdAsync(promotionId, ct);
+        Promotion? promotion = await _promotionRepository.GetByIdAsync(promotionId, ct);
         if (promotion is null)
             return ServiceError.NotFound(ErrorMessages.PromotionNotFound);
 
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, promotion.RestaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
@@ -135,7 +135,7 @@ public sealed class PromotionService(
     public async Task<ServiceResult<List<PromotionDto>>> GetActiveByRestaurantAsync(
         int restaurantId, CancellationToken ct = default)
     {
-        var promotions = await _promotionRepository.GetActiveByRestaurantAsync(restaurantId, ct);
+        List<Promotion> promotions = await _promotionRepository.GetActiveByRestaurantAsync(restaurantId, ct);
         return promotions.Select(p => p.ToDto()).ToList();
     }
 
@@ -145,8 +145,8 @@ public sealed class PromotionService(
         if (promotionType != PromotionType.ItemBased || dishIds.Count == 0)
             return null;
 
-        var (restaurantDishes, _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurantId, ct);
-        var restaurantDishIds = restaurantDishes.Select(d => d.Id).ToHashSet();
+        (List<Dish>? restaurantDishes, int _) = await _dishRepository.GetByRestaurantIdAsync(new DishQuery(), restaurantId, ct);
+        HashSet<int> restaurantDishIds = restaurantDishes.Select(d => d.Id).ToHashSet();
         if (dishIds.Any(id => !restaurantDishIds.Contains(id)))
             return new ServiceError(ErrorMessages.PromotionDishNotFromRestaurant);
 

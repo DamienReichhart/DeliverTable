@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Restaurant;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Admin;
@@ -30,7 +30,7 @@ public class RestaurantOrderConfigControllerTests
         _restaurantOrderConfigService.GetBlockedSlotsAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminBlockedSlotResponse>>.Success(new List<AdminBlockedSlotResponse>()));
 
-        var result = await _sut.GetBlockedSlots(1, CancellationToken.None);
+        IActionResult result = await _sut.GetBlockedSlots(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -40,7 +40,7 @@ public class RestaurantOrderConfigControllerTests
     {
         AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
-        var result = await _sut.GetBlockedSlots(1, CancellationToken.None);
+        IActionResult result = await _sut.GetBlockedSlots(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }
@@ -50,7 +50,7 @@ public class RestaurantOrderConfigControllerTests
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "10", nameof(UserRole.RestaurantOwner));
 
-        var response = new AdminBlockedSlotResponse
+        AdminBlockedSlotResponse response = new AdminBlockedSlotResponse
         {
             Id = 5,
             RestaurantId = 1,
@@ -64,7 +64,7 @@ public class RestaurantOrderConfigControllerTests
                 Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminBlockedSlotResponse>.Success(response));
 
-        var result = await _sut.CreateBlockedSlot(1, new AdminCreateBlockedSlotRequest(), CancellationToken.None);
+        IActionResult result = await _sut.CreateBlockedSlot(1, new AdminCreateBlockedSlotRequest(), CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -77,7 +77,7 @@ public class RestaurantOrderConfigControllerTests
         _restaurantOrderConfigService.DeleteBlockedSlotAsync(1, 5, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.DeleteBlockedSlot(1, 5, CancellationToken.None);
+        IActionResult result = await _sut.DeleteBlockedSlot(1, 5, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }

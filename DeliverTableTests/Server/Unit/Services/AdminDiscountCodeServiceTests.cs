@@ -6,6 +6,7 @@ using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -29,8 +30,8 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllDiscountCodes()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var codes = new List<DiscountCode>
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        List<DiscountCode> codes = new List<DiscountCode>
         {
             new() { Id = 1, Code = "CODE1", RestaurantId = 1, Restaurant = restaurant, Redemptions = [] },
             new() { Id = 2, Code = "CODE2", RestaurantId = 1, Restaurant = restaurant, Redemptions = [] }
@@ -38,7 +39,7 @@ public class AdminDiscountCodeServiceTests
 
         _discountCodeRepository.GetAllUnscopedAsync(Arg.Any<CancellationToken>()).Returns(codes);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminDiscountCodeResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -51,14 +52,14 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsDiscountCode()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var code = CreateDiscountCode(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        DiscountCode code = CreateDiscountCode(id: 1, restaurantId: 1);
         code.Restaurant = restaurant;
         code.Redemptions = [];
 
         _discountCodeRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(code);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -70,7 +71,7 @@ public class AdminDiscountCodeServiceTests
     {
         _discountCodeRepository.GetByIdWithRestaurantAsync(99, Arg.Any<CancellationToken>()).Returns((DiscountCode?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -84,21 +85,21 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task CreateAsync_WhenRestaurantExists_CreatesDiscountCode()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _discountCodeRepository.GetByCodeAndRestaurantAsync("NEWCODE", 1, Arg.Any<CancellationToken>())
             .Returns((DiscountCode?)null);
         _discountCodeRepository.CreateAsync(Arg.Any<DiscountCode>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var dc = callInfo.Arg<DiscountCode>();
+                DiscountCode dc = callInfo.Arg<DiscountCode>();
                 dc.Id = 10;
                 dc.Restaurant = restaurant;
                 dc.Redemptions = [];
                 return dc;
             });
 
-        var request = new AdminCreateDiscountCodeRequest
+        AdminCreateDiscountCodeRequest request = new AdminCreateDiscountCodeRequest
         {
             Code = "NEWCODE",
             Description = "Test description",
@@ -110,7 +111,7 @@ public class AdminDiscountCodeServiceTests
             IsActive = true
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Code, Is.EqualTo("NEWCODE"));
@@ -122,7 +123,7 @@ public class AdminDiscountCodeServiceTests
     {
         _restaurantRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((Restaurant?)null);
 
-        var request = new AdminCreateDiscountCodeRequest
+        AdminCreateDiscountCodeRequest request = new AdminCreateDiscountCodeRequest
         {
             Code = "CODE",
             RestaurantId = 99,
@@ -130,7 +131,7 @@ public class AdminDiscountCodeServiceTests
             ValidUntil = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -140,10 +141,10 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task CreateAsync_WhenInvalidDates_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new AdminCreateDiscountCodeRequest
+        AdminCreateDiscountCodeRequest request = new AdminCreateDiscountCodeRequest
         {
             Code = "CODE",
             RestaurantId = 1,
@@ -151,7 +152,7 @@ public class AdminDiscountCodeServiceTests
             ValidUntil = DateTime.UtcNow
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -161,10 +162,10 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task CreateAsync_WhenPercentageOver100_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new AdminCreateDiscountCodeRequest
+        AdminCreateDiscountCodeRequest request = new AdminCreateDiscountCodeRequest
         {
             Code = "CODE",
             RestaurantId = 1,
@@ -174,7 +175,7 @@ public class AdminDiscountCodeServiceTests
             ValidUntil = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -184,12 +185,12 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task CreateAsync_WhenCodeAlreadyExists_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _discountCodeRepository.GetByCodeAndRestaurantAsync("EXISTING", 1, Arg.Any<CancellationToken>())
             .Returns(CreateDiscountCode(id: 5, restaurantId: 1, code: "EXISTING"));
 
-        var request = new AdminCreateDiscountCodeRequest
+        AdminCreateDiscountCodeRequest request = new AdminCreateDiscountCodeRequest
         {
             Code = "EXISTING",
             RestaurantId = 1,
@@ -197,7 +198,7 @@ public class AdminDiscountCodeServiceTests
             ValidUntil = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.CreateAsync(request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.CreateAsync(request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -211,8 +212,8 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task UpdateAsync_WhenExists_UpdatesAndReturns()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var code = CreateDiscountCode(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        DiscountCode code = CreateDiscountCode(id: 1, restaurantId: 1);
         code.Restaurant = restaurant;
         code.Redemptions = [];
 
@@ -220,7 +221,7 @@ public class AdminDiscountCodeServiceTests
         _discountCodeRepository.UpdateAsync(Arg.Any<DiscountCode>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => callInfo.Arg<DiscountCode>());
 
-        var request = new AdminUpdateDiscountCodeRequest
+        AdminUpdateDiscountCodeRequest request = new AdminUpdateDiscountCodeRequest
         {
             Description = "Mise à jour",
             DiscountType = DiscountType.FixedAmount,
@@ -230,7 +231,7 @@ public class AdminDiscountCodeServiceTests
             IsActive = false
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Description, Is.EqualTo("Mise à jour"));
@@ -244,13 +245,13 @@ public class AdminDiscountCodeServiceTests
     {
         _discountCodeRepository.GetByIdWithRestaurantAsync(99, Arg.Any<CancellationToken>()).Returns((DiscountCode?)null);
 
-        var request = new AdminUpdateDiscountCodeRequest
+        AdminUpdateDiscountCodeRequest request = new AdminUpdateDiscountCodeRequest
         {
             ValidFrom = DateTime.UtcNow,
             ValidUntil = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.UpdateAsync(99, request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.UpdateAsync(99, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -260,20 +261,20 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task UpdateAsync_WhenInvalidDates_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var code = CreateDiscountCode(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        DiscountCode code = CreateDiscountCode(id: 1, restaurantId: 1);
         code.Restaurant = restaurant;
         code.Redemptions = [];
 
         _discountCodeRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(code);
 
-        var request = new AdminUpdateDiscountCodeRequest
+        AdminUpdateDiscountCodeRequest request = new AdminUpdateDiscountCodeRequest
         {
             ValidFrom = DateTime.UtcNow.AddDays(30),
             ValidUntil = DateTime.UtcNow
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -283,14 +284,14 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task UpdateAsync_WhenPercentageOver100_Returns400()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var code = CreateDiscountCode(id: 1, restaurantId: 1);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        DiscountCode code = CreateDiscountCode(id: 1, restaurantId: 1);
         code.Restaurant = restaurant;
         code.Redemptions = [];
 
         _discountCodeRepository.GetByIdWithRestaurantAsync(1, Arg.Any<CancellationToken>()).Returns(code);
 
-        var request = new AdminUpdateDiscountCodeRequest
+        AdminUpdateDiscountCodeRequest request = new AdminUpdateDiscountCodeRequest
         {
             DiscountType = DiscountType.Percentage,
             DiscountValue = 101m,
@@ -298,7 +299,7 @@ public class AdminDiscountCodeServiceTests
             ValidUntil = DateTime.UtcNow.AddDays(30)
         };
 
-        var result = await _sut.UpdateAsync(1, request);
+        ServiceResult<AdminDiscountCodeResponse> result = await _sut.UpdateAsync(1, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -314,7 +315,7 @@ public class AdminDiscountCodeServiceTests
     {
         _discountCodeRepository.DeleteAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1);
+        ServiceResult result = await _sut.DeleteAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -324,7 +325,7 @@ public class AdminDiscountCodeServiceTests
     {
         _discountCodeRepository.DeleteAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteAsync(99);
+        ServiceResult result = await _sut.DeleteAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -338,12 +339,12 @@ public class AdminDiscountCodeServiceTests
     [Test]
     public async Task GetRedemptionsAsync_WhenCodeExists_ReturnsRedemptions()
     {
-        var code = CreateDiscountCode(id: 1, restaurantId: 1);
+        DiscountCode code = CreateDiscountCode(id: 1, restaurantId: 1);
         _discountCodeRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(code);
 
-        var customer = CreateValidUser();
+        User customer = CreateValidUser();
         customer.Id = 10;
-        var redemptions = new List<DiscountCodeRedemption>
+        List<DiscountCodeRedemption> redemptions = new List<DiscountCodeRedemption>
         {
             new() { Id = 1, DiscountCodeId = 1, CustomerId = 10, Customer = customer, OrderId = 100, CreatedAt = DateTime.UtcNow },
             new() { Id = 2, DiscountCodeId = 1, CustomerId = 10, Customer = customer, OrderId = 101, CreatedAt = DateTime.UtcNow }
@@ -351,7 +352,7 @@ public class AdminDiscountCodeServiceTests
 
         _discountCodeRepository.GetRedemptionsByCodeIdAsync(1, Arg.Any<CancellationToken>()).Returns(redemptions);
 
-        var result = await _sut.GetRedemptionsAsync(1);
+        ServiceResult<List<AdminRedemptionResponse>> result = await _sut.GetRedemptionsAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -363,7 +364,7 @@ public class AdminDiscountCodeServiceTests
     {
         _discountCodeRepository.GetByIdAsync(99, Arg.Any<CancellationToken>()).Returns((DiscountCode?)null);
 
-        var result = await _sut.GetRedemptionsAsync(99);
+        ServiceResult<List<AdminRedemptionResponse>> result = await _sut.GetRedemptionsAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

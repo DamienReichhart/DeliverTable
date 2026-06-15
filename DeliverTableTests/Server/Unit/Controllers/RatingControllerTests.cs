@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Rating;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Rating;
 using Microsoft.AspNetCore.Http;
@@ -25,9 +25,9 @@ public class RatingControllerTests
 
     private void SetupUser(int userId)
     {
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
-        var identity = new ClaimsIdentity(claims, "TestAuth");
-        var principal = new ClaimsPrincipal(identity);
+        Claim[] claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
+        ClaimsIdentity identity = new ClaimsIdentity(claims, "TestAuth");
+        ClaimsPrincipal principal = new ClaimsPrincipal(identity);
         _sut.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext { User = principal },
@@ -39,15 +39,15 @@ public class RatingControllerTests
     [Test]
     public async Task Create_WhenSuccess_ReturnsCreatedAtAction()
     {
-        var dto = new RatingDto { Id = 1, OrderId = 1, Rating = 5 };
+        RatingDto dto = new RatingDto { Id = 1, OrderId = 1, Rating = 5 };
         _ratingService
             .CreateAsync(1, 10, Arg.Any<CreateRatingRequest>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RatingDto>.Success(dto));
 
-        var result = await _sut.Create(1, new CreateRatingRequest { Rating = 5 }, CancellationToken.None);
+        IActionResult result = await _sut.Create(1, new CreateRatingRequest { Rating = 5 }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
-        var created = (CreatedAtActionResult)result;
+        CreatedAtActionResult created = (CreatedAtActionResult)result;
         Assert.That(created.Value, Is.EqualTo(dto));
     }
 
@@ -58,10 +58,10 @@ public class RatingControllerTests
             .CreateAsync(1, 10, Arg.Any<CreateRatingRequest>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RatingDto>.Failure(new ServiceError("Erreur", 400)));
 
-        var result = await _sut.Create(1, new CreateRatingRequest { Rating = 5 }, CancellationToken.None);
+        IActionResult result = await _sut.Create(1, new CreateRatingRequest { Rating = 5 }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 
@@ -73,7 +73,7 @@ public class RatingControllerTests
             HttpContext = new DefaultHttpContext(),
         };
 
-        var result = await _sut.Create(1, new CreateRatingRequest { Rating = 5 }, CancellationToken.None);
+        IActionResult result = await _sut.Create(1, new CreateRatingRequest { Rating = 5 }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }
@@ -85,12 +85,12 @@ public class RatingControllerTests
     [Test]
     public async Task GetByOrder_WhenSuccess_ReturnsOk()
     {
-        var dto = new RatingDto { Id = 1, OrderId = 1, Rating = 5 };
+        RatingDto dto = new RatingDto { Id = 1, OrderId = 1, Rating = 5 };
         _ratingService
             .GetByOrderAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RatingDto>.Success(dto));
 
-        var result = await _sut.GetByOrder(1, CancellationToken.None);
+        IActionResult result = await _sut.GetByOrder(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -102,10 +102,10 @@ public class RatingControllerTests
             .GetByOrderAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RatingDto>.Failure(new ServiceError("Avis introuvable", 404)));
 
-        var result = await _sut.GetByOrder(1, CancellationToken.None);
+        IActionResult result = await _sut.GetByOrder(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -116,12 +116,12 @@ public class RatingControllerTests
     [Test]
     public async Task Update_WhenSuccess_ReturnsOk()
     {
-        var dto = new RatingDto { Id = 1, OrderId = 1, Rating = 4 };
+        RatingDto dto = new RatingDto { Id = 1, OrderId = 1, Rating = 4 };
         _ratingService
             .UpdateAsync(1, 10, Arg.Any<UpdateRatingRequest>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RatingDto>.Success(dto));
 
-        var result = await _sut.Update(
+        IActionResult result = await _sut.Update(
             1,
             new UpdateRatingRequest { Rating = 4 },
             CancellationToken.None
@@ -137,14 +137,14 @@ public class RatingControllerTests
             .UpdateAsync(1, 10, Arg.Any<UpdateRatingRequest>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RatingDto>.Failure(new ServiceError("Avis introuvable", 404)));
 
-        var result = await _sut.Update(
+        IActionResult result = await _sut.Update(
             1,
             new UpdateRatingRequest { Rating = 4 },
             CancellationToken.None
         );
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -159,7 +159,7 @@ public class RatingControllerTests
             .DeleteAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -171,10 +171,10 @@ public class RatingControllerTests
             .DeleteAsync(1, 10, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Avis introuvable", 404)));
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 

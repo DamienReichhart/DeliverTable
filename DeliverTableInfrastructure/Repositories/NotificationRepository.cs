@@ -19,7 +19,7 @@ public class NotificationRepository(DeliverTableContext dbContext) : INotificati
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var notification = await _dbContext.Notifications.FindAsync([id], ct);
+        Notification? notification = await _dbContext.Notifications.FindAsync([id], ct);
         if (notification is null) return false;
         _dbContext.Notifications.Remove(notification);
         await _dbContext.SaveChangesAsync(ct);

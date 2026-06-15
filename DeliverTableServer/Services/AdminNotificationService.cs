@@ -20,14 +20,14 @@ public sealed class AdminNotificationService(
 
     public async Task<ServiceResult<List<AdminNotificationResponse>>> GetAllAsync(CancellationToken ct = default)
     {
-        var notifications = await _notificationRepository.GetAllAsync(ct);
-        var result = notifications.Select(n => n.ToAdminDto()).ToList();
+        List<Notification> notifications = await _notificationRepository.GetAllAsync(ct);
+        List<AdminNotificationResponse> result = notifications.Select(n => n.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _notificationRepository.DeleteAsync(id, ct);
+        bool deleted = await _notificationRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.NotificationNotFound);
 
@@ -36,11 +36,11 @@ public sealed class AdminNotificationService(
 
     public async Task RaiseForAllAdminsAsync(NotificationType type, string payload, CancellationToken ct = default)
     {
-        var admins = await _userRepository.ListByRoleAsync(nameof(UserRole.Administrator), ct);
+        List<User> admins = await _userRepository.ListByRoleAsync(nameof(UserRole.Administrator), ct);
         if (admins.Count == 0) return;
 
-        var now = DateTime.UtcNow;
-        var notifications = admins.Select(admin => new Notification
+        DateTime now = DateTime.UtcNow;
+        IEnumerable<Notification> notifications = admins.Select(admin => new Notification
         {
             UserId = admin.Id,
             Type = type,

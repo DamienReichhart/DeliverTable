@@ -39,14 +39,14 @@ public class HealthApiClientTests
     [Test]
     public async Task GetHealthAsync_WithSuccessfulResponse_ReturnsHealthResponse()
     {
-        var expected = new HealthResponse
+        HealthResponse expected = new HealthResponse
         {
             Status = nameof(HealthStatus.Healthy),
             TimestampUtc = new DateTime(2026, 2, 25, 12, 0, 0, DateTimeKind.Utc)
         };
         _httpHandler.QueueJsonResponse(expected);
 
-        var result = await _sut.GetHealthAsync();
+        HealthResponse? result = await _sut.GetHealthAsync();
 
         Assert.Multiple(() =>
         {
@@ -77,7 +77,7 @@ public class HealthApiClientTests
     {
         _httpHandler.QueueErrorResponse(HttpStatusCode.InternalServerError);
 
-        var result = await _sut.GetHealthAsync();
+        HealthResponse? result = await _sut.GetHealthAsync();
 
         Assert.That(result, Is.Null);
     }
@@ -87,7 +87,7 @@ public class HealthApiClientTests
     {
         _httpHandler.QueueErrorResponse(HttpStatusCode.NotFound);
 
-        var result = await _sut.GetHealthAsync();
+        HealthResponse? result = await _sut.GetHealthAsync();
 
         Assert.That(result, Is.Null);
     }
@@ -96,9 +96,9 @@ public class HealthApiClientTests
     public async Task GetHealthAsync_SupportsCancellation()
     {
         _httpHandler.QueueJsonResponse(new HealthResponse());
-        using var cts = new CancellationTokenSource();
+        using CancellationTokenSource cts = new CancellationTokenSource();
 
-        var result = await _sut.GetHealthAsync(cts.Token);
+        HealthResponse? result = await _sut.GetHealthAsync(cts.Token);
 
         Assert.That(result, Is.Not.Null);
     }
@@ -106,14 +106,14 @@ public class HealthApiClientTests
     [Test]
     public async Task GetHealthAsync_WithDegradedStatus_ReturnsDegradedResponse()
     {
-        var degraded = new HealthResponse
+        HealthResponse degraded = new HealthResponse
         {
             Status = nameof(HealthStatus.Degraded),
             TimestampUtc = DateTime.UtcNow
         };
         _httpHandler.QueueJsonResponse(degraded);
 
-        var result = await _sut.GetHealthAsync();
+        HealthResponse? result = await _sut.GetHealthAsync();
 
         Assert.That(result!.Status, Is.EqualTo(nameof(HealthStatus.Degraded)));
     }

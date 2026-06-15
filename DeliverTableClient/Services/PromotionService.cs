@@ -14,14 +14,14 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
     {
         try
         {
-            var queryParams = new List<string>
+            List<string> queryParams = new List<string>
             {
                 $"PageNumber={query.PageNumber}",
                 $"PageSize={query.PageSize}"
             };
 
-            var url = $"{ApiRoutes.Promotion.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
-            var result = await _httpClient.GetFromJsonAsync<PaginatedResult<PromotionDto>>(url, ct);
+            string url = $"{ApiRoutes.Promotion.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
+            PaginatedResult<PromotionDto>? result = await _httpClient.GetFromJsonAsync<PaginatedResult<PromotionDto>>(url, ct);
             return (result, null);
         }
         catch (Exception ex)
@@ -32,37 +32,37 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
 
     public async Task<(PromotionDto?, ErrorResponse?)> CreateAsync(int restaurantId, CreatePromotionRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync(
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
             ApiRoutes.Promotion.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<PromotionDto>(cancellationToken: ct);
+        PromotionDto? result = await response.Content.ReadFromJsonAsync<PromotionDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(PromotionDto?, ErrorResponse?)> UpdateAsync(int promotionId, UpdatePromotionRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Promotion.Base}/{promotionId}", request, ct);
+        HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Promotion.Base}/{promotionId}", request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<PromotionDto>(cancellationToken: ct);
+        PromotionDto? result = await response.Content.ReadFromJsonAsync<PromotionDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(bool, ErrorResponse?)> DeleteAsync(int promotionId, CancellationToken ct = default)
     {
-        var response = await _httpClient.DeleteAsync($"{ApiRoutes.Promotion.Base}/{promotionId}", ct);
+        HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiRoutes.Promotion.Base}/{promotionId}", ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (false, error);
         }
 
@@ -73,7 +73,7 @@ public sealed class PromotionService(HttpClient httpClient) : IPromotionService
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<List<PromotionDto>>(
+            List<PromotionDto>? result = await _httpClient.GetFromJsonAsync<List<PromotionDto>>(
                 ApiRoutes.Promotion.ActiveRoute.Replace("{id:int}", restaurantId.ToString()), ct);
             return (result, null);
         }

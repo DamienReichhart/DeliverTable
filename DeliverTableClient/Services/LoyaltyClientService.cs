@@ -14,7 +14,7 @@ public sealed class LoyaltyClientService(HttpClient httpClient) : ILoyaltyClient
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<LoyaltyProgramDto>(
+            LoyaltyProgramDto? result = await _httpClient.GetFromJsonAsync<LoyaltyProgramDto>(
                 ApiRoutes.Loyalty.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), ct);
             return (result, null);
         }
@@ -26,15 +26,15 @@ public sealed class LoyaltyClientService(HttpClient httpClient) : ILoyaltyClient
 
     public async Task<(LoyaltyProgramDto?, ErrorResponse?)> CreateOrUpdateAsync(int restaurantId, CreateLoyaltyProgramRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync(
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
             ApiRoutes.Loyalty.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<LoyaltyProgramDto>(cancellationToken: ct);
+        LoyaltyProgramDto? result = await response.Content.ReadFromJsonAsync<LoyaltyProgramDto>(cancellationToken: ct);
         return (result, null);
     }
 
@@ -42,8 +42,8 @@ public sealed class LoyaltyClientService(HttpClient httpClient) : ILoyaltyClient
     {
         try
         {
-            var myAccountUrl = $"{ApiRoutes.Loyalty.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}/{ApiRoutes.Loyalty.MyAccountRoute}";
-            var result = await _httpClient.GetFromJsonAsync<LoyaltyAccountDto>(myAccountUrl, ct);
+            string myAccountUrl = $"{ApiRoutes.Loyalty.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}/{ApiRoutes.Loyalty.MyAccountRoute}";
+            LoyaltyAccountDto? result = await _httpClient.GetFromJsonAsync<LoyaltyAccountDto>(myAccountUrl, ct);
             return (result, null);
         }
         catch (Exception ex)

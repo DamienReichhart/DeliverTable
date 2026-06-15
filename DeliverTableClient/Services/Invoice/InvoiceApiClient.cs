@@ -11,16 +11,16 @@ public class InvoiceApiClient(HttpClient http, IJSRuntime js) : IInvoiceApiClien
 {
     public async Task<PaginatedResult<InvoiceListItemDto>?> GetMineAsync(int page, int pageSize)
     {
-        var url = $"{ApiRoutes.Invoice.Base}/{ApiRoutes.Invoice.MyListRoute}?page={page}&pageSize={pageSize}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Invoice.Base}/{ApiRoutes.Invoice.MyListRoute}?page={page}&pageSize={pageSize}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaginatedResult<InvoiceListItemDto>>();
     }
 
     public async Task<PaginatedResult<InvoiceListItemDto>?> GetForRestaurantAsync(int restaurantId, int page, int pageSize)
     {
-        var url = $"{ApiRoutes.Invoice.Base}/restaurant/{restaurantId}?page={page}&pageSize={pageSize}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Invoice.Base}/restaurant/{restaurantId}?page={page}&pageSize={pageSize}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaginatedResult<InvoiceListItemDto>>();
     }
@@ -34,7 +34,7 @@ public class InvoiceApiClient(HttpClient http, IJSRuntime js) : IInvoiceApiClien
         int page,
         int pageSize)
     {
-        var qs = new List<string>
+        List<string> qs = new List<string>
         {
             $"page={page}",
             $"pageSize={pageSize}",
@@ -45,16 +45,16 @@ public class InvoiceApiClient(HttpClient http, IJSRuntime js) : IInvoiceApiClien
         if (restaurantId.HasValue) qs.Add($"restaurantId={restaurantId.Value}");
         if (!string.IsNullOrWhiteSpace(customerEmail)) qs.Add($"customerEmail={Uri.EscapeDataString(customerEmail)}");
 
-        var url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.InvoicesRoute}?{string.Join("&", qs)}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.InvoicesRoute}?{string.Join("&", qs)}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaginatedResult<AdminInvoiceRowDto>>();
     }
 
     public async Task<AdminInvoiceDetailDto?> AdminGetAsync(int id)
     {
-        var url = $"{ApiRoutes.Admin.Base}/invoices/{id}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Admin.Base}/invoices/{id}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<AdminInvoiceDetailDto>();
     }
@@ -66,13 +66,13 @@ public class InvoiceApiClient(HttpClient http, IJSRuntime js) : IInvoiceApiClien
 
     public async Task DownloadPdfAsync(int id)
     {
-        var url = $"{ApiRoutes.Invoice.Base}/{id}/pdf";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Invoice.Base}/{id}/pdf";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return;
 
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
-        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+        string contentType = response.Content.Headers.ContentType?.MediaType ?? "application/pdf";
+        string fileName = response.Content.Headers.ContentDisposition?.FileNameStar
             ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
             ?? $"facture-{id}.pdf";
 

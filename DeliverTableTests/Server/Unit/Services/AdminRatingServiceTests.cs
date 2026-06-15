@@ -4,6 +4,8 @@ using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
+using DeliverTableSharedLibrary.Dtos.Admin;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -25,10 +27,10 @@ public class AdminRatingServiceTests
     [Test]
     public async Task GetRestaurantRatingsAsync_ReturnsAllRatings()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var customer = CreateValidUser();
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        User customer = CreateValidUser();
         customer.Id = 1;
-        var ratings = new List<RestaurantRating>
+        List<RestaurantRating> ratings = new List<RestaurantRating>
         {
             new()
             {
@@ -48,7 +50,7 @@ public class AdminRatingServiceTests
 
         _ratingRepository.GetAllRestaurantRatingsAsync(Arg.Any<CancellationToken>()).Returns(ratings);
 
-        var result = await _sut.GetRestaurantRatingsAsync();
+        ServiceResult<List<AdminRestaurantRatingResponse>> result = await _sut.GetRestaurantRatingsAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -57,10 +59,10 @@ public class AdminRatingServiceTests
     [Test]
     public async Task GetRestaurantRatingsAsync_MapsFieldsCorrectly()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 5);
-        var customer = CreateValidUser();
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 5);
+        User customer = CreateValidUser();
         customer.Id = 1;
-        var ratings = new List<RestaurantRating>
+        List<RestaurantRating> ratings = new List<RestaurantRating>
         {
             new()
             {
@@ -73,10 +75,10 @@ public class AdminRatingServiceTests
 
         _ratingRepository.GetAllRestaurantRatingsAsync(Arg.Any<CancellationToken>()).Returns(ratings);
 
-        var result = await _sut.GetRestaurantRatingsAsync();
+        ServiceResult<List<AdminRestaurantRatingResponse>> result = await _sut.GetRestaurantRatingsAsync();
 
         Assert.That(result.IsSuccess, Is.True);
-        var dto = result.Value![0];
+        AdminRestaurantRatingResponse dto = result.Value![0];
         Assert.That(dto.Id, Is.EqualTo(1));
         Assert.That(dto.Rating, Is.EqualTo(5));
         Assert.That(dto.Comment, Is.EqualTo("Excellent"));
@@ -94,7 +96,7 @@ public class AdminRatingServiceTests
     {
         _ratingRepository.DeleteRestaurantRatingAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1);
+        ServiceResult result = await _sut.DeleteAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -104,7 +106,7 @@ public class AdminRatingServiceTests
     {
         _ratingRepository.DeleteRestaurantRatingAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteAsync(99);
+        ServiceResult result = await _sut.DeleteAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

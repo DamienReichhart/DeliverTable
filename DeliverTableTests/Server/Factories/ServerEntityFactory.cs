@@ -15,7 +15,7 @@ public static class ServerEntityFactory
     /// <summary>Creates a valid <see cref="User"/> with unique email to avoid DB constraint conflicts.</summary>
     public static User CreateValidUser(string? email = null)
     {
-        var resolvedEmail = email ?? $"user{Interlocked.Increment(ref _emailCounter)}@example.com";
+        string resolvedEmail = email ?? $"user{Interlocked.Increment(ref _emailCounter)}@example.com";
 
         return new User
         {
@@ -38,7 +38,7 @@ public static class ServerEntityFactory
     /// <summary>Creates a valid <see cref="User"/> with an attached <see cref="Customer"/>.</summary>
     public static User CreateValidCustomer(string? email = null)
     {
-        var user = CreateValidUser(email);
+        User user = CreateValidUser(email);
         user.Customer = new Customer();
         return user;
     }
@@ -46,7 +46,7 @@ public static class ServerEntityFactory
     /// <summary>Creates a valid <see cref="User"/> with an attached <see cref="RestaurantOwner"/> profile.</summary>
     public static User CreateValidRestaurantOwner(string? email = null)
     {
-        var user = CreateValidUser(email);
+        User user = CreateValidUser(email);
         user.RestaurantOwner = new RestaurantOwner
         {
             ContactPhoneNumber = "+32470123456"

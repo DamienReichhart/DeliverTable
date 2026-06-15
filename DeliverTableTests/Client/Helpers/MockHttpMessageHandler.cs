@@ -46,7 +46,7 @@ public sealed class MockHttpMessageHandler : HttpMessageHandler
     {
         SentRequests.Add(request);
 
-        var response = _queuedResponses.TryDequeue(out var queued)
+        HttpResponseMessage response = _queuedResponses.TryDequeue(out HttpResponseMessage? queued)
             ? queued
             : DefaultResponse;
 

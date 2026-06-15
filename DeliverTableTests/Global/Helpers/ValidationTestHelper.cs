@@ -15,8 +15,8 @@ public static class ValidationTestHelper
     /// <returns>Every <see cref="ValidationResult" /> produced; empty when the model is valid.</returns>
     public static IList<ValidationResult> Validate(object model)
     {
-        var results = new List<ValidationResult>();
-        var context = new ValidationContext(model);
+        List<ValidationResult> results = new List<ValidationResult>();
+        ValidationContext context = new ValidationContext(model);
         Validator.TryValidateObject(model, context, results, validateAllProperties: true);
         return results;
     }
@@ -24,7 +24,7 @@ public static class ValidationTestHelper
     /// <summary>Asserts the model passes all validation rules.</summary>
     public static void AssertValid(object model)
     {
-        var results = Validate(model);
+        IList<ValidationResult> results = Validate(model);
         Assert.That(results, Is.Empty,
             $"Expected valid model but got: {FormatErrors(results)}");
     }
@@ -32,7 +32,7 @@ public static class ValidationTestHelper
     /// <summary>Asserts that <paramref name="memberName" /> has at least one validation error.</summary>
     public static void AssertHasError(object model, string memberName)
     {
-        var results = Validate(model);
+        IList<ValidationResult> results = Validate(model);
         Assert.That(results.Any(r => r.MemberNames.Contains(memberName)), Is.True,
             $"Expected error on '{memberName}' but got: {FormatErrors(results)}");
     }
@@ -46,8 +46,8 @@ public static class ValidationTestHelper
         string memberName,
         string expectedSubstring)
     {
-        var results = Validate(model);
-        var match = results.FirstOrDefault(r =>
+        IList<ValidationResult> results = Validate(model);
+        ValidationResult? match = results.FirstOrDefault(r =>
             r.MemberNames.Contains(memberName) &&
             (r.ErrorMessage?.Contains(expectedSubstring, StringComparison.OrdinalIgnoreCase) ?? false));
 
@@ -58,7 +58,7 @@ public static class ValidationTestHelper
     /// <summary>Asserts that <paramref name="memberName" /> has no validation errors.</summary>
     public static void AssertNoError(object model, string memberName)
     {
-        var results = Validate(model);
+        IList<ValidationResult> results = Validate(model);
         Assert.That(results.Any(r => r.MemberNames.Contains(memberName)), Is.False,
             $"Expected no error on '{memberName}' but found: {FormatErrors(results)}");
     }

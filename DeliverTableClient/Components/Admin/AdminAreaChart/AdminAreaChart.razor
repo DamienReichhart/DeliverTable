@@ -19,9 +19,9 @@
                 </linearGradient>
             </defs>
 
-            @for (var i = 0; i < 5; i++)
+            @for (int i = 0; i < 5; i++)
             {
-                var y = i * (ViewBoxHeight / 4.0);
+                double y = i * (ViewBoxHeight / 4.0);
                 <line x1="0" y1="@Inv(y)" x2="@ViewBoxWidth" y2="@Inv(y)"
                       stroke="#E8E4DF" stroke-width="0.5" stroke-dasharray="4 2" />
             }
@@ -30,14 +30,14 @@
             <polyline points="@_linePath" fill="none" stroke="@Color"
                       stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
 
-            @foreach (var pt in _points)
+            @foreach ((double X, double Y) pt in _points)
             {
                 <circle cx="@Inv(pt.X)" cy="@Inv(pt.Y)"
                         r="3" fill="@Color" class="adm-area-dot" />
             }
         </svg>
         <div class="adm-area-labels">
-            @foreach (var label in _xLabels)
+            @foreach (string label in _xLabels)
             {
                 <span>@label</span>
             }

@@ -13,13 +13,13 @@ public static class PaginationExtensions
 
     public static IQueryable<T> Paginate<T>(this IQueryable<T> query, int pageNumber, int pageSize)
     {
-        var (skip, take) = GetPaginationOffsets(pageNumber, pageSize);
+        (int skip, int take) = GetPaginationOffsets(pageNumber, pageSize);
         return query.Skip(skip).Take(take);
     }
 
     public static IEnumerable<T> Paginate<T>(this IEnumerable<T> source, int pageNumber, int pageSize)
     {
-        var (skip, take) = GetPaginationOffsets(pageNumber, pageSize);
+        (int skip, int take) = GetPaginationOffsets(pageNumber, pageSize);
         return source.Skip(skip).Take(take);
     }
 

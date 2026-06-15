@@ -77,7 +77,7 @@ public class CommissionStatementRepository(DeliverTableContext dbContext) : ICom
         int? year, CommissionStatementKind? kind, int? restaurantId,
         int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _dbContext.CommissionStatements
+        IQueryable<CommissionStatement> query = _dbContext.CommissionStatements
             .Include(s => s.RecipientRestaurant)
             .AsQueryable();
 
@@ -85,8 +85,8 @@ public class CommissionStatementRepository(DeliverTableContext dbContext) : ICom
         if (kind.HasValue) query = query.Where(s => s.Kind == kind.Value);
         if (restaurantId.HasValue) query = query.Where(s => s.RecipientRestaurantId == restaurantId.Value);
 
-        var total = await query.CountAsync(ct);
-        var items = await query
+        int total = await query.CountAsync(ct);
+        List<CommissionStatement> items = await query
             .OrderByDescending(s => s.IssuedAt)
             .Paginate(page, pageSize)
             .ToListAsync(ct);
@@ -100,10 +100,10 @@ public class CommissionStatementRepository(DeliverTableContext dbContext) : ICom
         {
             try
             {
-                var counter = await _dbContext.CommissionStatementCounters
+                CommissionStatementCounter counter = await _dbContext.CommissionStatementCounters
                     .FirstOrDefaultAsync(c => c.Id == 1, ct)
                     ?? throw new InvalidOperationException("CommissionStatementCounter row missing — migration seed not applied.");
-                var n = counter.NextNumber;
+                int n = counter.NextNumber;
                 counter.NextNumber = n + 1;
                 await _dbContext.SaveChangesAsync(ct);
                 return n;

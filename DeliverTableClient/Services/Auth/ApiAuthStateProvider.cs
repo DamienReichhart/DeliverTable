@@ -17,7 +17,7 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await _js.InvokeAsync<string>(_getItem, "authToken");
+        string token = await _js.InvokeAsync<string>(_getItem, "authToken");
 
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -27,7 +27,7 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
 
-        var response = await _httpClient.GetAsync(ApiRoutes.Auth.Me);
+        HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Auth.Me);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -49,7 +49,7 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
             new(ClaimTypes.Role, user.Role),
         ];
 
-        var identity = new ClaimsIdentity(claims, "jwt");
+        ClaimsIdentity identity = new ClaimsIdentity(claims, "jwt");
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
@@ -64,16 +64,16 @@ public class ApiAuthStateProvider(IJSRuntime js, HttpClient httpClient) : Authen
             new (ClaimTypes.Role, role),
         ];
 
-        var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));
-        var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
+        ClaimsPrincipal authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));
+        Task<AuthenticationState> authState = Task.FromResult(new AuthenticationState(authenticatedUser));
         NotifyAuthenticationStateChanged(authState);
     }
 
     public void NotifyUserLogout()
     {
         _httpClient.DefaultRequestHeaders.Authorization = null;
-        var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
-        var authState = Task.FromResult(new AuthenticationState(anonymousUser));
+        ClaimsPrincipal anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
+        Task<AuthenticationState> authState = Task.FromResult(new AuthenticationState(anonymousUser));
         NotifyAuthenticationStateChanged(authState);
     }
 }

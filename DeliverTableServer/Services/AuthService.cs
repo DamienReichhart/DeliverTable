@@ -8,6 +8,7 @@ using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableSharedLibrary.Dtos.Auth;
+using DeliverTableSharedLibrary.Dtos.Restaurant;
 
 namespace DeliverTableServer.Services;
 
@@ -26,7 +27,7 @@ public sealed class AuthService(
 
     public async Task<ServiceResult<ConnectionResponse>> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email, ct);
+        User? user = await _userRepository.GetByEmailAsync(request.Email, ct);
         if (user is null || !await _userRepository.CheckPasswordAsync(user, request.Password))
             return ServiceError.Unauthorized(ErrorMessages.InvalidCredentials);
 
@@ -38,11 +39,11 @@ public sealed class AuthService(
 
     public async Task<ServiceResult<ConnectionResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
-        var normalizedEmail = request.Email?.ToUpperInvariant();
+        string? normalizedEmail = request.Email?.ToUpperInvariant();
         if (await _userRepository.EmailExistsAsync(normalizedEmail!, ct))
             return new ServiceError(ErrorMessages.EmailAlreadyUsed);
 
-        var user = new User
+        User user = new User
         {
             UserName = request.Email,
             Email = request.Email,
@@ -51,15 +52,15 @@ public sealed class AuthService(
             Customer = new Customer()
         };
 
-        var (created, errors) = await _userRepository.CreateAsync(user, request.Password);
+        (bool created, IEnumerable<string>? errors) = await _userRepository.CreateAsync(user, request.Password);
         if (!created)
             return ServiceError.FromIdentityErrors(errors);
 
-        var (roleOk, _) = await _userRepository.AddToRoleAsync(user, _defaultRole);
+        (bool roleOk, IEnumerable<string> _) = await _userRepository.AddToRoleAsync(user, _defaultRole);
         if (!roleOk)
             return new ServiceError(ErrorMessages.InternalError, 500);
 
-        var userName = user.GetFullName();
+        string userName = user.GetFullName();
         await _emailJobService.QueueWelcomeEmailAsync(user.Email!, userName);
 
         return await BuildConnectionResponse(user);
@@ -67,11 +68,11 @@ public sealed class AuthService(
 
     public async Task<ServiceResult<ConnectionResponse>> RegisterRestaurantAsync(RestaurantRegister request, CancellationToken ct = default)
     {
-        var normalizedEmail = request.Email?.ToUpperInvariant();
+        string? normalizedEmail = request.Email?.ToUpperInvariant();
         if (await _userRepository.EmailExistsAsync(normalizedEmail!, ct))
             return new ServiceError(ErrorMessages.EmailAlreadyUsed);
 
-        var legalAndCoords = await _restaurantService.ValidateLegalAndLocateAsync(
+        ServiceResult<(double lat, double lon)> legalAndCoords = await _restaurantService.ValidateLegalAndLocateAsync(
             request.Restaurant.Siret,
             request.Restaurant.LegalName,
             request.Restaurant.LegalAddress,
@@ -81,7 +82,7 @@ public sealed class AuthService(
             request.Restaurant.ZipCode);
         if (!legalAndCoords.IsSuccess) return legalAndCoords.Error!;
 
-        var user = new User
+        User user = new User
         {
             UserName = request.Email,
             Email = request.Email,
@@ -94,18 +95,18 @@ public sealed class AuthService(
             Customer = new Customer()
         };
 
-        var (created, errors) = await _userRepository.CreateAsync(user, request.Password);
+        (bool created, IEnumerable<string>? errors) = await _userRepository.CreateAsync(user, request.Password);
         if (!created)
             return ServiceError.FromIdentityErrors(errors);
 
-        var (roleOk, _) = await _userRepository.AddToRoleAsync(user, nameof(UserRole.RestaurantOwner));
+        (bool roleOk, IEnumerable<string> _) = await _userRepository.AddToRoleAsync(user, nameof(UserRole.RestaurantOwner));
         if (!roleOk)
         {
             await _userRepository.DeleteAsync(user);
             return new ServiceError(ErrorMessages.InternalError, 500);
         }
 
-        var restaurantResult = await _restaurantService.CreateValidatedAsync(
+        ServiceResult<RestaurantDto> restaurantResult = await _restaurantService.CreateValidatedAsync(
             request.Restaurant, user.Id, legalAndCoords.Value, ct);
         if (!restaurantResult.IsSuccess)
         {
@@ -113,7 +114,7 @@ public sealed class AuthService(
             return restaurantResult.Error!;
         }
 
-        var ownerName = user.GetFullName();
+        string ownerName = user.GetFullName();
         await _emailJobService.QueueWelcomeEmailAsync(user.Email!, ownerName);
 
         return await BuildConnectionResponse(user);
@@ -121,22 +122,22 @@ public sealed class AuthService(
 
     public async Task<ServiceResult<UserResponse>> GetProfileAsync(int userId, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId, ct);
+        User? user = await _userRepository.GetByIdAsync(userId, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
-        var role = await _userRepository.GetPrimaryRoleAsync(user) ?? _defaultRole;
+        string role = await _userRepository.GetPrimaryRoleAsync(user) ?? _defaultRole;
         return user.ToDto(role);
     }
 
     public async Task<ServiceResult<ConnectionResponse>> UpdateProfileAsync(
         int userId, UpdateProfileRequest request, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId, ct);
+        User? user = await _userRepository.GetByIdAsync(userId, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
-        var normalizedEmail = request.Email?.ToUpperInvariant();
+        string? normalizedEmail = request.Email?.ToUpperInvariant();
         if (user.NormalizedEmail != normalizedEmail
             && await _userRepository.EmailExistsAsync(normalizedEmail!, ct))
         {
@@ -163,21 +164,21 @@ public sealed class AuthService(
     public async Task<ServiceResult> ChangePasswordAsync(
         int userId, ChangePasswordRequest request, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(userId, ct);
+        User? user = await _userRepository.GetByIdAsync(userId, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
         if (!await _userRepository.CheckPasswordAsync(user, request.CurrentPassword))
             return new ServiceError(ErrorMessages.CurrentPasswordIncorrect);
 
-        var (succeeded, errors) = await _userRepository.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        (bool succeeded, IEnumerable<string>? errors) = await _userRepository.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!succeeded)
             return ServiceError.FromIdentityErrors(errors);
 
         user.UpdatedAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync(ct);
 
-        var userName = user.GetFullName();
+        string userName = user.GetFullName();
         await _emailJobService.QueuePasswordChangedAsync(user.Email!, userName);
 
         return ServiceResult.Success();
@@ -185,8 +186,8 @@ public sealed class AuthService(
 
     private async Task<ConnectionResponse> BuildConnectionResponse(User user)
     {
-        var role = await _userRepository.GetPrimaryRoleAsync(user) ?? _defaultRole;
-        var token = await _tokenService.CreateToken(user);
+        string role = await _userRepository.GetPrimaryRoleAsync(user) ?? _defaultRole;
+        string token = await _tokenService.CreateToken(user);
         return new ConnectionResponse { Token = token, User = user.ToDto(role) };
     }
 }

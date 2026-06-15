@@ -35,7 +35,7 @@ public partial class Profile
         _loadError = null;
         StateHasChanged();
 
-        var (user, error) = await UserService.GetProfileAsync();
+        (UserResponse? user, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await UserService.GetProfileAsync();
 
         if (user != null)
         {
@@ -88,7 +88,7 @@ public partial class Profile
 
         try
         {
-            var (connection, error) = await UserService.UpdateProfileAsync(_profileModel);
+            (ConnectionResponse? connection, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await UserService.UpdateProfileAsync(_profileModel);
 
             if (connection?.User != null && !string.IsNullOrEmpty(connection.Token))
             {
@@ -143,7 +143,7 @@ public partial class Profile
 
         try
         {
-            var (success, error) = await UserService.ChangePasswordAsync(_passwordModel);
+            (bool success, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await UserService.ChangePasswordAsync(_passwordModel);
 
             if (success)
             {

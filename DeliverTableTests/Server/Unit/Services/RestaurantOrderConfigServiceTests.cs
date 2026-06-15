@@ -6,6 +6,7 @@ using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
 using NSubstitute;
 using System.Text.Json;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -29,7 +30,7 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task GetTablesCapacityAsync_WhenOwnerDoesNotMatch_ReturnsCapacity()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _orderConfigRepository.GetRuleByRestaurantIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(new OrderRule
@@ -40,7 +41,7 @@ public class RestaurantOrderConfigServiceTests
         _restaurantRepository.CountActiveTablesByMaxCapacityAsync(1, 2, Arg.Any<CancellationToken>())
             .Returns(4);
 
-        var result = await _sut.GetTablesCapacityAsync(1, 999);
+        ServiceResult<TablesCapacityResponse> result = await _sut.GetTablesCapacityAsync(1, 999);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.RestaurantId, Is.EqualTo(1));
@@ -51,7 +52,7 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task GetBlockedSlotsAsync_WhenOwnerMatches_ReturnsSlots()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
         _orderConfigRepository.GetBlockedSlotsByRestaurantAsync(1, Arg.Any<CancellationToken>())
@@ -68,7 +69,7 @@ public class RestaurantOrderConfigServiceTests
                 }
             });
 
-        var result = await _sut.GetBlockedSlotsAsync(1, 10);
+        ServiceResult<List<AdminBlockedSlotResponse>> result = await _sut.GetBlockedSlotsAsync(1, 10);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(1));
@@ -77,16 +78,16 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task CreateBlockedSlotAsync_WhenDatesInvalid_ReturnsError()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             StartsAt = DateTime.UtcNow.AddHours(5),
             EndsAt = DateTime.UtcNow.AddHours(4)
         };
 
-        var result = await _sut.CreateBlockedSlotAsync(1, 10, request);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.CreateBlockedSlotAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -96,7 +97,7 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task CreateBlockedSlotAsync_WhenOverlapExists_ReturnsError()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _orderConfigRepository.ExistsBlockedSlotOverlapAsync(
                 1,
@@ -106,14 +107,14 @@ public class RestaurantOrderConfigServiceTests
                 Arg.Any<CancellationToken>())
             .Returns(true);
 
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             StartsAt = DateTime.UtcNow.AddHours(4),
             EndsAt = DateTime.UtcNow.AddHours(6),
             Reason = "Maintenance"
         };
 
-        var result = await _sut.CreateBlockedSlotAsync(1, 10, request);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.CreateBlockedSlotAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(400));
@@ -123,7 +124,7 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task CreateBlockedSlotAsync_WhenValid_CreatesSlot()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _orderConfigRepository.ExistsBlockedSlotOverlapAsync(
                 1,
@@ -136,20 +137,20 @@ public class RestaurantOrderConfigServiceTests
         _orderConfigRepository.CreateBlockedSlotAsync(Arg.Any<OrderBlockedSlot>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var slot = callInfo.Arg<OrderBlockedSlot>();
+                OrderBlockedSlot slot = callInfo.Arg<OrderBlockedSlot>();
                 slot.Id = 11;
                 slot.Restaurant = restaurant;
                 return slot;
             });
 
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             StartsAt = DateTime.UtcNow.AddHours(4),
             EndsAt = DateTime.UtcNow.AddHours(6),
             Reason = "Maintenance"
         };
 
-        var result = await _sut.CreateBlockedSlotAsync(1, 10, request);
+        ServiceResult<AdminBlockedSlotResponse> result = await _sut.CreateBlockedSlotAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Is.Not.Null);
@@ -159,12 +160,12 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task DeleteBlockedSlotAsync_WhenSlotIsFromAnotherRestaurant_ReturnsNotFound()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _orderConfigRepository.GetBlockedSlotByIdAsync(9, Arg.Any<CancellationToken>())
             .Returns(new OrderBlockedSlot { Id = 9, RestaurantId = 2 });
 
-        var result = await _sut.DeleteBlockedSlotAsync(1, 9, 10);
+        ServiceResult result = await _sut.DeleteBlockedSlotAsync(1, 9, 10);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -174,13 +175,13 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task DeleteBlockedSlotAsync_WhenValid_DeletesSlot()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
         _orderConfigRepository.GetBlockedSlotByIdAsync(9, Arg.Any<CancellationToken>())
             .Returns(new OrderBlockedSlot { Id = 9, RestaurantId = 1, Restaurant = restaurant });
         _orderConfigRepository.DeleteBlockedSlotAsync(9, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteBlockedSlotAsync(1, 9, 10);
+        ServiceResult result = await _sut.DeleteBlockedSlotAsync(1, 9, 10);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -191,15 +192,15 @@ public class RestaurantOrderConfigServiceTests
         // Le client encode 0 = Lundi .. 6 = Dimanche. Le service doit convertir
         // DateTime.DayOfWeek (0 = Dimanche) vers cette convention, sinon les créneaux
         // sont calculés sur le mauvais jour (bug du décalage).
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         restaurant.IsActive = true;
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var date = new DateTime(2026, 6, 8, 0, 0, 0, DateTimeKind.Unspecified);
-        var clientDay = ((int)date.DayOfWeek + 6) % 7;
+        DateTime date = new DateTime(2026, 6, 8, 0, 0, 0, DateTimeKind.Unspecified);
+        int clientDay = ((int)date.DayOfWeek + 6) % 7;
 
-        var days = new List<OpeningDayScheduleDto>();
-        for (var d = 0; d <= 6; d++)
+        List<OpeningDayScheduleDto> days = new List<OpeningDayScheduleDto>();
+        for (int d = 0; d <= 6; d++)
         {
             days.Add(new OpeningDayScheduleDto
             {
@@ -223,7 +224,7 @@ public class RestaurantOrderConfigServiceTests
         _orderRepository.GetScheduledDineInReservedTableUnitsOverlappingAsync(
             1, Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(0);
 
-        var result = await _sut.GetAvailableSlotsAsync(
+        ServiceResult<RestaurantAvailableSlotsResponse> result = await _sut.GetAvailableSlotsAsync(
             1, new RestaurantAvailableSlotsQuery { Date = date, GuestCount = 2 });
 
         Assert.That(result.IsSuccess, Is.True);
@@ -233,16 +234,16 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task UpdateOpeningHoursAsync_WhenSlotDurationBelowMinimum_ReturnsError()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new UpdateRestaurantOpeningHoursRequest
+        UpdateRestaurantOpeningHoursRequest request = new UpdateRestaurantOpeningHoursRequest
         {
             SlotDurationMinutes = 1,
             Days = []
         };
 
-        var result = await _sut.UpdateOpeningHoursAsync(1, 10, request);
+        ServiceResult<RestaurantOpeningHoursResponse> result = await _sut.UpdateOpeningHoursAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.InvalidSlotDuration));
@@ -251,16 +252,16 @@ public class RestaurantOrderConfigServiceTests
     [Test]
     public async Task UpdateOpeningHoursAsync_WhenSlotDurationAboveMaximum_ReturnsError()
     {
-        var restaurant = CreateRestaurant(id: 1, ownerId: 10);
+        Restaurant restaurant = CreateRestaurant(id: 1, ownerId: 10);
         _restaurantRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var request = new UpdateRestaurantOpeningHoursRequest
+        UpdateRestaurantOpeningHoursRequest request = new UpdateRestaurantOpeningHoursRequest
         {
             SlotDurationMinutes = 300,
             Days = []
         };
 
-        var result = await _sut.UpdateOpeningHoursAsync(1, 10, request);
+        ServiceResult<RestaurantOpeningHoursResponse> result = await _sut.UpdateOpeningHoursAsync(1, 10, request);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.InvalidSlotDuration));

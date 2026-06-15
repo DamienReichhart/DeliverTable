@@ -4,6 +4,7 @@ using DeliverTableServer.Mappers;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
+using DeliverTableInfrastructure.Models;
 
 namespace DeliverTableServer.Services;
 
@@ -13,14 +14,14 @@ public sealed class AdminTransactionService(ITransactionRepository transactionRe
 
     public async Task<ServiceResult<List<AdminTransactionResponse>>> GetAllAsync(CancellationToken ct = default)
     {
-        var transactions = await _transactionRepository.GetAllAsync(ct);
-        var result = transactions.Select(t => t.ToAdminDto()).ToList();
+        List<RestaurantTransaction> transactions = await _transactionRepository.GetAllAsync(ct);
+        List<AdminTransactionResponse> result = transactions.Select(t => t.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminTransactionResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var transaction = await _transactionRepository.GetByIdAsync(id, ct);
+        RestaurantTransaction? transaction = await _transactionRepository.GetByIdAsync(id, ct);
         if (transaction is null)
             return ServiceError.NotFound(ErrorMessages.TransactionNotFound);
 
