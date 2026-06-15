@@ -34,17 +34,17 @@ public class CommissionStatementService(
         if (month is < 1 or > 12 || year is < 2000 or > 9999)
             return ServiceError.BadRequest(ErrorMessages.CommissionStatementInvalidPeriod);
 
-        var (startUtc, endUtc) = ComputePeriodBoundsUtc(year, month);
-        var result = new CommissionStatementGenerationResultDto
+        (DateTime startUtc, DateTime endUtc) = ComputePeriodBoundsUtc(year, month);
+        CommissionStatementGenerationResultDto result = new CommissionStatementGenerationResultDto
         {
             PeriodYear = year,
             PeriodMonth = month,
         };
 
-        var restaurantIds = await repo.ListRestaurantIdsWithEligibleOrdersAsync(startUtc, endUtc, ct);
+        List<int> restaurantIds = await repo.ListRestaurantIdsWithEligibleOrdersAsync(startUtc, endUtc, ct);
         result.RestaurantsProcessed = restaurantIds.Count;
 
-        foreach (var restaurantId in restaurantIds)
+        foreach (int restaurantId in restaurantIds)
         {
             try
             {
@@ -54,22 +54,22 @@ public class CommissionStatementService(
                     continue;
                 }
 
-                var restaurant = await restaurantRepo.GetByIdWithOwnerAsync(restaurantId, ct);
+                Restaurant? restaurant = await restaurantRepo.GetByIdWithOwnerAsync(restaurantId, ct);
                 if (restaurant is null) continue;
 
-                var orders = await repo.ListEligibleOrdersForRestaurantAsync(restaurantId, startUtc, endUtc, ct);
+                List<Order> orders = await repo.ListEligibleOrdersForRestaurantAsync(restaurantId, startUtc, endUtc, ct);
                 if (orders.Count == 0)
                 {
                     result.RestaurantsSkipped++;
                     continue;
                 }
 
-                var statement = BuildStatement(restaurant, year, month, orders);
+                CommissionStatement statement = BuildStatement(restaurant, year, month, orders);
                 statement.Number = await FormatInvoiceNumberAsync(year, month, ct);
 
                 // Use the navigation rather than the (still-0) FK id so EF resolves
                 // CommissionStatementId after the INSERT during the same SaveChanges.
-                foreach (var o in orders) o.CommissionStatement = statement;
+                foreach (Order o in orders) o.CommissionStatement = statement;
                 await repo.CreateAsync(statement, ct);
 
                 await publisher.PublishAsync(
@@ -96,29 +96,29 @@ public class CommissionStatementService(
     public async Task<ServiceResult> HandleRefundForPriorPeriodAsync(
         int orderId, int refundId, string stripeRefundId, decimal refundedAmount, CancellationToken ct)
     {
-        var order = await orderRepo.GetByIdAsync(orderId, ct);
+        Order? order = await orderRepo.GetByIdAsync(orderId, ct);
         if (order is null) return ServiceResult.Success();
         if (order.CommissionStatementId is null) return ServiceResult.Success();
 
-        var existingLine = await repo.FindLineByRefundEventIdAsync(stripeRefundId, ct);
+        CommissionStatementLine? existingLine = await repo.FindLineByRefundEventIdAsync(stripeRefundId, ct);
         if (existingLine is not null) return ServiceResult.Success();
 
-        var original = await repo.GetByIdWithLinesAndRecipientAsync(order.CommissionStatementId.Value, ct);
+        CommissionStatement? original = await repo.GetByIdWithLinesAndRecipientAsync(order.CommissionStatementId.Value, ct);
         if (original is null) return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
 
-        var originalLine = original.Lines.FirstOrDefault(l => l.OrderId == orderId);
+        CommissionStatementLine? originalLine = original.Lines.FirstOrDefault(l => l.OrderId == orderId);
         if (originalLine is null) return ServiceResult.Success();
 
-        var restaurant = await restaurantRepo.GetByIdWithOwnerAsync(order.RestaurantId, ct);
+        Restaurant? restaurant = await restaurantRepo.GetByIdWithOwnerAsync(order.RestaurantId, ct);
         if (restaurant is null) return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
 
-        var rate = originalLine.CommissionRateSnapshot;
-        var vat = originalLine.VatRate;
-        var ht = Math.Round(refundedAmount * rate, 2, MidpointRounding.AwayFromZero);
-        var ttc = Math.Round(ht * (1 + vat / 100m), 2, MidpointRounding.AwayFromZero);
-        var vatAmount = Math.Round(ttc - ht, 2, MidpointRounding.AwayFromZero);
+        decimal rate = originalLine.CommissionRateSnapshot;
+        decimal vat = originalLine.VatRate;
+        decimal ht = Math.Round(refundedAmount * rate, 2, MidpointRounding.AwayFromZero);
+        decimal ttc = Math.Round(ht * (1 + vat / 100m), 2, MidpointRounding.AwayFromZero);
+        decimal vatAmount = Math.Round(ttc - ht, 2, MidpointRounding.AwayFromZero);
 
-        var creditNote = new CommissionStatement
+        CommissionStatement creditNote = new CommissionStatement
         {
             Kind = CommissionStatementKind.CreditNote,
             RecipientRestaurantId = restaurant.Id,
@@ -150,7 +150,7 @@ public class CommissionStatementService(
             SortOrder = 0,
         });
 
-        var seq = await repo.AllocateNextNumberAsync(ct);
+        int seq = await repo.AllocateNextNumberAsync(ct);
         creditNote.Number = $"AVOIR-COMM-{original.PeriodYear:D4}-{original.PeriodMonth:D2}-{seq:D6}";
 
         order.CommissionRefundStatementId = creditNote.Id;
@@ -165,30 +165,30 @@ public class CommissionStatementService(
 
     internal static (DateTime startUtc, DateTime endUtc) ComputePeriodBoundsUtc(int year, int month)
     {
-        var startLocal = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Unspecified);
-        var endLocal = startLocal.AddMonths(1);
-        var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, ParisTz);
-        var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, ParisTz);
+        DateTime startLocal = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Unspecified);
+        DateTime endLocal = startLocal.AddMonths(1);
+        DateTime startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, ParisTz);
+        DateTime endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, ParisTz);
         return (startUtc, endUtc);
     }
 
     private CommissionStatement BuildStatement(Restaurant restaurant, int year, int month, List<Order> orders)
     {
-        var issuerSnapshot = new InvoiceLegalSnapshotDto(
+        InvoiceLegalSnapshotDto issuerSnapshot = new InvoiceLegalSnapshotDto(
             Name: env.PlatformLegalName,
             LegalForm: env.PlatformLegalForm,
             Siret: env.PlatformSiret,
             VatNumber: env.PlatformVatNumber,
             Address: env.PlatformAddress);
 
-        var recipientSnapshot = new InvoiceLegalSnapshotDto(
+        InvoiceLegalSnapshotDto recipientSnapshot = new InvoiceLegalSnapshotDto(
             Name: restaurant.LegalName,
             LegalForm: restaurant.LegalForm,
             Siret: restaurant.Siret,
             VatNumber: string.Empty,
             Address: restaurant.LegalAddress);
 
-        var statement = new CommissionStatement
+        CommissionStatement statement = new CommissionStatement
         {
             Kind = CommissionStatementKind.Invoice,
             RecipientRestaurantId = restaurant.Id,
@@ -202,15 +202,15 @@ public class CommissionStatementService(
             RecipientEmailSnapshot = restaurant.Owner?.Email,
         };
 
-        var rateVat = env.PlatformVatApplicable ? 20m : 0m;
+        decimal rateVat = env.PlatformVatApplicable ? 20m : 0m;
         int sort = 0;
-        foreach (var order in orders)
+        foreach (Order order in orders)
         {
-            var net = order.TotalAmount - TotalRefundedFor(order);
+            decimal net = order.TotalAmount - TotalRefundedFor(order);
             if (net <= 0) continue;
-            var commissionHt = Math.Round(net * env.PlatformCommissionRate, 2, MidpointRounding.AwayFromZero);
-            var commissionTtc = Math.Round(commissionHt * (1 + rateVat / 100m), 2, MidpointRounding.AwayFromZero);
-            var commissionVat = Math.Round(commissionTtc - commissionHt, 2, MidpointRounding.AwayFromZero);
+            decimal commissionHt = Math.Round(net * env.PlatformCommissionRate, 2, MidpointRounding.AwayFromZero);
+            decimal commissionTtc = Math.Round(commissionHt * (1 + rateVat / 100m), 2, MidpointRounding.AwayFromZero);
+            decimal commissionVat = Math.Round(commissionTtc - commissionHt, 2, MidpointRounding.AwayFromZero);
 
             statement.Lines.Add(new CommissionStatementLine
             {
@@ -242,7 +242,7 @@ public class CommissionStatementService(
         int? year, CommissionStatementKind? kind, int? restaurantId,
         int page, int pageSize, CancellationToken ct)
     {
-        var (items, total) = await repo.AdminListAsync(year, kind, restaurantId, page, pageSize, ct);
+        (List<CommissionStatement>? items, int total) = await repo.AdminListAsync(year, kind, restaurantId, page, pageSize, ct);
 
         return ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>.Success(
             new PaginatedResult<AdminCommissionStatementRowDto>
@@ -259,12 +259,12 @@ public class CommissionStatementService(
     {
         if (!isAdmin)
         {
-            var restaurant = await restaurantRepo.GetByIdAsync(restaurantId, ct);
+            Restaurant? restaurant = await restaurantRepo.GetByIdAsync(restaurantId, ct);
             if (restaurant is null) return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
             if (restaurant.OwnerId != userId) return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
         }
 
-        var (items, total) = await repo.AdminListAsync(year: null, kind: null, restaurantId: restaurantId, page, pageSize, ct);
+        (List<CommissionStatement>? items, int total) = await repo.AdminListAsync(year: null, kind: null, restaurantId: restaurantId, page, pageSize, ct);
         return ServiceResult<PaginatedResult<AdminCommissionStatementRowDto>>.Success(
             new PaginatedResult<AdminCommissionStatementRowDto>
             {
@@ -278,13 +278,13 @@ public class CommissionStatementService(
     public async Task<ServiceResult<(byte[] Pdf, string FileName)>> GetPdfForOwnerAsync(
         int statementId, int userId, bool isAdmin, bool isRestaurantOwner, CancellationToken ct)
     {
-        var statement = await repo.GetByIdAsync(statementId, ct);
+        CommissionStatement? statement = await repo.GetByIdAsync(statementId, ct);
         if (statement is null) return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
 
         if (!isAdmin)
         {
             if (!isRestaurantOwner) return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
-            var restaurant = await restaurantRepo.GetByIdAsync(statement.RecipientRestaurantId, ct);
+            Restaurant? restaurant = await restaurantRepo.GetByIdAsync(statement.RecipientRestaurantId, ct);
             if (restaurant is null || restaurant.OwnerId != userId)
                 return ServiceError.Forbidden(ErrorMessages.InvoiceAccessDenied);
         }
@@ -295,7 +295,7 @@ public class CommissionStatementService(
     public async Task<ServiceResult<AdminCommissionStatementDetailDto>> AdminGetDetailAsync(
         int id, CancellationToken ct)
     {
-        var statement = await repo.GetByIdWithLinesAndRecipientAsync(id, ct);
+        CommissionStatement? statement = await repo.GetByIdWithLinesAndRecipientAsync(id, ct);
         if (statement is null)
             return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
 
@@ -335,26 +335,26 @@ public class CommissionStatementService(
     public async Task<ServiceResult<(byte[] Pdf, string FileName)>> AdminGetPdfAsync(
         int id, CancellationToken ct)
     {
-        var statement = await repo.GetByIdAsync(id, ct);
+        CommissionStatement? statement = await repo.GetByIdAsync(id, ct);
         if (statement is null)
             return ServiceError.NotFound(ErrorMessages.CommissionStatementNotFound);
 
         if (string.IsNullOrEmpty(statement.StoragePath))
             return ServiceError.NotFound(ErrorMessages.CommissionStatementPdfNotYetGenerated);
 
-        var storageResult = await objectStorage.GetObjectAsync(statement.StoragePath, ct);
+        ObjectStorageResult? storageResult = await objectStorage.GetObjectAsync(statement.StoragePath, ct);
         if (storageResult is null)
             return ServiceError.NotFound(ErrorMessages.CommissionStatementPdfNotYetGenerated);
 
-        using var ms = new MemoryStream();
+        using MemoryStream ms = new MemoryStream();
         await storageResult.Content.CopyToAsync(ms, ct);
-        var fileName = $"{statement.Number}.pdf";
+        string fileName = $"{statement.Number}.pdf";
         return ServiceResult<(byte[] Pdf, string FileName)>.Success((ms.ToArray(), fileName));
     }
 
     private async Task<string> FormatInvoiceNumberAsync(int year, int month, CancellationToken ct)
     {
-        var seq = await repo.AllocateNextNumberAsync(ct);
+        int seq = await repo.AllocateNextNumberAsync(ct);
         return $"COMM-{year:D4}-{month:D2}-{seq:D6}";
     }
 

@@ -12,9 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using Quartz;
 
 DotNetEnv.Env.Load();
-var env = SchedulerEnvironment.Load();
+SchedulerEnvironment env = SchedulerEnvironment.Load();
 
-var builder = Host.CreateApplicationBuilder(args);
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddSingleton(env);
 builder.Services.AddDbContext<DeliverTableContext>(opts => opts.UseNpgsql(env.ConnectionStringDatabase));
 
@@ -35,12 +35,12 @@ builder.Services.AddScoped<ICommissionStatementRepository, CommissionStatementRe
 builder.Services.AddScoped<IRestaurantRepository, RestaurantRepository>();
 
 // AppEnvironment from the server project (loads commission rate, VAT, legal info from env vars).
-var appEnv = AppEnvironment.Load();
+AppEnvironment appEnv = AppEnvironment.Load();
 builder.Services.AddSingleton(appEnv);
 builder.Services.AddScoped<ICommissionStatementService, CommissionStatementService>();
 
 // RabbitMQ publisher (same config wiring as DeliverTableWorker/Program.cs).
-var rabbitConfig = new RabbitMqConfig
+RabbitMqConfig rabbitConfig = new RabbitMqConfig
 {
     Host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "rabbitmq",
     Port = int.Parse(Environment.GetEnvironmentVariable("RABBITMQ_PORT") ?? "5672"),
@@ -53,7 +53,7 @@ builder.Services.AddSingleton<IMessagePublisher>(sp =>
 
 builder.Services.AddQuartz(q =>
 {
-    var jobKey = new JobKey(nameof(MonthlyCommissionStatementJob));
+    JobKey jobKey = new JobKey(nameof(MonthlyCommissionStatementJob));
     q.AddJob<MonthlyCommissionStatementJob>(opts => opts.WithIdentity(jobKey));
 
     q.AddTrigger(t => t

@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +23,7 @@ public class AdminDashboardControllerTests
     [Test]
     public async Task GetStats_ReturnsOk()
     {
-        var stats = new AdminDashboardStatsResponse
+        AdminDashboardStatsResponse stats = new AdminDashboardStatsResponse
         {
             TotalUsers = 100,
             TotalRestaurants = 25,
@@ -35,10 +35,10 @@ public class AdminDashboardControllerTests
         _adminDashboardService.GetStatsAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDashboardStatsResponse>.Success(stats));
 
-        var result = await _sut.GetStats(CancellationToken.None);
+        IActionResult result = await _sut.GetStats(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var ok = (OkObjectResult)result;
+        OkObjectResult ok = (OkObjectResult)result;
         Assert.That(ok.Value, Is.SameAs(stats));
     }
 
@@ -48,10 +48,10 @@ public class AdminDashboardControllerTests
         _adminDashboardService.GetStatsAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDashboardStatsResponse>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetStats(CancellationToken.None);
+        IActionResult result = await _sut.GetStats(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 }

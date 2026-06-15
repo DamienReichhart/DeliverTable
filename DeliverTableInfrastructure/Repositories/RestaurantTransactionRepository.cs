@@ -21,12 +21,12 @@ public class RestaurantTransactionRepository(DeliverTableContext dbContext) : IR
     public async Task<(List<RestaurantTransaction> Items, int TotalCount)> GetByRestaurantAsync(
         int restaurantId, TransactionQuery query, CancellationToken ct = default)
     {
-        var q = _dbContext.RestaurantTransactions
+        IOrderedQueryable<RestaurantTransaction> q = _dbContext.RestaurantTransactions
             .Where(t => t.RestaurantId == restaurantId)
             .OrderByDescending(t => t.CreatedAt);
 
-        var totalCount = await q.CountAsync(ct);
-        var items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
+        int totalCount = await q.CountAsync(ct);
+        List<RestaurantTransaction> items = await q.Paginate(query.PageNumber, query.PageSize).ToListAsync(ct);
         return (items, totalCount);
     }
 }

@@ -48,7 +48,7 @@ public class ApiAuthStateProviderTests
         ConfigureLocalStorage(ClientTestFactory.ValidToken);
         QueueMeResponse();
 
-        var state = await _sut.GetAuthenticationStateAsync();
+        AuthenticationState state = await _sut.GetAuthenticationStateAsync();
 
         Assert.That(state.User.Identity?.IsAuthenticated, Is.True);
     }
@@ -57,11 +57,11 @@ public class ApiAuthStateProviderTests
     public async Task GetAuthenticationStateAsync_WithToken_BuildsCorrectClaims()
     {
         ConfigureLocalStorage(ClientTestFactory.ValidToken);
-        var expectedUser = ClientTestFactory.CreateValidUserResponse();
+        UserResponse expectedUser = ClientTestFactory.CreateValidUserResponse();
         QueueMeResponse(expectedUser);
 
-        var state = await _sut.GetAuthenticationStateAsync();
-        var claims = state.User.Claims.ToList();
+        AuthenticationState state = await _sut.GetAuthenticationStateAsync();
+        List<Claim> claims = state.User.Claims.ToList();
 
         Assert.Multiple(() =>
         {
@@ -77,7 +77,7 @@ public class ApiAuthStateProviderTests
     [Test]
     public async Task GetAuthenticationStateAsync_WithToken_SetsAuthorizationHeader()
     {
-        var token = ClientTestFactory.ValidToken;
+        string token = ClientTestFactory.ValidToken;
         ConfigureLocalStorage(token);
         QueueMeResponse();
 
@@ -99,7 +99,7 @@ public class ApiAuthStateProviderTests
         ConfigureLocalStorage(ClientTestFactory.ValidToken);
         QueueMeResponse();
 
-        var state = await _sut.GetAuthenticationStateAsync();
+        AuthenticationState state = await _sut.GetAuthenticationStateAsync();
 
         Assert.That(state.User.Identity?.AuthenticationType, Is.EqualTo("jwt"));
     }
@@ -109,7 +109,7 @@ public class ApiAuthStateProviderTests
     {
         ConfigureLocalStorage(token: null);
 
-        var state = await _sut.GetAuthenticationStateAsync();
+        AuthenticationState state = await _sut.GetAuthenticationStateAsync();
 
         Assert.That(state.User.Identity?.IsAuthenticated, Is.False);
     }
@@ -119,7 +119,7 @@ public class ApiAuthStateProviderTests
     {
         ConfigureLocalStorage(token: "   ");
 
-        var state = await _sut.GetAuthenticationStateAsync();
+        AuthenticationState state = await _sut.GetAuthenticationStateAsync();
 
         Assert.That(state.User.Identity?.IsAuthenticated, Is.False);
     }
@@ -143,7 +143,7 @@ public class ApiAuthStateProviderTests
         ConfigureLocalStorage(ClientTestFactory.ValidToken);
         _mockHandler.QueueErrorResponse(HttpStatusCode.Unauthorized);
 
-        var state = await _sut.GetAuthenticationStateAsync();
+        AuthenticationState state = await _sut.GetAuthenticationStateAsync();
 
         Assert.That(state.User.Identity?.IsAuthenticated, Is.False);
     }
@@ -205,7 +205,7 @@ public class ApiAuthStateProviderTests
 
         await Task.Delay(50);
 
-        var claims = receivedState!.User.Claims.ToList();
+        List<Claim> claims = receivedState!.User.Claims.ToList();
         Assert.Multiple(() =>
         {
             Assert.That(claims.First(c => c.Type == ClaimTypes.Role).Value,

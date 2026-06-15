@@ -1,6 +1,6 @@
 using System.Reflection;
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Admin;
@@ -33,7 +33,7 @@ public class AdminOrderControllerTests
     [Test]
     public async Task GetAll_ReturnsOk()
     {
-        var orders = new List<AdminOrderResponse>
+        List<AdminOrderResponse> orders = new List<AdminOrderResponse>
         {
             new() { Id = 1, Status = nameof(OrderStatus.Pending) },
             new() { Id = 2, Status = nameof(OrderStatus.Confirmed) }
@@ -41,7 +41,7 @@ public class AdminOrderControllerTests
         _adminOrderService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminOrderResponse>>.Success(orders));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -52,10 +52,10 @@ public class AdminOrderControllerTests
         _adminOrderService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminOrderResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -66,11 +66,11 @@ public class AdminOrderControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var order = new AdminOrderResponse { Id = 1, Status = nameof(OrderStatus.Pending) };
+        AdminOrderResponse order = new AdminOrderResponse { Id = 1, Status = nameof(OrderStatus.Pending) };
         _adminOrderService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderResponse>.Success(order));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -81,10 +81,10 @@ public class AdminOrderControllerTests
         _adminOrderService.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderResponse>.Failure(new ServiceError("Commande introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -95,12 +95,12 @@ public class AdminOrderControllerTests
     [Test]
     public async Task UpdateStatus_WhenSuccess_ReturnsOk()
     {
-        var request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
-        var response = new AdminOrderResponse { Id = 1, Status = nameof(OrderStatus.Confirmed) };
+        AdminUpdateOrderStatusRequest request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
+        AdminOrderResponse response = new AdminOrderResponse { Id = 1, Status = nameof(OrderStatus.Confirmed) };
         _adminOrderService.UpdateStatusAsync(1, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderResponse>.Success(response));
 
-        var result = await _sut.UpdateStatus(1, request, CancellationToken.None);
+        IActionResult result = await _sut.UpdateStatus(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -108,28 +108,28 @@ public class AdminOrderControllerTests
     [Test]
     public async Task UpdateStatus_WhenNotFound_Returns404()
     {
-        var request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
+        AdminUpdateOrderStatusRequest request = new AdminUpdateOrderStatusRequest { Status = nameof(OrderStatus.Confirmed) };
         _adminOrderService.UpdateStatusAsync(99, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderResponse>.Failure(new ServiceError("Commande introuvable", 404)));
 
-        var result = await _sut.UpdateStatus(99, request, CancellationToken.None);
+        IActionResult result = await _sut.UpdateStatus(99, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
     [Test]
     public async Task UpdateStatus_WhenInvalidStatus_Returns400()
     {
-        var request = new AdminUpdateOrderStatusRequest { Status = "InvalidStatus" };
+        AdminUpdateOrderStatusRequest request = new AdminUpdateOrderStatusRequest { Status = "InvalidStatus" };
         _adminOrderService.UpdateStatusAsync(1, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderResponse>.Failure(new ServiceError("Statut invalide", 400)));
 
-        var result = await _sut.UpdateStatus(1, request, CancellationToken.None);
+        IActionResult result = await _sut.UpdateStatus(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 
@@ -141,12 +141,12 @@ public class AdminOrderControllerTests
     public async Task RefundOrder_HappyPath_ReturnsOkWithRefundDto()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "99", nameof(UserRole.Administrator));
-        var refundDto = new RefundDto(1, 20m, "EUR", "mistake", DateTime.UtcNow);
+        RefundDto refundDto = new RefundDto(1, 20m, "EUR", "mistake", DateTime.UtcNow);
         _paymentService
             .RefundAsync(42, 20m, "mistake", 99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RefundDto>.Success(refundDto));
 
-        var result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
+        IActionResult result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -156,7 +156,7 @@ public class AdminOrderControllerTests
     {
         AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
-        var result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
+        IActionResult result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }
@@ -169,21 +169,21 @@ public class AdminOrderControllerTests
             .RefundAsync(42, 20m, "mistake", 99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RefundDto>.Failure(new ServiceError("Remboursement impossible", 400)));
 
-        var result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
+        IActionResult result = await _sut.RefundOrder(42, new AdminRefundRequest { Amount = 20m, Reason = "mistake" }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 
     [Test]
     public void RefundOrder_HasAdministratorAuthorizeAttribute()
     {
-        var method = typeof(AdminOrderController).GetMethod(nameof(AdminOrderController.RefundOrder))!;
-        var methodAttrs = method
+        MethodInfo method = typeof(AdminOrderController).GetMethod(nameof(AdminOrderController.RefundOrder))!;
+        IEnumerable<AuthorizeAttribute> methodAttrs = method
             .GetCustomAttributes(typeof(AuthorizeAttribute), true)
             .Cast<AuthorizeAttribute>();
-        var controllerAttrs = typeof(AdminOrderController)
+        IEnumerable<AuthorizeAttribute> controllerAttrs = typeof(AdminOrderController)
             .GetCustomAttributes(typeof(AuthorizeAttribute), true)
             .Cast<AuthorizeAttribute>();
 

@@ -16,15 +16,15 @@ public sealed class AdminModerationService(IModerationRepository moderationRepos
     public async Task<ServiceResult<List<AdminModerationActionResponse>>> GetAllAsync(
         CancellationToken ct = default)
     {
-        var actions = await _moderationRepository.GetAllAsync(ct);
-        var result = actions.Select(a => a.ToAdminDto()).ToList();
+        List<ModerationAction> actions = await _moderationRepository.GetAllAsync(ct);
+        List<AdminModerationActionResponse> result = actions.Select(a => a.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminModerationActionResponse>> GetByIdAsync(
         int id, CancellationToken ct = default)
     {
-        var action = await _moderationRepository.GetByIdAsync(id, ct);
+        ModerationAction? action = await _moderationRepository.GetByIdAsync(id, ct);
         if (action is null)
             return ServiceError.NotFound(ErrorMessages.ModerationActionNotFound);
 
@@ -34,7 +34,7 @@ public sealed class AdminModerationService(IModerationRepository moderationRepos
     public async Task<ServiceResult<AdminModerationActionResponse>> CreateAsync(
         AdminCreateModerationActionRequest request, int adminUserId, CancellationToken ct = default)
     {
-        var action = new ModerationAction
+        ModerationAction action = new ModerationAction
         {
             TargetType = request.TargetType,
             TargetId = request.TargetId,
@@ -43,7 +43,7 @@ public sealed class AdminModerationService(IModerationRepository moderationRepos
             AdminUserId = adminUserId
         };
 
-        var created = await _moderationRepository.CreateAsync(action, ct);
+        ModerationAction created = await _moderationRepository.CreateAsync(action, ct);
         return created.ToAdminDto();
     }
 }

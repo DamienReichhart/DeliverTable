@@ -38,7 +38,7 @@ public class EmailJobConsumerTests
         _emailJobRepo = Substitute.For<IEmailJobRepository>();
         _env = BuildWorkerEnvironment();
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         services.AddSingleton(_emailJobRepo);
         services.AddSingleton(_storage);
         _scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
@@ -54,8 +54,8 @@ public class EmailJobConsumerTests
     [Test]
     public async Task ProcessJobAsync_WithAttachmentPath_DownloadsFromStorageAndAttaches()
     {
-        var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
-        var job = new EmailJob
+        byte[] pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 }; // %PDF
+        EmailJob job = new EmailJob
         {
             Id = 1,
             Type = EmailJobType.InvoiceReadyCustomer,
@@ -77,7 +77,7 @@ public class EmailJobConsumerTests
                 ContentType: "application/pdf",
                 ContentLength: pdfBytes.Length));
 
-        using var scope = _scopeFactory.CreateScope();
+        using IServiceScope scope = _scopeFactory.CreateScope();
         await _sut.ProcessJobAsync(job, scope, CancellationToken.None);
 
         await _emailSender.Received(1).SendAsync(
@@ -95,7 +95,7 @@ public class EmailJobConsumerTests
     [Test]
     public async Task ProcessJobAsync_WithoutAttachment_SendsWithNoAttachment()
     {
-        var job = new EmailJob
+        EmailJob job = new EmailJob
         {
             Id = 2,
             Type = EmailJobType.InvoiceReadyCustomer,
@@ -111,7 +111,7 @@ public class EmailJobConsumerTests
         _templateRenderer.RenderAsync(job.Type, job.TemplateData, Arg.Any<CancellationToken>())
             .Returns("<html>facture</html>");
 
-        using var scope = _scopeFactory.CreateScope();
+        using IServiceScope scope = _scopeFactory.CreateScope();
         await _sut.ProcessJobAsync(job, scope, CancellationToken.None);
 
         await _emailSender.Received(1).SendAsync(
@@ -128,7 +128,7 @@ public class EmailJobConsumerTests
     [Test]
     public async Task ProcessJobAsync_WithAttachmentPath_StorageReturnsNull_SendsWithNoAttachment()
     {
-        var job = new EmailJob
+        EmailJob job = new EmailJob
         {
             Id = 3,
             Type = EmailJobType.InvoiceReadyCustomer,
@@ -146,7 +146,7 @@ public class EmailJobConsumerTests
         _storage.GetObjectAsync(job.AttachmentStoragePath, Arg.Any<CancellationToken>())
             .Returns((ObjectStorageResult?)null);
 
-        using var scope = _scopeFactory.CreateScope();
+        using IServiceScope scope = _scopeFactory.CreateScope();
         await _sut.ProcessJobAsync(job, scope, CancellationToken.None);
 
         await _emailSender.Received(1).SendAsync(
@@ -161,8 +161,8 @@ public class EmailJobConsumerTests
     [Test]
     public async Task ProcessJobAsync_WithAttachmentPath_NoFilename_UsesFilenameFromPath()
     {
-        var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 };
-        var job = new EmailJob
+        byte[] pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46 };
+        EmailJob job = new EmailJob
         {
             Id = 4,
             Type = EmailJobType.InvoiceReadyCustomer,
@@ -183,7 +183,7 @@ public class EmailJobConsumerTests
                 ContentType: "application/pdf",
                 ContentLength: pdfBytes.Length));
 
-        using var scope = _scopeFactory.CreateScope();
+        using IServiceScope scope = _scopeFactory.CreateScope();
         await _sut.ProcessJobAsync(job, scope, CancellationToken.None);
 
         await _emailSender.Received(1).SendAsync(
@@ -197,7 +197,7 @@ public class EmailJobConsumerTests
 
     private static WorkerEnvironment BuildWorkerEnvironment()
     {
-        var vars = new Dictionary<string, string>
+        Dictionary<string, string> vars = new Dictionary<string, string>
         {
             ["CONNECTION_STRING_DATABASE"] = "Host=localhost;Database=test",
             ["RABBITMQ_HOST"] = "localhost",
@@ -218,7 +218,7 @@ public class EmailJobConsumerTests
             ["OBJECT_STORAGE_BUCKET_NAME"] = "bucket",
         };
 
-        foreach (var (key, value) in vars)
+        foreach ((string? key, string? value) in vars)
             Environment.SetEnvironmentVariable(key, value);
 
         try
@@ -227,7 +227,7 @@ public class EmailJobConsumerTests
         }
         finally
         {
-            foreach (var key in vars.Keys)
+            foreach (string key in vars.Keys)
                 Environment.SetEnvironmentVariable(key, null);
         }
     }

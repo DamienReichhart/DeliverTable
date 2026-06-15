@@ -11,7 +11,7 @@ public class RazorEmailTemplateRenderer : IEmailTemplateRenderer
 
     public RazorEmailTemplateRenderer()
     {
-        var templatesPath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email");
+        string templatesPath = Path.Combine(AppContext.BaseDirectory, "Templates", "Email");
         _engine = new RazorLightEngineBuilder()
             .UseFileSystemProject(templatesPath)
             .UseMemoryCachingProvider()
@@ -47,7 +47,7 @@ public class RazorEmailTemplateRenderer : IEmailTemplateRenderer
 
     private async Task<string> RenderTypedAsync<T>(string templateName, string json)
     {
-        var data = JsonSerializer.Deserialize<T>(json)
+        T data = JsonSerializer.Deserialize<T>(json)
             ?? throw new InvalidOperationException($"Failed to deserialize template data for {templateName}");
         return await _engine.CompileRenderAsync($"{templateName}.cshtml", data);
     }

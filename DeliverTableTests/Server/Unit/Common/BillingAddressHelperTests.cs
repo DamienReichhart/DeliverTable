@@ -50,8 +50,8 @@ public class BillingAddressHelperTests
     [Test]
     public void FormatBillingAddressForSnapshot_FullAddress_ReturnsFourLines()
     {
-        var user = UserWith(line2: "Bât. B");
-        var formatted = BillingAddressHelper.FormatBillingAddressForSnapshot(user);
+        User user = UserWith(line2: "Bât. B");
+        string formatted = BillingAddressHelper.FormatBillingAddressForSnapshot(user);
 
         Assert.That(formatted, Is.EqualTo("12 rue de la Paix\nBât. B\n75002 Paris\nFrance"));
     }
@@ -59,7 +59,7 @@ public class BillingAddressHelperTests
     [Test]
     public void FormatBillingAddressForSnapshot_NoLineTwo_ReturnsThreeLines()
     {
-        var formatted = BillingAddressHelper.FormatBillingAddressForSnapshot(UserWith());
+        string formatted = BillingAddressHelper.FormatBillingAddressForSnapshot(UserWith());
 
         Assert.That(formatted, Is.EqualTo("12 rue de la Paix\n75002 Paris\nFrance"));
     }
@@ -67,7 +67,7 @@ public class BillingAddressHelperTests
     [Test]
     public void FormatBillingAddressForSnapshot_AllEmpty_ReturnsEmptyString()
     {
-        var user = UserWith(line1: "", postal: "", city: "", country: "");
+        User user = UserWith(line1: "", postal: "", city: "", country: "");
 
         Assert.That(BillingAddressHelper.FormatBillingAddressForSnapshot(user), Is.EqualTo(string.Empty));
     }
@@ -75,8 +75,8 @@ public class BillingAddressHelperTests
     [Test]
     public void FormatBillingAddressForSnapshot_TrimsWhitespace()
     {
-        var user = UserWith(line1: "  12 rue  ", postal: " 75002 ", city: " Paris ", country: " France ");
-        var formatted = BillingAddressHelper.FormatBillingAddressForSnapshot(user);
+        User user = UserWith(line1: "  12 rue  ", postal: " 75002 ", city: " Paris ", country: " France ");
+        string formatted = BillingAddressHelper.FormatBillingAddressForSnapshot(user);
 
         Assert.That(formatted, Is.EqualTo("12 rue\n75002 Paris\nFrance"));
     }

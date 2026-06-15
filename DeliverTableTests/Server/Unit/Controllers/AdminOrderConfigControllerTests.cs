@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +25,7 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task GetAllRules_ReturnsOk()
     {
-        var rules = new List<AdminOrderRuleResponse>
+        List<AdminOrderRuleResponse> rules = new List<AdminOrderRuleResponse>
         {
             new() { Id = 1, RestaurantId = 1 },
             new() { Id = 2, RestaurantId = 2 }
@@ -33,7 +33,7 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.GetAllRulesAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminOrderRuleResponse>>.Success(rules));
 
-        var result = await _sut.GetAllRules(CancellationToken.None);
+        IActionResult result = await _sut.GetAllRules(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -44,10 +44,10 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.GetAllRulesAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminOrderRuleResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAllRules(CancellationToken.None);
+        IActionResult result = await _sut.GetAllRules(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -58,11 +58,11 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task GetRuleById_WhenExists_ReturnsOk()
     {
-        var rule = new AdminOrderRuleResponse { Id = 1, RestaurantId = 1 };
+        AdminOrderRuleResponse rule = new AdminOrderRuleResponse { Id = 1, RestaurantId = 1 };
         _adminOrderConfigService.GetRuleByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderRuleResponse>.Success(rule));
 
-        var result = await _sut.GetRuleById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetRuleById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -74,10 +74,10 @@ public class AdminOrderConfigControllerTests
             .Returns(ServiceResult<AdminOrderRuleResponse>.Failure(
                 new ServiceError("Règle de commande introuvable", 404)));
 
-        var result = await _sut.GetRuleById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetRuleById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -88,34 +88,34 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task CreateRule_WhenSuccess_ReturnsCreated()
     {
-        var request = new AdminCreateOrderRuleRequest
+        AdminCreateOrderRuleRequest request = new AdminCreateOrderRuleRequest
         {
             RestaurantId = 1,
             AllowPreorder = true
         };
-        var response = new AdminOrderRuleResponse { Id = 10, RestaurantId = 1, AllowPreorder = true };
+        AdminOrderRuleResponse response = new AdminOrderRuleResponse { Id = 10, RestaurantId = 1, AllowPreorder = true };
         _adminOrderConfigService.CreateRuleAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderRuleResponse>.Success(response));
 
-        var result = await _sut.CreateRule(request, CancellationToken.None);
+        IActionResult result = await _sut.CreateRule(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
-        var created = (CreatedAtActionResult)result;
+        CreatedAtActionResult created = (CreatedAtActionResult)result;
         Assert.That(created.ActionName, Is.EqualTo(nameof(AdminOrderConfigController.GetRuleById)));
     }
 
     [Test]
     public async Task CreateRule_WhenError_ReturnsError()
     {
-        var request = new AdminCreateOrderRuleRequest { RestaurantId = 99 };
+        AdminCreateOrderRuleRequest request = new AdminCreateOrderRuleRequest { RestaurantId = 99 };
         _adminOrderConfigService.CreateRuleAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderRuleResponse>.Failure(
                 new ServiceError("Etablissement introuvable", 404)));
 
-        var result = await _sut.CreateRule(request, CancellationToken.None);
+        IActionResult result = await _sut.CreateRule(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -126,12 +126,12 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task UpdateRule_WhenSuccess_ReturnsOk()
     {
-        var request = new AdminUpdateOrderRuleRequest { AllowPreorder = true };
-        var response = new AdminOrderRuleResponse { Id = 1, AllowPreorder = true };
+        AdminUpdateOrderRuleRequest request = new AdminUpdateOrderRuleRequest { AllowPreorder = true };
+        AdminOrderRuleResponse response = new AdminOrderRuleResponse { Id = 1, AllowPreorder = true };
         _adminOrderConfigService.UpdateRuleAsync(1, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderRuleResponse>.Success(response));
 
-        var result = await _sut.UpdateRule(1, request, CancellationToken.None);
+        IActionResult result = await _sut.UpdateRule(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -139,15 +139,15 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task UpdateRule_WhenNotFound_Returns404()
     {
-        var request = new AdminUpdateOrderRuleRequest { AllowPreorder = true };
+        AdminUpdateOrderRuleRequest request = new AdminUpdateOrderRuleRequest { AllowPreorder = true };
         _adminOrderConfigService.UpdateRuleAsync(99, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminOrderRuleResponse>.Failure(
                 new ServiceError("Règle de commande introuvable", 404)));
 
-        var result = await _sut.UpdateRule(99, request, CancellationToken.None);
+        IActionResult result = await _sut.UpdateRule(99, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -161,7 +161,7 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.DeleteRuleAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.DeleteRule(1, CancellationToken.None);
+        IActionResult result = await _sut.DeleteRule(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -172,10 +172,10 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.DeleteRuleAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Règle de commande introuvable", 404)));
 
-        var result = await _sut.DeleteRule(99, CancellationToken.None);
+        IActionResult result = await _sut.DeleteRule(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -186,7 +186,7 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task GetAllBlockedSlots_ReturnsOk()
     {
-        var slots = new List<AdminBlockedSlotResponse>
+        List<AdminBlockedSlotResponse> slots = new List<AdminBlockedSlotResponse>
         {
             new() { Id = 1, RestaurantId = 1 },
             new() { Id = 2, RestaurantId = 1 }
@@ -194,7 +194,7 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.GetAllBlockedSlotsAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminBlockedSlotResponse>>.Success(slots));
 
-        var result = await _sut.GetAllBlockedSlots(CancellationToken.None);
+        IActionResult result = await _sut.GetAllBlockedSlots(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -205,10 +205,10 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.GetAllBlockedSlotsAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminBlockedSlotResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAllBlockedSlots(CancellationToken.None);
+        IActionResult result = await _sut.GetAllBlockedSlots(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -219,11 +219,11 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task GetBlockedSlotById_WhenExists_ReturnsOk()
     {
-        var slot = new AdminBlockedSlotResponse { Id = 1, RestaurantId = 1 };
+        AdminBlockedSlotResponse slot = new AdminBlockedSlotResponse { Id = 1, RestaurantId = 1 };
         _adminOrderConfigService.GetBlockedSlotByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminBlockedSlotResponse>.Success(slot));
 
-        var result = await _sut.GetBlockedSlotById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetBlockedSlotById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -235,10 +235,10 @@ public class AdminOrderConfigControllerTests
             .Returns(ServiceResult<AdminBlockedSlotResponse>.Failure(
                 new ServiceError("Créneau bloqué introuvable", 404)));
 
-        var result = await _sut.GetBlockedSlotById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetBlockedSlotById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -249,28 +249,28 @@ public class AdminOrderConfigControllerTests
     [Test]
     public async Task CreateBlockedSlot_WhenSuccess_ReturnsCreated()
     {
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             RestaurantId = 1,
             StartsAt = DateTime.UtcNow.AddDays(1),
             EndsAt = DateTime.UtcNow.AddDays(1).AddHours(2),
             Reason = "Maintenance"
         };
-        var response = new AdminBlockedSlotResponse { Id = 10, RestaurantId = 1, Reason = "Maintenance" };
+        AdminBlockedSlotResponse response = new AdminBlockedSlotResponse { Id = 10, RestaurantId = 1, Reason = "Maintenance" };
         _adminOrderConfigService.CreateBlockedSlotAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminBlockedSlotResponse>.Success(response));
 
-        var result = await _sut.CreateBlockedSlot(request, CancellationToken.None);
+        IActionResult result = await _sut.CreateBlockedSlot(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
-        var created = (CreatedAtActionResult)result;
+        CreatedAtActionResult created = (CreatedAtActionResult)result;
         Assert.That(created.ActionName, Is.EqualTo(nameof(AdminOrderConfigController.GetBlockedSlotById)));
     }
 
     [Test]
     public async Task CreateBlockedSlot_WhenError_ReturnsError()
     {
-        var request = new AdminCreateBlockedSlotRequest
+        AdminCreateBlockedSlotRequest request = new AdminCreateBlockedSlotRequest
         {
             RestaurantId = 1,
             StartsAt = DateTime.UtcNow.AddDays(2),
@@ -280,10 +280,10 @@ public class AdminOrderConfigControllerTests
             .Returns(ServiceResult<AdminBlockedSlotResponse>.Failure(
                 new ServiceError("Dates invalides", 400)));
 
-        var result = await _sut.CreateBlockedSlot(request, CancellationToken.None);
+        IActionResult result = await _sut.CreateBlockedSlot(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 
@@ -297,7 +297,7 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.DeleteBlockedSlotAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.DeleteBlockedSlot(1, CancellationToken.None);
+        IActionResult result = await _sut.DeleteBlockedSlot(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -308,10 +308,10 @@ public class AdminOrderConfigControllerTests
         _adminOrderConfigService.DeleteBlockedSlotAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Créneau bloqué introuvable", 404)));
 
-        var result = await _sut.DeleteBlockedSlot(99, CancellationToken.None);
+        IActionResult result = await _sut.DeleteBlockedSlot(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 

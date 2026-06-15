@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Dish;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Dish;
@@ -24,8 +24,8 @@ public class DishControllerTests
     [Test]
     public async Task GetAllDishes_ReturnsOkWithPaginatedResult()
     {
-        var query = new DishQuery();
-        var paginated = new PaginatedResult<DishDto>
+        DishQuery query = new DishQuery();
+        PaginatedResult<DishDto> paginated = new PaginatedResult<DishDto>
         {
             Items = [
                 new DishDto { Id = 1, Name = "Pizza Margherita" },
@@ -38,7 +38,7 @@ public class DishControllerTests
         _dishService.GetAllAsync(query, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<DishDto>>.Success(paginated));
 
-        var result = await _sut.GetAllDishes(query, CancellationToken.None);
+        IActionResult result = await _sut.GetAllDishes(query, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -46,11 +46,11 @@ public class DishControllerTests
     [Test]
     public async Task GetDishById_WhenExists_ReturnsOk()
     {
-        var dto = new DishDto { Id = 1, Name = "Pizza" };
+        DishDto dto = new DishDto { Id = 1, Name = "Pizza" };
         _dishService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DishDto>.Success(dto));
 
-        var result = await _sut.GetDishById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetDishById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -61,7 +61,7 @@ public class DishControllerTests
         _dishService.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<DishDto>.Failure(new ServiceError("Plat introuvable", 404)));
 
-        var result = await _sut.GetDishById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetDishById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));
@@ -73,7 +73,7 @@ public class DishControllerTests
         _dishService.DeleteAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.DeleteDish(1, CancellationToken.None);
+        IActionResult result = await _sut.DeleteDish(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }

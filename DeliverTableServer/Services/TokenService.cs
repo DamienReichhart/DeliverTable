@@ -22,17 +22,17 @@ namespace DeliverTableServer.Services
 
         public async Task<string> CreateToken(User user)
         {
-            var key = Encoding.UTF8.GetBytes(_jwtConfig.Key);
+            byte[] key = Encoding.UTF8.GetBytes(_jwtConfig.Key);
 
-            var roles = await _userManager.GetRolesAsync(user);
-            var role = roles.FirstOrDefault(_defaultRoleValue);
+            IList<string> roles = await _userManager.GetRolesAsync(user);
+            string role = roles.FirstOrDefault(_defaultRoleValue);
 
             List<Claim> claims = [
                 new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new(ClaimTypes.Role, role)
             ];
 
-            var tokenDescriptor = new SecurityTokenDescriptor
+            SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(_jwtConfig.ExpireMinutes),
@@ -43,8 +43,8 @@ namespace DeliverTableServer.Services
                     SecurityAlgorithms.HmacSha256Signature)
             };
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
+            JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
     }

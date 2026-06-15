@@ -23,7 +23,7 @@ public class OrderRestaurantTimeoutSweepTests
     {
         _orderRepo = Substitute.For<IOrderRepository>();
         _lifecycle = Substitute.For<IPaymentLifecycleService>();
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         services.AddSingleton(_orderRepo);
         services.AddSingleton(_lifecycle);
         _scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
@@ -39,7 +39,7 @@ public class OrderRestaurantTimeoutSweepTests
     [Test]
     public async Task RunTickAsync_AutoRefusesOrdersPendingLongerThan24h()
     {
-        var stale = new List<Order>
+        List<Order> stale = new List<Order>
         {
             new() { Id = 5, Status = OrderStatus.Pending, CreatedAt = DateTime.UtcNow.AddHours(-25) },
         };

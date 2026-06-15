@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
@@ -27,7 +27,7 @@ public class AdminModerationControllerTests
     [Test]
     public async Task GetAll_ReturnsOk()
     {
-        var actions = new List<AdminModerationActionResponse>
+        List<AdminModerationActionResponse> actions = new List<AdminModerationActionResponse>
         {
             new() { Id = 1, TargetType = "Restaurant", ActionType = "Approve" },
             new() { Id = 2, TargetType = "User", ActionType = "Ban" }
@@ -35,7 +35,7 @@ public class AdminModerationControllerTests
         _adminModerationService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminModerationActionResponse>>.Success(actions));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -47,10 +47,10 @@ public class AdminModerationControllerTests
             .Returns(ServiceResult<List<AdminModerationActionResponse>>.Failure(
                 new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -61,11 +61,11 @@ public class AdminModerationControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var action = new AdminModerationActionResponse { Id = 1, TargetType = "Restaurant" };
+        AdminModerationActionResponse action = new AdminModerationActionResponse { Id = 1, TargetType = "Restaurant" };
         _adminModerationService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminModerationActionResponse>.Success(action));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -77,10 +77,10 @@ public class AdminModerationControllerTests
             .Returns(ServiceResult<AdminModerationActionResponse>.Failure(
                 new ServiceError("Action de modération introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -93,21 +93,21 @@ public class AdminModerationControllerTests
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "1");
 
-        var request = new AdminCreateModerationActionRequest
+        AdminCreateModerationActionRequest request = new AdminCreateModerationActionRequest
         {
             TargetType = ModerationTargetType.Restaurant,
             TargetId = 10,
             ActionType = ModerationActionType.Approve,
             Reason = "Conforme"
         };
-        var response = new AdminModerationActionResponse { Id = 5, TargetType = "Restaurant" };
+        AdminModerationActionResponse response = new AdminModerationActionResponse { Id = 5, TargetType = "Restaurant" };
         _adminModerationService.CreateAsync(request, 1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminModerationActionResponse>.Success(response));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
-        var created = (CreatedAtActionResult)result;
+        CreatedAtActionResult created = (CreatedAtActionResult)result;
         Assert.That(created.ActionName, Is.EqualTo(nameof(AdminModerationController.GetById)));
     }
 
@@ -116,7 +116,7 @@ public class AdminModerationControllerTests
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "1");
 
-        var request = new AdminCreateModerationActionRequest
+        AdminCreateModerationActionRequest request = new AdminCreateModerationActionRequest
         {
             TargetType = ModerationTargetType.Restaurant,
             TargetId = 10,
@@ -126,10 +126,10 @@ public class AdminModerationControllerTests
             .Returns(ServiceResult<AdminModerationActionResponse>.Failure(
                 new ServiceError("Erreur", 400)));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(400));
     }
 
@@ -138,14 +138,14 @@ public class AdminModerationControllerTests
     {
         AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
-        var request = new AdminCreateModerationActionRequest
+        AdminCreateModerationActionRequest request = new AdminCreateModerationActionRequest
         {
             TargetType = ModerationTargetType.Restaurant,
             TargetId = 10,
             ActionType = ModerationActionType.Approve
         };
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }

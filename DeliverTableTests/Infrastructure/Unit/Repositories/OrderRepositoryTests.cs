@@ -27,12 +27,12 @@ public class OrderRepositoryTests
     [Test]
     public async Task GetByIdWithFullDetailsAsync_LoadsDiscountsAndItemDish()
     {
-        var customer = new User { UserName = "c@example.fr", Email = "c@example.fr", FirstName = "Jean", LastName = "Dupont" };
-        var owner = new User { UserName = "o@example.fr", Email = "o@example.fr", FirstName = "Owner", LastName = "X" };
+        User customer = new User { UserName = "c@example.fr", Email = "c@example.fr", FirstName = "Jean", LastName = "Dupont" };
+        User owner = new User { UserName = "o@example.fr", Email = "o@example.fr", FirstName = "Owner", LastName = "X" };
         _testDb.Context.Users.AddRange(customer, owner);
         await _testDb.Context.SaveChangesAsync();
 
-        var restaurant = new Restaurant
+        Restaurant restaurant = new Restaurant
         {
             OwnerId = owner.Id,
             Name = "Resto",
@@ -45,11 +45,11 @@ public class OrderRepositoryTests
         _testDb.Context.Restaurants.Add(restaurant);
         await _testDb.Context.SaveChangesAsync();
 
-        var dish = new Dish { RestaurantId = restaurant.Id, Name = "Plat", BasePrice = 10m, VatRate = VatRate.Intermediate10 };
+        Dish dish = new Dish { RestaurantId = restaurant.Id, Name = "Plat", BasePrice = 10m, VatRate = VatRate.Intermediate10 };
         _testDb.Context.Dishes.Add(dish);
         await _testDb.Context.SaveChangesAsync();
 
-        var order = new Order
+        Order order = new Order
         {
             CustomerId = customer.Id,
             RestaurantId = restaurant.Id,
@@ -74,7 +74,7 @@ public class OrderRepositoryTests
 
         _testDb.Context.ChangeTracker.Clear();
 
-        var result = await _sut.GetByIdWithFullDetailsAsync(order.Id);
+        Order? result = await _sut.GetByIdWithFullDetailsAsync(order.Id);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Discounts, Has.Count.EqualTo(1));

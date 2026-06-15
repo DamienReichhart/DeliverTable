@@ -26,15 +26,15 @@ public sealed class ObjectStorageService(
     {
         try
         {
-            var request = new GetObjectRequest
+            GetObjectRequest request = new GetObjectRequest
             {
                 BucketName = _config.BucketName,
                 Key = key
             };
 
-            var response = await _s3Client.GetObjectAsync(request, cancellationToken);
+            GetObjectResponse response = await _s3Client.GetObjectAsync(request, cancellationToken);
 
-            var contentType = !string.IsNullOrWhiteSpace(response.Headers.ContentType)
+            string contentType = !string.IsNullOrWhiteSpace(response.Headers.ContentType)
                 ? response.Headers.ContentType
                 : "application/octet-stream";
 
@@ -63,11 +63,11 @@ public sealed class ObjectStorageService(
         string imageKey = $"{identifier}{UploadLimits.DefaultImageExtension}";
         string key = string.IsNullOrEmpty(folder) ? imageKey : $"{folder.Trim('/')}/{imageKey}";
 
-        using var memoryStream = new MemoryStream();
+        using MemoryStream memoryStream = new MemoryStream();
         await file.CopyToAsync(memoryStream, cancellationToken);
         memoryStream.Position = 0;
 
-        var request = new PutObjectRequest
+        PutObjectRequest request = new PutObjectRequest
         {
             BucketName = _config.BucketName,
             Key = key,
@@ -81,7 +81,7 @@ public sealed class ObjectStorageService(
 
         try
         {
-            var response = await _s3Client.PutObjectAsync(request, cancellationToken);
+            PutObjectResponse response = await _s3Client.PutObjectAsync(request, cancellationToken);
 
             if (response.HttpStatusCode == HttpStatusCode.OK)
             {
@@ -103,7 +103,7 @@ public sealed class ObjectStorageService(
     {
         string key = $"{folder.Trim('/')}/{fileName}";
 
-        var request = new PutObjectRequest
+        PutObjectRequest request = new PutObjectRequest
         {
             BucketName = _config.BucketName,
             Key = key,
@@ -115,7 +115,7 @@ public sealed class ObjectStorageService(
 
         try
         {
-            var response = await _s3Client.PutObjectAsync(request, cancellationToken);
+            PutObjectResponse response = await _s3Client.PutObjectAsync(request, cancellationToken);
 
             if (response.HttpStatusCode == HttpStatusCode.OK)
             {

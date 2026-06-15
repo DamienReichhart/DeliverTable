@@ -10,13 +10,13 @@ public class PaymentApiClient(HttpClient http) : IPaymentApiClient
 {
     public async Task<(CreateOrderResponse?, ErrorResponse?)> CreateOrderAsync(CreateOrderRequest request)
     {
-        var response = await http.PostAsJsonAsync(ApiRoutes.Order.Base, request);
+        HttpResponseMessage response = await http.PostAsJsonAsync(ApiRoutes.Order.Base, request);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
             return (null, error);
         }
-        var result = await response.Content.ReadFromJsonAsync<CreateOrderResponse>();
+        CreateOrderResponse? result = await response.Content.ReadFromJsonAsync<CreateOrderResponse>();
         return (result, null);
     }
 

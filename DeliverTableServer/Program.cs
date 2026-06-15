@@ -6,11 +6,11 @@ using DeliverTableServer.Middleware;
 using DeliverTableSharedLibrary.Constants;
 
 EnvLoader.Load();
-var env = AppEnvironment.Load();
+AppEnvironment env = AppEnvironment.Load();
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-var maxUploadBytes = UploadLimits.ToBytes(env.UploadMaxSizeMb);
+long maxUploadBytes = UploadLimits.ToBytes(env.UploadMaxSizeMb);
 
 builder.Services.AddSingleton(env);
 builder.Services.AddSingleton(env.Jwt);
@@ -20,7 +20,7 @@ builder.Services.AddSignalR();
 Stripe.StripeConfiguration.ApiKey = env.StripeSecretKey;
 
 // RabbitMQ
-var rabbitMqConfig = new RabbitMqConfig
+RabbitMqConfig rabbitMqConfig = new RabbitMqConfig
 {
     Host = env.RabbitMqHost,
     Port = env.RabbitMqPort,
@@ -76,11 +76,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // app.UseMiddleware<NotFoundMiddleware>();
 
-var enableOpenApi = app.Environment.IsDevelopment() || env.OpenApiEnableDocumentation;
+bool enableOpenApi = app.Environment.IsDevelopment() || env.OpenApiEnableDocumentation;
 
 if (enableOpenApi)
 {

@@ -15,7 +15,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void ValidRequest_ShouldPassValidation()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         ValidationTestHelper.AssertValid(request);
     }
 
@@ -24,7 +24,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void FirstName_WhenEmpty_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.FirstName = "";
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.FirstName));
@@ -33,7 +33,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void FirstName_AtMaxLength_ShouldPass()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.FirstName = new string('A', 50);
 
         ValidationTestHelper.AssertNoError(request, nameof(RegisterRequest.FirstName));
@@ -42,7 +42,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void FirstName_ExceedingMaxLength_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.FirstName = new string('A', 51);
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.FirstName));
@@ -55,7 +55,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void LastName_WhenEmpty_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.LastName = "";
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.LastName));
@@ -64,7 +64,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void LastName_AtMaxLength_ShouldPass()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.LastName = new string('B', 100);
 
         ValidationTestHelper.AssertNoError(request, nameof(RegisterRequest.LastName));
@@ -73,7 +73,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void LastName_ExceedingMaxLength_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.LastName = new string('B', 101);
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.LastName));
@@ -86,7 +86,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void Email_WhenEmpty_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Email = "";
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.Email));
@@ -97,7 +97,7 @@ public class RegisterRequestValidationTests
     [TestCase("no-domain@")]
     public void Email_WhenInvalidFormat_ShouldFail(string invalidEmail)
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Email = invalidEmail;
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.Email));
@@ -106,7 +106,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void Email_AtMaxLength_ShouldPass()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Email = new string('a', 91) + "@test.com"; // 100 chars
 
         ValidationTestHelper.AssertNoError(request, nameof(RegisterRequest.Email));
@@ -115,7 +115,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void Email_ExceedingMaxLength_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Email = new string('a', 92) + "@test.com"; // 101 chars
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.Email));
@@ -128,7 +128,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void Password_WhenEmpty_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Password = "";
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.Password));
@@ -137,7 +137,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void Password_BelowMinLength_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Password = new string('x', 11);
         request.ConfirmPassword = request.Password;
 
@@ -147,7 +147,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void Password_AtMinLength_ShouldPass()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Password = new string('x', 12);
         request.ConfirmPassword = request.Password;
 
@@ -161,7 +161,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void ConfirmPassword_WhenEmpty_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.ConfirmPassword = "";
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.ConfirmPassword));
@@ -170,7 +170,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void ConfirmPassword_WhenMismatch_ShouldFail()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.ConfirmPassword = "DifferentPass12!";
 
         ValidationTestHelper.AssertHasError(request, nameof(RegisterRequest.ConfirmPassword));
@@ -179,7 +179,7 @@ public class RegisterRequestValidationTests
     [Test]
     public void ConfirmPassword_WhenMatching_ShouldPass()
     {
-        var request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
+        RegisterRequest request = SharedLibraryDtoFactory.CreateValidRegisterRequest();
         request.Password = "MatchingPass12!";
         request.ConfirmPassword = "MatchingPass12!";
 

@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
@@ -26,7 +26,7 @@ public class AdminPromotionControllerTests
     [Test]
     public async Task GetAll_ReturnsOk()
     {
-        var promotions = new List<AdminPromotionResponse>
+        List<AdminPromotionResponse> promotions = new List<AdminPromotionResponse>
         {
             new() { Id = 1, Name = "Promo A" },
             new() { Id = 2, Name = "Promo B" }
@@ -34,7 +34,7 @@ public class AdminPromotionControllerTests
         _adminPromotionService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminPromotionResponse>>.Success(promotions));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -45,10 +45,10 @@ public class AdminPromotionControllerTests
         _adminPromotionService.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(ServiceResult<List<AdminPromotionResponse>>.Failure(new ServiceError("Erreur", 500)));
 
-        var result = await _sut.GetAll(CancellationToken.None);
+        IActionResult result = await _sut.GetAll(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(500));
     }
 
@@ -59,11 +59,11 @@ public class AdminPromotionControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var promotion = new AdminPromotionResponse { Id = 1, Name = "Promo A" };
+        AdminPromotionResponse promotion = new AdminPromotionResponse { Id = 1, Name = "Promo A" };
         _adminPromotionService.GetByIdAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminPromotionResponse>.Success(promotion));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -74,10 +74,10 @@ public class AdminPromotionControllerTests
         _adminPromotionService.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminPromotionResponse>.Failure(new ServiceError("Promotion introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -88,7 +88,7 @@ public class AdminPromotionControllerTests
     [Test]
     public async Task Create_WhenSuccess_ReturnsCreated()
     {
-        var request = new AdminCreatePromotionRequest
+        AdminCreatePromotionRequest request = new AdminCreatePromotionRequest
         {
             Name = "Nouvelle Promo",
             DiscountType = DiscountType.Percentage,
@@ -98,21 +98,21 @@ public class AdminPromotionControllerTests
             RestaurantId = 1,
             IsActive = true
         };
-        var response = new AdminPromotionResponse { Id = 10, Name = "Nouvelle Promo" };
+        AdminPromotionResponse response = new AdminPromotionResponse { Id = 10, Name = "Nouvelle Promo" };
         _adminPromotionService.CreateAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminPromotionResponse>.Success(response));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<CreatedAtActionResult>());
-        var created = (CreatedAtActionResult)result;
+        CreatedAtActionResult created = (CreatedAtActionResult)result;
         Assert.That(created.ActionName, Is.EqualTo(nameof(AdminPromotionController.GetById)));
     }
 
     [Test]
     public async Task Create_WhenError_ReturnsError()
     {
-        var request = new AdminCreatePromotionRequest
+        AdminCreatePromotionRequest request = new AdminCreatePromotionRequest
         {
             Name = "Promo",
             RestaurantId = 99,
@@ -122,10 +122,10 @@ public class AdminPromotionControllerTests
         _adminPromotionService.CreateAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminPromotionResponse>.Failure(new ServiceError("Restaurant introuvable", 404)));
 
-        var result = await _sut.Create(request, CancellationToken.None);
+        IActionResult result = await _sut.Create(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -136,7 +136,7 @@ public class AdminPromotionControllerTests
     [Test]
     public async Task Update_WhenSuccess_ReturnsOk()
     {
-        var request = new AdminUpdatePromotionRequest
+        AdminUpdatePromotionRequest request = new AdminUpdatePromotionRequest
         {
             Name = "Mis à jour",
             DiscountValue = 20m,
@@ -144,11 +144,11 @@ public class AdminPromotionControllerTests
             EndsAt = DateTime.UtcNow.AddDays(30),
             IsActive = true
         };
-        var response = new AdminPromotionResponse { Id = 1, Name = "Mis à jour" };
+        AdminPromotionResponse response = new AdminPromotionResponse { Id = 1, Name = "Mis à jour" };
         _adminPromotionService.UpdateAsync(1, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminPromotionResponse>.Success(response));
 
-        var result = await _sut.Update(1, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(1, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -156,7 +156,7 @@ public class AdminPromotionControllerTests
     [Test]
     public async Task Update_WhenNotFound_Returns404()
     {
-        var request = new AdminUpdatePromotionRequest
+        AdminUpdatePromotionRequest request = new AdminUpdatePromotionRequest
         {
             Name = "Name",
             StartsAt = DateTime.UtcNow,
@@ -165,10 +165,10 @@ public class AdminPromotionControllerTests
         _adminPromotionService.UpdateAsync(99, request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminPromotionResponse>.Failure(new ServiceError("Promotion introuvable", 404)));
 
-        var result = await _sut.Update(99, request, CancellationToken.None);
+        IActionResult result = await _sut.Update(99, request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 
@@ -182,7 +182,7 @@ public class AdminPromotionControllerTests
         _adminPromotionService.DeleteAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.Delete(1, CancellationToken.None);
+        IActionResult result = await _sut.Delete(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -193,10 +193,10 @@ public class AdminPromotionControllerTests
         _adminPromotionService.DeleteAsync(99, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("Promotion introuvable", 404)));
 
-        var result = await _sut.Delete(99, CancellationToken.None);
+        IActionResult result = await _sut.Delete(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(404));
     }
 

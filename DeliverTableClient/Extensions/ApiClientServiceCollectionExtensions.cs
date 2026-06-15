@@ -27,14 +27,14 @@ public static class ApiClientServiceCollectionExtensions
     {
         services.AddSingleton<IApiClientOptions>(sp =>
         {
-            var appConfig = sp.GetRequiredService<IAppConfiguration>();
+            IAppConfiguration appConfig = sp.GetRequiredService<IAppConfiguration>();
             return new ApiClientOptions { BaseUrl = appConfig.ApiBaseUrl };
         });
 
         services.AddScoped(sp =>
         {
-            var options = sp.GetRequiredService<IApiClientOptions>();
-            var client = new HttpClient { BaseAddress = new Uri(options.BaseUrl) };
+            IApiClientOptions options = sp.GetRequiredService<IApiClientOptions>();
+            HttpClient client = new HttpClient { BaseAddress = new Uri(options.BaseUrl) };
             return client;
         });
 

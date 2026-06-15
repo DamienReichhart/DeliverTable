@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Auth;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos.Auth;
@@ -29,12 +29,12 @@ public class AuthControllerTests
     [Test]
     public async Task Login_WithSuccessResult_ReturnsOk()
     {
-        var request = new LoginRequest { Email = "login@example.com", Password = "SecurePass123!" };
-        var connection = CreateConnectionResponse();
+        LoginRequest request = new LoginRequest { Email = "login@example.com", Password = "SecurePass123!" };
+        ConnectionResponse connection = CreateConnectionResponse();
         _authService.LoginAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ConnectionResponse>.Success(connection));
 
-        var result = await _sut.Login(request, CancellationToken.None);
+        IActionResult result = await _sut.Login(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -42,14 +42,14 @@ public class AuthControllerTests
     [Test]
     public async Task Login_WithFailureResult_ReturnsError()
     {
-        var request = new LoginRequest { Email = "bad@example.com", Password = "wrong" };
+        LoginRequest request = new LoginRequest { Email = "bad@example.com", Password = "wrong" };
         _authService.LoginAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ConnectionResponse>.Failure(new ServiceError("Identifiants invalides", 401)));
 
-        var result = await _sut.Login(request, CancellationToken.None);
+        IActionResult result = await _sut.Login(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
-        var obj = (ObjectResult)result;
+        ObjectResult obj = (ObjectResult)result;
         Assert.That(obj.StatusCode, Is.EqualTo(401));
     }
 
@@ -60,7 +60,7 @@ public class AuthControllerTests
     [Test]
     public async Task Register_WithSuccessResult_ReturnsOk()
     {
-        var request = new RegisterRequest
+        RegisterRequest request = new RegisterRequest
         {
             FirstName = "Jean",
             LastName = "Dupont",
@@ -71,7 +71,7 @@ public class AuthControllerTests
         _authService.RegisterAsync(request, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<ConnectionResponse>.Success(CreateConnectionResponse()));
 
-        var result = await _sut.Register(request, CancellationToken.None);
+        IActionResult result = await _sut.Register(request, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -94,7 +94,7 @@ public class AuthControllerTests
                 Role = nameof(UserRole.Customer)
             }));
 
-        var result = await _sut.GetProfile(CancellationToken.None);
+        IActionResult result = await _sut.GetProfile(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -104,7 +104,7 @@ public class AuthControllerTests
     {
         AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
-        var result = await _sut.GetProfile(CancellationToken.None);
+        IActionResult result = await _sut.GetProfile(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }

@@ -44,7 +44,7 @@ public class TokenServiceTests
     [Test]
     public async Task CreateToken_ReturnsNonEmptyString()
     {
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
         Assert.That(token, Is.Not.Null.And.Not.Empty);
     }
@@ -52,28 +52,28 @@ public class TokenServiceTests
     [Test]
     public async Task CreateToken_ContainsCorrectSubjectClaim()
     {
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var jwt = ParseToken(token);
+        JwtSecurityToken jwt = ParseToken(token);
         Assert.That(jwt.Subject, Is.EqualTo(_testUser.Id.ToString()));
     }
 
     [Test]
     public async Task CreateToken_DoesNotContainEmailClaim()
     {
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var jwt = ParseToken(token);
-        var emailClaim = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email);
+        JwtSecurityToken jwt = ParseToken(token);
+        Claim? emailClaim = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email);
         Assert.That(emailClaim, Is.Null);
     }
 
     [Test]
     public async Task CreateToken_ContainsCorrectRoleClaim()
     {
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var roleValue = ExtractRoleClaim(token);
+        string roleValue = ExtractRoleClaim(token);
         Assert.That(roleValue, Is.EqualTo(nameof(UserRole.Customer)));
     }
 
@@ -83,18 +83,18 @@ public class TokenServiceTests
         _userManager.GetRolesAsync(Arg.Any<User>())
             .Returns(new List<string>());
 
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var roleValue = ExtractRoleClaim(token);
+        string roleValue = ExtractRoleClaim(token);
         Assert.That(roleValue, Is.EqualTo(nameof(UserRole.Customer)));
     }
 
     [Test]
     public async Task CreateToken_HasCorrectIssuerAndAudience()
     {
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var jwt = ParseToken(token);
+        JwtSecurityToken jwt = ParseToken(token);
         Assert.That(jwt.Issuer, Is.EqualTo(_jwtConfig.Issuer));
         Assert.That(jwt.Audiences.First(), Is.EqualTo(_jwtConfig.Audience));
     }
@@ -102,23 +102,23 @@ public class TokenServiceTests
     [Test]
     public async Task CreateToken_ExpiresWithinConfiguredWindow()
     {
-        var before = DateTime.UtcNow;
+        DateTime before = DateTime.UtcNow;
 
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var jwt = ParseToken(token);
-        var expectedExpiry = before.AddMinutes(_jwtConfig.ExpireMinutes);
+        JwtSecurityToken jwt = ParseToken(token);
+        DateTime expectedExpiry = before.AddMinutes(_jwtConfig.ExpireMinutes);
         Assert.That(jwt.ValidTo, Is.EqualTo(expectedExpiry).Within(TimeSpan.FromSeconds(5)));
     }
 
     [Test]
     public async Task CreateToken_CanBeValidatedWithSameKey()
     {
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var handler = new JwtSecurityTokenHandler();
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtConfig.Key));
-        var validationParams = new TokenValidationParameters
+        JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
+        SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtConfig.Key));
+        TokenValidationParameters validationParams = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidIssuer = _jwtConfig.Issuer,
@@ -129,7 +129,7 @@ public class TokenServiceTests
             ValidateLifetime = true
         };
 
-        var result = await handler.ValidateTokenAsync(token, validationParams);
+        TokenValidationResult result = await handler.ValidateTokenAsync(token, validationParams);
 
         Assert.That(result.IsValid, Is.True);
     }
@@ -139,16 +139,16 @@ public class TokenServiceTests
     {
         _testUser.Email = null;
 
-        var token = await _sut.CreateToken(_testUser);
+        string token = await _sut.CreateToken(_testUser);
 
-        var jwt = ParseToken(token);
-        var emailClaim = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email);
+        JwtSecurityToken jwt = ParseToken(token);
+        Claim? emailClaim = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email);
         Assert.That(emailClaim, Is.Null);
     }
 
     private static JwtSecurityToken ParseToken(string token)
     {
-        var handler = new JwtSecurityTokenHandler();
+        JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
         return handler.ReadJwtToken(token);
     }
 
@@ -158,8 +158,8 @@ public class TokenServiceTests
     /// </summary>
     private static string ExtractRoleClaim(string token)
     {
-        var jwt = ParseToken(token);
-        var roleClaim = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)
+        JwtSecurityToken jwt = ParseToken(token);
+        Claim roleClaim = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)
                         ?? jwt.Claims.First(c => c.Type == "role");
         return roleClaim.Value;
     }

@@ -20,7 +20,7 @@ public class EmailJobService(
     public async Task<ServiceResult> QueueOrderConfirmationAsync(
         Order order, string customerEmail, string customerName)
     {
-        var templateData = new OrderConfirmationData(
+        OrderConfirmationData templateData = new OrderConfirmationData(
             order.Id,
             order.TotalAmount,
             order.Restaurant.Name,
@@ -37,7 +37,7 @@ public class EmailJobService(
     public async Task<ServiceResult> QueueOrderStatusUpdateAsync(
         Order order, string customerEmail, string newStatus)
     {
-        var templateData = new OrderStatusUpdateData(order.Id, newStatus, order.Restaurant.Name);
+        OrderStatusUpdateData templateData = new OrderStatusUpdateData(order.Id, newStatus, order.Restaurant.Name);
 
         return await CreateAndPublishAsync(
             EmailJobType.OrderStatusUpdate,
@@ -50,7 +50,7 @@ public class EmailJobService(
     public async Task<ServiceResult> QueueOrderDeliveredAsync(
         Order order, string customerEmail, string customerName)
     {
-        var templateData = new OrderDeliveredData(order.Id, order.TotalAmount, order.Restaurant.Name);
+        OrderDeliveredData templateData = new OrderDeliveredData(order.Id, order.TotalAmount, order.Restaurant.Name);
 
         return await CreateAndPublishAsync(
             EmailJobType.OrderDelivered,
@@ -63,7 +63,7 @@ public class EmailJobService(
     public async Task<ServiceResult> QueueOrderCancelledAsync(
         Order order, string customerEmail, string customerName)
     {
-        var templateData = new OrderCancelledData(order.Id, order.Restaurant.Name);
+        OrderCancelledData templateData = new OrderCancelledData(order.Id, order.Restaurant.Name);
 
         return await CreateAndPublishAsync(
             EmailJobType.OrderCancelled,
@@ -76,7 +76,7 @@ public class EmailJobService(
     public async Task<ServiceResult> QueueOrderReadyAsync(
         Order order, string customerEmail, string customerName)
     {
-        var templateData = new OrderReadyData(order.Id, order.Restaurant.Name);
+        OrderReadyData templateData = new OrderReadyData(order.Id, order.Restaurant.Name);
 
         return await CreateAndPublishAsync(
             EmailJobType.OrderReady,
@@ -89,9 +89,9 @@ public class EmailJobService(
     public async Task<ServiceResult> QueueNewOrderForRestaurantAsync(
         Order order, string ownerEmail, string restaurantName)
     {
-        var customerName = order.Customer?.GetFullName() ?? "Client";
+        string customerName = order.Customer?.GetFullName() ?? "Client";
 
-        var templateData = new NewOrderForRestaurantData(
+        NewOrderForRestaurantData templateData = new NewOrderForRestaurantData(
             order.Id,
             customerName,
             order.OrderType.ToString(),
@@ -109,7 +109,7 @@ public class EmailJobService(
     public async Task<ServiceResult> QueuePasswordResetAsync(
         string email, string userName, string resetLink)
     {
-        var templateData = new PasswordResetData(resetLink, userName);
+        PasswordResetData templateData = new PasswordResetData(resetLink, userName);
 
         return await CreateAndPublishAsync(
             EmailJobType.PasswordReset,
@@ -121,7 +121,7 @@ public class EmailJobService(
 
     public async Task<ServiceResult> QueuePasswordChangedAsync(string email, string userName)
     {
-        var templateData = new PasswordChangedData(userName);
+        PasswordChangedData templateData = new PasswordChangedData(userName);
 
         return await CreateAndPublishAsync(
             EmailJobType.PasswordChanged,
@@ -133,7 +133,7 @@ public class EmailJobService(
 
     public async Task<ServiceResult> QueueWelcomeEmailAsync(string email, string userName)
     {
-        var templateData = new WelcomeEmailData(userName);
+        WelcomeEmailData templateData = new WelcomeEmailData(userName);
 
         return await CreateAndPublishAsync(
             EmailJobType.WelcomeEmail,
@@ -146,7 +146,7 @@ public class EmailJobService(
     private async Task<ServiceResult> CreateAndPublishAsync<T>(
         EmailJobType type, string email, string? name, string subject, T templateData)
     {
-        var job = new EmailJob
+        EmailJob job = new EmailJob
         {
             Type = type,
             Status = EmailJobStatus.Pending,

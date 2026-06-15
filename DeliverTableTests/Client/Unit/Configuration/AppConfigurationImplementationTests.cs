@@ -66,7 +66,7 @@ public class AppConfigurationImplementationTests
     [Test]
     public void Constructor_Defaults_NotLoadedWithEmptyValues()
     {
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
 
         Assert.Multiple(() =>
         {
@@ -86,7 +86,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         QueueConfigResponse(apiBaseUrl: "https://api.prod.com", environment: "Production");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(_httpHandler.SentRequests[0].RequestUri!.PathAndQuery,
@@ -99,7 +99,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         QueueConfigResponse(apiBaseUrl: "https://api.prod.com/", environment: "Production");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(sut.ApiBaseUrl, Is.EqualTo("https://api.prod.com"));
@@ -111,7 +111,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         QueueConfigResponse(apiBaseUrl: "https://api.prod.com/v1/", environment: "Production");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(sut.ApiBaseUrl, Does.Not.EndWith("/"));
@@ -123,7 +123,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         QueueConfigResponse(apiBaseUrl: "https://api.prod.com", environment: "Production");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(sut.Environment, Is.EqualTo("Production"));
@@ -135,7 +135,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         QueueConfigResponse(apiBaseUrl: "https://api.prod.com", environment: "Production");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(sut.IsLoaded, Is.True);
@@ -147,7 +147,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         QueueConfigResponse(apiBaseUrl: "", environment: "Production");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(sut.ApiBaseUrl, Is.EqualTo(FallbackBaseAddress));
@@ -159,7 +159,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         _httpHandler.QueueJsonResponse(new { environment = "Production" });
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(sut.ApiBaseUrl, Is.EqualTo(FallbackBaseAddress));
@@ -175,7 +175,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Development");
         QueueConfigResponse(apiBaseUrl: "http://localhost:5268", environment: "Development");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.That(_httpHandler.SentRequests[0].RequestUri!.PathAndQuery,
@@ -189,7 +189,7 @@ public class AppConfigurationImplementationTests
         _httpHandler.QueueErrorResponse(HttpStatusCode.NotFound);
         QueueConfigResponse(apiBaseUrl: "http://localhost:5268", environment: "Development");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.Multiple(() =>
@@ -208,7 +208,7 @@ public class AppConfigurationImplementationTests
         _httpHandler.QueueErrorResponse(HttpStatusCode.NotFound);
         _httpHandler.QueueErrorResponse(HttpStatusCode.NotFound);
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.Multiple(() =>
@@ -228,7 +228,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         QueueConfigResponse(apiBaseUrl: "https://api.prod.com", environment: "Production");
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
         await sut.LoadAsync();
 
@@ -245,7 +245,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         _httpHandler.QueueErrorResponse(HttpStatusCode.InternalServerError);
 
-        var sut = CreateSut();
+        AppConfigurationImplementation sut = CreateSut();
         await sut.LoadAsync();
 
         Assert.Multiple(() =>
@@ -261,7 +261,7 @@ public class AppConfigurationImplementationTests
         ConfigureEnvironment("Production");
         _configHttpClient.Dispose();
 
-        var sut = new AppConfigurationImplementation(
+        AppConfigurationImplementation sut = new AppConfigurationImplementation(
             _configHttpClient, _hostEnvironment, FallbackBaseAddress);
         await sut.LoadAsync();
 

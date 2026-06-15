@@ -30,8 +30,8 @@ public partial class Home(
             _ => "Bonjour"
         };
 
-        var authState = await authStateProvider.GetAuthenticationStateAsync();
-        var name = authState.User.FindFirst(ClaimTypes.Name)?.Value;
+        AuthenticationState authState = await authStateProvider.GetAuthenticationStateAsync();
+        string? name = authState.User.FindFirst(ClaimTypes.Name)?.Value;
         _userName = !string.IsNullOrWhiteSpace(name) ? name : null;
 
         await LoadRestaurants();
@@ -48,8 +48,8 @@ public partial class Home(
         _loading = true;
         StateHasChanged();
 
-        var query = new RestaurantQuery { PageSize = 8, Type = _activeType };
-        var (result, _) = await restaurantService.GetAllRestaurants(query);
+        RestaurantQuery query = new RestaurantQuery { PageSize = 8, Type = _activeType };
+        (DeliverTableSharedLibrary.Dtos.PaginatedResult<RestaurantDto>? result, DeliverTableSharedLibrary.Dtos.ErrorResponse _) = await restaurantService.GetAllRestaurants(query);
         _restaurants = result?.Items;
 
         _loading = false;

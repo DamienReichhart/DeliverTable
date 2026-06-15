@@ -13,10 +13,10 @@ public sealed class PaymentLifecycleService(
 {
     public async Task<bool> CancelAbandonedOrderAsync(int orderId, CancellationToken ct)
     {
-        var order = await orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(orderId, ct);
         if (order is null || order.Status != OrderStatus.AwaitingPayment) return false;
 
-        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        Payment? payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
         if (payment is not null && !string.IsNullOrEmpty(payment.StripePaymentIntentId))
         {
             await stripe.CancelPaymentIntentAsync(
@@ -41,10 +41,10 @@ public sealed class PaymentLifecycleService(
 
     public async Task<bool> AutoRefuseOrderAsync(int orderId, CancellationToken ct)
     {
-        var order = await orderRepository.GetByIdAsync(orderId, ct);
+        Order? order = await orderRepository.GetByIdAsync(orderId, ct);
         if (order is null || order.Status != OrderStatus.Pending) return false;
 
-        var payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
+        Payment? payment = await paymentRepository.GetByOrderIdAsync(orderId, ct);
         if (payment is not null && !string.IsNullOrEmpty(payment.StripePaymentIntentId))
         {
             await stripe.CancelPaymentIntentAsync(

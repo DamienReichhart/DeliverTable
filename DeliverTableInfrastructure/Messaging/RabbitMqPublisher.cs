@@ -18,7 +18,7 @@ public class RabbitMqPublisher : IMessagePublisher, IAsyncDisposable
 
     public static async Task<RabbitMqPublisher> CreateAsync(RabbitMqConfig config)
     {
-        var factory = new ConnectionFactory
+        ConnectionFactory factory = new ConnectionFactory
         {
             HostName = config.Host,
             Port = config.Port,
@@ -26,8 +26,8 @@ public class RabbitMqPublisher : IMessagePublisher, IAsyncDisposable
             Password = config.Password
         };
 
-        var connection = await factory.CreateConnectionAsync();
-        var channel = await connection.CreateChannelAsync();
+        IConnection connection = await factory.CreateConnectionAsync();
+        IChannel channel = await connection.CreateChannelAsync();
 
         await channel.ExchangeDeclareAsync(
             exchange: ExchangeName,
@@ -39,10 +39,10 @@ public class RabbitMqPublisher : IMessagePublisher, IAsyncDisposable
 
     public async Task PublishAsync<T>(string routingKey, T message, CancellationToken ct = default) where T : class
     {
-        var json = JsonSerializer.Serialize(message);
-        var body = Encoding.UTF8.GetBytes(json);
+        string json = JsonSerializer.Serialize(message);
+        byte[] body = Encoding.UTF8.GetBytes(json);
 
-        var properties = new BasicProperties
+        BasicProperties properties = new BasicProperties
         {
             Persistent = true,
             ContentType = "application/json"

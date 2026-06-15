@@ -35,7 +35,7 @@ public class AuthServiceTests
     [Test]
     public async Task UpdateProfile_WithBillingFields_PersistsThemTrimmed()
     {
-        var user = ServerEntityFactory.CreateValidUser("u@example.fr");
+        User user = ServerEntityFactory.CreateValidUser("u@example.fr");
         user.Id = 42;
         user.BillingAddressLine1 = string.Empty;
         user.BillingPostalCode = string.Empty;
@@ -45,7 +45,7 @@ public class AuthServiceTests
         _userRepository.GetByIdAsync(42, Arg.Any<CancellationToken>()).Returns(user);
         _userRepository.EmailExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
 
-        var request = new UpdateProfileRequest
+        UpdateProfileRequest request = new UpdateProfileRequest
         {
             FirstName = "Jean",
             LastName = "Dupont",
@@ -57,7 +57,7 @@ public class AuthServiceTests
             BillingCountry = " France ",
         };
 
-        var result = await _sut.UpdateProfileAsync(42, request, CancellationToken.None);
+        ServiceResult<ConnectionResponse> result = await _sut.UpdateProfileAsync(42, request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(user.BillingAddressLine1, Is.EqualTo("12 rue de la Paix"));
@@ -72,10 +72,10 @@ public class AuthServiceTests
     [Test]
     public async Task RegisterRestaurantAsync_EmailAlreadyUsed_ReturnsError_NoUserCreated()
     {
-        var request = BuildValidRestaurantRegister();
+        RestaurantRegister request = BuildValidRestaurantRegister();
         _userRepository.EmailExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
+        ServiceResult<ConnectionResponse> result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.EmailAlreadyUsed));
@@ -88,14 +88,14 @@ public class AuthServiceTests
     [Test]
     public async Task RegisterRestaurantAsync_RestaurantValidationFails_NoUserCreated()
     {
-        var request = BuildValidRestaurantRegister();
+        RestaurantRegister request = BuildValidRestaurantRegister();
         _userRepository.EmailExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _restaurantService.ValidateLegalAndLocateAsync(
                 Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
                 Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
             .Returns(new ServiceError(ErrorMessages.SiretInvalid));
 
-        var result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
+        ServiceResult<ConnectionResponse> result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.SiretInvalid));
@@ -105,7 +105,7 @@ public class AuthServiceTests
     [Test]
     public async Task RegisterRestaurantAsync_ValidPayload_CreatesUserOwnerRoleAndRestaurant()
     {
-        var request = BuildValidRestaurantRegister();
+        RestaurantRegister request = BuildValidRestaurantRegister();
         _userRepository.EmailExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _restaurantService.ValidateLegalAndLocateAsync(
                 Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
@@ -124,7 +124,7 @@ public class AuthServiceTests
         _tokenService.CreateToken(Arg.Any<User>())
             .Returns("test-token");
 
-        var result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
+        ServiceResult<ConnectionResponse> result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _userRepository.Received(1).CreateAsync(Arg.Any<User>(), request.Password);
@@ -139,7 +139,7 @@ public class AuthServiceTests
     [Test]
     public async Task RegisterRestaurantAsync_RestaurantInsertFails_DeletesUser()
     {
-        var request = BuildValidRestaurantRegister();
+        RestaurantRegister request = BuildValidRestaurantRegister();
         _userRepository.EmailExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _restaurantService.ValidateLegalAndLocateAsync(
                 Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
@@ -156,7 +156,7 @@ public class AuthServiceTests
         _userRepository.DeleteAsync(Arg.Any<User>())
             .Returns((true, Enumerable.Empty<string>()));
 
-        var result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
+        ServiceResult<ConnectionResponse> result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         await _userRepository.Received(1).DeleteAsync(Arg.Any<User>());
@@ -166,7 +166,7 @@ public class AuthServiceTests
     [Test]
     public async Task RegisterRestaurantAsync_RoleAssignmentFails_DeletesUser()
     {
-        var request = BuildValidRestaurantRegister();
+        RestaurantRegister request = BuildValidRestaurantRegister();
         _userRepository.EmailExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
         _restaurantService.ValidateLegalAndLocateAsync(
                 Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
@@ -179,7 +179,7 @@ public class AuthServiceTests
         _userRepository.DeleteAsync(Arg.Any<User>())
             .Returns((true, Enumerable.Empty<string>()));
 
-        var result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
+        ServiceResult<ConnectionResponse> result = await _sut.RegisterRestaurantAsync(request, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         await _userRepository.Received(1).DeleteAsync(Arg.Any<User>());

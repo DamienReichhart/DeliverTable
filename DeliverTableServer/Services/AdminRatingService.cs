@@ -4,6 +4,7 @@ using DeliverTableServer.Mappers;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
+using DeliverTableInfrastructure.Models;
 
 namespace DeliverTableServer.Services;
 
@@ -14,14 +15,14 @@ public sealed class AdminRatingService(IRatingRepository ratingRepository) : IAd
     public async Task<ServiceResult<List<AdminRestaurantRatingResponse>>> GetRestaurantRatingsAsync(
         CancellationToken ct = default)
     {
-        var ratings = await _ratingRepository.GetAllRestaurantRatingsAsync(ct);
-        var result = ratings.Select(r => r.ToAdminDto()).ToList();
+        List<RestaurantRating> ratings = await _ratingRepository.GetAllRestaurantRatingsAsync(ct);
+        List<AdminRestaurantRatingResponse> result = ratings.Select(r => r.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _ratingRepository.DeleteRestaurantRatingAsync(id, ct);
+        bool deleted = await _ratingRepository.DeleteRestaurantRatingAsync(id, ct);
         if (deleted)
             return ServiceResult.Success();
 

@@ -25,7 +25,7 @@ public class OrderAbandonmentSweepTests
         _orderRepo = Substitute.For<IOrderRepository>();
         _lifecycle = Substitute.For<IPaymentLifecycleService>();
 
-        var services = new ServiceCollection();
+        ServiceCollection services = new ServiceCollection();
         services.AddSingleton(_orderRepo);
         services.AddSingleton(_lifecycle);
         _scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
@@ -42,7 +42,7 @@ public class OrderAbandonmentSweepTests
     [Test]
     public async Task RunTickAsync_CancelsOrdersOlderThan15Minutes()
     {
-        var stale = new List<Order>
+        List<Order> stale = new List<Order>
         {
             new() { Id = 1, Status = OrderStatus.AwaitingPayment, CreatedAt = DateTime.UtcNow.AddMinutes(-20) },
         };
@@ -58,7 +58,7 @@ public class OrderAbandonmentSweepTests
     [Test]
     public async Task RunTickAsync_ContinuesOnPerOrderFailure()
     {
-        var stale = new List<Order>
+        List<Order> stale = new List<Order>
         {
             new() { Id = 1 }, new() { Id = 2 },
         };

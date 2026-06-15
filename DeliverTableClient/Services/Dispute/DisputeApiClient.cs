@@ -11,8 +11,8 @@ public class DisputeApiClient(HttpClient http) : IDisputeApiClient
     public async Task<PaginatedResult<DisputeRowDto>?> GetForRestaurantAsync(
         int restaurantId, int page, int pageSize)
     {
-        var url = $"{ApiRoutes.Dispute.Base}/restaurant/{restaurantId}?page={page}&pageSize={pageSize}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Dispute.Base}/restaurant/{restaurantId}?page={page}&pageSize={pageSize}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaginatedResult<DisputeRowDto>>();
     }
@@ -20,7 +20,7 @@ public class DisputeApiClient(HttpClient http) : IDisputeApiClient
     public async Task<PaginatedResult<AdminDisputeRowDto>?> AdminListAsync(
         DisputeState? state, int? year, int? restaurantId, int? orderId, int page, int pageSize)
     {
-        var qs = new List<string>
+        List<string> qs = new List<string>
         {
             $"page={page}",
             $"pageSize={pageSize}",
@@ -30,16 +30,16 @@ public class DisputeApiClient(HttpClient http) : IDisputeApiClient
         if (restaurantId.HasValue) qs.Add($"restaurantId={restaurantId.Value}");
         if (orderId.HasValue) qs.Add($"orderId={orderId.Value}");
 
-        var url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.DisputesRoute}?{string.Join("&", qs)}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Admin.Base}/{ApiRoutes.Admin.DisputesRoute}?{string.Join("&", qs)}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaginatedResult<AdminDisputeRowDto>>();
     }
 
     public async Task<AdminDisputeDetailDto?> AdminGetAsync(int id)
     {
-        var url = $"{ApiRoutes.Admin.Base}/disputes/{id}";
-        var response = await http.GetAsync(url);
+        string url = $"{ApiRoutes.Admin.Base}/disputes/{id}";
+        HttpResponseMessage response = await http.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<AdminDisputeDetailDto>();
     }

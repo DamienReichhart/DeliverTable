@@ -15,11 +15,11 @@ public sealed class AdminOrderConfigClientService(HttpClient httpClient) : IAdmi
     public async Task<(List<AdminOrderRuleResponse>? Rules, ErrorResponse? Error)> GetAllRulesAsync(
         CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.OrderRules, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Admin.OrderRules, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var items = await response.Content.ReadFromJsonAsync<List<AdminOrderRuleResponse>>(cancellationToken: ct);
+        List<AdminOrderRuleResponse>? items = await response.Content.ReadFromJsonAsync<List<AdminOrderRuleResponse>>(cancellationToken: ct);
         return items is not null
             ? (items, null)
             : (null, new ErrorResponse { Error = "Impossible de lire la liste des règles de commande", Status = (int)response.StatusCode });
@@ -28,39 +28,39 @@ public sealed class AdminOrderConfigClientService(HttpClient httpClient) : IAdmi
     public async Task<(AdminOrderRuleResponse? Rule, ErrorResponse? Error)> GetRuleByIdAsync(
         int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync($"{ApiRoutes.Admin.OrderRules}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync($"{ApiRoutes.Admin.OrderRules}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminOrderRuleResponse>(cancellationToken: ct);
+        AdminOrderRuleResponse? item = await response.Content.ReadFromJsonAsync<AdminOrderRuleResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(AdminOrderRuleResponse? Rule, ErrorResponse? Error)> CreateRuleAsync(
         AdminCreateOrderRuleRequest request, CancellationToken ct = default)
     {
-        using var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Admin.OrderRules, request, ct);
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(ApiRoutes.Admin.OrderRules, request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminOrderRuleResponse>(cancellationToken: ct);
+        AdminOrderRuleResponse? item = await response.Content.ReadFromJsonAsync<AdminOrderRuleResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(AdminOrderRuleResponse? Rule, ErrorResponse? Error)> UpdateRuleAsync(
         int id, AdminUpdateOrderRuleRequest request, CancellationToken ct = default)
     {
-        using var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Admin.OrderRules}/{id}", request, ct);
+        using HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.Admin.OrderRules}/{id}", request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminOrderRuleResponse>(cancellationToken: ct);
+        AdminOrderRuleResponse? item = await response.Content.ReadFromJsonAsync<AdminOrderRuleResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(bool Success, ErrorResponse? Error)> DeleteRuleAsync(int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.OrderRules}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.OrderRules}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (false, await ReadError(response, ct));
 
@@ -72,11 +72,11 @@ public sealed class AdminOrderConfigClientService(HttpClient httpClient) : IAdmi
     public async Task<(List<AdminBlockedSlotResponse>? Slots, ErrorResponse? Error)> GetAllBlockedSlotsAsync(
         CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.BlockedSlots, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Admin.BlockedSlots, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var items = await response.Content.ReadFromJsonAsync<List<AdminBlockedSlotResponse>>(cancellationToken: ct);
+        List<AdminBlockedSlotResponse>? items = await response.Content.ReadFromJsonAsync<List<AdminBlockedSlotResponse>>(cancellationToken: ct);
         return items is not null
             ? (items, null)
             : (null, new ErrorResponse { Error = "Impossible de lire la liste des créneaux bloqués", Status = (int)response.StatusCode });
@@ -85,28 +85,28 @@ public sealed class AdminOrderConfigClientService(HttpClient httpClient) : IAdmi
     public async Task<(AdminBlockedSlotResponse? Slot, ErrorResponse? Error)> GetBlockedSlotByIdAsync(
         int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync($"{ApiRoutes.Admin.BlockedSlots}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync($"{ApiRoutes.Admin.BlockedSlots}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminBlockedSlotResponse>(cancellationToken: ct);
+        AdminBlockedSlotResponse? item = await response.Content.ReadFromJsonAsync<AdminBlockedSlotResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(AdminBlockedSlotResponse? Slot, ErrorResponse? Error)> CreateBlockedSlotAsync(
         AdminCreateBlockedSlotRequest request, CancellationToken ct = default)
     {
-        using var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Admin.BlockedSlots, request, ct);
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(ApiRoutes.Admin.BlockedSlots, request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminBlockedSlotResponse>(cancellationToken: ct);
+        AdminBlockedSlotResponse? item = await response.Content.ReadFromJsonAsync<AdminBlockedSlotResponse>(cancellationToken: ct);
         return (item, null);
     }
 
     public async Task<(bool Success, ErrorResponse? Error)> DeleteBlockedSlotAsync(int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.BlockedSlots}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiRoutes.Admin.BlockedSlots}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (false, await ReadError(response, ct));
 
@@ -117,7 +117,7 @@ public sealed class AdminOrderConfigClientService(HttpClient httpClient) : IAdmi
     {
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
         }
         catch

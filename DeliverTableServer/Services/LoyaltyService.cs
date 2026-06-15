@@ -20,12 +20,12 @@ public sealed class LoyaltyService(
     public async Task<ServiceResult<LoyaltyProgramDto>> CreateOrUpdateProgramAsync(
         int restaurantId, int ownerId, CreateLoyaltyProgramRequest request, CancellationToken ct = default)
     {
-        var ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
+        ServiceResult<Restaurant> ownershipResult = await RestaurantValidationHelper.ValidateOwnershipAsync(
             _restaurantRepository, restaurantId, ownerId, ct);
         if (!ownershipResult.IsSuccess)
             return ownershipResult.Error!;
 
-        var existing = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
+        LoyaltyProgram? existing = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
 
         if (existing is not null)
         {
@@ -33,25 +33,25 @@ public sealed class LoyaltyService(
             existing.EurosPerPoint = request.EurosPerPoint;
             existing.UpdatedAt = DateTime.UtcNow;
 
-            var updated = await _loyaltyRepository.UpdateAsync(existing, ct);
+            LoyaltyProgram updated = await _loyaltyRepository.UpdateAsync(existing, ct);
             return updated.ToDto();
         }
 
-        var program = new LoyaltyProgram
+        LoyaltyProgram program = new LoyaltyProgram
         {
             RestaurantId = restaurantId,
             PointsPerEuro = request.PointsPerEuro,
             EurosPerPoint = request.EurosPerPoint
         };
 
-        var created = await _loyaltyRepository.CreateAsync(program, ct);
+        LoyaltyProgram created = await _loyaltyRepository.CreateAsync(program, ct);
         return created.ToDto();
     }
 
     public async Task<ServiceResult<LoyaltyProgramDto>> GetProgramAsync(
         int restaurantId, CancellationToken ct = default)
     {
-        var program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
+        LoyaltyProgram? program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
         if (program is null)
             return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
@@ -61,11 +61,11 @@ public sealed class LoyaltyService(
     public async Task<ServiceResult<LoyaltyAccountDto>> GetMyAccountAsync(
         int restaurantId, int customerId, CancellationToken ct = default)
     {
-        var program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
+        LoyaltyProgram? program = await _loyaltyRepository.GetByRestaurantAsync(restaurantId, ct);
         if (program is null)
             return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
-        var account = await _loyaltyRepository.GetAccountAsync(program.Id, customerId, ct);
+        LoyaltyAccount? account = await _loyaltyRepository.GetAccountAsync(program.Id, customerId, ct);
 
         if (account is null)
         {

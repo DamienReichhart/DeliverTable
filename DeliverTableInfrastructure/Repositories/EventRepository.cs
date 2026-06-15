@@ -38,7 +38,7 @@ public class EventRepository(DeliverTableContext dbContext) : IEventRepository
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var evt = await _dbContext.Events.FindAsync([id], ct);
+        Event? evt = await _dbContext.Events.FindAsync([id], ct);
         if (evt is null) return false;
 
         _dbContext.Events.Remove(evt);
