@@ -11,6 +11,12 @@
                 <NotAuthorized>
                     <RedirectToLogin />
                 </NotAuthorized>
+                <Authorizing>
+                    <div class="app-authorizing">
+                        <span class="app-authorizing__spinner"></span>
+                        <p class="app-authorizing__text">Chargement de vos informations ...</p>
+                    </div>
+                </Authorizing>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
