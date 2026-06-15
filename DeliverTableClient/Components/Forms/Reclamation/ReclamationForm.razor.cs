@@ -88,7 +88,7 @@ public partial class ReclamationForm(IReclamationService reclamationService, Nav
         _errorMessage = null;
         try
         {
-            (ReclamationDto _, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await reclamationService.CreateReclamationAsync(Reclamation, _images);
+            (ReclamationDto? _, DeliverTableSharedLibrary.Dtos.ErrorResponse? error) = await reclamationService.CreateReclamationAsync(Reclamation, _images);
             if (error is null)
                 _isReclamationSend = true;
             else

@@ -49,7 +49,7 @@ public partial class Home(
         StateHasChanged();
 
         RestaurantQuery query = new RestaurantQuery { PageSize = 8, Type = _activeType };
-        (DeliverTableSharedLibrary.Dtos.PaginatedResult<RestaurantDto>? result, DeliverTableSharedLibrary.Dtos.ErrorResponse _) = await restaurantService.GetAllRestaurants(query);
+        (DeliverTableSharedLibrary.Dtos.PaginatedResult<RestaurantDto>? result, DeliverTableSharedLibrary.Dtos.ErrorResponse? _) = await restaurantService.GetAllRestaurants(query);
         _restaurants = result?.Items;
 
         _loading = false;
