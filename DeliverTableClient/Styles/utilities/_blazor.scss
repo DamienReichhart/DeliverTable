@@ -69,5 +69,40 @@
 }
 
 .loading-progress-text::after {
-  content: var(--blazor-load-percentage-text, 'Loading');
+  content: var(--blazor-load-percentage-text, 'Chargement…');
+}
+
+// ── Authorizing state (AuthorizeRouteView <Authorizing>) ──
+
+.app-authorizing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+  min-height: 60vh;
+  padding: $spacing-xl;
+}
+
+.app-authorizing__spinner {
+  display: inline-block;
+  width: 3rem;
+  height: 3rem;
+  border: 0.35rem solid $color-border;
+  border-top-color: $color-primary;
+  border-radius: $radius-full;
+  animation: app-authorizing-spin 0.7s linear infinite;
+}
+
+.app-authorizing__text {
+  margin: 0;
+  font-family: $font-family-base;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+}
+
+@keyframes app-authorizing-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
