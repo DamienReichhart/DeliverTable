@@ -6,6 +6,7 @@ using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -27,9 +28,9 @@ public class AdminModerationServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllModerationActions()
     {
-        var admin = CreateValidUser();
+        User admin = CreateValidUser();
         admin.Id = 1;
-        var actions = new List<ModerationAction>
+        List<ModerationAction> actions = new List<ModerationAction>
         {
             new()
             {
@@ -57,7 +58,7 @@ public class AdminModerationServiceTests
 
         _moderationRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(actions);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminModerationActionResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -69,7 +70,7 @@ public class AdminModerationServiceTests
         _moderationRepository.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(new List<ModerationAction>());
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminModerationActionResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Is.Empty);
@@ -82,9 +83,9 @@ public class AdminModerationServiceTests
     [Test]
     public async Task GetByIdAsync_WhenExists_ReturnsModerationAction()
     {
-        var admin = CreateValidUser();
+        User admin = CreateValidUser();
         admin.Id = 1;
-        var action = new ModerationAction
+        ModerationAction action = new ModerationAction
         {
             Id = 1,
             TargetType = ModerationTargetType.Restaurant,
@@ -98,7 +99,7 @@ public class AdminModerationServiceTests
 
         _moderationRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(action);
 
-        var result = await _sut.GetByIdAsync(1);
+        ServiceResult<AdminModerationActionResponse> result = await _sut.GetByIdAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(1));
@@ -113,7 +114,7 @@ public class AdminModerationServiceTests
         _moderationRepository.GetByIdAsync(99, Arg.Any<CancellationToken>())
             .Returns((ModerationAction?)null);
 
-        var result = await _sut.GetByIdAsync(99);
+        ServiceResult<AdminModerationActionResponse> result = await _sut.GetByIdAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));
@@ -127,7 +128,7 @@ public class AdminModerationServiceTests
     [Test]
     public async Task CreateAsync_ReturnsCreatedAction()
     {
-        var request = new AdminCreateModerationActionRequest
+        AdminCreateModerationActionRequest request = new AdminCreateModerationActionRequest
         {
             TargetType = ModerationTargetType.Restaurant,
             TargetId = 10,
@@ -138,12 +139,12 @@ public class AdminModerationServiceTests
         _moderationRepository.CreateAsync(Arg.Any<ModerationAction>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var a = callInfo.ArgAt<ModerationAction>(0);
+                ModerationAction a = callInfo.ArgAt<ModerationAction>(0);
                 a.Id = 5;
                 return a;
             });
 
-        var result = await _sut.CreateAsync(request, adminUserId: 1);
+        ServiceResult<AdminModerationActionResponse> result = await _sut.CreateAsync(request, adminUserId: 1);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Id, Is.EqualTo(5));
@@ -154,7 +155,7 @@ public class AdminModerationServiceTests
     [Test]
     public async Task CreateAsync_WithNullReason_DefaultsToEmptyString()
     {
-        var request = new AdminCreateModerationActionRequest
+        AdminCreateModerationActionRequest request = new AdminCreateModerationActionRequest
         {
             TargetType = ModerationTargetType.User,
             TargetId = 20,
@@ -165,12 +166,12 @@ public class AdminModerationServiceTests
         _moderationRepository.CreateAsync(Arg.Any<ModerationAction>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var a = callInfo.ArgAt<ModerationAction>(0);
+                ModerationAction a = callInfo.ArgAt<ModerationAction>(0);
                 a.Id = 6;
                 return a;
             });
 
-        var result = await _sut.CreateAsync(request, adminUserId: 2);
+        ServiceResult<AdminModerationActionResponse> result = await _sut.CreateAsync(request, adminUserId: 2);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value!.Reason, Is.EqualTo(""));

@@ -42,7 +42,7 @@ public class InvoiceNumberingService(DeliverTableContext dbContext) : IInvoiceNu
         bool isCreditNote,
         CancellationToken ct)
     {
-        var counter = await _dbContext.InvoiceCounters
+        InvoiceCounter? counter = await _dbContext.InvoiceCounters
             .FirstOrDefaultAsync(c =>
                 c.EntityType == issuerType &&
                 c.EntityId == issuerEntityId &&

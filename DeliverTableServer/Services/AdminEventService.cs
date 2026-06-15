@@ -20,14 +20,14 @@ public sealed class AdminEventService(
 
     public async Task<ServiceResult<List<AdminEventResponse>>> GetAllAsync(CancellationToken ct = default)
     {
-        var events = await _eventRepository.GetAllAsync(ct);
-        var result = events.Select(e => e.ToAdminDto()).ToList();
+        List<Event> events = await _eventRepository.GetAllAsync(ct);
+        List<AdminEventResponse> result = events.Select(e => e.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminEventResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var evt = await _eventRepository.GetByIdAsync(id, ct);
+        Event? evt = await _eventRepository.GetByIdAsync(id, ct);
         if (evt is null)
             return ServiceError.NotFound(ErrorMessages.EventNotFound);
 
@@ -37,7 +37,7 @@ public sealed class AdminEventService(
     public async Task<ServiceResult<AdminEventResponse>> CreateAsync(
         AdminCreateEventRequest request, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(request.CreatedByUserId, ct);
+        User? user = await _userRepository.GetByIdAsync(request.CreatedByUserId, ct);
         if (user is null)
             return ServiceError.NotFound(ErrorMessages.UserNotFound);
 
@@ -46,12 +46,12 @@ public sealed class AdminEventService(
 
         if (request.RestaurantId is not null)
         {
-            var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId.Value, ct);
+            Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId.Value, ct);
             if (restaurant is null)
                 return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
         }
 
-        var evt = new Event
+        Event evt = new Event
         {
             Name = request.Name,
             Description = request.Description ?? "",
@@ -64,14 +64,14 @@ public sealed class AdminEventService(
             CreatedByUserId = request.CreatedByUserId
         };
 
-        var created = await _eventRepository.CreateAsync(evt, ct);
+        Event created = await _eventRepository.CreateAsync(evt, ct);
         return created.ToAdminDto();
     }
 
     public async Task<ServiceResult<AdminEventResponse>> UpdateAsync(
         int id, AdminUpdateEventRequest request, CancellationToken ct = default)
     {
-        var evt = await _eventRepository.GetByIdAsync(id, ct);
+        Event? evt = await _eventRepository.GetByIdAsync(id, ct);
         if (evt is null)
             return ServiceError.NotFound(ErrorMessages.EventNotFound);
 
@@ -80,7 +80,7 @@ public sealed class AdminEventService(
 
         if (request.RestaurantId is not null)
         {
-            var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId.Value, ct);
+            Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId.Value, ct);
             if (restaurant is null)
                 return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
         }
@@ -95,13 +95,13 @@ public sealed class AdminEventService(
         evt.RestaurantId = request.RestaurantId;
         evt.UpdatedAt = DateTime.UtcNow;
 
-        var updated = await _eventRepository.UpdateAsync(evt, ct);
+        Event updated = await _eventRepository.UpdateAsync(evt, ct);
         return updated.ToAdminDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _eventRepository.DeleteAsync(id, ct);
+        bool deleted = await _eventRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.EventNotFound);
 

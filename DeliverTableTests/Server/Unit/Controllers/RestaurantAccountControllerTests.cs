@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.RestaurantAccount;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -27,7 +27,7 @@ public class RestaurantAccountControllerTests
     public async Task GetAccount_WithValidOwner_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var accountDto = new RestaurantAccountDto
+        RestaurantAccountDto accountDto = new RestaurantAccountDto
         {
             Balance = 360m,
             Transactions = new PaginatedResult<RestaurantTransactionDto>
@@ -41,7 +41,7 @@ public class RestaurantAccountControllerTests
         _accountService.GetAccountAsync(1, 5, Arg.Any<TransactionQuery>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RestaurantAccountDto>.Success(accountDto));
 
-        var result = await _sut.GetAccount(1, new TransactionQuery(), CancellationToken.None);
+        IActionResult result = await _sut.GetAccount(1, new TransactionQuery(), CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -51,7 +51,7 @@ public class RestaurantAccountControllerTests
     {
         AuthenticationTestHelper.SetupUnauthenticatedUser(_sut);
 
-        var result = await _sut.GetAccount(1, new TransactionQuery(), CancellationToken.None);
+        IActionResult result = await _sut.GetAccount(1, new TransactionQuery(), CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
     }
@@ -60,7 +60,7 @@ public class RestaurantAccountControllerTests
     public async Task Withdraw_WithValidRequest_ReturnsOk()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "5", nameof(UserRole.RestaurantOwner));
-        var accountDto = new RestaurantAccountDto
+        RestaurantAccountDto accountDto = new RestaurantAccountDto
         {
             Balance = 300m,
             Transactions = new PaginatedResult<RestaurantTransactionDto>
@@ -74,7 +74,7 @@ public class RestaurantAccountControllerTests
         _accountService.WithdrawAsync(1, 5, Arg.Any<WithdrawRequest>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RestaurantAccountDto>.Success(accountDto));
 
-        var result = await _sut.Withdraw(1, new WithdrawRequest { Amount = 200 }, CancellationToken.None);
+        IActionResult result = await _sut.Withdraw(1, new WithdrawRequest { Amount = 200 }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -86,7 +86,7 @@ public class RestaurantAccountControllerTests
         _accountService.WithdrawAsync(1, 5, Arg.Any<WithdrawRequest>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<RestaurantAccountDto>.Failure(new ServiceError("Solde insuffisant", 400)));
 
-        var result = await _sut.Withdraw(1, new WithdrawRequest { Amount = 9999 }, CancellationToken.None);
+        IActionResult result = await _sut.Withdraw(1, new WithdrawRequest { Amount = 9999 }, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(400));

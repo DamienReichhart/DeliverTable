@@ -33,9 +33,9 @@ public class AppEnvironmentTests
     [TearDown]
     public void TearDown()
     {
-        foreach (var name in AllRequiredVars)
+        foreach (string name in AllRequiredVars)
             Environment.SetEnvironmentVariable(name, null);
-        foreach (var name in AllOptionalVars)
+        foreach (string name in AllOptionalVars)
             Environment.SetEnvironmentVariable(name, null);
     }
 
@@ -44,7 +44,7 @@ public class AppEnvironmentTests
     {
         SetAllRequired();
 
-        var env = AppEnvironment.Load();
+        AppEnvironment env = AppEnvironment.Load();
 
         Assert.Multiple(() =>
         {
@@ -77,7 +77,7 @@ public class AppEnvironmentTests
     {
         SetAllRequired();
 
-        var env = AppEnvironment.Load();
+        AppEnvironment env = AppEnvironment.Load();
 
         Assert.Multiple(() =>
         {
@@ -101,7 +101,7 @@ public class AppEnvironmentTests
         Environment.SetEnvironmentVariable("OPENAPI_ENABLE_DOCUMENTATION", "true");
         Environment.SetEnvironmentVariable("UPLOAD_MAX_SIZE_MB", "10");
 
-        var env = AppEnvironment.Load();
+        AppEnvironment env = AppEnvironment.Load();
 
         Assert.Multiple(() =>
         {
@@ -116,11 +116,11 @@ public class AppEnvironmentTests
     [Test]
     public void Load_ThrowsWithAllMissingVars_WhenNoneAreSet()
     {
-        var ex = Assert.Throws<InvalidOperationException>(() => AppEnvironment.Load());
+        InvalidOperationException? ex = Assert.Throws<InvalidOperationException>(() => AppEnvironment.Load());
 
         Assert.Multiple(() =>
         {
-            foreach (var name in AllRequiredVars)
+            foreach (string name in AllRequiredVars)
                 Assert.That(ex!.Message, Does.Contain(name));
         });
     }
@@ -150,7 +150,7 @@ public class AppEnvironmentTests
         SetAllRequired();
         Environment.SetEnvironmentVariable(missingVar, null);
 
-        var ex = Assert.Throws<InvalidOperationException>(() => AppEnvironment.Load());
+        InvalidOperationException? ex = Assert.Throws<InvalidOperationException>(() => AppEnvironment.Load());
 
         Assert.That(ex!.Message, Does.Contain(missingVar));
     }
@@ -161,7 +161,7 @@ public class AppEnvironmentTests
         SetAllRequired();
         Environment.SetEnvironmentVariable("JWT_EXPIRE_MINUTES", "invalid");
 
-        var ex = Assert.Throws<InvalidOperationException>(() => AppEnvironment.Load());
+        InvalidOperationException? ex = Assert.Throws<InvalidOperationException>(() => AppEnvironment.Load());
 
         Assert.That(ex!.Message, Does.Contain("JWT_EXPIRE_MINUTES"));
         Assert.That(ex.Message, Does.Contain("invalid"));
@@ -175,7 +175,7 @@ public class AppEnvironmentTests
         SetAllRequired();
         Environment.SetEnvironmentVariable("OPENAPI_ENABLE_DOCUMENTATION", value);
 
-        var env = AppEnvironment.Load();
+        AppEnvironment env = AppEnvironment.Load();
 
         Assert.That(env.OpenApiEnableDocumentation, Is.True);
     }

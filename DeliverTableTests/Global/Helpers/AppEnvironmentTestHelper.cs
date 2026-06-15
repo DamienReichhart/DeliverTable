@@ -32,7 +32,7 @@ public static class AppEnvironmentTestHelper
 
     public static AppEnvironment SetupEnvironment()
     {
-        foreach (var (key, value) in RequiredVars)
+        foreach ((string? key, string? value) in RequiredVars)
             Environment.SetEnvironmentVariable(key, value);
 
         return AppEnvironment.Load();
@@ -40,7 +40,7 @@ public static class AppEnvironmentTestHelper
 
     public static void CleanupEnvironment()
     {
-        foreach (var key in RequiredVars.Keys)
+        foreach (string key in RequiredVars.Keys)
             Environment.SetEnvironmentVariable(key, null);
     }
 }

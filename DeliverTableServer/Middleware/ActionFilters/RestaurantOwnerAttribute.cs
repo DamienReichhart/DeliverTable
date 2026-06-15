@@ -3,6 +3,7 @@ using DeliverTableInfrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
+using DeliverTableInfrastructure.Models;
 
 namespace DeliverTableServer.Middleware.ActionFilters;
 
@@ -19,14 +20,14 @@ public class RestaurantOwnerAttribute : TypeFilterAttribute
             if (!ActionFilterHelper.TryGetRouteId(context, out int id, ErrorMessages.MissingOrInvalidDishId))
                 return;
 
-            var dish = await _dbContext.Dishes.FindAsync(id);
+            Dish? dish = await _dbContext.Dishes.FindAsync(id);
             if (dish is null)
             {
                 context.Result = new NotFoundResult();
                 return;
             }
 
-            var restaurantOwnerId = await _dbContext.Restaurants
+            int? restaurantOwnerId = await _dbContext.Restaurants
                 .Where(r => r.Id == dish.RestaurantId)
                 .Select(r => (int?)r.OwnerId)
                 .FirstOrDefaultAsync();

@@ -13,21 +13,21 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
 {
     public byte[] Render(Invoice invoice)
     {
-        var issuer =
+        InvoiceLegalSnapshotDto issuer =
             JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.IssuerLegalSnapshotJson)
             ?? new InvoiceLegalSnapshotDto("", "", "", "", "", "");
-        var recipient =
+        InvoiceLegalSnapshotDto recipient =
             JsonSerializer.Deserialize<InvoiceLegalSnapshotDto>(invoice.RecipientSnapshotJson)
             ?? new InvoiceLegalSnapshotDto("", "", "", "", "", "");
 
-        var isCreditNote =
+        bool isCreditNote =
             invoice.Kind == InvoiceKind.CreditNoteToCustomer
             || invoice.Kind == InvoiceKind.CommissionCreditNoteToRestaurant;
-        var isVatExempt = invoice.Lines.All(l => l.VatRate == 0m);
+        bool isVatExempt = invoice.Lines.All(l => l.VatRate == 0m);
 
-        var title = isCreditNote ? "AVOIR" : "FACTURE";
+        string title = isCreditNote ? "AVOIR" : "FACTURE";
 
-        var doc = Document.Create(container =>
+        Document doc = Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -99,7 +99,7 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
                                     h.Cell().AlignRight().Text("Total TTC").Bold();
                                 });
                                 foreach (
-                                    var line in invoice
+                                    InvoiceLine? line in invoice
                                         .Lines.Where(l => l.Kind == InvoiceLineKind.Item)
                                         .OrderBy(l => l.SortOrder)
                                 )
@@ -124,7 +124,7 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
                                 }
                             });
 
-                        var discountLines = invoice
+                        List<InvoiceLine> discountLines = invoice
                             .Lines.Where(l => l.Kind == InvoiceLineKind.Discount)
                             .OrderBy(l => l.SortOrder)
                             .ToList();
@@ -144,7 +144,7 @@ public sealed class InvoicePdfRenderer : IInvoicePdfRenderer
                                         cd.RelativeColumn(2);
                                         cd.RelativeColumn(2);
                                     });
-                                    foreach (var line in discountLines)
+                                    foreach (InvoiceLine line in discountLines)
                                     {
                                         table.Cell().Text(line.Description);
                                         table.Cell()

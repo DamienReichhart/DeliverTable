@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos;
 using DeliverTableSharedLibrary.Dtos.Dispute;
@@ -26,8 +26,8 @@ public class AdminDisputeControllerTests
     [Test]
     public async Task List_ReturnsOkWithPaginatedRows()
     {
-        var filter = new DisputeAdminFilter { State = DisputeState.Open, Page = 1, PageSize = 20 };
-        var paginated = new PaginatedResult<AdminDisputeRowDto>
+        DisputeAdminFilter filter = new DisputeAdminFilter { State = DisputeState.Open, Page = 1, PageSize = 20 };
+        PaginatedResult<AdminDisputeRowDto> paginated = new PaginatedResult<AdminDisputeRowDto>
         {
             Items =
             [
@@ -43,21 +43,21 @@ public class AdminDisputeControllerTests
         _service.ListForAdminAsync(filter, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<AdminDisputeRowDto>>.Success(paginated));
 
-        var result = await _sut.List(filter, CancellationToken.None);
+        IActionResult result = await _sut.List(filter, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var ok = (OkObjectResult)result;
+        OkObjectResult ok = (OkObjectResult)result;
         Assert.That(ok.Value, Is.InstanceOf<PaginatedResult<AdminDisputeRowDto>>());
     }
 
     [Test]
     public async Task GetById_Found_ReturnsOkWithDetail()
     {
-        var header = new AdminDisputeRowDto(
+        AdminDisputeRowDto header = new AdminDisputeRowDto(
             1, "dp_1", 10, 5, "Chez Toto", "c@d.fr",
             25m, "EUR", "fraudulent",
             DisputeState.Open, DateTime.UtcNow, null, DateTime.UtcNow.AddDays(7));
-        var detail = new AdminDisputeDetailDto(
+        AdminDisputeDetailDto detail = new AdminDisputeDetailDto(
             header,
             "https://dashboard.stripe.com/test/disputes/dp_1",
             42, "ch_1", 100m,
@@ -65,10 +65,10 @@ public class AdminDisputeControllerTests
         _service.GetAdminDetailAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminDisputeDetailDto>.Success(detail));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var ok = (OkObjectResult)result;
+        OkObjectResult ok = (OkObjectResult)result;
         Assert.That(ok.Value, Is.EqualTo(detail));
     }
 
@@ -79,7 +79,7 @@ public class AdminDisputeControllerTests
             .Returns(ServiceResult<AdminDisputeDetailDto>.Failure(
                 new ServiceError("Not found", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.Not.InstanceOf<OkObjectResult>());
     }

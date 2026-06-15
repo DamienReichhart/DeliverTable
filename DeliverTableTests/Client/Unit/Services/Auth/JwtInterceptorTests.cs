@@ -43,7 +43,7 @@ public class JwtInterceptorTests
     {
         ConfigureStoredToken("my-jwt-token");
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
         await _invoker.SendAsync(request, CancellationToken.None);
 
         Assert.Multiple(() =>
@@ -59,7 +59,7 @@ public class JwtInterceptorTests
     {
         ConfigureStoredToken(null);
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
         await _invoker.SendAsync(request, CancellationToken.None);
 
         Assert.That(request.Headers.Authorization, Is.Null);
@@ -70,7 +70,7 @@ public class JwtInterceptorTests
     {
         ConfigureStoredToken("");
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
         await _invoker.SendAsync(request, CancellationToken.None);
 
         Assert.That(request.Headers.Authorization, Is.Null);
@@ -81,8 +81,8 @@ public class JwtInterceptorTests
     {
         ConfigureStoredToken(null);
 
-        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
-        var response = await _invoker.SendAsync(request, CancellationToken.None);
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/api/test");
+        HttpResponseMessage response = await _invoker.SendAsync(request, CancellationToken.None);
 
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
     }

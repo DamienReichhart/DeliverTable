@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories;
 using DeliverTableSharedLibrary.Enums;
 using DeliverTableTests.Server.Factories;
@@ -25,11 +26,11 @@ public class CommissionStatementRepositoryTests
     [Test]
     public async Task InvoiceExistsForPeriodAsync_ReturnsTrue_WhenInvoicePresent()
     {
-        var s = CommissionStatementFactory.CreateInvoice(restaurantId: 42, year: 2026, month: 5);
+        CommissionStatement s = CommissionStatementFactory.CreateInvoice(restaurantId: 42, year: 2026, month: 5);
         _database.Context.CommissionStatements.Add(s);
         await _database.Context.SaveChangesAsync();
 
-        var exists = await _sut.InvoiceExistsForPeriodAsync(42, 2026, 5, default);
+        bool exists = await _sut.InvoiceExistsForPeriodAsync(42, 2026, 5, default);
 
         Assert.That(exists, Is.True);
     }
@@ -37,12 +38,12 @@ public class CommissionStatementRepositoryTests
     [Test]
     public async Task InvoiceExistsForPeriodAsync_ReturnsFalse_WhenOnlyCreditNotePresent()
     {
-        var s = CommissionStatementFactory.CreateInvoice(restaurantId: 42, year: 2026, month: 5);
+        CommissionStatement s = CommissionStatementFactory.CreateInvoice(restaurantId: 42, year: 2026, month: 5);
         s.Kind = CommissionStatementKind.CreditNote;
         _database.Context.CommissionStatements.Add(s);
         await _database.Context.SaveChangesAsync();
 
-        var exists = await _sut.InvoiceExistsForPeriodAsync(42, 2026, 5, default);
+        bool exists = await _sut.InvoiceExistsForPeriodAsync(42, 2026, 5, default);
 
         Assert.That(exists, Is.False);
     }
@@ -54,9 +55,9 @@ public class CommissionStatementRepositoryTests
         _database.Context.CommissionStatementCounters.Add(new() { Id = 1, NextNumber = 1 });
         await _database.Context.SaveChangesAsync();
 
-        var a = await _sut.AllocateNextNumberAsync();
-        var b = await _sut.AllocateNextNumberAsync();
-        var c = await _sut.AllocateNextNumberAsync();
+        int a = await _sut.AllocateNextNumberAsync();
+        int b = await _sut.AllocateNextNumberAsync();
+        int c = await _sut.AllocateNextNumberAsync();
 
         Assert.That(a, Is.EqualTo(1));
         Assert.That(b, Is.EqualTo(2));

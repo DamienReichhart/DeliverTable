@@ -27,7 +27,7 @@ public class LoyaltyRepositoryTests
     private async Task<(LoyaltyAccount account, LoyaltyTransaction transaction)> SeedRedeemScenarioAsync(
         int initialBalance, int redeemPoints)
     {
-        var program = new LoyaltyProgram
+        LoyaltyProgram program = new LoyaltyProgram
         {
             Id = 1,
             RestaurantId = 1,
@@ -35,7 +35,7 @@ public class LoyaltyRepositoryTests
         };
         _testDb.Context.LoyaltyPrograms.Add(program);
 
-        var account = new LoyaltyAccount
+        LoyaltyAccount account = new LoyaltyAccount
         {
             Id = 1,
             LoyaltyProgramId = 1,
@@ -45,7 +45,7 @@ public class LoyaltyRepositoryTests
         _testDb.Context.LoyaltyAccounts.Add(account);
 
         // Redeem transactions store Points as negative (see OrderService.ApplyLoyaltyPointsAsync)
-        var transaction = new LoyaltyTransaction
+        LoyaltyTransaction transaction = new LoyaltyTransaction
         {
             Id = 1,
             LoyaltyAccountId = 1,
@@ -65,7 +65,7 @@ public class LoyaltyRepositoryTests
     public async Task MarkPendingRedemptionsReversedForOrderAsync_RedeemTransaction_RestoresPointsToBalance()
     {
         // Arrange: account starts at 100, redeem transaction deducted 30 (stored as -30)
-        var (account, _) = await SeedRedeemScenarioAsync(initialBalance: 100, redeemPoints: 30);
+        (LoyaltyAccount? account, LoyaltyTransaction _) = await SeedRedeemScenarioAsync(initialBalance: 100, redeemPoints: 30);
 
         // Act
         await _sut.MarkPendingRedemptionsReversedForOrderAsync(orderId: 99, CancellationToken.None);
@@ -81,14 +81,14 @@ public class LoyaltyRepositoryTests
 
         await _sut.MarkPendingRedemptionsReversedForOrderAsync(orderId: 99, CancellationToken.None);
 
-        var tx = _testDb.Context.LoyaltyTransactions.Single(t => t.OrderId == 99);
+        LoyaltyTransaction tx = _testDb.Context.LoyaltyTransactions.Single(t => t.OrderId == 99);
         Assert.That(tx.Status, Is.EqualTo(LoyaltyRedemptionStatus.Reversed));
     }
 
     [Test]
     public async Task MarkPendingRedemptionsReversedForOrderAsync_NoMatchingOrder_DoesNotChangeBalance()
     {
-        var (account, _) = await SeedRedeemScenarioAsync(initialBalance: 100, redeemPoints: 30);
+        (LoyaltyAccount? account, LoyaltyTransaction _) = await SeedRedeemScenarioAsync(initialBalance: 100, redeemPoints: 30);
 
         // Reverse for a different orderId
         await _sut.MarkPendingRedemptionsReversedForOrderAsync(orderId: 999, CancellationToken.None);

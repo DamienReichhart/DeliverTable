@@ -59,35 +59,35 @@ public sealed class WorkerEnvironment
 
     public static WorkerEnvironment Load()
     {
-        var errors = new List<string>();
+        List<string> errors = new List<string>();
 
-        var dbConn = RequireVar("CONNECTION_STRING_DATABASE", errors);
-        var rmqHost = RequireVar("RABBITMQ_HOST", errors);
-        var rmqPort = ParseInt("RABBITMQ_PORT", 5672, errors);
-        var rmqUser = RequireVar("RABBITMQ_USER", errors);
-        var rmqPass = RequireVar("RABBITMQ_PASSWORD", errors);
-        var smtpHost = RequireVar("SMTP_HOST", errors);
-        var smtpPort = ParseInt("SMTP_PORT", 465, errors);
-        var smtpUser = RequireVar("SMTP_USER", errors);
-        var smtpPass = RequireVar("SMTP_PASSWORD", errors);
-        var smtpFrom = RequireVar("SMTP_FROM_EMAIL", errors);
-        var smtpName = GetVar("SMTP_FROM_NAME") ?? "DeliverTable";
-        var smtpRate = ParseInt("SMTP_MAX_SENDS_PER_MINUTE", 5, errors);
-        var neutralizeEmail = ParseBool("NEUTRALIZE_EMAIL");
+        string? dbConn = RequireVar("CONNECTION_STRING_DATABASE", errors);
+        string? rmqHost = RequireVar("RABBITMQ_HOST", errors);
+        int rmqPort = ParseInt("RABBITMQ_PORT", 5672, errors);
+        string? rmqUser = RequireVar("RABBITMQ_USER", errors);
+        string? rmqPass = RequireVar("RABBITMQ_PASSWORD", errors);
+        string? smtpHost = RequireVar("SMTP_HOST", errors);
+        int smtpPort = ParseInt("SMTP_PORT", 465, errors);
+        string? smtpUser = RequireVar("SMTP_USER", errors);
+        string? smtpPass = RequireVar("SMTP_PASSWORD", errors);
+        string? smtpFrom = RequireVar("SMTP_FROM_EMAIL", errors);
+        string smtpName = GetVar("SMTP_FROM_NAME") ?? "DeliverTable";
+        int smtpRate = ParseInt("SMTP_MAX_SENDS_PER_MINUTE", 5, errors);
+        bool neutralizeEmail = ParseBool("NEUTRALIZE_EMAIL");
 
-        var platformLegalName = RequireVar("PLATFORM_LEGAL_NAME", errors);
-        var platformLegalForm = RequireVar("PLATFORM_LEGAL_FORM", errors);
-        var platformSiret = RequireVar("PLATFORM_SIRET", errors);
-        var platformVatNumber = RequireVar("PLATFORM_VAT_NUMBER", errors);
-        var platformAddress = RequireVar("PLATFORM_ADDRESS", errors);
-        var platformVatApplicable = ParseBool("PLATFORM_VAT_APPLICABLE");
+        string? platformLegalName = RequireVar("PLATFORM_LEGAL_NAME", errors);
+        string? platformLegalForm = RequireVar("PLATFORM_LEGAL_FORM", errors);
+        string? platformSiret = RequireVar("PLATFORM_SIRET", errors);
+        string? platformVatNumber = RequireVar("PLATFORM_VAT_NUMBER", errors);
+        string? platformAddress = RequireVar("PLATFORM_ADDRESS", errors);
+        bool platformVatApplicable = ParseBool("PLATFORM_VAT_APPLICABLE");
 
-        var osUrl = RequireVar("OBJECT_STORAGE_SERVICE_URL", errors);
-        var osAccessKey = RequireVar("OBJECT_STORAGE_ACCESS_KEY", errors);
-        var osSecretKey = RequireVar("OBJECT_STORAGE_SECRET_KEY", errors);
-        var osBucket = RequireVar("OBJECT_STORAGE_BUCKET_NAME", errors);
-        var osForcePathStyle = ParseBool("OBJECT_STORAGE_FORCE_PATH_STYLE");
-        var osRegion = GetVar("OBJECT_STORAGE_REGION") ?? "garage";
+        string? osUrl = RequireVar("OBJECT_STORAGE_SERVICE_URL", errors);
+        string? osAccessKey = RequireVar("OBJECT_STORAGE_ACCESS_KEY", errors);
+        string? osSecretKey = RequireVar("OBJECT_STORAGE_SECRET_KEY", errors);
+        string? osBucket = RequireVar("OBJECT_STORAGE_BUCKET_NAME", errors);
+        bool osForcePathStyle = ParseBool("OBJECT_STORAGE_FORCE_PATH_STYLE");
+        string osRegion = GetVar("OBJECT_STORAGE_REGION") ?? "garage";
 
         if (errors.Count > 0)
             throw new InvalidOperationException(
@@ -107,22 +107,22 @@ public sealed class WorkerEnvironment
 
     private static string? RequireVar(string name, List<string> errors)
     {
-        var value = GetVar(name);
+        string? value = GetVar(name);
         if (string.IsNullOrWhiteSpace(value)) errors.Add(name);
         return value;
     }
 
     private static bool ParseBool(string name)
     {
-        var raw = GetVar(name);
+        string? raw = GetVar(name);
         return string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static int ParseInt(string name, int defaultValue, List<string> errors)
     {
-        var raw = GetVar(name);
+        string? raw = GetVar(name);
         if (string.IsNullOrWhiteSpace(raw)) return defaultValue;
-        if (int.TryParse(raw, out var result)) return result;
+        if (int.TryParse(raw, out int result)) return result;
         errors.Add($"{name} (expected integer, got '{raw}')");
         return defaultValue;
     }

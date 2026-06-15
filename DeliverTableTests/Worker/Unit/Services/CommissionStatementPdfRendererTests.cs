@@ -1,3 +1,4 @@
+using DeliverTableInfrastructure.Models;
 using DeliverTableTests.Server.Factories;
 using DeliverTableWorker.Services;
 using NUnit.Framework;
@@ -17,7 +18,7 @@ public class CommissionStatementPdfRendererTests
     [Test]
     public void Render_ReturnsNonEmptyPdfBytes_ForInvoice()
     {
-        var statement = CommissionStatementFactory.CreateInvoice(7, 2026, 5);
+        CommissionStatement statement = CommissionStatementFactory.CreateInvoice(7, 2026, 5);
         statement.IssuerLegalSnapshotJson =
             """{"Name":"Platform","LegalForm":"SAS","Siret":"123","VatNumber":"FR1","Address":"X","Email":""}""";
         statement.RecipientSnapshotJson =
@@ -40,8 +41,8 @@ public class CommissionStatementPdfRendererTests
         statement.TotalVat = 2m;
         statement.TotalTtc = 12m;
 
-        var sut = new CommissionStatementPdfRenderer();
-        var bytes = sut.Render(statement);
+        CommissionStatementPdfRenderer sut = new CommissionStatementPdfRenderer();
+        byte[] bytes = sut.Render(statement);
 
         Assert.That(bytes.Length, Is.GreaterThan(1000));
         Assert.That(System.Text.Encoding.ASCII.GetString(bytes, 0, 5), Is.EqualTo("%PDF-"));

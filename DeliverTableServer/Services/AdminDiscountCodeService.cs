@@ -17,14 +17,14 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
 
     public async Task<ServiceResult<List<AdminDiscountCodeResponse>>> GetAllAsync(CancellationToken ct = default)
     {
-        var codes = await _discountCodeRepository.GetAllUnscopedAsync(ct);
-        var result = codes.Select(c => c.ToAdminDto()).ToList();
+        List<DiscountCode> codes = await _discountCodeRepository.GetAllUnscopedAsync(ct);
+        List<AdminDiscountCodeResponse> result = codes.Select(c => c.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminDiscountCodeResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var code = await _discountCodeRepository.GetByIdWithRestaurantAsync(id, ct);
+        DiscountCode? code = await _discountCodeRepository.GetByIdWithRestaurantAsync(id, ct);
         if (code is null)
             return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
@@ -34,7 +34,7 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
     public async Task<ServiceResult<AdminDiscountCodeResponse>> CreateAsync(
         AdminCreateDiscountCodeRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
@@ -44,11 +44,11 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
         if (DiscountValidationHelper.ValidatePercentageDiscount(request.DiscountType, request.DiscountValue) is { } pctError)
             return pctError;
 
-        var existing = await _discountCodeRepository.GetByCodeAndRestaurantAsync(request.Code, request.RestaurantId, ct);
+        DiscountCode? existing = await _discountCodeRepository.GetByCodeAndRestaurantAsync(request.Code, request.RestaurantId, ct);
         if (existing is not null)
             return ServiceError.BadRequest(ErrorMessages.DiscountCodeAlreadyExists);
 
-        var discountCode = new DiscountCode
+        DiscountCode discountCode = new DiscountCode
         {
             Code = request.Code,
             Description = request.Description ?? "",
@@ -63,7 +63,7 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
             IsActive = request.IsActive
         };
 
-        var created = await _discountCodeRepository.CreateAsync(discountCode, ct);
+        DiscountCode created = await _discountCodeRepository.CreateAsync(discountCode, ct);
         created.Restaurant = restaurant;
         created.Redemptions = [];
         return created.ToAdminDto();
@@ -72,7 +72,7 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
     public async Task<ServiceResult<AdminDiscountCodeResponse>> UpdateAsync(
         int id, AdminUpdateDiscountCodeRequest request, CancellationToken ct = default)
     {
-        var code = await _discountCodeRepository.GetByIdWithRestaurantAsync(id, ct);
+        DiscountCode? code = await _discountCodeRepository.GetByIdWithRestaurantAsync(id, ct);
         if (code is null)
             return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
@@ -93,13 +93,13 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
         code.IsActive = request.IsActive;
         code.UpdatedAt = DateTime.UtcNow;
 
-        var updated = await _discountCodeRepository.UpdateAsync(code, ct);
+        DiscountCode updated = await _discountCodeRepository.UpdateAsync(code, ct);
         return updated.ToAdminDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _discountCodeRepository.DeleteAsync(id, ct);
+        bool deleted = await _discountCodeRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
@@ -108,12 +108,12 @@ public sealed class AdminDiscountCodeService(IDiscountCodeRepository discountCod
 
     public async Task<ServiceResult<List<AdminRedemptionResponse>>> GetRedemptionsAsync(int discountCodeId, CancellationToken ct = default)
     {
-        var code = await _discountCodeRepository.GetByIdAsync(discountCodeId, ct);
+        DiscountCode? code = await _discountCodeRepository.GetByIdAsync(discountCodeId, ct);
         if (code is null)
             return ServiceError.NotFound(ErrorMessages.DiscountCodeNotFound);
 
-        var redemptions = await _discountCodeRepository.GetRedemptionsByCodeIdAsync(discountCodeId, ct);
-        var result = redemptions.Select(r => r.ToAdminDto()).ToList();
+        List<DiscountCodeRedemption> redemptions = await _discountCodeRepository.GetRedemptionsByCodeIdAsync(discountCodeId, ct);
+        List<AdminRedemptionResponse> result = redemptions.Select(r => r.ToAdminDto()).ToList();
         return result;
     }
 }

@@ -18,7 +18,7 @@ public static class ObjectStorageExtensions
         this IServiceCollection services,
         ObjectStorageConfig config)
     {
-        var s3Config = new AmazonS3Config
+        AmazonS3Config s3Config = new AmazonS3Config
         {
             ServiceURL = config.ServiceUrl,
             ForcePathStyle = config.ForcePathStyle,

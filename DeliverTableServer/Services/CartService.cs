@@ -20,7 +20,7 @@ public sealed class CartService(
 
     public async Task<ServiceResult<CartDto>> GetCartAsync(int customerId, int restaurantId, CancellationToken ct = default)
     {
-        var cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, restaurantId, ct);
+        Cart? cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, restaurantId, ct);
         if (cart is null)
         {
             return new CartDto
@@ -37,20 +37,20 @@ public sealed class CartService(
 
     public async Task<ServiceResult<List<CartDto>>> GetAllCartsAsync(int customerId, CancellationToken ct = default)
     {
-        var carts = await _cartRepository.GetByCustomerAsync(customerId, ct);
+        List<Cart> carts = await _cartRepository.GetByCustomerAsync(customerId, ct);
         return carts.Select(c => c.ToDto()).ToList();
     }
 
     public async Task<ServiceResult<CartDto>> AddItemAsync(int customerId, AddToCartRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
         if (!restaurant.IsActive)
             return new ServiceError(ErrorMessages.RestaurantNotActive);
 
-        var dish = await _dishRepository.GetByIdAsync(request.DishId, ct);
+        Dish? dish = await _dishRepository.GetByIdAsync(request.DishId, ct);
         if (dish is null)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
@@ -60,7 +60,7 @@ public sealed class CartService(
         if (dish.RestaurantId != request.RestaurantId)
             return new ServiceError(ErrorMessages.DishNotFromRestaurant);
 
-        var cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, request.RestaurantId, ct);
+        Cart? cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, request.RestaurantId, ct);
 
         if (cart is null)
         {
@@ -72,7 +72,7 @@ public sealed class CartService(
             cart = await _cartRepository.CreateAsync(cart, ct);
         }
 
-        var existingItem = cart.Items.FirstOrDefault(i => i.DishId == request.DishId);
+        CartItem? existingItem = cart.Items.FirstOrDefault(i => i.DishId == request.DishId);
         if (existingItem is not null)
         {
             existingItem.Quantity += request.Quantity;
@@ -83,7 +83,7 @@ public sealed class CartService(
         }
         else
         {
-            var cartItem = new CartItem
+            CartItem cartItem = new CartItem
             {
                 CartId = cart.Id,
                 DishId = request.DishId,
@@ -94,13 +94,13 @@ public sealed class CartService(
             await _cartRepository.AddItemAsync(cartItem, ct);
         }
 
-        var updatedCart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, request.RestaurantId, ct);
+        Cart? updatedCart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, request.RestaurantId, ct);
         return updatedCart!.ToDto();
     }
 
     public async Task<ServiceResult<CartItemDto>> UpdateItemAsync(int customerId, int cartItemId, UpdateCartItemRequest request, CancellationToken ct = default)
     {
-        var cartItem = await _cartRepository.GetCartItemByIdAsync(cartItemId, ct);
+        CartItem? cartItem = await _cartRepository.GetCartItemByIdAsync(cartItemId, ct);
         if (cartItem is null)
             return ServiceError.NotFound(ErrorMessages.CartItemNotFound);
 
@@ -110,13 +110,13 @@ public sealed class CartService(
         cartItem.Quantity = request.Quantity;
         cartItem.SpecialInstructions = request.SpecialInstructions;
 
-        var updated = await _cartRepository.UpdateItemAsync(cartItem, ct);
+        CartItem updated = await _cartRepository.UpdateItemAsync(cartItem, ct);
         return updated.ToDto();
     }
 
     public async Task<ServiceResult> RemoveItemAsync(int customerId, int cartItemId, CancellationToken ct = default)
     {
-        var cartItem = await _cartRepository.GetCartItemByIdAsync(cartItemId, ct);
+        CartItem? cartItem = await _cartRepository.GetCartItemByIdAsync(cartItemId, ct);
         if (cartItem is null)
             return ServiceError.NotFound(ErrorMessages.CartItemNotFound);
 
@@ -129,7 +129,7 @@ public sealed class CartService(
 
     public async Task<ServiceResult> ClearCartAsync(int customerId, int restaurantId, CancellationToken ct = default)
     {
-        var cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, restaurantId, ct);
+        Cart? cart = await _cartRepository.GetByCustomerAndRestaurantAsync(customerId, restaurantId, ct);
         if (cart is null)
             return ServiceError.NotFound(ErrorMessages.CartNotFound);
 

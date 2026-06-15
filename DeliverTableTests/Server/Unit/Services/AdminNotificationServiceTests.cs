@@ -5,6 +5,8 @@ using DeliverTableServer.Services;
 using DeliverTableSharedLibrary.Enums;
 using NSubstitute;
 using static DeliverTableTests.Server.Factories.ServerEntityFactory;
+using DeliverTableServer.Common;
+using DeliverTableSharedLibrary.Dtos.Admin;
 
 namespace DeliverTableTests.Server.Unit.Services;
 
@@ -28,9 +30,9 @@ public class AdminNotificationServiceTests
     [Test]
     public async Task GetAllAsync_ReturnsAllNotifications()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 1;
-        var notifications = new List<Notification>
+        List<Notification> notifications = new List<Notification>
         {
             new()
             {
@@ -48,7 +50,7 @@ public class AdminNotificationServiceTests
 
         _notificationRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(notifications);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminNotificationResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -57,9 +59,9 @@ public class AdminNotificationServiceTests
     [Test]
     public async Task GetAllAsync_MapsFieldsCorrectly()
     {
-        var user = CreateValidUser();
+        User user = CreateValidUser();
         user.Id = 1;
-        var notifications = new List<Notification>
+        List<Notification> notifications = new List<Notification>
         {
             new()
             {
@@ -71,10 +73,10 @@ public class AdminNotificationServiceTests
 
         _notificationRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(notifications);
 
-        var result = await _sut.GetAllAsync();
+        ServiceResult<List<AdminNotificationResponse>> result = await _sut.GetAllAsync();
 
         Assert.That(result.IsSuccess, Is.True);
-        var dto = result.Value![0];
+        AdminNotificationResponse dto = result.Value![0];
         Assert.That(dto.Id, Is.EqualTo(1));
         Assert.That(dto.Type, Is.EqualTo(nameof(NotificationType.OrderStatus)));
         Assert.That(dto.Payload, Is.EqualTo("Commande confirmée"));
@@ -92,7 +94,7 @@ public class AdminNotificationServiceTests
     {
         _notificationRepository.DeleteAsync(1, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.DeleteAsync(1);
+        ServiceResult result = await _sut.DeleteAsync(1);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -102,7 +104,7 @@ public class AdminNotificationServiceTests
     {
         _notificationRepository.DeleteAsync(99, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await _sut.DeleteAsync(99);
+        ServiceResult result = await _sut.DeleteAsync(99);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.StatusCode, Is.EqualTo(404));

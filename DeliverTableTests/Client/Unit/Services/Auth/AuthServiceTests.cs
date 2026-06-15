@@ -50,7 +50,7 @@ public class AuthServiceTests
         _httpHandler.QueueJsonResponse(
             ClientTestFactory.CreateValidConnectionResponse());
 
-        var result = await _sut.Login(new LoginRequest
+        AuthResponse result = await _sut.Login(new LoginRequest
         {
             Email = "user@example.com",
             Password = "SecurePass123!"
@@ -108,7 +108,7 @@ public class AuthServiceTests
             ClientTestFactory.CreateApiErrorBody("Invalid credentials"),
             HttpStatusCode.Unauthorized);
 
-        var result = await _sut.Login(new LoginRequest
+        AuthResponse result = await _sut.Login(new LoginRequest
         {
             Email = "user@example.com",
             Password = "SecurePass123!"
@@ -127,7 +127,7 @@ public class AuthServiceTests
         _httpHandler.QueueErrorResponse(
             HttpStatusCode.InternalServerError, "<html>Server Error</html>");
 
-        var result = await _sut.Login(new LoginRequest
+        AuthResponse result = await _sut.Login(new LoginRequest
         {
             Email = "user@example.com",
             Password = "SecurePass123!"
@@ -146,7 +146,7 @@ public class AuthServiceTests
         _httpHandler.QueueJsonResponse(
             ClientTestFactory.CreateConnectionResponseWithEmptyToken());
 
-        var result = await _sut.Login(new LoginRequest
+        AuthResponse result = await _sut.Login(new LoginRequest
         {
             Email = "user@example.com",
             Password = "SecurePass123!"
@@ -163,7 +163,7 @@ public class AuthServiceTests
             Content = new StringContent("not-json")
         });
 
-        var result = await _sut.Login(new LoginRequest
+        AuthResponse result = await _sut.Login(new LoginRequest
         {
             Email = "user@example.com",
             Password = "SecurePass123!"
@@ -182,7 +182,7 @@ public class AuthServiceTests
         _httpHandler.QueueJsonResponse(
             ClientTestFactory.CreateValidConnectionResponse());
 
-        var result = await _sut.Register(new RegisterRequest
+        AuthResponse result = await _sut.Register(new RegisterRequest
         {
             FirstName = "Jean",
             LastName = "Dupont",
@@ -220,7 +220,7 @@ public class AuthServiceTests
             ClientTestFactory.CreateApiErrorBody("Email already exists"),
             HttpStatusCode.Conflict);
 
-        var result = await _sut.Register(new RegisterRequest
+        AuthResponse result = await _sut.Register(new RegisterRequest
         {
             FirstName = "Jean",
             LastName = "Dupont",
@@ -246,7 +246,7 @@ public class AuthServiceTests
         _httpHandler.QueueJsonResponse(
             ClientTestFactory.CreateValidConnectionResponse());
 
-        var result = await _sut.RegisterRestaurant(new RestaurantRegister
+        AuthResponse result = await _sut.RegisterRestaurant(new RestaurantRegister
         {
             FirstName = "Marie",
             LastName = "Curie",
@@ -318,7 +318,7 @@ public class AuthServiceTests
             ClientTestFactory.CreateApiErrorBody("VAT number already registered"),
             HttpStatusCode.Conflict);
 
-        var result = await _sut.RegisterRestaurant(new RestaurantRegister
+        AuthResponse result = await _sut.RegisterRestaurant(new RestaurantRegister
         {
             FirstName = "Marie",
             LastName = "Curie",

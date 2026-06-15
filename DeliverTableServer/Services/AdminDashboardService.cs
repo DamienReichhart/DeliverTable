@@ -4,6 +4,7 @@ using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
 using DeliverTableSharedLibrary.Enums;
 using Microsoft.EntityFrameworkCore;
+using DeliverTableInfrastructure.Models;
 
 namespace DeliverTableServer.Services;
 
@@ -13,7 +14,7 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
 
     public async Task<ServiceResult<AdminDashboardStatsResponse>> GetStatsAsync(CancellationToken ct = default)
     {
-        var stats = new AdminDashboardStatsResponse
+        AdminDashboardStatsResponse stats = new AdminDashboardStatsResponse
         {
             TotalUsers = await _dbContext.Users.CountAsync(ct),
             TotalRestaurants = await _dbContext.Restaurants.CountAsync(ct),
@@ -27,15 +28,15 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
 
     public async Task<ServiceResult<AdminDashboardAnalyticsResponse>> GetAnalyticsAsync(CancellationToken ct = default)
     {
-        var today = DateTime.UtcNow.Date;
-        var thirtyDaysAgo = today.AddDays(-29);
-        var weekAgo = today.AddDays(-7);
+        DateTime today = DateTime.UtcNow.Date;
+        DateTime thirtyDaysAgo = today.AddDays(-29);
+        DateTime weekAgo = today.AddDays(-7);
 
-        var recentOrders = await _dbContext.Orders
+        List<Order> recentOrders = await _dbContext.Orders
             .Where(o => o.CreatedAt >= thirtyDaysAgo)
             .ToListAsync(ct);
 
-        var revenueByDay = recentOrders
+        List<DailyRevenuePoint> revenueByDay = recentOrders
             .GroupBy(o => DateOnly.FromDateTime(o.CreatedAt))
             .Select(g => new DailyRevenuePoint
             {
@@ -45,7 +46,7 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
             .OrderBy(p => p.Date)
             .ToList();
 
-        var ordersByDay = recentOrders
+        List<DailyCountPoint> ordersByDay = recentOrders
             .GroupBy(o => DateOnly.FromDateTime(o.CreatedAt))
             .Select(g => new DailyCountPoint
             {
@@ -55,11 +56,11 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
             .OrderBy(p => p.Date)
             .ToList();
 
-        var recentUsers = await _dbContext.Users
+        List<User> recentUsers = await _dbContext.Users
             .Where(u => u.CreatedAt >= thirtyDaysAgo)
             .ToListAsync(ct);
 
-        var userRegistrationsByDay = recentUsers
+        List<DailyCountPoint> userRegistrationsByDay = recentUsers
             .GroupBy(u => DateOnly.FromDateTime(u.CreatedAt))
             .Select(g => new DailyCountPoint
             {
@@ -69,13 +70,13 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
             .OrderBy(p => p.Date)
             .ToList();
 
-        var totalOrderCount = await _dbContext.Orders.CountAsync(ct);
+        int totalOrderCount = await _dbContext.Orders.CountAsync(ct);
 
-        var ordersByStatus = await BreakdownAsync(_dbContext.Orders, o => o.Status, totalOrderCount, ct);
-        var ordersByType = await BreakdownAsync(_dbContext.Orders, o => o.OrderType, totalOrderCount, ct);
-        var paymentsByStatus = await BreakdownAsync(_dbContext.Orders, o => o.PaymentStatus, totalOrderCount, ct);
+        List<StatusBreakdownItem> ordersByStatus = await BreakdownAsync(_dbContext.Orders, o => o.Status, totalOrderCount, ct);
+        List<StatusBreakdownItem> ordersByType = await BreakdownAsync(_dbContext.Orders, o => o.OrderType, totalOrderCount, ct);
+        List<StatusBreakdownItem> paymentsByStatus = await BreakdownAsync(_dbContext.Orders, o => o.PaymentStatus, totalOrderCount, ct);
 
-        var topRestaurants = await _dbContext.Orders
+        List<TopRestaurantItem> topRestaurants = await _dbContext.Orders
             .GroupBy(o => new { o.RestaurantId, o.Restaurant.Name })
             .Select(g => new TopRestaurantItem
             {
@@ -88,7 +89,7 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
             .Take(5)
             .ToListAsync(ct);
 
-        var latestOrders = await _dbContext.Orders
+        List<RecentOrderItem> latestOrders = await _dbContext.Orders
             .OrderByDescending(o => o.CreatedAt)
             .Take(10)
             .Select(o => new RecentOrderItem
@@ -103,14 +104,14 @@ public sealed class AdminDashboardService(DeliverTableContext dbContext) : IAdmi
             })
             .ToListAsync(ct);
 
-        var averageOrderValue = totalOrderCount > 0
+        decimal averageOrderValue = totalOrderCount > 0
             ? Math.Round(await _dbContext.Orders.AverageAsync(o => o.TotalAmount, ct), 2)
             : 0;
 
-        var todayOrders = recentOrders.Where(o => o.CreatedAt.Date == today).ToList();
-        var newUsersThisWeek = recentUsers.Count(u => u.CreatedAt >= weekAgo);
+        List<Order> todayOrders = recentOrders.Where(o => o.CreatedAt.Date == today).ToList();
+        int newUsersThisWeek = recentUsers.Count(u => u.CreatedAt >= weekAgo);
 
-        var analytics = new AdminDashboardAnalyticsResponse
+        AdminDashboardAnalyticsResponse analytics = new AdminDashboardAnalyticsResponse
         {
             RevenueByDay = revenueByDay,
             OrdersByDay = ordersByDay,

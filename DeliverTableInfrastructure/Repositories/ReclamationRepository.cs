@@ -29,7 +29,7 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
 
     public async Task<Reclamation> CreateReclamation(CreateReclamationDto reclamation)
     {
-        var entity = new Reclamation
+        Reclamation entity = new Reclamation
         {
             OrderId = reclamation.OrderId,
             Description = reclamation.Description,
@@ -57,7 +57,7 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
 
     public async Task<List<Reclamation>> GetReclamationsByUser(int userId)
     {
-        var orderIds = await dbContext.Orders
+        List<int> orderIds = await dbContext.Orders
             .Where(o => o.CustomerId == userId)
             .Select(o => o.Id)
             .ToListAsync();
@@ -71,7 +71,7 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
 
     public async Task<List<Reclamation>> GetReclamationsByRestaurant(int restaurantId)
     {
-        var orderIds = await dbContext.Orders
+        List<int> orderIds = await dbContext.Orders
             .Where(o => o.RestaurantId == restaurantId)
             .Select(o => o.Id)
             .ToListAsync();
@@ -85,7 +85,7 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
 
     public async Task<List<Reclamation>> GetReclamationsByRestaurantOwner(int ownerId)
     {
-        var orderIds = await dbContext.Orders
+        List<int> orderIds = await dbContext.Orders
             .Where(o => o.Restaurant.OwnerId == ownerId)
             .Select(o => o.Id)
             .ToListAsync();
@@ -140,13 +140,13 @@ public class ReclamationRepository(DeliverTableContext dbContext) : IReclamation
         ReclamationQuery query)
     {
         if (!string.IsNullOrEmpty(query.ReclamationType) &&
-            Enum.TryParse<ReclamationType>(query.ReclamationType, ignoreCase: true, out var type))
+            Enum.TryParse<ReclamationType>(query.ReclamationType, ignoreCase: true, out ReclamationType type))
         {
             queryable = queryable.Where(r => r.Type == type);
         }
 
         if (!string.IsNullOrEmpty(query.ReclamationStatus) &&
-            Enum.TryParse<ReclamationStatus>(query.ReclamationStatus, ignoreCase: true, out var status))
+            Enum.TryParse<ReclamationStatus>(query.ReclamationStatus, ignoreCase: true, out ReclamationStatus status))
         {
             queryable = queryable.Where(r => r.Status == status);
         }

@@ -28,13 +28,13 @@ public sealed class DishService(
 
     public async Task<ServiceResult<PaginatedResult<DishDto>>> GetAllAsync(DishQuery query, CancellationToken ct = default)
     {
-        var data = await _dishRepository.GetAllAsync(query, ct);
+        (List<Dish> Items, int TotalCount) data = await _dishRepository.GetAllAsync(query, ct);
         return data.ToPaginatedResult(d => d.ToDto(), 1, data.TotalCount);
     }
 
     public async Task<ServiceResult<DishDto>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var dish = await _dishRepository.GetByIdAsync(id, ct);
+        Dish? dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
@@ -44,21 +44,21 @@ public sealed class DishService(
     public async Task<ServiceResult<PaginatedResult<DishDto>>> GetByRestaurantIdAsync(
         DishQuery query, int restaurantId, CancellationToken ct = default)
     {
-        var data = await _dishRepository.GetByRestaurantIdAsync(query, restaurantId, ct);
+        (List<Dish> Items, int TotalCount) data = await _dishRepository.GetByRestaurantIdAsync(query, restaurantId, ct);
         return data.ToPaginatedResult(d => d.ToDto(), 1, data.TotalCount);
     }
 
     public async Task<ServiceResult<DishDto>> CreateAsync(
         CreateDishDto dto, int restaurantId, IFormFile? image, CancellationToken ct = default)
     {
-        var imageError = ValidateImage(image);
+        ServiceError? imageError = ValidateImage(image);
         if (imageError is not null)
             return imageError;
 
-        var dish = new Dish { RestaurantId = restaurantId };
+        Dish dish = new Dish { RestaurantId = restaurantId };
         ApplyDtoToDish(dto, dish);
 
-        var created = await _dishRepository.CreateAsync(dish, ct);
+        Dish created = await _dishRepository.CreateAsync(dish, ct);
 
         if (image is not null)
             await _objectStorage.UploadAsync(image, DishImageFolder, created.Id);
@@ -69,11 +69,11 @@ public sealed class DishService(
     public async Task<ServiceResult<DishDto>> UpdateAsync(
         int id, CreateDishDto dto, IFormFile? image, CancellationToken ct = default)
     {
-        var imageError = ValidateImage(image);
+        ServiceError? imageError = ValidateImage(image);
         if (imageError is not null)
             return imageError;
 
-        var dish = await _dishRepository.GetByIdAsync(id, ct);
+        Dish? dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
@@ -85,7 +85,7 @@ public sealed class DishService(
 
         ApplyDtoToDish(dto, dish);
 
-        var updated = await _dishRepository.UpdateAsync(dish, ct);
+        Dish updated = await _dishRepository.UpdateAsync(dish, ct);
         return updated.ToDto();
     }
 
@@ -108,12 +108,12 @@ public sealed class DishService(
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var dish = await _dishRepository.GetByIdAsync(id, ct);
+        Dish? dish = await _dishRepository.GetByIdAsync(id, ct);
         if (dish is null)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 
         await _objectStorage.DeleteAsync($"{DishImageFolder}/{dish.Id}");
-        var deleted = await _dishRepository.DeleteAsync(id, ct);
+        bool deleted = await _dishRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.DishNotFound);
 

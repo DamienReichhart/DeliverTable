@@ -20,7 +20,7 @@ public sealed class HealthApiClient : IHealthApiClient
     {
         try
         {
-            var response = await _httpClient.GetAsync(ApiRoutes.Health, cancellationToken);
+            HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Health, cancellationToken);
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<HealthResponse>(cancellationToken);
         }

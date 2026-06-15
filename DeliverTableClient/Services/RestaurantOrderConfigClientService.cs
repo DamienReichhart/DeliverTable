@@ -15,13 +15,13 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         int restaurantId,
         CancellationToken ct = default)
     {
-        var url = ApiRoutes.OrderConfig.RestaurantBlockedSlotsRoute.Replace("{id:int}", restaurantId.ToString());
+        string url = ApiRoutes.OrderConfig.RestaurantBlockedSlotsRoute.Replace("{id:int}", restaurantId.ToString());
 
-        using var response = await _httpClient.GetAsync(url, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(url, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var items = await response.Content.ReadFromJsonAsync<List<AdminBlockedSlotResponse>>(cancellationToken: ct);
+        List<AdminBlockedSlotResponse>? items = await response.Content.ReadFromJsonAsync<List<AdminBlockedSlotResponse>>(cancellationToken: ct);
         return items is not null
             ? (items, null)
             : (null, new ErrorResponse { Error = "Impossible de lire la liste des créneaux bloqués", Status = (int)response.StatusCode });
@@ -32,13 +32,13 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         AdminCreateBlockedSlotRequest request,
         CancellationToken ct = default)
     {
-        var url = ApiRoutes.OrderConfig.RestaurantBlockedSlotsRoute.Replace("{id:int}", restaurantId.ToString());
+        string url = ApiRoutes.OrderConfig.RestaurantBlockedSlotsRoute.Replace("{id:int}", restaurantId.ToString());
 
-        using var response = await _httpClient.PostAsJsonAsync(url, request, ct);
+        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(url, request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminBlockedSlotResponse>(cancellationToken: ct);
+        AdminBlockedSlotResponse? item = await response.Content.ReadFromJsonAsync<AdminBlockedSlotResponse>(cancellationToken: ct);
         return (item, null);
     }
 
@@ -47,11 +47,11 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         int slotId,
         CancellationToken ct = default)
     {
-        var url = ApiRoutes.OrderConfig.RestaurantBlockedSlotByIdRoute
+        string url = ApiRoutes.OrderConfig.RestaurantBlockedSlotByIdRoute
             .Replace("{id:int}", restaurantId.ToString())
             .Replace("{slotId:int}", slotId.ToString());
 
-        using var response = await _httpClient.DeleteAsync(url, ct);
+        using HttpResponseMessage response = await _httpClient.DeleteAsync(url, ct);
         if (!response.IsSuccessStatusCode)
             return (false, await ReadError(response, ct));
 
@@ -62,13 +62,13 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         int restaurantId,
         CancellationToken ct = default)
     {
-        var url = ApiRoutes.OrderConfig.TablesCapacityRoute.Replace("{id:int}", restaurantId.ToString());
+        string url = ApiRoutes.OrderConfig.TablesCapacityRoute.Replace("{id:int}", restaurantId.ToString());
 
-        using var response = await _httpClient.GetAsync(url, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(url, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<TablesCapacityResponse>(cancellationToken: ct);
+        TablesCapacityResponse? item = await response.Content.ReadFromJsonAsync<TablesCapacityResponse>(cancellationToken: ct);
         return (item, null);
     }
 
@@ -77,13 +77,13 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         UpdateTablesCapacityRequest request,
         CancellationToken ct = default)
     {
-        var url = ApiRoutes.OrderConfig.TablesCapacityRoute.Replace("{id:int}", restaurantId.ToString());
+        string url = ApiRoutes.OrderConfig.TablesCapacityRoute.Replace("{id:int}", restaurantId.ToString());
 
-        using var response = await _httpClient.PutAsJsonAsync(url, request, ct);
+        using HttpResponseMessage response = await _httpClient.PutAsJsonAsync(url, request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<TablesCapacityResponse>(cancellationToken: ct);
+        TablesCapacityResponse? item = await response.Content.ReadFromJsonAsync<TablesCapacityResponse>(cancellationToken: ct);
         return (item, null);
     }
 
@@ -91,13 +91,13 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         int restaurantId,
         CancellationToken ct = default)
     {
-        var url = ApiRoutes.OrderConfig.OpeningHoursRoute.Replace("{id:int}", restaurantId.ToString());
+        string url = ApiRoutes.OrderConfig.OpeningHoursRoute.Replace("{id:int}", restaurantId.ToString());
 
-        using var response = await _httpClient.GetAsync(url, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(url, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<RestaurantOpeningHoursResponse>(cancellationToken: ct);
+        RestaurantOpeningHoursResponse? item = await response.Content.ReadFromJsonAsync<RestaurantOpeningHoursResponse>(cancellationToken: ct);
         return (item, null);
     }
 
@@ -106,13 +106,13 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         UpdateRestaurantOpeningHoursRequest request,
         CancellationToken ct = default)
     {
-        var url = ApiRoutes.OrderConfig.OpeningHoursRoute.Replace("{id:int}", restaurantId.ToString());
+        string url = ApiRoutes.OrderConfig.OpeningHoursRoute.Replace("{id:int}", restaurantId.ToString());
 
-        using var response = await _httpClient.PutAsJsonAsync(url, request, ct);
+        using HttpResponseMessage response = await _httpClient.PutAsJsonAsync(url, request, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<RestaurantOpeningHoursResponse>(cancellationToken: ct);
+        RestaurantOpeningHoursResponse? item = await response.Content.ReadFromJsonAsync<RestaurantOpeningHoursResponse>(cancellationToken: ct);
         return (item, null);
     }
 
@@ -121,16 +121,16 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
         RestaurantAvailableSlotsQuery query,
         CancellationToken ct = default)
     {
-        var queryString = $"date={query.Date:yyyy-MM-dd}&guestCount={query.GuestCount}";
-        var url = ApiRoutes.OrderConfig.AvailableSlotsRoute
+        string queryString = $"date={query.Date:yyyy-MM-dd}&guestCount={query.GuestCount}";
+        string url = ApiRoutes.OrderConfig.AvailableSlotsRoute
             .Replace("{id:int}", restaurantId.ToString())
             + $"?{queryString}";
 
-        using var response = await _httpClient.GetAsync(url, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(url, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<RestaurantAvailableSlotsResponse>(cancellationToken: ct);
+        RestaurantAvailableSlotsResponse? item = await response.Content.ReadFromJsonAsync<RestaurantAvailableSlotsResponse>(cancellationToken: ct);
         return (item, null);
     }
 
@@ -138,7 +138,7 @@ public sealed class RestaurantOrderConfigClientService(HttpClient httpClient) : 
     {
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
         }
         catch

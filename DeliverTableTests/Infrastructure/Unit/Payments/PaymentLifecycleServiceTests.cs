@@ -32,14 +32,14 @@ public class PaymentLifecycleServiceTests
     [Test]
     public async Task CancelAbandonedOrderAsync_TransitionsOrderAndCancelsIntent()
     {
-        var order = new Order { Id = 42, Status = OrderStatus.AwaitingPayment };
-        var payment = new Payment { Id = 1, OrderId = 42, StripePaymentIntentId = "pi_123" };
+        Order order = new Order { Id = 42, Status = OrderStatus.AwaitingPayment };
+        Payment payment = new Payment { Id = 1, OrderId = 42, StripePaymentIntentId = "pi_123" };
         _orderRepository.GetByIdAsync(42, Arg.Any<CancellationToken>()).Returns(order);
         _paymentRepository.GetByOrderIdAsync(42, Arg.Any<CancellationToken>()).Returns(payment);
         _stripe.CancelPaymentIntentAsync("pi_123", Arg.Any<string>(), Arg.Any<CancellationToken>())
                .Returns(new StripeCancelResult("pi_123", "canceled"));
 
-        var changed = await _sut.CancelAbandonedOrderAsync(42, CancellationToken.None);
+        bool changed = await _sut.CancelAbandonedOrderAsync(42, CancellationToken.None);
 
         Assert.That(changed, Is.True);
         Assert.That(order.Status, Is.EqualTo(OrderStatus.Cancelled));
@@ -51,10 +51,10 @@ public class PaymentLifecycleServiceTests
     [Test]
     public async Task CancelAbandonedOrderAsync_OrderNotInAwaitingPayment_ReturnsFalse()
     {
-        var order = new Order { Id = 42, Status = OrderStatus.Pending };
+        Order order = new Order { Id = 42, Status = OrderStatus.Pending };
         _orderRepository.GetByIdAsync(42, Arg.Any<CancellationToken>()).Returns(order);
 
-        var changed = await _sut.CancelAbandonedOrderAsync(42, CancellationToken.None);
+        bool changed = await _sut.CancelAbandonedOrderAsync(42, CancellationToken.None);
 
         Assert.That(changed, Is.False);
         await _stripe.DidNotReceive().CancelPaymentIntentAsync(
@@ -64,14 +64,14 @@ public class PaymentLifecycleServiceTests
     [Test]
     public async Task AutoRefuseOrderAsync_TransitionsPendingToRefusedAndCancelsAuth()
     {
-        var order = new Order { Id = 7, Status = OrderStatus.Pending };
-        var payment = new Payment { Id = 1, OrderId = 7, StripePaymentIntentId = "pi_77" };
+        Order order = new Order { Id = 7, Status = OrderStatus.Pending };
+        Payment payment = new Payment { Id = 1, OrderId = 7, StripePaymentIntentId = "pi_77" };
         _orderRepository.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(order);
         _paymentRepository.GetByOrderIdAsync(7, Arg.Any<CancellationToken>()).Returns(payment);
         _stripe.CancelPaymentIntentAsync("pi_77", Arg.Any<string>(), Arg.Any<CancellationToken>())
                .Returns(new StripeCancelResult("pi_77", "canceled"));
 
-        var changed = await _sut.AutoRefuseOrderAsync(7, CancellationToken.None);
+        bool changed = await _sut.AutoRefuseOrderAsync(7, CancellationToken.None);
 
         Assert.That(changed, Is.True);
         Assert.That(order.Status, Is.EqualTo(OrderStatus.Refused));

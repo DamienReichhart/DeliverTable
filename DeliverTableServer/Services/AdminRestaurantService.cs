@@ -4,6 +4,7 @@ using DeliverTableServer.Mappers;
 using DeliverTableInfrastructure.Repositories.Interfaces;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Admin;
+using DeliverTableInfrastructure.Models;
 
 namespace DeliverTableServer.Services;
 
@@ -13,14 +14,14 @@ public sealed class AdminRestaurantService(IRestaurantRepository restaurantRepos
 
     public async Task<ServiceResult<List<AdminRestaurantResponse>>> GetAllAsync(CancellationToken ct = default)
     {
-        var restaurants = await _restaurantRepository.GetAllUnscopedAsync(ct);
-        var result = restaurants.Select(r => r.ToAdminDto()).ToList();
+        List<Restaurant> restaurants = await _restaurantRepository.GetAllUnscopedAsync(ct);
+        List<AdminRestaurantResponse> result = restaurants.Select(r => r.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminRestaurantResponse>> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdWithOwnerAsync(id, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdWithOwnerAsync(id, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
@@ -30,7 +31,7 @@ public sealed class AdminRestaurantService(IRestaurantRepository restaurantRepos
     public async Task<ServiceResult<AdminRestaurantResponse>> UpdateAsync(
         int id, AdminUpdateRestaurantRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdWithOwnerAsync(id, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdWithOwnerAsync(id, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
@@ -44,13 +45,13 @@ public sealed class AdminRestaurantService(IRestaurantRepository restaurantRepos
         restaurant.IsActive = request.IsActive;
         restaurant.UpdatedAt = DateTime.UtcNow;
 
-        var updated = await _restaurantRepository.UpdateAsync(restaurant, ct);
+        Restaurant updated = await _restaurantRepository.UpdateAsync(restaurant, ct);
         return updated.ToAdminDto();
     }
 
     public async Task<ServiceResult> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _restaurantRepository.DeleteAsync(id, ct);
+        bool deleted = await _restaurantRepository.DeleteAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 

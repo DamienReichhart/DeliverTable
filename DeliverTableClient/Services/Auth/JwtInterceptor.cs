@@ -9,7 +9,7 @@ public class JwtInterceptor : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
+        string token = await _js.InvokeAsync<string>("localStorage.getItem", "authToken");
 
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

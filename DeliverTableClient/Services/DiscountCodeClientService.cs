@@ -14,14 +14,14 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
     {
         try
         {
-            var queryParams = new List<string>
+            List<string> queryParams = new List<string>
             {
                 $"PageNumber={query.PageNumber}",
                 $"PageSize={query.PageSize}"
             };
 
-            var url = $"{ApiRoutes.DiscountCode.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
-            var result = await _httpClient.GetFromJsonAsync<PaginatedResult<DiscountCodeDto>>(url, ct);
+            string url = $"{ApiRoutes.DiscountCode.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString())}?{string.Join("&", queryParams)}";
+            PaginatedResult<DiscountCodeDto>? result = await _httpClient.GetFromJsonAsync<PaginatedResult<DiscountCodeDto>>(url, ct);
             return (result, null);
         }
         catch (Exception ex)
@@ -32,37 +32,37 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
 
     public async Task<(DiscountCodeDto?, ErrorResponse?)> CreateAsync(int restaurantId, CreateDiscountCodeRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PostAsJsonAsync(
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
             ApiRoutes.DiscountCode.RestaurantBaseRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<DiscountCodeDto>(cancellationToken: ct);
+        DiscountCodeDto? result = await response.Content.ReadFromJsonAsync<DiscountCodeDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(DiscountCodeDto?, ErrorResponse?)> UpdateAsync(int discountCodeId, UpdateDiscountCodeRequest request, CancellationToken ct = default)
     {
-        var response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.DiscountCode.Base}/{discountCodeId}", request, ct);
+        HttpResponseMessage response = await _httpClient.PutAsJsonAsync($"{ApiRoutes.DiscountCode.Base}/{discountCodeId}", request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<DiscountCodeDto>(cancellationToken: ct);
+        DiscountCodeDto? result = await response.Content.ReadFromJsonAsync<DiscountCodeDto>(cancellationToken: ct);
         return (result, null);
     }
 
     public async Task<(bool, ErrorResponse?)> DeleteAsync(int discountCodeId, CancellationToken ct = default)
     {
-        var response = await _httpClient.DeleteAsync($"{ApiRoutes.DiscountCode.Base}/{discountCodeId}", ct);
+        HttpResponseMessage response = await _httpClient.DeleteAsync($"{ApiRoutes.DiscountCode.Base}/{discountCodeId}", ct);
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (false, error);
         }
 
@@ -71,17 +71,17 @@ public sealed class DiscountCodeClientService(HttpClient httpClient) : IDiscount
 
     public async Task<(DiscountCodeDto?, ErrorResponse?)> ValidateAsync(int restaurantId, string code, CancellationToken ct = default)
     {
-        var request = new ValidateDiscountCodeRequest { Code = code };
-        var response = await _httpClient.PostAsJsonAsync(
+        ValidateDiscountCodeRequest request = new ValidateDiscountCodeRequest { Code = code };
+        HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
             ApiRoutes.DiscountCode.ValidateRoute.Replace("{id:int}", restaurantId.ToString()), request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return (null, error);
         }
 
-        var result = await response.Content.ReadFromJsonAsync<DiscountCodeDto>(cancellationToken: ct);
+        DiscountCodeDto? result = await response.Content.ReadFromJsonAsync<DiscountCodeDto>(cancellationToken: ct);
         return (result, null);
     }
 }

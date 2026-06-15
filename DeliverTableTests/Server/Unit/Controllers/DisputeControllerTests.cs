@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Dispute;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -28,7 +28,7 @@ public class DisputeControllerTests
     public async Task GetForRestaurant_Owner_ReturnsPaginatedList()
     {
         AuthenticationTestHelper.SetupAuthenticatedUser(_sut, "7", nameof(UserRole.RestaurantOwner));
-        var paginated = new PaginatedResult<DisputeRowDto>
+        PaginatedResult<DisputeRowDto> paginated = new PaginatedResult<DisputeRowDto>
         {
             Items =
             [
@@ -42,10 +42,10 @@ public class DisputeControllerTests
         _service.ListForRestaurantAsync(5, 1, 20, 7, false, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<DisputeRowDto>>.Success(paginated));
 
-        var result = await _sut.GetForRestaurant(5, 1, 20, CancellationToken.None);
+        IActionResult result = await _sut.GetForRestaurant(5, 1, 20, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
-        var ok = (OkObjectResult)result;
+        OkObjectResult ok = (OkObjectResult)result;
         Assert.That(ok.Value, Is.InstanceOf<PaginatedResult<DisputeRowDto>>());
     }
 
@@ -57,7 +57,7 @@ public class DisputeControllerTests
             .Returns(ServiceResult<PaginatedResult<DisputeRowDto>>.Success(
                 new PaginatedResult<DisputeRowDto> { Items = [], TotalCount = 0, Page = 1, PageSize = 20 }));
 
-        var result = await _sut.GetForRestaurant(5, 1, 20, CancellationToken.None);
+        IActionResult result = await _sut.GetForRestaurant(5, 1, 20, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
         await _service.Received(1).ListForRestaurantAsync(
@@ -72,7 +72,7 @@ public class DisputeControllerTests
             .Returns(ServiceResult<PaginatedResult<DisputeRowDto>>.Failure(
                 new ServiceError("Denied", 403)));
 
-        var result = await _sut.GetForRestaurant(5, 1, 20, CancellationToken.None);
+        IActionResult result = await _sut.GetForRestaurant(5, 1, 20, CancellationToken.None);
 
         Assert.That(result, Is.Not.InstanceOf<OkObjectResult>());
     }

@@ -13,11 +13,11 @@ public sealed class AdminTransactionClientService(HttpClient httpClient) : IAdmi
     public async Task<(List<AdminTransactionResponse>? Transactions, ErrorResponse? Error)> GetAllAsync(
         CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync(ApiRoutes.Admin.Transactions, ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync(ApiRoutes.Admin.Transactions, ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var items = await response.Content.ReadFromJsonAsync<List<AdminTransactionResponse>>(cancellationToken: ct);
+        List<AdminTransactionResponse>? items = await response.Content.ReadFromJsonAsync<List<AdminTransactionResponse>>(cancellationToken: ct);
         return items is not null
             ? (items, null)
             : (null, new ErrorResponse { Error = "Impossible de lire la liste des transactions", Status = (int)response.StatusCode });
@@ -26,11 +26,11 @@ public sealed class AdminTransactionClientService(HttpClient httpClient) : IAdmi
     public async Task<(AdminTransactionResponse? Transaction, ErrorResponse? Error)> GetByIdAsync(
         int id, CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync($"{ApiRoutes.Admin.Transactions}/{id}", ct);
+        using HttpResponseMessage response = await _httpClient.GetAsync($"{ApiRoutes.Admin.Transactions}/{id}", ct);
         if (!response.IsSuccessStatusCode)
             return (null, await ReadError(response, ct));
 
-        var item = await response.Content.ReadFromJsonAsync<AdminTransactionResponse>(cancellationToken: ct);
+        AdminTransactionResponse? item = await response.Content.ReadFromJsonAsync<AdminTransactionResponse>(cancellationToken: ct);
         return (item, null);
     }
 
@@ -38,7 +38,7 @@ public sealed class AdminTransactionClientService(HttpClient httpClient) : IAdmi
     {
         try
         {
-            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            ErrorResponse? error = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
             return error ?? new ErrorResponse { Error = "Une erreur est survenue", Status = (int)response.StatusCode };
         }
         catch

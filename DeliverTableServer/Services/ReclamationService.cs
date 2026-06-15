@@ -38,13 +38,13 @@ public class ReclamationService(
 
     public async Task<ServiceResult<List<ReclamationDto>>> GetReclamationsByUser(int userId)
     {
-        var reclamations = await reclamationRepository.GetReclamationsByUser(userId);
+        List<Reclamation> reclamations = await reclamationRepository.GetReclamationsByUser(userId);
         return reclamations.Select(r => r.ToDto()).ToList();
     }
 
     public async Task<ServiceResult<List<ReclamationDto>>> GetReclamationsByRestaurant(int restaurantId)
     {
-        var reclamations = await reclamationRepository.GetReclamationsByRestaurant(restaurantId);
+        List<Reclamation> reclamations = await reclamationRepository.GetReclamationsByRestaurant(restaurantId);
         return reclamations.Select(r => r.ToDto()).ToList();
     }
 
@@ -94,7 +94,7 @@ public class ReclamationService(
         foreach (IFormFile image in images)
         {
             string fileName = image.Name;
-            var match = Regex.Match(fileName, @"Item_(?<itemId>\d+)_image");
+            Match match = Regex.Match(fileName, @"Item_(?<itemId>\d+)_image");
             if (match.Success)
             {
                 bool status = int.TryParse(match.Groups["itemId"].Value, out int parsedItemId);
@@ -119,7 +119,7 @@ public class ReclamationService(
 
     public async Task<ServiceResult<List<ReclamationDto>>> GetReclamationsByRestaurantOwner(int ownerId)
     {
-        var reclamations = await reclamationRepository.GetReclamationsByRestaurantOwner(ownerId);
+        List<Reclamation> reclamations = await reclamationRepository.GetReclamationsByRestaurantOwner(ownerId);
         return reclamations.Select(r => r.ToDto()).ToList();
     }
 
@@ -142,7 +142,7 @@ public class ReclamationService(
         }
         else
         {
-            var selectedItems = reclamation.Items
+            List<ReclamationItem> selectedItems = reclamation.Items
                 .Where(i => dto.ItemIds.Contains(i.Id))
                 .ToList();
 
@@ -226,7 +226,7 @@ public class ReclamationService(
 
         Reclamation? updated = await reclamationRepository.UpdateReclamationStatus(reclamationId, ReclamationStatus.Contested);
 
-        var notificationPayload = JsonSerializer.Serialize(new
+        string notificationPayload = JsonSerializer.Serialize(new
         {
             reclamationId = updated!.ReclamationId,
             orderId = updated.OrderId,

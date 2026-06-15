@@ -1,5 +1,6 @@
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Services;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Dtos.Restaurant;
@@ -26,8 +27,8 @@ public class RestaurantServiceMapTests
     [Test]
     public async Task GetForMapAsync_ReturnsRestaurantMapDtos()
     {
-        var query = new RestaurantQuery { Latitude = 48.8, Longitude = 2.3, RadiusKm = 10 };
-        var restaurants = new List<Restaurant>
+        RestaurantQuery query = new RestaurantQuery { Latitude = 48.8, Longitude = 2.3, RadiusKm = 10 };
+        List<Restaurant> restaurants = new List<Restaurant>
         {
             CreateRestaurant(id: 1),
             CreateRestaurant(id: 2)
@@ -39,7 +40,7 @@ public class RestaurantServiceMapTests
 
         _restaurantRepository.GetForMapAsync(query, Arg.Any<CancellationToken>()).Returns(restaurants);
 
-        var result = await _sut.GetForMapAsync(query);
+        ServiceResult<List<RestaurantMapDto>> result = await _sut.GetForMapAsync(query);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Has.Count.EqualTo(2));
@@ -50,10 +51,10 @@ public class RestaurantServiceMapTests
     [Test]
     public async Task GetForMapAsync_WhenNoResults_ReturnsEmptyList()
     {
-        var query = new RestaurantQuery { Latitude = 48.8, Longitude = 2.3, RadiusKm = 1 };
+        RestaurantQuery query = new RestaurantQuery { Latitude = 48.8, Longitude = 2.3, RadiusKm = 1 };
         _restaurantRepository.GetForMapAsync(query, Arg.Any<CancellationToken>()).Returns(new List<Restaurant>());
 
-        var result = await _sut.GetForMapAsync(query);
+        ServiceResult<List<RestaurantMapDto>> result = await _sut.GetForMapAsync(query);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Value, Is.Empty);
@@ -62,8 +63,8 @@ public class RestaurantServiceMapTests
     [Test]
     public async Task GetForMapAsync_MapsAllFields()
     {
-        var query = new RestaurantQuery { Latitude = 48.8, Longitude = 2.3, RadiusKm = 10 };
-        var restaurant = CreateRestaurant(id: 42);
+        RestaurantQuery query = new RestaurantQuery { Latitude = 48.8, Longitude = 2.3, RadiusKm = 10 };
+        Restaurant restaurant = CreateRestaurant(id: 42);
         restaurant.Name = "Le Gourmet";
         restaurant.Type = DeliverTableSharedLibrary.Enums.RestaurantType.Français;
         restaurant.Latitude = 48.85;
@@ -71,10 +72,10 @@ public class RestaurantServiceMapTests
 
         _restaurantRepository.GetForMapAsync(query, Arg.Any<CancellationToken>()).Returns(new List<Restaurant> { restaurant });
 
-        var result = await _sut.GetForMapAsync(query);
+        ServiceResult<List<RestaurantMapDto>> result = await _sut.GetForMapAsync(query);
 
         Assert.That(result.IsSuccess, Is.True);
-        var dto = result.Value![0];
+        RestaurantMapDto dto = result.Value![0];
         Assert.That(dto.Id, Is.EqualTo(42));
         Assert.That(dto.Name, Is.EqualTo("Le Gourmet"));
         Assert.That(dto.Type, Is.EqualTo("Français"));

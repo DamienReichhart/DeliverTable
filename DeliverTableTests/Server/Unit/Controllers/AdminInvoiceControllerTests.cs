@@ -1,6 +1,6 @@
 using System.Reflection;
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Admin;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableSharedLibrary.Dtos;
@@ -31,7 +31,7 @@ public class AdminInvoiceControllerTests
     [Test]
     public async Task List_ReturnsOkWithPaginatedResult()
     {
-        var row = new AdminInvoiceRowDto(
+        AdminInvoiceRowDto row = new AdminInvoiceRowDto(
             1,
             "DT-2026-000001",
             InvoiceKind.CommissionInvoiceToRestaurant,
@@ -42,7 +42,7 @@ public class AdminInvoiceControllerTests
             2.40m,
             InvoiceStatus.Generated);
 
-        var paginated = new PaginatedResult<AdminInvoiceRowDto>
+        PaginatedResult<AdminInvoiceRowDto> paginated = new PaginatedResult<AdminInvoiceRowDto>
         {
             Items = [row],
             TotalCount = 1,
@@ -54,7 +54,7 @@ public class AdminInvoiceControllerTests
             .AdminListAsync(Arg.Any<InvoiceAdminQuery>(), Arg.Any<CancellationToken>())
             .Returns(ServiceResult<PaginatedResult<AdminInvoiceRowDto>>.Success(paginated));
 
-        var result = await _sut.List(new InvoiceAdminQuery(), CancellationToken.None);
+        IActionResult result = await _sut.List(new InvoiceAdminQuery(), CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -67,7 +67,7 @@ public class AdminInvoiceControllerTests
             .Returns(ServiceResult<PaginatedResult<AdminInvoiceRowDto>>.Failure(
                 new ServiceError("Erreur interne", 500)));
 
-        var result = await _sut.List(new InvoiceAdminQuery(), CancellationToken.None);
+        IActionResult result = await _sut.List(new InvoiceAdminQuery(), CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(500));
@@ -80,18 +80,18 @@ public class AdminInvoiceControllerTests
     [Test]
     public async Task GetById_WhenExists_ReturnsOk()
     {
-        var header = new InvoiceListItemDto(
+        InvoiceListItemDto header = new InvoiceListItemDto(
             1, "DT-2026-000001", InvoiceKind.CommissionInvoiceToRestaurant,
             42, DateTime.UtcNow, 2.40m, "EUR", InvoiceStatus.Generated);
-        var issuer = new InvoiceLegalSnapshotDto("Platform", "SAS", "99999", "FR12345", "10 rue");
-        var recipient = new InvoiceLegalSnapshotDto("Restaurant", "SARL", "11111", "", "2 av");
-        var detail = new AdminInvoiceDetailDto(header, [], issuer, recipient, null);
+        InvoiceLegalSnapshotDto issuer = new InvoiceLegalSnapshotDto("Platform", "SAS", "99999", "FR12345", "10 rue");
+        InvoiceLegalSnapshotDto recipient = new InvoiceLegalSnapshotDto("Restaurant", "SARL", "11111", "", "2 av");
+        AdminInvoiceDetailDto detail = new AdminInvoiceDetailDto(header, [], issuer, recipient, null);
 
         _invoiceService
             .AdminGetDetailAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult<AdminInvoiceDetailDto>.Success(detail));
 
-        var result = await _sut.GetById(1, CancellationToken.None);
+        IActionResult result = await _sut.GetById(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
     }
@@ -104,7 +104,7 @@ public class AdminInvoiceControllerTests
             .Returns(ServiceResult<AdminInvoiceDetailDto>.Failure(
                 new ServiceError("Facture introuvable", 404)));
 
-        var result = await _sut.GetById(99, CancellationToken.None);
+        IActionResult result = await _sut.GetById(99, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(404));
@@ -121,7 +121,7 @@ public class AdminInvoiceControllerTests
             .AdminResendEmailAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Success());
 
-        var result = await _sut.ResendEmail(1, CancellationToken.None);
+        IActionResult result = await _sut.ResendEmail(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -133,7 +133,7 @@ public class AdminInvoiceControllerTests
             .AdminResendEmailAsync(1, Arg.Any<CancellationToken>())
             .Returns(ServiceResult.Failure(new ServiceError("La facture est en cours de génération", 409)));
 
-        var result = await _sut.ResendEmail(1, CancellationToken.None);
+        IActionResult result = await _sut.ResendEmail(1, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         Assert.That(((ObjectResult)result).StatusCode, Is.EqualTo(409));
@@ -142,7 +142,7 @@ public class AdminInvoiceControllerTests
     [Test]
     public void AdminInvoiceController_HasAdministratorRoleAttribute()
     {
-        var classAttrs = typeof(AdminInvoiceController)
+        List<AuthorizeAttribute> classAttrs = typeof(AdminInvoiceController)
             .GetCustomAttributes(typeof(AuthorizeAttribute), true)
             .Cast<AuthorizeAttribute>()
             .ToList();

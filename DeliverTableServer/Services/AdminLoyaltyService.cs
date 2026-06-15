@@ -16,14 +16,14 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
 
     public async Task<ServiceResult<List<AdminLoyaltyProgramResponse>>> GetAllProgramsAsync(CancellationToken ct = default)
     {
-        var programs = await _loyaltyRepository.GetAllProgramsUnscopedAsync(ct);
-        var result = programs.Select(p => p.ToAdminDto()).ToList();
+        List<LoyaltyProgram> programs = await _loyaltyRepository.GetAllProgramsUnscopedAsync(ct);
+        List<AdminLoyaltyProgramResponse> result = programs.Select(p => p.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<AdminLoyaltyProgramResponse>> GetProgramByIdAsync(int id, CancellationToken ct = default)
     {
-        var program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(id, ct);
+        LoyaltyProgram? program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(id, ct);
         if (program is null)
             return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
@@ -33,15 +33,15 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
     public async Task<ServiceResult<AdminLoyaltyProgramResponse>> CreateProgramAsync(
         AdminCreateLoyaltyProgramRequest request, CancellationToken ct = default)
     {
-        var restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
+        Restaurant? restaurant = await _restaurantRepository.GetByIdAsync(request.RestaurantId, ct);
         if (restaurant is null)
             return ServiceError.NotFound(ErrorMessages.RestaurantNotFound);
 
-        var existing = await _loyaltyRepository.GetByRestaurantAsync(request.RestaurantId, ct);
+        LoyaltyProgram? existing = await _loyaltyRepository.GetByRestaurantAsync(request.RestaurantId, ct);
         if (existing is not null)
             return ServiceError.BadRequest(ErrorMessages.LoyaltyProgramAlreadyExists);
 
-        var program = new LoyaltyProgram
+        LoyaltyProgram program = new LoyaltyProgram
         {
             PointsPerEuro = request.PointsPerEuro,
             EurosPerPoint = request.EurosPerPoint,
@@ -49,14 +49,14 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
             IsActive = request.IsActive
         };
 
-        var created = await _loyaltyRepository.CreateAsync(program, ct);
+        LoyaltyProgram created = await _loyaltyRepository.CreateAsync(program, ct);
         return created.ToAdminDto();
     }
 
     public async Task<ServiceResult<AdminLoyaltyProgramResponse>> UpdateProgramAsync(
         int id, AdminUpdateLoyaltyProgramRequest request, CancellationToken ct = default)
     {
-        var program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(id, ct);
+        LoyaltyProgram? program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(id, ct);
         if (program is null)
             return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
@@ -64,13 +64,13 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
         program.EurosPerPoint = request.EurosPerPoint;
         program.IsActive = request.IsActive;
 
-        var updated = await _loyaltyRepository.UpdateAsync(program, ct);
+        LoyaltyProgram updated = await _loyaltyRepository.UpdateAsync(program, ct);
         return updated.ToAdminDto();
     }
 
     public async Task<ServiceResult> DeleteProgramAsync(int id, CancellationToken ct = default)
     {
-        var deleted = await _loyaltyRepository.DeleteProgramAsync(id, ct);
+        bool deleted = await _loyaltyRepository.DeleteProgramAsync(id, ct);
         if (!deleted)
             return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
@@ -79,19 +79,19 @@ public sealed class AdminLoyaltyService(ILoyaltyRepository loyaltyRepository, IR
 
     public async Task<ServiceResult<List<AdminLoyaltyAccountResponse>>> GetAccountsAsync(int programId, CancellationToken ct = default)
     {
-        var program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(programId, ct);
+        LoyaltyProgram? program = await _loyaltyRepository.GetProgramByIdWithAccountsAsync(programId, ct);
         if (program is null)
             return ServiceError.NotFound(ErrorMessages.LoyaltyProgramNotFound);
 
-        var accounts = await _loyaltyRepository.GetAccountsByProgramIdAsync(programId, ct);
-        var result = accounts.Select(a => a.ToAdminDto()).ToList();
+        List<LoyaltyAccount> accounts = await _loyaltyRepository.GetAccountsByProgramIdAsync(programId, ct);
+        List<AdminLoyaltyAccountResponse> result = accounts.Select(a => a.ToAdminDto()).ToList();
         return result;
     }
 
     public async Task<ServiceResult<List<AdminLoyaltyTransactionResponse>>> GetTransactionsAsync(int accountId, CancellationToken ct = default)
     {
-        var transactions = await _loyaltyRepository.GetTransactionsByAccountIdAsync(accountId, ct);
-        var result = transactions.Select(t => t.ToAdminDto()).ToList();
+        List<LoyaltyTransaction> transactions = await _loyaltyRepository.GetTransactionsByAccountIdAsync(accountId, ct);
+        List<AdminLoyaltyTransactionResponse> result = transactions.Select(t => t.ToAdminDto()).ToList();
         return result;
     }
 }

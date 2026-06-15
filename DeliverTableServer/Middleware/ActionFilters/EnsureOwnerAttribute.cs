@@ -22,7 +22,7 @@ public class EnsureOwnerAttribute : TypeFilterAttribute
             if (!ActionFilterHelper.TryGetUserId(context, out int currentUserId))
                 return;
 
-            var restaurantOwnerId = await _dbContext.Restaurants
+            int? restaurantOwnerId = await _dbContext.Restaurants
                 .Where(r => r.Id == id)
                 .Select(r => (int?)r.OwnerId)
                 .FirstOrDefaultAsync();

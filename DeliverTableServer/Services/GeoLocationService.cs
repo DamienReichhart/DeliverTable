@@ -24,9 +24,9 @@ namespace DeliverTableServer.Services
             string query = Uri.EscapeDataString($"{address} {zipcode} {city}");
             string url = GouvApiRoutes.Geolocation + query;
 
-            var response = await _httpClient.GetFromJsonAsync<GouvFeatureCollection>(url);
+            GouvFeatureCollection? response = await _httpClient.GetFromJsonAsync<GouvFeatureCollection>(url);
 
-            var bestResult = response?.Features.FirstOrDefault();
+            GouvFeature? bestResult = response?.Features.FirstOrDefault();
 
             if (
                 bestResult != null

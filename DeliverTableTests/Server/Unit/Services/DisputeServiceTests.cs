@@ -1,6 +1,7 @@
 using DeliverTableInfrastructure.Messaging;
 using DeliverTableInfrastructure.Models;
 using DeliverTableInfrastructure.Repositories.Interfaces;
+using DeliverTableServer.Common;
 using DeliverTableServer.Configuration;
 using DeliverTableServer.Constants;
 using DeliverTableServer.Services;
@@ -80,21 +81,21 @@ public class DisputeServiceTests
     [Test]
     public async Task HandleCreatedAsync_HappyPath_PersistsDisputeReversalAndDefersPublishes()
     {
-        var stripeDispute = CreateStripeDispute();
-        var payment = new Payment { Id = 1, StripeChargeId = "ch_1", OrderId = 10, Amount = 100m };
-        var order = new Order { Id = 10, RestaurantId = 5, CustomerId = 2 };
-        var owner = new User { Id = 99, Email = "owner@rest.fr" };
-        var restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 100m, OwnerId = 99, Owner = owner };
+        Stripe.Dispute stripeDispute = CreateStripeDispute();
+        Payment payment = new Payment { Id = 1, StripeChargeId = "ch_1", OrderId = 10, Amount = 100m };
+        Order order = new Order { Id = 10, RestaurantId = 5, CustomerId = 2 };
+        User owner = new User { Id = 99, Email = "owner@rest.fr" };
+        Restaurant restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 100m, OwnerId = 99, Owner = owner };
 
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns((Dispute?)null);
         _paymentRepo.GetByStripeChargeIdAsync("ch_1", Arg.Any<CancellationToken>()).Returns(payment);
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
         _restaurantRepo.GetByIdWithOwnerAsync(5, Arg.Any<CancellationToken>()).Returns(restaurant);
         _disputeRepo.CreateAsync(Arg.Any<Dispute>(), Arg.Any<CancellationToken>())
-            .Returns(ci => { var d = ci.Arg<Dispute>(); d.Id = 42; return d; });
+            .Returns(ci => { Dispute d = ci.Arg<Dispute>(); d.Id = 42; return d; });
 
-        var deferred = new List<Func<Task>>();
-        var result = await _sut.HandleCreatedAsync(stripeDispute, deferred, CancellationToken.None);
+        List<Func<Task>> deferred = new List<Func<Task>>();
+        ServiceResult<Dispute> result = await _sut.HandleCreatedAsync(stripeDispute, deferred, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _disputeRepo.Received(1).CreateAsync(
@@ -127,11 +128,11 @@ public class DisputeServiceTests
     [Test]
     public async Task HandleCreatedAsync_DuplicateStripeDisputeId_SkipsIdempotently()
     {
-        var existing = new Dispute { Id = 42, StripeDisputeId = "dp_1", State = DisputeState.Open };
+        Dispute existing = new Dispute { Id = 42, StripeDisputeId = "dp_1", State = DisputeState.Open };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns(existing);
 
-        var deferred = new List<Func<Task>>();
-        var result = await _sut.HandleCreatedAsync(CreateStripeDispute(), deferred, CancellationToken.None);
+        List<Func<Task>> deferred = new List<Func<Task>>();
+        ServiceResult<Dispute> result = await _sut.HandleCreatedAsync(CreateStripeDispute(), deferred, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         await _disputeRepo.DidNotReceive().CreateAsync(Arg.Any<Dispute>(), Arg.Any<CancellationToken>());
@@ -145,7 +146,7 @@ public class DisputeServiceTests
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns((Dispute?)null);
         _paymentRepo.GetByStripeChargeIdAsync("ch_missing", Arg.Any<CancellationToken>()).Returns((Payment?)null);
 
-        var result = await _sut.HandleCreatedAsync(
+        ServiceResult<Dispute> result = await _sut.HandleCreatedAsync(
             CreateStripeDispute(chargeId: "ch_missing"),
             new List<Func<Task>>(),
             CancellationToken.None);
@@ -157,10 +158,10 @@ public class DisputeServiceTests
     [Test]
     public async Task HandleCreatedAsync_PartialAmount_ReversesOnlyDisputedAmount()
     {
-        var stripeDispute = CreateStripeDispute(amount: 1500); // 15 EUR
-        var payment = new Payment { Id = 1, StripeChargeId = "ch_1", OrderId = 10, Amount = 100m };
-        var order = new Order { Id = 10, RestaurantId = 5 };
-        var restaurant = new Restaurant { Id = 5, Balance = 200m, OwnerId = 99 };
+        Stripe.Dispute stripeDispute = CreateStripeDispute(amount: 1500); // 15 EUR
+        Payment payment = new Payment { Id = 1, StripeChargeId = "ch_1", OrderId = 10, Amount = 100m };
+        Order order = new Order { Id = 10, RestaurantId = 5 };
+        Restaurant restaurant = new Restaurant { Id = 5, Balance = 200m, OwnerId = 99 };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns((Dispute?)null);
         _paymentRepo.GetByStripeChargeIdAsync("ch_1", Arg.Any<CancellationToken>()).Returns(payment);
         _orderRepo.GetByIdAsync(10, Arg.Any<CancellationToken>()).Returns(order);
@@ -181,7 +182,7 @@ public class DisputeServiceTests
     [Test]
     public async Task HandleUpdatedAsync_RefreshesDueByAndPayload()
     {
-        var existing = new Dispute
+        Dispute existing = new Dispute
         {
             Id = 42,
             StripeDisputeId = "dp_1",
@@ -190,10 +191,10 @@ public class DisputeServiceTests
             StripePayload = "{}",
         };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns(existing);
-        var newDueBy = DateTime.UtcNow.AddDays(14);
-        var stripeDispute = CreateStripeDispute(dueBy: newDueBy);
+        DateTime newDueBy = DateTime.UtcNow.AddDays(14);
+        Stripe.Dispute stripeDispute = CreateStripeDispute(dueBy: newDueBy);
 
-        var result = await _sut.HandleUpdatedAsync(stripeDispute, CancellationToken.None);
+        ServiceResult result = await _sut.HandleUpdatedAsync(stripeDispute, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(existing.DueBy, Is.EqualTo(newDueBy));
@@ -204,9 +205,9 @@ public class DisputeServiceTests
     public async Task HandleUpdatedAsync_MissingDispute_ReturnsError()
     {
         _disputeRepo.GetByStripeDisputeIdAsync("dp_X", Arg.Any<CancellationToken>()).Returns((Dispute?)null);
-        var stripeDispute = CreateStripeDispute(id: "dp_X");
+        Stripe.Dispute stripeDispute = CreateStripeDispute(id: "dp_X");
 
-        var result = await _sut.HandleUpdatedAsync(stripeDispute, CancellationToken.None);
+        ServiceResult result = await _sut.HandleUpdatedAsync(stripeDispute, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.DisputeNotFound));
@@ -219,7 +220,7 @@ public class DisputeServiceTests
     [Test]
     public async Task HandleClosedAsync_Won_CreatesRestoreAndRestoresBalance()
     {
-        var dispute = new Dispute
+        Dispute dispute = new Dispute
         {
             Id = 42,
             StripeDisputeId = "dp_1",
@@ -228,13 +229,13 @@ public class DisputeServiceTests
             Amount = 25m,
             State = DisputeState.Open,
         };
-        var owner = new User { Id = 99, Email = "o@r.fr" };
-        var restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 75m, OwnerId = 99, Owner = owner };
+        User owner = new User { Id = 99, Email = "o@r.fr" };
+        Restaurant restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 75m, OwnerId = 99, Owner = owner };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns(dispute);
         _restaurantRepo.GetByIdWithOwnerAsync(5, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var deferred = new List<Func<Task>>();
-        var result = await _sut.HandleClosedAsync(
+        List<Func<Task>> deferred = new List<Func<Task>>();
+        ServiceResult result = await _sut.HandleClosedAsync(
             CreateStripeDispute(status: "won"), deferred, CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
@@ -253,7 +254,7 @@ public class DisputeServiceTests
     [Test]
     public async Task HandleClosedAsync_Lost_ClosesWithoutBalanceChange()
     {
-        var dispute = new Dispute
+        Dispute dispute = new Dispute
         {
             Id = 42,
             StripeDisputeId = "dp_1",
@@ -262,12 +263,12 @@ public class DisputeServiceTests
             Amount = 25m,
             State = DisputeState.Open,
         };
-        var owner = new User { Id = 99, Email = "o@r.fr" };
-        var restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 75m, OwnerId = 99, Owner = owner };
+        User owner = new User { Id = 99, Email = "o@r.fr" };
+        Restaurant restaurant = new Restaurant { Id = 5, Name = "Chez Toto", Balance = 75m, OwnerId = 99, Owner = owner };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns(dispute);
         _restaurantRepo.GetByIdWithOwnerAsync(5, Arg.Any<CancellationToken>()).Returns(restaurant);
 
-        var result = await _sut.HandleClosedAsync(
+        ServiceResult result = await _sut.HandleClosedAsync(
             CreateStripeDispute(status: "lost"), new List<Func<Task>>(), CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
@@ -279,7 +280,7 @@ public class DisputeServiceTests
     [Test]
     public async Task HandleClosedAsync_AlreadyClosed_IsIdempotent()
     {
-        var dispute = new Dispute
+        Dispute dispute = new Dispute
         {
             Id = 42,
             StripeDisputeId = "dp_1",
@@ -290,7 +291,7 @@ public class DisputeServiceTests
         };
         _disputeRepo.GetByStripeDisputeIdAsync("dp_1", Arg.Any<CancellationToken>()).Returns(dispute);
 
-        var result = await _sut.HandleClosedAsync(
+        ServiceResult result = await _sut.HandleClosedAsync(
             CreateStripeDispute(status: "won"), new List<Func<Task>>(), CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.True);
@@ -302,9 +303,9 @@ public class DisputeServiceTests
     public async Task HandleClosedAsync_MissingDispute_ReturnsError()
     {
         _disputeRepo.GetByStripeDisputeIdAsync("dp_X", Arg.Any<CancellationToken>()).Returns((Dispute?)null);
-        var stripeDispute = CreateStripeDispute(id: "dp_X", status: "won");
+        Stripe.Dispute stripeDispute = CreateStripeDispute(id: "dp_X", status: "won");
 
-        var result = await _sut.HandleClosedAsync(stripeDispute, new List<Func<Task>>(), CancellationToken.None);
+        ServiceResult result = await _sut.HandleClosedAsync(stripeDispute, new List<Func<Task>>(), CancellationToken.None);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Error!.Message, Is.EqualTo(ErrorMessages.DisputeNotFound));
@@ -319,7 +320,7 @@ public class DisputeServiceTests
     {
         _disputeRepo.HasOpenForOrderAsync(10, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await _sut.HasOpenDisputeForOrderAsync(10, CancellationToken.None);
+        bool result = await _sut.HasOpenDisputeForOrderAsync(10, CancellationToken.None);
 
         Assert.That(result, Is.True);
     }

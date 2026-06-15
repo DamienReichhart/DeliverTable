@@ -1,5 +1,5 @@
 using DeliverTableServer.Common;
-using DeliverTableServer.Controllers;
+using DeliverTableServer.Features.Payment;
 using DeliverTableServer.Services.Interfaces;
 using DeliverTableSharedLibrary.Constants.Enums;
 using DeliverTableTests.Global.Helpers;
@@ -29,7 +29,7 @@ public class PaymentControllerTests
         _service.CancelAuthorizationAsync(42, 7, Arg.Any<CancellationToken>())
                 .Returns(ServiceResult.Success());
 
-        var result = await _sut.Cancel(42, CancellationToken.None);
+        IActionResult result = await _sut.Cancel(42, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -41,7 +41,7 @@ public class PaymentControllerTests
         _service.CancelAuthorizationAsync(42, 7, Arg.Any<CancellationToken>())
                 .Returns(ServiceResult.Failure(new ServiceError("Annulation impossible", 400)));
 
-        var result = await _sut.Cancel(42, CancellationToken.None);
+        IActionResult result = await _sut.Cancel(42, CancellationToken.None);
 
         Assert.That(result, Is.Not.InstanceOf<NoContentResult>());
     }
@@ -53,7 +53,7 @@ public class PaymentControllerTests
         _service.CancelAuthorizationAsync(42, 7, Arg.Any<CancellationToken>())
                 .Returns(ServiceResult.Failure(new ServiceError("Vous n'êtes pas autorisé à modifier cette commande", 403)));
 
-        var result = await _sut.Cancel(42, CancellationToken.None);
+        IActionResult result = await _sut.Cancel(42, CancellationToken.None);
 
         Assert.That(result, Is.Not.InstanceOf<NoContentResult>());
     }
