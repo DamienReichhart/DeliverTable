@@ -116,6 +116,13 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       ADMIN_DISPUTE_EMAIL: ${ADMIN_DISPUTE_EMAIL}
+      PLATFORM_LEGAL_NAME: ${PLATFORM_LEGAL_NAME}
+      PLATFORM_LEGAL_FORM: ${PLATFORM_LEGAL_FORM}
+      PLATFORM_SIRET: ${PLATFORM_SIRET}
+      PLATFORM_VAT_NUMBER: ${PLATFORM_VAT_NUMBER}
+      PLATFORM_ADDRESS: ${PLATFORM_ADDRESS}
+      PLATFORM_VAT_APPLICABLE: ${PLATFORM_VAT_APPLICABLE:-true}
+      PLATFORM_COMMISSION_RATE: ${PLATFORM_COMMISSION_RATE:-0.10}
     depends_on:
       database:
         condition: service_healthy
@@ -130,6 +137,8 @@ services:
         ipv4_address: 172.31.0.30
       dt-backend-net:
         ipv4_address: 172.32.0.10
+      dt-egress-net:
+        ipv4_address: 172.33.0.10
     healthcheck:
       test: ["CMD", "/healthcheck", "http://localhost:8080/api/v1/Health"]
       interval: 30s
@@ -275,6 +284,18 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-DeliverTable}
       SMTP_MAX_SENDS_PER_MINUTE: ${SMTP_MAX_SENDS_PER_MINUTE:-5}
       NEUTRALIZE_EMAIL: ${NEUTRALIZE_EMAIL:-false}
+      PLATFORM_LEGAL_NAME: ${PLATFORM_LEGAL_NAME}
+      PLATFORM_LEGAL_FORM: ${PLATFORM_LEGAL_FORM}
+      PLATFORM_SIRET: ${PLATFORM_SIRET}
+      PLATFORM_VAT_NUMBER: ${PLATFORM_VAT_NUMBER}
+      PLATFORM_ADDRESS: ${PLATFORM_ADDRESS}
+      PLATFORM_VAT_APPLICABLE: ${PLATFORM_VAT_APPLICABLE:-true}
+      OBJECT_STORAGE_SERVICE_URL: ${OBJECT_STORAGE_SERVICE_URL}
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY}
+      OBJECT_STORAGE_BUCKET_NAME: ${OBJECT_STORAGE_BUCKET_NAME}
+      OBJECT_STORAGE_FORCE_PATH_STYLE: ${OBJECT_STORAGE_FORCE_PATH_STYLE:-true}
+      OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-garage}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -283,6 +304,8 @@ services:
     networks:
       dt-backend-net:
         ipv4_address: 172.32.0.60
+      dt-egress-net:
+        ipv4_address: 172.33.0.60
     cap_drop:
       - ALL
     logging: *default-logging
@@ -330,6 +353,8 @@ services:
     networks:
       dt-backend-net:
         ipv4_address: 172.32.0.70
+      dt-egress-net:
+        ipv4_address: 172.33.0.70
     cap_drop:
       - ALL
     logging: *default-logging
@@ -364,6 +389,20 @@ networks:
       config:
         - subnet: 172.32.0.0/24
           gateway: 172.32.0.1
+
+  # Outbound-only network: NOT internal, so Docker installs the NAT/default
+  # route that lets backend, worker and scheduler reach external APIs
+  # (api-adresse.data.gouv.fr, Stripe, SMTP). No ports are published here, so
+  # these services remain unreachable from outside; ingress still flows through
+  # the proxy on dt-frontend-net. The other internal nets keep DB/Redis/etc.
+  # isolated with no egress.
+  dt-egress-net:
+    name: dt-egress-prod
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.33.0.0/24
+          gateway: 172.33.0.1
 
 volumes:
   postgres-data:

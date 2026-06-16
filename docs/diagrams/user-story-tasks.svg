@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- User Story card -->
+  <rect x="30" y="20" width="460" height="380" rx="16" fill="#ffffff" stroke="#e8772e" stroke-width="2.5" filter="url(#shadow)"/>
+
+  <!-- User Story header -->
+  <rect x="30" y="20" width="460" height="70" rx="16" fill="#fdf0e6"/>
+  <rect x="30" y="74" width="460" height="16" fill="#fdf0e6"/>
+  <rect x="50" y="40" width="36" height="36" rx="8" fill="#e8772e"/>
+  <text x="68" y="64" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">US</text>
+  <text x="104" y="52" font-size="18" font-weight="700" fill="#2b3038">User Story</text>
+  <rect x="104" y="62" width="170" height="9" rx="4" fill="#f3c9a4"/>
+
+  <!-- Task 1 -->
+  <rect x="56" y="108" width="408" height="60" rx="10" fill="#f7f8fa" stroke="#d8dce2" stroke-width="1.5"/>
+  <rect x="56" y="108" width="6" height="60" rx="3" fill="#2f6f8f"/>
+  <rect x="78" y="126" width="18" height="18" rx="4" fill="#ffffff" stroke="#9aa1ab" stroke-width="1.5"/>
+  <text x="116" y="134" font-size="14" font-weight="600" fill="#2b3038">Tâche 1</text>
+  <rect x="116" y="144" width="280" height="8" rx="4" fill="#e3e6ea"/>
+
+  <!-- Task 2 -->
+  <rect x="56" y="178" width="408" height="60" rx="10" fill="#f7f8fa" stroke="#d8dce2" stroke-width="1.5"/>
+  <rect x="56" y="178" width="6" height="60" rx="3" fill="#3a8d6b"/>
+  <rect x="78" y="196" width="18" height="18" rx="4" fill="#ffffff" stroke="#9aa1ab" stroke-width="1.5"/>
+  <text x="116" y="204" font-size="14" font-weight="600" fill="#2b3038">Tâche 2</text>
+  <rect x="116" y="214" width="240" height="8" rx="4" fill="#e3e6ea"/>
+
+  <!-- Task 3 -->
+  <rect x="56" y="248" width="408" height="60" rx="10" fill="#f7f8fa" stroke="#d8dce2" stroke-width="1.5"/>
+  <rect x="56" y="248" width="6" height="60" rx="3" fill="#c9892b"/>
+  <rect x="78" y="266" width="18" height="18" rx="4" fill="#ffffff" stroke="#9aa1ab" stroke-width="1.5"/>
+  <text x="116" y="274" font-size="14" font-weight="600" fill="#2b3038">Tâche 3</text>
+  <rect x="116" y="284" width="300" height="8" rx="4" fill="#e3e6ea"/>
+
+  <!-- Task 4 -->
+  <rect x="56" y="318" width="408" height="60" rx="10" fill="#f7f8fa" stroke="#d8dce2" stroke-width="1.5"/>
+  <rect x="56" y="318" width="6" height="60" rx="3" fill="#8a4fb0"/>
+  <rect x="78" y="336" width="18" height="18" rx="4" fill="#ffffff" stroke="#9aa1ab" stroke-width="1.5"/>
+  <text x="116" y="344" font-size="14" font-weight="600" fill="#2b3038">Tâche 4</text>
+  <rect x="116" y="354" width="210" height="8" rx="4" fill="#e3e6ea"/>
+</svg>
