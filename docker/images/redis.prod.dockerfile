@@ -1,4 +1,4 @@
-FROM redis:7-alpine
+FROM redis:8-alpine
 
 RUN addgroup -g 1656 redis-dt && \
     adduser -D -u 1656 -G redis-dt redis-dt && \
