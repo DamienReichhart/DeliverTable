@@ -55,6 +55,8 @@ RUN /tools/depcopier \
     --scan  /staging/app \
     --copy  /staging/app:/app \
     --copy  /staging/healthcheck:/healthcheck \
+    --copy  /usr/lib/libssl.so.3:/usr/lib/libssl.so.3 \
+    --copy  /usr/lib/libcrypto.so.3:/usr/lib/libcrypto.so.3 \
     --certs \
     --user  1654:1654:appuser \
     --mkdir /tmp \
