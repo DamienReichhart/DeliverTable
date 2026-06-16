@@ -124,6 +124,8 @@ services:
       PLATFORM_VAT_APPLICABLE: ${PLATFORM_VAT_APPLICABLE:-true}
       PLATFORM_COMMISSION_RATE: ${PLATFORM_COMMISSION_RATE:-0.10}
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       database:
         condition: service_healthy
       garage:
@@ -183,6 +185,34 @@ services:
       - SETGID
     logging: *default-logging
     restart: always
+
+  # One-shot init job: applies EF Core migrations, then seeds the bootstrap
+  # administrator from BASE_ADMIN_EMAIL / BASE_ADMIN_PASSWORD when no admin
+  # exists yet, and exits. backend/worker/scheduler wait for it to complete.
+  migrator:
+    container_name: dt-migrator-prod
+    build:
+      context: .
+      dockerfile: docker/images/migrator.prod.dockerfile
+    environment:
+      CONNECTION_STRING_DATABASE: ${CONNECTION_STRING_DATABASE}
+      BASE_ADMIN_EMAIL: ${BASE_ADMIN_EMAIL}
+      BASE_ADMIN_PASSWORD: ${BASE_ADMIN_PASSWORD}
+      BASE_ADMIN_FIRST_NAME: ${BASE_ADMIN_FIRST_NAME:-Admin}
+      BASE_ADMIN_LAST_NAME: ${BASE_ADMIN_LAST_NAME:-DeliverTable}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      dt-backend-net:
+        ipv4_address: 172.32.0.80
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:size=50m
 
   redis:
     container_name: dt-redis-prod
@@ -297,6 +327,8 @@ services:
       OBJECT_STORAGE_FORCE_PATH_STYLE: ${OBJECT_STORAGE_FORCE_PATH_STYLE:-true}
       OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-garage}
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
       database:
@@ -346,6 +378,8 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       database:
         condition: service_healthy
       rabbitmq:
@@ -403,6 +437,7 @@ networks:
       config:
         - subnet: 172.33.0.0/24
           gateway: 172.33.0.1
+
 
 volumes:
   postgres-data:
