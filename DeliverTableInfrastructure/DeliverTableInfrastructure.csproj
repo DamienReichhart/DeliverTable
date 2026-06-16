@@ -9,16 +9,16 @@
     <ItemGroup>
         <PackageReference Include="AWSSDK.S3" Version="4.0.19.2" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5">
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.9">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
         <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
         <PackageReference Include="Stripe.net" Version="51.0.0" />
     </ItemGroup>
