@@ -60,6 +60,12 @@ RUN /tools/depcopier \
     --mkdir /tmp \
     --out   /rootfs
 
+# depcopier creates /tmp as root-owned mode 0755; the container runs as the
+# non-root appuser (1654) and could not write there. QuestPDF needs a writable
+# temp directory to render PDFs, so restore the conventional sticky world-
+# writable /tmp permissions (preserved through the COPY into scratch below).
+RUN chmod 1777 /rootfs/tmp
+
 # ── Stage 4: Scratch ─────────────────────────────────────────
 FROM scratch
 

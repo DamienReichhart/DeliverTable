@@ -12,6 +12,10 @@ using DeliverTableWorker.Services;
 using Microsoft.EntityFrameworkCore;
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+// The production worker runs on a minimal scratch image with no system fonts or
+// fontconfig. Disable environment font discovery so QuestPDF renders with its
+// bundled default font instead of probing the (absent) OS font stack.
+QuestPDF.Settings.UseEnvironmentFonts = false;
 
 DotNetEnv.Env.Load();
 WorkerEnvironment env = WorkerEnvironment.Load();

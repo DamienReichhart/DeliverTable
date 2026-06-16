@@ -45,6 +45,7 @@ RUN apk add --no-cache \
     libstdc++ \
     libssl3 \
     libcrypto3 \
+    tzdata \
     zlib
 
 COPY --from=tools /out/depcopier   /tools/depcopier
@@ -57,6 +58,7 @@ RUN /tools/depcopier \
     --copy  /staging/healthcheck:/healthcheck \
     --copy  /usr/lib/libssl.so.3:/usr/lib/libssl.so.3 \
     --copy  /usr/lib/libcrypto.so.3:/usr/lib/libcrypto.so.3 \
+    --copy  /usr/share/zoneinfo:/usr/share/zoneinfo \
     --certs \
     --user  1654:1654:appuser \
     --mkdir /tmp \
