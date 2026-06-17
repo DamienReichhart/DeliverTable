@@ -1,6 +1,6 @@
 # ── Stage 1: Build Go tools ───────────────────────────────────
 # depcopier scans ELF binaries for shared-lib deps and assembles a rootfs.
-FROM golang:1.24-alpine AS tools
+FROM golang:1.26-alpine AS tools
 
 WORKDIR /src
 COPY docker/images/tools/ ./
@@ -33,7 +33,7 @@ RUN dotnet publish DeliverTableMigrator/DeliverTableMigrator.csproj \
 # ── Stage 3: Assemble the minimal rootfs ─────────────────────
 # Alpine provides the same musl-based shared libraries the self-contained
 # .NET publish links against (libstdc++, libssl, zlib, etc.).
-FROM alpine:3.21 AS rootfs
+FROM alpine:3.24 AS rootfs
 
 RUN apk add --no-cache \
     ca-certificates \
