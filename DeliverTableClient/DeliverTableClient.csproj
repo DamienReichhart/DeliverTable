@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNetCore.SassCompiler" Version="1.97.1" />
+        <PackageReference Include="AspNetCore.SassCompiler" Version="1.101.0" />
         <PackageReference Include="Blazicons.Lucide" Version="2.1.3" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.5" />
