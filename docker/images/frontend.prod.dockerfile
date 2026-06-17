@@ -1,5 +1,5 @@
 # ── Stage 1: Build Go tools ───────────────────────────────────
-FROM golang:1.24-alpine AS tools
+FROM golang:1.26-alpine AS tools
 
 WORKDIR /src
 COPY docker/images/tools/ ./
@@ -31,7 +31,7 @@ RUN dotnet publish DeliverTableClient/DeliverTableClient.csproj \
 # We extract the nginx binary, its shared-library deps, and the
 # default nginx.conf (which includes conf.d/*.conf), then layer in
 # the Blazor WASM static output and our site-specific config.
-FROM nginx:1.27-alpine AS rootfs
+FROM nginx:1.31-alpine AS rootfs
 
 COPY --from=tools /out/depcopier   /tools/depcopier
 COPY --from=tools /out/healthcheck /staging/healthcheck

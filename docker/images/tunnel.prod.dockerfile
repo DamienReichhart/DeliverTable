@@ -1,5 +1,5 @@
 # ── Stage 1: Build healthcheck ────────────────────────────────
-FROM golang:1.24-alpine AS tools
+FROM golang:1.26-alpine AS tools
 
 WORKDIR /src
 COPY docker/images/tools/go.mod        ./
@@ -13,7 +13,7 @@ FROM cloudflare/cloudflared:latest AS upstream
 # ── Stage 3: Assemble rootfs ─────────────────────────────────
 # cloudflared is a statically-linked Go binary; it only needs CA certs
 # for TLS to the Cloudflare edge.
-FROM alpine:3.21 AS rootfs
+FROM alpine:3.24 AS rootfs
 
 RUN apk add --no-cache ca-certificates && \
     mkdir -p \

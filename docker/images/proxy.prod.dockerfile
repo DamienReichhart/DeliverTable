@@ -1,5 +1,5 @@
 # ── Stage 1: Build Go tools ───────────────────────────────────
-FROM golang:1.24-alpine AS tools
+FROM golang:1.26-alpine AS tools
 
 WORKDIR /src
 COPY docker/images/tools/ ./
@@ -8,7 +8,7 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/depcopier   ./depc
     CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/healthcheck ./healthcheck
 
 # ── Stage 2: Assemble rootfs from nginx:alpine ───────────────
-FROM nginx:1.27-alpine AS rootfs
+FROM nginx:1.31-alpine AS rootfs
 
 COPY --from=tools /out/depcopier   /tools/depcopier
 COPY --from=tools /out/healthcheck /staging/healthcheck
